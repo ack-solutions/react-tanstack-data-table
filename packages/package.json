@@ -35,8 +35,7 @@
     "registry": "https://registry.npmjs.org/"
   },
   "scripts": {
-    "build": "tsc --project tsconfig.lib.json",
-    "prepublishOnly": "npm run build"
+    "build": "tsc --project tsconfig.lib.json"
   },
   "peerDependencies": {
     "@emotion/react": "^11.14.0",

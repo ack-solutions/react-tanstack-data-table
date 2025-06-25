@@ -41,25 +41,15 @@ jobs:
       - name: Build all packages
         run: yarn build:all
 
-      - name: Prepare and publish package
+      - name: Publish package
         run: |
-          # Create a temporary directory for publishing
-          mkdir -p temp-publish
+          # Copy additional files to dist
+          cp packages/README.md packages/dist/
+          cp packages/LICENSE packages/dist/
+          cp packages/package.json packages/dist/
           
-          # Copy all built files
-          cp -r packages/dist/* temp-publish/
-          
-          # Copy additional files
-          cp packages/README.md temp-publish/
-          cp packages/LICENSE temp-publish/
-          cp packages/package.json temp-publish/
-          
-          # Publish from the temporary directory
-          cd temp-publish
+          # Publish directly from dist
+          cd packages/dist
           npm publish --access public || echo "⚠️ Failed to publish (maybe already published)"
-          
-          # Clean up
-          cd ..
-          rm -rf temp-publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
