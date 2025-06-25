@@ -1,6 +1,6 @@
 {
   "name": "@ackplus/react-tanstack-data-table",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "A powerful React data table component built with MUI and TanStack Table",
   "keywords": [
     "react",
@@ -26,16 +26,16 @@
     "url": "https://github.com/ack-solutions/react-tanstack-data-table/issues"
   },
   "type": "module",
-  "main": "./dist/index.esm.js",
-  "module": "./dist/index.esm.js",
-  "types": "./dist/index.esm.d.ts",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "sideEffects": false,
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org/"
   },
   "scripts": {
-    "build": "rollup -c rollup.config.cjs",
+    "build": "tsc --project tsconfig.lib.json",
     "prepublishOnly": "npm run build"
   },
   "peerDependencies": {
@@ -57,9 +57,9 @@
     "./package.json": "./package.json",
     ".": {
       "development": "./src/index.ts",
-      "types": "./dist/index.esm.d.ts",
-      "import": "./dist/index.esm.js",
-      "default": "./dist/index.esm.js"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
     }
   },
   "files": [
