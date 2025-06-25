@@ -2,7 +2,7 @@ import { ViewColumnOutlined } from '@mui/icons-material';
 import { Box, Checkbox, Divider, FormControlLabel, FormGroup, IconButton, Tooltip, Typography } from '@mui/material';
 import { useMemo } from 'react';
 
-import { MenuDropdown } from '../../../../menu-dropdown';
+import { MenuDropdown } from '../droupdown/menu-dropdown';
 import { useDataTableContext } from '../../contexts/data-table-context';
 import { getSlotComponent } from '../../utils/slot-helpers';
 
@@ -14,11 +14,11 @@ export function ColumnVisibilityControl() {
 
 
     const columns = useMemo(() => {
-        if (slotProps.columnsPanel?.getTogglableColumns) {
-            return slotProps.columnsPanel?.getTogglableColumns(table.getAllLeafColumns());
+        if (slotProps?.columnsPanel?.getTogglableColumns) {
+            return slotProps?.columnsPanel?.getTogglableColumns(table.getAllLeafColumns());
         }
         return table.getAllLeafColumns().filter(column => column.getCanHide());
-    }, [slotProps.columnsPanel, table]);
+    }, [slotProps?.columnsPanel, table]);
 
 
     const handleColumnVisibilityChange = ((columnId: string, visible: boolean) => {
@@ -36,13 +36,13 @@ export function ColumnVisibilityControl() {
                         }}
                     >
                         <ColumnIconSlot
-                            {...slotProps.columnIcon}
+                            {...slotProps?.columnIcon}
                         />
                     </IconButton>
                 </Tooltip>
             )}
         >
-            {({ handleClose: _handleClose }) => (
+            {({ handleClose }: { handleClose: () => void }) => (
                 <Box
                     sx={{
                         p: 2,
@@ -57,14 +57,14 @@ export function ColumnVisibilityControl() {
                     </Typography>
                     <Divider sx={{ mb: 1 }} />
                     <FormGroup>
-                        {columns.map(column => (
+                        {columns.map((column: any) => (
                             <FormControlLabel
                                 key={column.id}
                                 control={(
                                     <Checkbox
                                         disabled={!column.getCanHide()}
                                         checked={column.getIsVisible()}
-                                        onChange={(e) => handleColumnVisibilityChange(column.id, e.target.checked)}
+                                        onChange={(e: any) => handleColumnVisibilityChange(column.id, e.target.checked)}
                                         size="small"
                                     />
                                 )}

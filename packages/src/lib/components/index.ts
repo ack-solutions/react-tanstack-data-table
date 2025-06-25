@@ -22,3 +22,4 @@ export * from './filters';
 
 // Pagination components
 export * from './pagination';
+export * from './droupdown/menu-dropdown';

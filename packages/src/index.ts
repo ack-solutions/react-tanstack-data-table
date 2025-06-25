@@ -45,6 +45,7 @@ export * from './lib/types';
 
 // Re-export commonly used types from TanStack Table
 export type {
+    Column,
     ColumnDef,
     Row,
     Table,

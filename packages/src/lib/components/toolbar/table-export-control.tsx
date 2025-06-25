@@ -10,7 +10,7 @@ import {
 } from '@mui/material';
 
 
-import { MenuDropdown } from '../../../../menu-dropdown';
+import { MenuDropdown } from '../droupdown/menu-dropdown';
 import { useDataTableContext } from '../../contexts/data-table-context';
 import { ExcelIcon, CsvIcon } from '../../icons';
 import { TableState } from '../../types';
@@ -136,7 +136,7 @@ export function TableExportControl({
                 </Tooltip>
             )}
         >
-            {({ handleClose }) => (
+            {({ handleClose }: { handleClose: () => void }) => (
                 <Box
                     sx={{
                         p: 1,

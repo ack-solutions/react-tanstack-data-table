@@ -2,6 +2,7 @@
  * Column utilities for DataTable components
  */
 import { DataTableColumn } from '../types';
+import { Column } from "@tanstack/react-table";
 
 
 export type ColumnType = 'text' | 'number' | 'date' | 'boolean' | 'select' | 'actions';
@@ -9,10 +10,10 @@ export type ColumnType = 'text' | 'number' | 'date' | 'boolean' | 'select' | 'ac
 /**
  * Get the type of a column from its metadata
  */
-export function getColumnType(column: DataTableColumn<any, unknown>): ColumnType {
+export function getColumnType(column: Column<any, unknown>): ColumnType {
     // Check if column has explicit type in meta
-    if (column?.type) {
-        return column?.type;
+    if ((column as any)?.type) {
+        return (column as any)?.type;
     }
 
     return 'text'; // Default to text

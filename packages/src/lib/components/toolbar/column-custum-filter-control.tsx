@@ -15,7 +15,7 @@ import {
 } from '@mui/material';
 import { useState, useMemo, useCallback } from 'react';
 
-import { MenuDropdown } from '../../../../menu-dropdown';
+import { MenuDropdown } from '../droupdown/menu-dropdown';
 import { useDataTableContext } from '../../contexts/data-table-context';
 import {
     AddIcon,
@@ -114,7 +114,7 @@ export function ColumnCustomFilterControl() {
 
     const getOperatorsForColumn = useCallback((columnId: string) => {
         const column = filterableColumns.find(col => col.id === columnId);
-        const type = getColumnType(column);
+        const type = getColumnType(column as any);
         return FILTER_OPERATORS[type as keyof typeof FILTER_OPERATORS] || FILTER_OPERATORS.text;
     }, [filterableColumns]);
 
@@ -135,12 +135,12 @@ export function ColumnCustomFilterControl() {
                             flexShrink: 0,
                         }}
                     >
-                        <FilterIconSlot {...slotProps.filterIcon} />
+                        <FilterIconSlot {...slotProps?.filterIcon} />
                     </IconButton>
                 </Badge>
             )}
         >
-            {({ handleClose }) => (
+            {({ handleClose }: any) => (
                 <Box
                     sx={{
                         p: 2,
@@ -305,7 +305,7 @@ export function ColumnCustomFilterControl() {
                                         {!['isEmpty', 'isNotEmpty'].includes(filter.operator) ? (
                                             <FilterValueInput
                                                 filter={filter}
-                                                column={filterableColumns.find(col => col.id === filter.columnId)}
+                                                column={filterableColumns.find(col => col.id === filter.columnId) as any}
                                                 onValueChange={(value) => updateFilter(filter.id, { value })}
                                             />
                                         ) : (

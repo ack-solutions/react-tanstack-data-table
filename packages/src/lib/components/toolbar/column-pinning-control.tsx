@@ -9,10 +9,10 @@ import {
     ListItem,
     ListItemText,
 } from '@mui/material';
-import { ColumnPinningState } from '@tanstack/react-table';
+import { ColumnPinningState, Column } from '@tanstack/react-table';
 import { useCallback, useMemo } from 'react';
 
-import { MenuDropdown } from '../../../../menu-dropdown';
+import { MenuDropdown } from '../droupdown/menu-dropdown';
 import { useDataTableContext } from '../../contexts/data-table-context';
 import {
     UnpinIcon,
@@ -30,12 +30,12 @@ export function ColumnPinningControl() {
 
     const columnPinning = table.getState().columnPinning;
 
-    const allColumns = useMemo(() => {
-        if (slotProps.columnsPanel?.getPinnableColumns) {
-            return slotProps.columnsPanel.getPinnableColumns(table.getAllLeafColumns());
+    const allColumns: Column<any, unknown>[] = useMemo(() => {
+        if (slotProps?.columnsPanel?.getPinnableColumns) {
+            return slotProps?.columnsPanel?.getPinnableColumns(table.getAllLeafColumns());
         }
         return table.getAllLeafColumns().filter(column => column.getCanPin());
-    }, [slotProps.columnsPanel, table]);
+    }, [slotProps?.columnsPanel, table]);
 
     const handlePinColumn = (columnId: string, position: 'left' | 'right' | 'none') => {
         const currentPinning = table.getState().columnPinning;
@@ -73,8 +73,8 @@ export function ColumnPinningControl() {
     }, [table]);
 
     // Count only user-pinned columns (exclude system columns like select and action)
-    const userPinnedLeft = (columnPinning.left.filter((id) => allColumns.some((column) => column.id === id)) || []);
-    const userPinnedRight = (columnPinning.right.filter((id) => allColumns.some((column) => column.id === id)) || []);
+    const userPinnedLeft = (columnPinning.left?.filter((id) => allColumns.some((column: any) => column.id === id)) || []);
+    const userPinnedRight = (columnPinning.right?.filter((id) => allColumns.some((column: any) => column.id === id)) || []);
     console.log('userPinnedLeft', userPinnedLeft, userPinnedRight);
     const totalPinned = userPinnedLeft.length + userPinnedRight.length;
 
@@ -88,7 +88,7 @@ export function ColumnPinningControl() {
                             flexShrink: 0,
                         }}
                     >
-                        <PinIconSlot {...slotProps.pinIcon} />
+                        <PinIconSlot {...slotProps?.pinIcon} />
                         {totalPinned > 0 && (
                             <Box
                                 sx={{
@@ -113,7 +113,7 @@ export function ColumnPinningControl() {
                 </Tooltip>
             )}
         >
-            {({ handleClose: _handleClose }) => (
+            {({ handleClose }: { handleClose: () => void }) => (
                 <Box
                     sx={{
                         minWidth: 300,
@@ -147,7 +147,7 @@ export function ColumnPinningControl() {
                         dense
                         sx={{ py: 0 }}
                     >
-                        {allColumns.map((column) => {
+                        {allColumns.map((column: any) => {
                             const pinStatus = getColumnPinStatus(column.id);
                             const displayName = getColumnDisplayName(column);
 
@@ -171,7 +171,7 @@ export function ColumnPinningControl() {
                                                 >
                                                     <LeftIconSlot
                                                         fontSize="small"
-                                                        {...slotProps.leftIcon}
+                                                        {...slotProps?.leftIcon}
                                                     />
                                                 </IconButton>
                                             </Tooltip>
@@ -185,7 +185,7 @@ export function ColumnPinningControl() {
                                                 >
                                                     <RightIconSlot
                                                         fontSize="small"
-                                                        {...slotProps.rightIcon}
+                                                        {...slotProps?.rightIcon}
                                                     />
                                                 </IconButton>
                                             </Tooltip>
@@ -199,7 +199,7 @@ export function ColumnPinningControl() {
                                                     >
                                                         <UnpinIconSlot
                                                             fontSize="small"
-                                                            {...slotProps.unpinIcon}
+                                                            {...slotProps?.unpinIcon}
                                                         />
                                                     </IconButton>
                                                 </Tooltip>
@@ -222,12 +222,12 @@ export function ColumnPinningControl() {
                                                     {pinStatus === 'left' ? (
                                                         <LeftIconSlot
                                                             fontSize="small"
-                                                            {...slotProps.leftIcon}
+                                                            {...slotProps?.leftIcon}
                                                         />
                                                     ) : (
                                                         <RightIconSlot
                                                             fontSize="small"
-                                                            {...slotProps.rightIcon}
+                                                            {...slotProps?.rightIcon}
                                                         />
                                                     )}
                                                     <Typography
