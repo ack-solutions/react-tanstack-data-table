@@ -716,6 +716,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         pageSize: pagination.pageSize,
         handleColumnFilterStateChange,
         onDataStateChange,
+        onFetchData: onFetchData,
         onDataChange,
         // Export props
         exportFilename,

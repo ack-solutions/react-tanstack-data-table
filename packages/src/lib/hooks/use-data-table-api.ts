@@ -27,7 +27,8 @@ interface UseDataTableApiProps<T> {
     handleColumnFilterStateChange: (filterState: ICustomColumnFilter) => void;
 
     // Callbacks
-    onDataStateChange?: (state: TableFilters) => void;
+    onDataStateChange?: (state: Partial<TableState>) => void;
+    onFetchData?: (filters: Partial<TableState>) => void;
     onDataChange?: (newData: T[]) => void;
 
     // Export props
@@ -64,6 +65,7 @@ export function useDataTableApi<T extends Record<string, any>>(
         pageSize,
         handleColumnFilterStateChange,
         onDataStateChange,
+        onFetchData,
         onDataChange,
         // Export props
         exportFilename = 'export',
@@ -326,30 +328,42 @@ export function useDataTableApi<T extends Record<string, any>>(
         data: {
             refresh: () => {
                 // Call external data state change handler to trigger refresh
+                const currentFilters = {
+                    globalFilter,
+                    customColumnsFilter: customColumnsFilter,
+                    sorting,
+                    pagination,
+                };
                 if (onDataStateChange) {
                     const currentState: TableFilters = {
-                        globalFilter,
-                        customColumnsFilter: customColumnsFilter,
-                        sorting,
-                        pagination,
+                        ...currentFilters,
                         columnOrder,
                         columnPinning,
                     };
                     onDataStateChange(currentState);
                 }
+                if (onFetchData) {
+                    onFetchData(currentFilters)
+                }
             },
             reload: () => {
                 // Same as refresh for now
+                const currentFilters = {
+                    globalFilter,
+                    customColumnsFilter: customColumnsFilter,
+                    sorting,
+                    pagination,
+                };
                 if (onDataStateChange) {
                     const currentState: TableFilters = {
-                        globalFilter,
-                        customColumnsFilter: customColumnsFilter,
-                        sorting,
-                        pagination,
+                        ...currentFilters,
                         columnOrder,
                         columnPinning,
                     };
                     onDataStateChange({ ...currentState });
+                }
+                if (onFetchData) {
+                    onFetchData({ ...currentFilters });
                 }
             },
             // Data CRUD operations
@@ -767,6 +781,7 @@ export function useDataTableApi<T extends Record<string, any>>(
         data,
         idKey,
         onDataStateChange,
+        onFetchData,
         globalFilter,
         sorting,
         pagination,
