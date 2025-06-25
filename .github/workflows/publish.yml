@@ -38,27 +38,13 @@ jobs:
       - name: Preview version bumps
         run: git diff
 
-      - name: Build package
-        run: |
-          # Try Nx build first, fallback to simple build
-          yarn build:all
+      - name: Build all packages
+        run: yarn build:all
 
-      - name: Prepare package for publishing
+      - name: Publish all packages
         run: |
-          # Create the package directory structure
-          mkdir -p dist/packages/@ackplus-react-tanstack-data-table
-          
-          # Copy built files
-          cp -r packages/dist/* dist/packages/@ackplus-react-tanstack-data-table/ || echo "No dist files to copy"
-          
-          # Copy package.json and other files
-          cp packages/package.json dist/packages/@ackplus-react-tanstack-data-table/
-          cp packages/README.md dist/packages/@ackplus-react-tanstack-data-table/
-          cp packages/LICENSE dist/packages/@ackplus-react-tanstack-data-table/
-
-      - name: Publish package
-        run: |
-          cd dist/packages/@ackplus-react-tanstack-data-table
+          cd packages/dist/@ackplus-react-tanstack-data-table
           npm publish --access public || echo "⚠️ Failed to publish (maybe already published)"
+          cd -
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
