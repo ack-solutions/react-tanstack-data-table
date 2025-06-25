@@ -41,10 +41,15 @@ jobs:
       - name: Build all packages
         run: yarn build:all
 
-      - name: Publish all packages
+      - name: Copy additional files and publish
         run: |
-          cd packages/dist/@ackplus-react-tanstack-data-table
+          # Copy additional files to the built package
+          cp packages/README.md packages/dist/
+          cp packages/LICENSE packages/dist/
+          cp packages/package.json packages/dist/
+          
+          # Publish from the built directory
+          cd packages/dist
           npm publish --access public || echo "⚠️ Failed to publish (maybe already published)"
-          cd -
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
