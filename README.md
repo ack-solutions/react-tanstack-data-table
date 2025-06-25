@@ -1,90 +1,233 @@
-# ReactMuiTanstackDataTable
+# React TanStack Data Table
 
-<a alt="Nx logo" href="https://nx.dev" target="_blank" rel="noreferrer"><img src="https://raw.githubusercontent.com/nrwl/nx/master/images/nx-logo.png" width="45"></a>
+A powerful, feature-rich, and highly customizable React data table component built with Material-UI (MUI) and TanStack Table. Perfect for building modern data-intensive applications with advanced table functionality.
 
-✨ Your new, shiny [Nx workspace](https://nx.dev) is almost ready ✨.
+## 🚀 Quick Links
 
-[Learn more about this workspace setup and its capabilities](https://nx.dev/nx-api/js?utm_source=nx_project&amp;utm_medium=readme&amp;utm_campaign=nx_projects) or run `npx nx graph` to visually explore what was created. Now, let's get you up to speed!
+- 📦 **NPM Package**: [@ackplus/react-tanstack-data-table](https://www.npmjs.com/package/@ackplus/react-tanstack-data-table)
+- 📖 **Documentation**: [Package README](./packages/README.md)
+- 🔗 **Repository**: [GitHub](https://github.com/ack-solutions/react-tanstack-data-table)
 
-## Finish your CI setup
+## 📂 Project Structure
 
-[Click here to finish setting up your workspace!](https://cloud.nx.app/connect/TqQDogcZVb)
-
-
-## Generate a library
-
-```sh
-npx nx g @nx/js:lib packages/pkg1 --publishable --importPath=@my-org/pkg1
-```
-
-## Run tasks
-
-To build the library use:
-
-```sh
-npx nx build pkg1
-```
-
-To run any task with Nx use:
-
-```sh
-npx nx <target> <project-name>
-```
-
-These targets are either [inferred automatically](https://nx.dev/concepts/inferred-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) or defined in the `project.json` or `package.json` files.
-
-[More about running tasks in the docs &raquo;](https://nx.dev/features/run-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-## Versioning and releasing
-
-To version and release the library use
+This is a monorepo containing:
 
 ```
-npx nx release
+├── packages/           # Main data table library
+│   ├── src/
+│   │   ├── lib/
+│   │   │   ├── components/    # React components
+│   │   │   │   ├── components/    # React components
+│   │   │   │   ├── types/         # TypeScript definitions
+│   │   │   │   ├── utils/         # Utility functions
+│   │   │   │   ├── hooks/         # Custom React hooks
+│   │   │   │   ├── contexts/      # React contexts
+│   │   │   │   └── examples/      # Usage examples
+│   │   │   └── index.ts
+│   │   ├── package.json
+│   │   └── README.md      # 📖 Main documentation
+│   ├── react/             # Demo/development app
+│   └── react-e2e/         # End-to-end tests
 ```
 
-Pass `--dry-run` to see what would happen without actually releasing the library.
+## ✨ Features
 
-[Learn more about Nx release &raquo;](https://nx.dev/features/manage-releases?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+- 🚀 **High Performance** - Built on TanStack Table
+- 🎨 **Material Design** - Beautiful MUI components
+- 📱 **Responsive** - Mobile-friendly design
+- 🔍 **Advanced Filtering** - Global search & column filters
+- 📊 **Multi-Column Sorting** - Powerful sorting capabilities
+- 📄 **Flexible Pagination** - Client & server-side options
+- 🎯 **Column Management** - Show/hide, resize, reorder, pin
+- 📤 **Data Export** - CSV/Excel with progress tracking
+- 🖱️ **Row Selection** - Single & multi-selection with bulk actions
+- ⚡ **Virtualization** - Handle large datasets efficiently
+- 🔄 **Server Integration** - Built-in server-side operations
+- 🎛️ **Highly Customizable** - Extensive slots & props system
+- 📝 **TypeScript** - Full type safety
+- 🔌 **Extensible** - Plugin architecture
 
-## Keep TypeScript project references up to date
+## 🏗️ Development
 
-Nx automatically updates TypeScript [project references](https://www.typescriptlang.org/docs/handbook/project-references.html) in `tsconfig.json` files to ensure they remain accurate based on your project dependencies (`import` or `require` statements). This sync is automatically done when running tasks such as `build` or `typecheck`, which require updated references to function correctly.
+### Prerequisites
 
-To manually trigger the process to sync the project graph dependencies information to the TypeScript project references, run the following command:
+- Node.js 18+
+- Yarn or npm
 
-```sh
-npx nx sync
+### Getting Started
+
+```bash
+# Clone the repository
+git clone https://github.com/ack-solutions/react-tanstack-data-table.git
+cd react-tanstack-data-table
+
+# Install dependencies
+yarn install
+
+# Build the library
+yarn build:all
+
+# Start development server
+yarn start
+
+# Run tests
+yarn test
 ```
 
-You can enforce that the TypeScript project references are always in the correct state when running in CI by adding a step to your CI job configuration that runs the following command:
+### Development Commands
 
-```sh
-npx nx sync:check
+```bash
+# Build the library
+yarn build:all
+
+# Build and watch for changes
+yarn build --watch
+
+# Start demo app
+yarn start
+
+# Run tests
+yarn test
+
+# Run linting
+yarn lint
+
+# Format code
+yarn format
+
+# Clean build artifacts
+yarn clean
 ```
 
-[Learn more about nx sync](https://nx.dev/reference/nx-commands#sync)
+## 📦 Package Development
 
+The main library is located in the `packages/` directory:
 
-[Learn more about Nx on CI](https://nx.dev/ci/intro/ci-with-nx#ready-get-started-with-your-provider?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+```bash
+# Work in the packages directory
+cd packages
 
-## Install Nx Console
+# Build the library
+npm run build
 
-Nx Console is an editor extension that enriches your developer experience. It lets you run tasks, generate code, and improves code autocompletion in your IDE. It is available for VSCode and IntelliJ.
+# Test the package locally
+npm pack
+```
 
-[Install Nx Console &raquo;](https://nx.dev/getting-started/editor-setup?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+## 🚀 Publishing
 
-## Useful links
+This project uses automated publishing via GitHub Actions:
 
-Learn more:
+```bash
+# Create and push a version tag
+git tag v1.0.0
+git push origin v1.0.0
+```
 
-- [Learn more about this workspace setup](https://nx.dev/nx-api/js?utm_source=nx_project&amp;utm_medium=readme&amp;utm_campaign=nx_projects)
-- [Learn about Nx on CI](https://nx.dev/ci/intro/ci-with-nx?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Releasing Packages with Nx release](https://nx.dev/features/manage-releases?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [What are Nx plugins?](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+Or publish manually:
 
-And join the Nx community:
-- [Discord](https://go.nx.dev/community)
-- [Follow us on X](https://twitter.com/nxdevtools) or [LinkedIn](https://www.linkedin.com/company/nrwl)
-- [Our Youtube channel](https://www.youtube.com/@nxdevtools)
-- [Our blog](https://nx.dev/blog?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+```bash
+cd packages
+npm publish --access public
+```
+
+## 🧪 Testing
+
+### Unit Tests
+
+```bash
+yarn test
+```
+
+### E2E Tests
+
+```bash
+yarn e2e
+```
+
+### Manual Testing
+
+```bash
+# Start the demo app
+yarn start
+
+# Open http://localhost:4200
+```
+
+## 📚 Usage
+
+For detailed usage instructions, examples, and API documentation, see the [Package README](./packages/README.md).
+
+### Basic Example
+
+```tsx
+import { DataTable } from '@ackplus/react-tanstack-data-table';
+
+function MyTable() {
+  return (
+    <DataTable
+      columns={columns}
+      data={data}
+      enableSorting
+      enableGlobalFilter
+      enablePagination
+      enableRowSelection
+    />
+  );
+}
+```
+
+## 🤝 Contributing
+
+We welcome contributions! Please follow these steps:
+
+1. **Fork the repository**
+2. **Create a feature branch**: `git checkout -b feature/my-feature`
+3. **Make your changes**
+4. **Add tests** for new functionality
+5. **Run tests**: `yarn test`
+6. **Commit changes**: `git commit -m "Add my feature"`
+7. **Push to branch**: `git push origin feature/my-feature`
+8. **Create Pull Request**
+
+### Development Guidelines
+
+- Follow TypeScript best practices
+- Add comprehensive tests for new features
+- Update documentation for API changes
+- Follow the existing code style
+- Use conventional commit messages
+
+## 📋 Roadmap
+
+- [ ] More export formats (PDF, JSON)
+- [ ] Advanced filtering UI
+- [ ] Drag & drop row reordering
+- [ ] Mobile-optimized layouts
+- [ ] Performance optimizations
+- [ ] Accessibility improvements
+- [ ] Storybook documentation
+- [ ] More themes and customization options
+
+## 🆘 Support
+
+- 📖 [Documentation](./packages/README.md)
+- 🐛 [Issue Tracker](https://github.com/ack-solutions/react-tanstack-data-table/issues)
+- 💬 [Discussions](https://github.com/ack-solutions/react-tanstack-data-table/discussions)
+- 📧 [Contact](mailto:support@ack-solutions.com)
+
+## 📄 License
+
+MIT © [ACK Solutions](https://github.com/ack-solutions)
+
+## 🏆 Built With
+
+- [React](https://reactjs.org/) - UI library
+- [TanStack Table](https://tanstack.com/table) - Headless table library
+- [Material-UI](https://mui.com/) - React component library
+- [TypeScript](https://www.typescriptlang.org/) - Type-safe JavaScript
+- [Nx](https://nx.dev/) - Monorepo toolkit
+
+---
+
+⭐ **Star this repository** if you find it helpful!
