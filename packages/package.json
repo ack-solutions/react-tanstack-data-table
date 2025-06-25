@@ -1,6 +1,6 @@
 {
   "name": "@ackplus/react-tanstack-data-table",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "A powerful React data table component built with MUI and TanStack Table",
   "keywords": [
     "react",
@@ -17,7 +17,7 @@
     "email": "your-email@example.com"
   },
   "license": "MIT",
-  "homepage": "https://github.com/ack-solutions/react-tanstack-data-table#readme",
+  "homepage": "https://github.com/ack-solutions/react-tanstack-data-table/packages/#readme",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/ack-solutions/react-tanstack-data-table.git"

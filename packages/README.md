@@ -546,6 +546,25 @@ Key changes in v1.0:
 
 We welcome contributions! Please see our [Contributing Guide](https://github.com/ack-solutions/react-tanstack-data-table/blob/main/CONTRIBUTING.md) for details.
 
+## 💖 Support the Project
+
+If you find this package helpful and want to support its development, consider making a donation:
+
+<div align="center">
+
+[![PayPal](https://img.shields.io/badge/PayPal-00457C?style=for-the-badge&logo=paypal&logoColor=white)](https://www.paypal.com/paypalme/my/profile)
+[![Razorpay](https://img.shields.io/badge/Razorpay-02042B?style=for-the-badge&logo=razorpay&logoColor=white)](https://razorpay.me/@ackplus)
+
+**[💳 PayPal](https://www.paypal.com/paypalme/my/profile)** • **[💳 Razorpay](https://razorpay.me/@ackplus)**
+
+</div>
+
+Your support helps us:
+- 🛠️ Maintain and improve the library
+- 🐛 Fix bugs and add new features
+- 📚 Create better documentation
+- 🚀 Keep the project active and up-to-date
+
 ## 📄 License
 
 MIT © [ACK Solutions](https://github.com/ack-solutions)

@@ -7,7 +7,7 @@ module.exports = withNx(
     main: './src/index.ts',
     outputPath: './dist',
     tsConfig: './tsconfig.lib.json',
-    compiler: 'babel',
+    compiler: 'tsc',
     external: ["react","react-dom","react/jsx-runtime"],
     format: ["esm"],
     assets:[{ input: '.', output: '.', glob: 'README.md'}],
