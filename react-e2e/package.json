@@ -1,0 +1,10 @@
+{
+  "name": "@react-mui-tanstack-data-table/react-e2e",
+  "version": "0.0.1",
+  "private": true,
+  "nx": {
+    "implicitDependencies": [
+      "@react-mui-tanstack-data-table/react"
+    ]
+  }
+}

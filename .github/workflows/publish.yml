@@ -1,0 +1,54 @@
+name: Release from Tag
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        run: yarn
+
+      - name: Setup NPM Auth
+        run: echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > ~/.npmrc
+
+      - name: Extract version from tag
+        id: version
+        run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Apply version bump with Changesets
+        run: |
+          VERSION=${{ steps.version.outputs.version }}
+          echo "Applying version bump via Changesets: $VERSION"
+          yarn set-version "$VERSION"
+
+      - name: Preview version bumps
+        run: git diff
+
+      - name: Build all packages
+        run: yarn build:all
+
+      - name: Publish all packages
+        run: |
+          for dir in dist/packages/*; do
+            if [ -f "$dir/package.json" ]; then
+              cd $dir
+              npm publish --access public || echo "⚠️ Failed to publish $dir (maybe already published)"
+              cd -
+            fi
+          done
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }} 
