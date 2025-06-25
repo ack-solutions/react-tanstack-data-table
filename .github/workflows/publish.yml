@@ -3,7 +3,7 @@ name: Release from Tag
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
 
 jobs:
   release:
@@ -17,7 +17,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          registry-url: 'https://registry.npmjs.org'
+          registry-url: "https://registry.npmjs.org"
 
       - name: Install dependencies
         run: yarn
@@ -43,12 +43,8 @@ jobs:
 
       - name: Publish all packages
         run: |
-          for dir in dist/packages/*; do
-            if [ -f "$dir/package.json" ]; then
-              cd $dir
-              npm publish --access public || echo "⚠️ Failed to publish $dir (maybe already published)"
-              cd -
-            fi
-          done
+          cd packages/dist
+          npm publish --access public || echo "⚠️ Failed to publish (maybe already published)"
+          cd -
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }} 
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
