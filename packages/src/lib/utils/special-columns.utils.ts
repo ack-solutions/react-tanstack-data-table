@@ -55,7 +55,6 @@ export const createExpandingColumn = <T>(config: Partial<DataTableColumn<T>>): D
         onClick: row.getToggleExpandedHandler(),
         size: 'small',
         sx: { p: 0 },
-        children: row.getIsExpanded() ? createElement(KeyboardArrowUpOutlined) : createElement(KeyboardArrowDownOutlined),
-    }),
+    }, row.getIsExpanded() ? createElement(KeyboardArrowUpOutlined) : createElement(KeyboardArrowDownOutlined)),
     ...config,
 });

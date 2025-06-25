@@ -10,7 +10,7 @@ import type { DataTableColumn, PinnedColumnStyleOptions } from '../types';
  * Generate box shadow for pinned columns using subtle theme-compatible shadows
  * Only shows shadow on the trailing edge of pinned columns
  */
-const getBoxShadow = (isPinned: 'left' | 'right' | false, isLastLeftPinnedColumn: boolean, isFirstRightPinnedColumn: boolean) => {
+const getBoxShadow = (isPinned: 'left' | 'right' | false | undefined, isLastLeftPinnedColumn: boolean, isFirstRightPinnedColumn: boolean) => {
     if (isPinned === 'left' && isLastLeftPinnedColumn) {
         // Subtle shadow on right side of left-pinned column
         return '1px 0 3px rgba(0, 0, 0, 0.12)';
@@ -76,7 +76,7 @@ export function getPinnedColumnStyle(options: PinnedColumnStyleOptions) {
         }),
 
         // Box shadow only on trailing edge with subtle shadows
-        boxShadow: getBoxShadow(isPinned, isLastLeftPinnedColumn, isFirstRightPinnedColumn),
+        boxShadow: getBoxShadow(isPinned, !!isLastLeftPinnedColumn, !!isFirstRightPinnedColumn),
     };
 }
 

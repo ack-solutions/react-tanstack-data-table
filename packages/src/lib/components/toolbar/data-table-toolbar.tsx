@@ -32,7 +32,7 @@ export interface DataTableToolbarProps {
 }
 
 export function DataTableToolbar({
-    extraFilter,
+    extraFilter = null,
     enableGlobalFilter = true,
     title,
     subtitle,
@@ -121,7 +121,7 @@ export function DataTableToolbar({
                         alignItems="center"
                     >
                         {/* Extra Filter */}
-                        {extraFilter}
+                        {extraFilter as any}
                     </Stack>
                 </Stack>
             </Box>

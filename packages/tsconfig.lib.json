@@ -5,6 +5,8 @@
     "declaration": true,
     "declarationMap": true,
     "emitDeclarationOnly": false,
+    "strict": false,
+    "noImplicitAny": false,
     "types": [
       "node",
       "@nx/react/typings/cssmodule.d.ts",

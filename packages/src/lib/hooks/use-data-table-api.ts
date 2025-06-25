@@ -1,5 +1,5 @@
 import { ColumnOrderState, ColumnPinningState, SortingState, Table } from '@tanstack/react-table';
-import { useImperativeHandle } from 'react';
+import { Ref, useImperativeHandle } from 'react';
 
 import { ICustomColumnFilter, TableFilters, TableState } from '../types';
 import { DataTableApi } from '../types/data-table-api';
@@ -44,7 +44,7 @@ interface UseDataTableApiProps<T> {
 
 export function useDataTableApi<T extends Record<string, any>>(
     props: UseDataTableApiProps<T>,
-    ref: React.Ref<DataTableApi<T>>,
+    ref: Ref<DataTableApi<T>>,
 ) {
     const {
         table,

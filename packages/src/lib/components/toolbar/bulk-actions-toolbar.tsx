@@ -8,6 +8,7 @@ import {
     alpha,
     IconButton,
     Tooltip,
+    Theme,
 } from '@mui/material';
 import { ReactNode } from 'react';
 
@@ -49,7 +50,7 @@ export function BulkActionsToolbar<T = any>({
                         xs: 1,
                         sm: 1,
                     },
-                    bgcolor: theme => alpha(theme.palette.primary.main, 0.05),
+                    bgcolor: (theme:Theme) => alpha(theme.palette.primary.main, 0.05),
                     mb: 1,
                     position: 'relative',
                     zIndex: 1,
@@ -96,7 +97,7 @@ export function BulkActionsToolbar<T = any>({
                                         size="small"
                                         color="primary"
                                     >
-                                        <SelectAllIconSlot {...slotProps.selectAllIcon} />
+                                        <SelectAllIconSlot {...slotProps?.selectAllIcon} />
                                     </IconButton>
                                 </Tooltip>
                             ) : null}
@@ -106,7 +107,7 @@ export function BulkActionsToolbar<T = any>({
                                         onClick={onDeselectAll}
                                         size="small"
                                     >
-                                        <DeselectIconSlot {...slotProps.deselectIcon} />
+                                        <DeselectIconSlot {...slotProps?.deselectIcon} />
                                     </IconButton>
                                 </Tooltip>
                             ) : null}
@@ -114,7 +115,7 @@ export function BulkActionsToolbar<T = any>({
                     ) : null}
 
                     {/* Custom bulk actions */}
-                    {bulkActions ? bulkActions(selectedRows) : null}
+                    {bulkActions ? (bulkActions(selectedRows) as any) : null}
                 </Box>
             </ToolbarSlot>
         </Fade>

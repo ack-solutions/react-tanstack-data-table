@@ -16,7 +16,8 @@ import {
 import { ColumnDef } from '@tanstack/react-table';
 import { useRef, useCallback, useState } from 'react';
 
-import { DataTable, DataTableApi } from '../index';
+import { DataTable } from '../components/table/data-table';
+import { DataTableApi } from '../types';
 
 
 interface User {

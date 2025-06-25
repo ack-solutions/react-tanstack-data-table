@@ -59,7 +59,7 @@ export function MenuDropdown({
                 onClick: handleClick,
             });
         }
-        return <Button onClick={handleClick}>{label}</Button>;
+        return <Button onClick={handleClick}>{label as any}</Button>;
     }, [
         anchor,
         handleClick,

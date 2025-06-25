@@ -74,6 +74,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     totalRow = 0,
     idKey = 'id' as keyof T,
     extraFilter = null,
+    footerFilter = null,
 
     // Data management mode (MUI DataGrid style)
     dataMode = 'client',
@@ -891,6 +892,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                     >
                         <PaginationSlot
                             {...baseSlotProps}
+                            footerFilter={footerFilter}
                             {...slotProps?.pagination}
                             pagination={pagination}
                             totalRow={tableTotalRow}

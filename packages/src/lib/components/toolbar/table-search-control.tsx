@@ -20,7 +20,7 @@ export function TableSearchControl() {
     const SearchIconSlot = getSlotComponent(slots, 'searchIcon', Search);
     const ClearIconSlot = getSlotComponent(slots, 'clearIcon', Clear);
     const handleChange = useCallback(
-        (e) => {
+        (e: any) => {
             table.setGlobalFilter(e.target.value);
         },
         [table],
@@ -79,7 +79,7 @@ export function TableSearchControl() {
                             flexShrink: 0,
                         }}
                     >
-                        <SearchIconSlot {...slotProps.searchIcon} />
+                        <SearchIconSlot {...slotProps?.searchIcon} />
                     </IconButton>
                 </Tooltip>
             )}
@@ -106,7 +106,7 @@ export function TableSearchControl() {
                                     >
                                         <ClearIconSlot
                                             size="small"
-                                            {...slotProps.clearIcon}
+                                            {...slotProps?.clearIcon}
                                         />
                                     </IconButton>
                                 </Tooltip>
@@ -118,7 +118,7 @@ export function TableSearchControl() {
                             <InputAdornment position="start">
                                 <SearchIconSlot
                                     size="small"
-                                    {...slotProps.searchIcon}
+                                    {...slotProps?.searchIcon}
                                 />
                             </InputAdornment>
                         ) : null

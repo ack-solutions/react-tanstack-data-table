@@ -1,10 +1,12 @@
 import { FormControl, InputLabel, Select, MenuItem, TextField } from '@mui/material';
-import { DatePicker } from '@mui/x-date-pickers';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { Column } from '@tanstack/react-table';
 import moment from 'moment';
 
 import { getColumnType } from '../../utils/column-helpers';
 import { ColumnFilterRule } from '../toolbar/column-custum-filter-control';
+import { AdapterMoment } from '@mui/x-date-pickers/AdapterMoment';
+import { LocalizationProvider } from '@mui/x-date-pickers';
 
 
 function getColumnOptions(column: Column<any, unknown>): any[] {
@@ -123,6 +125,7 @@ export function FilterValueInput<T>({
     }
     if (columnType === 'date') {
         return (
+            <LocalizationProvider dateAdapter={AdapterMoment}>
             <DatePicker
                 value={filter.value ? moment(filter.value) : null}
                 onChange={(e) => onValueChange(e?.toDate())}
@@ -137,6 +140,7 @@ export function FilterValueInput<T>({
                     },
                 }}
             />
+            </LocalizationProvider>
         );
     }
     if (columnType === 'number') {

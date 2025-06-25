@@ -93,7 +93,7 @@ export function DataTableRow<T>({
                             timeout="auto"
                             unmountOnExit
                         >
-                            {renderSubComponent(row)}
+                            {renderSubComponent(row) as any}
                         </Collapse>
                     </CellSlot>
                 </ExpandedRowSlot>

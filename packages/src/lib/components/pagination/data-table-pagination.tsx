@@ -1,12 +1,13 @@
 // data-table-pagination.tsx
 import { TablePagination, Box, TablePaginationProps } from '@mui/material';
-import { useCallback } from 'react';
+import { ReactNode, useCallback } from 'react';
 
 import { useDataTableContext } from '../../contexts/data-table-context';
 
 
 export interface DataTablePaginationProps extends Omit<TablePaginationProps, 'count' | 'rowsPerPage' | 'page' | 'onPageChange' | 'onRowsPerPageChange'> {
     totalRow: number;
+    footerFilter?: ReactNode | null;
     pagination: {
         pageIndex: number;
         pageSize: number;
@@ -14,6 +15,7 @@ export interface DataTablePaginationProps extends Omit<TablePaginationProps, 'co
 }
 
 export function DataTablePagination({
+    footerFilter = null,
     pagination,
     totalRow,
     ...props
@@ -30,10 +32,12 @@ export function DataTablePagination({
             sx={{
                 display: 'flex',
                 alignItems: 'center',
+                gap: 1,
                 justifyContent: 'space-between',
                 px: 2,
             }}
         >
+            {footerFilter as any}
 
             <TablePagination
                 component="div"

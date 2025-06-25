@@ -27,7 +27,8 @@ export interface DataTableProps<T> {
     data?: T[];
     totalRow?: number;
     idKey?: keyof T;
-    extraFilter?: ReactNode;
+    extraFilter?: ReactNode | null;
+    footerFilter?: ReactNode | null;
 
     // Data management modes (MUI DataGrid style)
     dataMode?: 'client' | 'server'; // Data management mode (default: 'client')
