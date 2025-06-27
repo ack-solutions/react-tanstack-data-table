@@ -450,11 +450,6 @@ Columns are defined using TanStack Table's column definition format with additio
 interface DataTableColumn<T> extends ColumnDef<T> {
   // Display properties
   align?: 'left' | 'center' | 'right';
-  
-  // Data processing
-  valueGetter?: (params: { row: any; data: any }) => any;
-  valueFormatter?: (params: { value: any; row: any }) => string;
-  
   // Filtering
   filterable?: boolean;
   type?: 'boolean' | 'number' | 'date' | 'select' | 'text';

@@ -3,40 +3,11 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { Column } from '@tanstack/react-table';
 import moment from 'moment';
 
-import { getColumnType } from '../../utils/column-helpers';
-import { ColumnFilterRule } from '../toolbar/column-custum-filter-control';
+import { getColumnOptions, getColumnType, getCustomFilterComponent } from '../../utils/column-helpers';
 import { AdapterMoment } from '@mui/x-date-pickers/AdapterMoment';
 import { LocalizationProvider } from '@mui/x-date-pickers';
+import { ColumnFilterRule } from '../../features';
 
-
-function getColumnOptions(column: Column<any, unknown>): any[] {
-    // Check if column has explicit options in meta
-    if ((column?.columnDef as any)?.options) {
-        return (column?.columnDef as any)?.options || [];
-    }
-
-    // Default options for boolean type
-    const columnType = getColumnType(column);
-    if (columnType === 'boolean') {
-        return [
-            {
-                value: true,
-                label: 'Yes',
-            },
-            {
-                value: false,
-                label: 'No',
-            },
-        ];
-    }
-
-    return [];
-}
-
-function getCustomFilterComponent(column: Column<any, unknown>): any {
-    // Check if column has custom filter component in meta
-    return (column?.columnDef?.meta as any)?.filterComponent;
-}
 
 interface FilterValueInputProps<T> {
     filter: ColumnFilterRule;

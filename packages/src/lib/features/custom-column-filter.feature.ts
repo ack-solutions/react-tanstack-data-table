@@ -11,8 +11,12 @@ import {
     Updater,
     functionalUpdate,
     makeStateUpdater,
+    RowModel,
+    Row,
 } from '@tanstack/react-table';
-import { CustomColumnFilterState } from '../types';
+
+// Import from types to avoid circular dependency
+import type { CustomColumnFilterState } from '../types/table.types';
 
 // Types for the custom column filter feature
 export interface ColumnFilterRule {
@@ -258,13 +262,81 @@ export function matchesCustomColumnFilters<TData extends RowData>(
     if (activeFilters.length === 0) return true;
 
     const results = activeFilters.map((filter) => {
-        const columnValue = row.getValue(filter.columnId);
+        let columnValue;
+        
+        try {
+            // Try to get the value safely to avoid infinite loops
+            const column = row.getAllCells().find((cell: any) => cell.column.id === filter.columnId);
+            if (column) {
+                // Get the raw value from the row data instead of using getValue() to avoid accessorFn loops
+                const rowData = row.original;
+                const columnDef = column.column.columnDef;
+                
+                if (columnDef.accessorFn) {
+                    // Use accessorFn directly on the row data
+                    columnValue = columnDef.accessorFn(rowData);
+                } else if (columnDef.accessorKey) {
+                    // Use direct property access
+                    columnValue = rowData[columnDef.accessorKey];
+                } else {
+                    // Fallback to getValue if no other option
+                    columnValue = column.getValue();
+                }
+            } else {
+                // Fallback: try direct property access on row data
+                columnValue = row.original[filter.columnId];
+            }
+        } catch (error) {
+            console.warn(`Error getting value for column ${filter.columnId}:`, error);
+            columnValue = row.original[filter.columnId];
+        }
+        
         return evaluateFilterCondition(columnValue, filter.operator, filter.value);
     });
 
     return logic === 'AND' ? results.every(Boolean) : results.some(Boolean);
 }
 
+
+
+export const getCombinedFilteredRowModel = <TData,>() => {
+    return (table: Table<TData>) => (): RowModel<TData> => {
+        // Get the pre-filtered row model (avoids infinite recursion)
+        const preFilteredRowModel = table.getPreFilteredRowModel();
+        
+        const { filters, logic } = table.getState().customColumnFilter ?? {
+            filters: [],
+            logic: 'AND',
+        };
+
+        // If no custom filters, return the pre-filtered model
+        if (!filters.length) {
+            return preFilteredRowModel;
+        }
+
+        // Apply custom column filters to pre-filtered rows
+        const filteredRows = preFilteredRowModel.rows.filter(row =>
+            matchesCustomColumnFilters(row, filters, logic)
+        );
+
+        const flatRows: Row<TData>[] = [];
+        const rowsById: Record<string, Row<TData>> = {};
+
+        const addRow = (row: Row<TData>) => {
+            flatRows.push(row);
+            rowsById[row.id] = row;
+            row.subRows?.forEach(addRow);
+        };
+
+        filteredRows.forEach(addRow);
+
+        return {
+            rows: filteredRows,
+            flatRows,
+            rowsById,
+        };
+    };
+};
 /**
  * Evaluate a single filter condition
  */

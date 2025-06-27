@@ -2,9 +2,8 @@
  * Example: Custom Column Filter Feature Usage
  */
 import React, { useCallback, useState } from 'react';
-import { DataTable } from '../../../packages/src';
-import { ColumnDef } from '@tanstack/react-table';
-import { Box, Typography, Paper, Button, Stack } from '@mui/material';
+import { DataTable, DataTableColumn } from '../../../packages/src';
+import { Box, Typography, Paper, Stack } from '@mui/material';
 
 interface Person {
     id: number;
@@ -43,11 +42,11 @@ export const CustomColumnFilterExample: React.FC = () => {
 
         // Simulate server-side filtering
         let filteredData = [...sampleData];
-        
+
         if (params.customColumnsFilter?.filters?.length > 0) {
             const { filters, logic } = params.customColumnsFilter;
             console.log('🔍 Server filtering with:', { filters, logic });
-            
+
             filteredData = filteredData.filter(item => {
                 const results = filters.map((filter: any) => {
                     const value = (item as any)[filter.columnId];
@@ -64,7 +63,7 @@ export const CustomColumnFilterExample: React.FC = () => {
                             return true;
                     }
                 });
-                
+
                 return logic === 'AND' ? results.every(Boolean) : results.some(Boolean);
             });
         }
@@ -74,16 +73,14 @@ export const CustomColumnFilterExample: React.FC = () => {
             data: filteredData,
             total: filteredData.length,
         };
-        setServerData(filteredData);
-        setServerLoading(false);
     }, []);
 
-    const columns: ColumnDef<Person>[] = [
-        { accessorKey: 'id', header: 'ID', size: 80 },
+    const columns: DataTableColumn<Person>[] = [
+        { accessorKey: 'id', header: 'ID', size: 80, type: 'number' },
         { accessorKey: 'name', header: 'Name', size: 150 },
-        { accessorKey: 'age', header: 'Age', size: 80 },
+        { accessorKey: 'age', header: 'Age', size: 80, type: 'number', },
         { accessorKey: 'email', header: 'Email', size: 200 },
-        { accessorKey: 'city', header: 'City', size: 120 },
+        { accessorKey: 'city', header: 'City', size: 120, type: 'select', options: [{ label: 'New York', value: 'New York' }, { label: 'Los Angeles', value: 'Los Angeles' }, { label: 'Chicago', value: 'Chicago' }, { label: 'Houston', value: 'Houston' }, { label: 'Phoenix', value: 'Phoenix' }] },
     ];
 
     return (
@@ -91,7 +88,7 @@ export const CustomColumnFilterExample: React.FC = () => {
             <Typography variant="h4" gutterBottom>
                 Custom Column Filter Example
             </Typography>
-            
+
             <Typography variant="body1" sx={{ mb: 3 }}>
                 This example demonstrates custom column filtering in both client-side and server-side modes.
             </Typography>
@@ -106,7 +103,7 @@ export const CustomColumnFilterExample: React.FC = () => {
                         Filters are applied immediately using the custom filter function.
                         Check console for "🔍 Custom filter function called!" logs.
                     </Typography>
-                    
+
                     <DataTable
                         columns={columns}
                         data={clientData}
@@ -133,7 +130,7 @@ export const CustomColumnFilterExample: React.FC = () => {
                             Server Fetch Count: {serverFetchCount}
                         </Typography>
                     </Box>
-                    
+
                     <DataTable
                         columns={columns}
                         dataMode="server"

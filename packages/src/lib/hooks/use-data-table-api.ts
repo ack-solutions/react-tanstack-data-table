@@ -2,8 +2,9 @@ import { ColumnOrderState, ColumnPinningState, SortingState, Table } from '@tans
 import { Ref, useImperativeHandle } from 'react';
 
 import { CustomColumnFilterState, TableFilters, TableState } from '../types';
-import { DataTableApi } from '../types/data-table-api';
+import { DataTableApi, SelectionPayload } from '../types/data-table-api';
 import { exportClientData, exportServerData } from '../utils/export-utils';
+import { ServerSelectionState } from '../components/table/data-table.types';
 
 
 interface UseDataTableApiProps<T> {
@@ -22,6 +23,13 @@ interface UseDataTableApiProps<T> {
     initialPageIndex: number;
     initialPageSize?: number;
     pageSize: number;
+
+    // Selection props
+    selectMode?: 'page' | 'all';
+    serverSelection?: ServerSelectionState;
+    onServerSelectionChange?: (state: ServerSelectionState) => void;
+    onSelectModeChange?: (mode: 'page' | 'all') => void;
+    totalRow?: number;
 
     // Handlers
     handleColumnFilterStateChange: (filterState: CustomColumnFilterState) => void;
@@ -63,6 +71,12 @@ export function useDataTableApi<T extends Record<string, any>>(
         initialPageIndex,
         initialPageSize,
         pageSize,
+        // Selection props
+        selectMode = 'page',
+        serverSelection,
+        onServerSelectionChange,
+        onSelectModeChange,
+        totalRow,
         handleColumnFilterStateChange,
         onDataStateChange,
         onFetchData,
@@ -221,6 +235,8 @@ export function useDataTableApi<T extends Record<string, any>>(
                 handleColumnFilterStateChange({
                     filters: newFilters,
                     logic: customColumnsFilter.logic,
+                    pendingFilters: customColumnsFilter.pendingFilters || [],
+                    pendingLogic: customColumnsFilter.pendingLogic || 'AND',
                 });
             },
             removeColumnFilter: (filterId: string) => {
@@ -229,6 +245,8 @@ export function useDataTableApi<T extends Record<string, any>>(
                 handleColumnFilterStateChange({
                     filters: newFilters,
                     logic: customColumnsFilter.logic,
+                    pendingFilters: customColumnsFilter.pendingFilters || [],
+                    pendingLogic: customColumnsFilter.pendingLogic || 'AND',
                 });
             },
             clearAllFilters: () => {
@@ -236,6 +254,8 @@ export function useDataTableApi<T extends Record<string, any>>(
                 handleColumnFilterStateChange({
                     filters: [],
                     logic: 'AND',
+                    pendingFilters: [],
+                    pendingLogic: 'AND',
                 });
             },
             resetFilters: () => {
@@ -243,6 +263,8 @@ export function useDataTableApi<T extends Record<string, any>>(
                 handleColumnFilterStateChange({
                     filters: [],
                     logic: 'AND',
+                    pendingFilters: [],
+                    pendingLogic: 'AND',
                 });
             },
         },
@@ -295,23 +317,159 @@ export function useDataTableApi<T extends Record<string, any>>(
             },
         },
 
-        // Row Selection
+        // Enhanced Row Selection with automatic mode detection
         selection: {
+            // Basic selection (works with current selectMode)
             selectRow: (rowId: string) => {
-                table.getRow(rowId)?.toggleSelected(true);
+                if (dataMode === 'server' && selectMode === 'all' && onServerSelectionChange && serverSelection) {
+                    if (serverSelection.selectAllMatching) {
+                        // Remove from excluded list
+                        onServerSelectionChange({
+                            ...serverSelection,
+                            excludedIds: serverSelection.excludedIds.filter(id => id !== rowId),
+                        });
+                    } else {
+                        // Add to selected list (not implemented for server mode when not selectAllMatching)
+                        table.getRow(rowId)?.toggleSelected(true);
+                    }
+                } else {
+                    table.getRow(rowId)?.toggleSelected(true);
+                }
             },
             deselectRow: (rowId: string) => {
-                table.getRow(rowId)?.toggleSelected(false);
+                if (dataMode === 'server' && selectMode === 'all' && onServerSelectionChange && serverSelection) {
+                    if (serverSelection.selectAllMatching) {
+                        // Add to excluded list
+                        onServerSelectionChange({
+                            ...serverSelection,
+                            excludedIds: [...serverSelection.excludedIds, rowId],
+                        });
+                    } else {
+                        table.getRow(rowId)?.toggleSelected(false);
+                    }
+                } else {
+                    table.getRow(rowId)?.toggleSelected(false);
+                }
             },
             toggleRowSelection: (rowId: string) => {
-                table.getRow(rowId)?.toggleSelected();
+                const isSelected = dataMode === 'server' && selectMode === 'all' && serverSelection?.selectAllMatching
+                    ? !serverSelection.excludedIds.includes(rowId)
+                    : table.getRow(rowId)?.getIsSelected() || false;
+                
+                if (isSelected) {
+                    // Deselect
+                    if (dataMode === 'server' && selectMode === 'all' && onServerSelectionChange && serverSelection) {
+                        onServerSelectionChange({
+                            ...serverSelection,
+                            excludedIds: [...serverSelection.excludedIds, rowId],
+                        });
+                    } else {
+                        table.getRow(rowId)?.toggleSelected(false);
+                    }
+                } else {
+                    // Select
+                    if (dataMode === 'server' && selectMode === 'all' && onServerSelectionChange && serverSelection) {
+                        onServerSelectionChange({
+                            ...serverSelection,
+                            excludedIds: serverSelection.excludedIds.filter(id => id !== rowId),
+                        });
+                    } else {
+                        table.getRow(rowId)?.toggleSelected(true);
+                    }
+                }
             },
-            selectAllRows: () => {
-                table.toggleAllRowsSelected(true);
+            
+            // Smart selection methods (automatically handle page vs all modes)
+            selectAll: () => {
+                if (dataMode === 'server' && selectMode === 'all' && onServerSelectionChange) {
+                    onServerSelectionChange({
+                        selectAllMatching: true,
+                        excludedIds: [],
+                    });
+                } else if (selectMode === 'page') {
+                    table.toggleAllPageRowsSelected(true);
+                } else {
+                    table.toggleAllRowsSelected(true);
+                }
             },
-            deselectAllRows: () => {
+            deselectAll: () => {
+                if (dataMode === 'server' && selectMode === 'all' && onServerSelectionChange) {
+                    onServerSelectionChange({
+                        selectAllMatching: false,
+                        excludedIds: [],
+                    });
+                }
                 table.toggleAllRowsSelected(false);
             },
+            toggleSelectAll: () => {
+                const isAllSelected = dataMode === 'server' && selectMode === 'all' && serverSelection?.selectAllMatching
+                    ? serverSelection.selectAllMatching && serverSelection.excludedIds.length === 0
+                    : selectMode === 'page'
+                        ? table.getIsAllPageRowsSelected()
+                        : table.getIsAllRowsSelected();
+                
+                if (isAllSelected) {
+                    // Deselect all
+                    if (dataMode === 'server' && selectMode === 'all' && onServerSelectionChange) {
+                        onServerSelectionChange({
+                            selectAllMatching: false,
+                            excludedIds: [],
+                        });
+                    }
+                    table.toggleAllRowsSelected(false);
+                } else {
+                    // Select all
+                    if (dataMode === 'server' && selectMode === 'all' && onServerSelectionChange) {
+                        onServerSelectionChange({
+                            selectAllMatching: true,
+                            excludedIds: [],
+                        });
+                    } else if (selectMode === 'page') {
+                        table.toggleAllPageRowsSelected(true);
+                    } else {
+                        table.toggleAllRowsSelected(true);
+                    }
+                }
+            },
+            
+            // Page-specific selection (regardless of selectMode)
+            selectAllOnPage: () => {
+                table.toggleAllPageRowsSelected(true);
+            },
+            deselectAllOnPage: () => {
+                table.toggleAllPageRowsSelected(false);
+            },
+            toggleSelectAllOnPage: () => {
+                table.toggleAllPageRowsSelected();
+            },
+            
+            // Server selection methods (only work in server mode)
+            selectAllMatching: () => {
+                if (dataMode === 'server' && onServerSelectionChange) {
+                    onServerSelectionChange({
+                        selectAllMatching: true,
+                        excludedIds: [],
+                    });
+                }
+            },
+            excludeRow: (rowId: string) => {
+                if (dataMode === 'server' && onServerSelectionChange && serverSelection) {
+                    onServerSelectionChange({
+                        ...serverSelection,
+                        excludedIds: [...serverSelection.excludedIds.filter(id => id !== rowId), rowId],
+                    });
+                }
+            },
+            includeRow: (rowId: string) => {
+                if (dataMode === 'server' && onServerSelectionChange && serverSelection) {
+                    onServerSelectionChange({
+                        ...serverSelection,
+                        excludedIds: serverSelection.excludedIds.filter(id => id !== rowId),
+                    });
+                }
+            },
+            
+            // Selection state getters
             getSelectedRows: () => {
                 return Object.keys(table.getState().rowSelection)
                     .filter(key => table.getState().rowSelection[key])
@@ -321,6 +479,69 @@ export function useDataTableApi<T extends Record<string, any>>(
             getSelectedRowIds: () => {
                 return Object.keys(table.getState().rowSelection)
                     .filter(key => table.getState().rowSelection[key]);
+            },
+            getSelectionPayload: (): SelectionPayload => {
+                if (dataMode === 'server' && selectMode === 'all' && serverSelection) {
+                    return {
+                        mode: 'all',
+                        selectAllMatching: serverSelection.selectAllMatching,
+                        excludedIds: serverSelection.excludedIds,
+                        totalCount: totalRow || 0,
+                    };
+                } else {
+                    return {
+                        mode: selectMode || 'page',
+                        selectedIds: Object.keys(table.getState().rowSelection)
+                            .filter(key => table.getState().rowSelection[key]),
+                    };
+                }
+            },
+            getSelectedCount: () => {
+                if (dataMode === 'server' && selectMode === 'all' && serverSelection?.selectAllMatching) {
+                    return (totalRow || 0) - serverSelection.excludedIds.length;
+                } else {
+                    return Object.keys(table.getState().rowSelection)
+                        .filter(key => table.getState().rowSelection[key]).length;
+                }
+            },
+            
+            // Selection state checks
+            isRowSelected: (rowId: string) => {
+                if (dataMode === 'server' && selectMode === 'all' && serverSelection?.selectAllMatching) {
+                    return !serverSelection.excludedIds.includes(rowId);
+                }
+                return table.getRow(rowId)?.getIsSelected() || false;
+            },
+            isAllSelected: () => {
+                if (dataMode === 'server' && selectMode === 'all' && serverSelection) {
+                    return serverSelection.selectAllMatching && serverSelection.excludedIds.length === 0;
+                }
+                return selectMode === 'page' ? table.getIsAllPageRowsSelected() : table.getIsAllRowsSelected();
+            },
+            isAllPageSelected: () => {
+                return table.getIsAllPageRowsSelected();
+            },
+            isSomeSelected: () => {
+                if (dataMode === 'server' && selectMode === 'all' && serverSelection) {
+                    return serverSelection.selectAllMatching && serverSelection.excludedIds.length > 0;
+                }
+                return selectMode === 'page' ? table.getIsSomePageRowsSelected() : table.getIsSomeRowsSelected();
+            },
+            isSomePageSelected: () => {
+                return table.getIsSomePageRowsSelected();
+            },
+            isSelectAllMatching: () => {
+                return dataMode === 'server' && serverSelection?.selectAllMatching || false;
+            },
+            
+            // Selection mode management
+            getSelectionMode: () => {
+                return selectMode || 'page';
+            },
+            setSelectionMode: (mode: 'page' | 'all') => {
+                if (onSelectModeChange) {
+                    onSelectModeChange(mode);
+                }
             },
         },
 
@@ -511,6 +732,8 @@ export function useDataTableApi<T extends Record<string, any>>(
                 handleColumnFilterStateChange({
                     filters: [],
                     logic: 'AND',
+                    pendingFilters: [],
+                    pendingLogic: 'AND',
                 });
 
                 if (enablePagination) {
@@ -616,8 +839,6 @@ export function useDataTableApi<T extends Record<string, any>>(
                             filename,
                             fetchData: onServerExport,
                             currentFilters,
-                            pageSize: 1000,
-                            includeHeaders,
                             onProgress: onExportProgress,
                             onComplete: onExportComplete,
                             onError: onExportError,
@@ -634,9 +855,6 @@ export function useDataTableApi<T extends Record<string, any>>(
                         await exportClientData(table, {
                             format: 'csv',
                             filename,
-                            onlyVisibleColumns,
-                            onlySelectedRows: shouldExportSelected,
-                            includeHeaders,
                             onProgress: onExportProgress,
                             onComplete: onExportComplete,
                             onError: onExportError,
@@ -680,27 +898,15 @@ export function useDataTableApi<T extends Record<string, any>>(
                             filename,
                             fetchData: onServerExport,
                             currentFilters,
-                            pageSize: 1000,
-                            includeHeaders,
                             onProgress: onExportProgress,
                             onComplete: onExportComplete,
                             onError: onExportError,
                         });
                     } else {
                         // Client export - auto-detect selected rows if not specified
-                        const hasSelectedRows = Object.keys(table.getState().rowSelection).some(
-                            key => table.getState().rowSelection[key],
-                        );
-                        const shouldExportSelected = onlySelectedRows !== undefined
-                            ? onlySelectedRows
-                            : hasSelectedRows;
-
                         await exportClientData(table, {
                             format: 'excel',
                             filename,
-                            onlyVisibleColumns,
-                            onlySelectedRows: shouldExportSelected,
-                            includeHeaders,
                             onProgress: onExportProgress,
                             onComplete: onExportComplete,
                             onError: onExportError,
@@ -751,8 +957,6 @@ export function useDataTableApi<T extends Record<string, any>>(
                         filename,
                         fetchData,
                         currentFilters,
-                        pageSize,
-                        includeHeaders,
                         onProgress: onExportProgress,
                         onComplete: onExportComplete,
                         onError: onExportError,

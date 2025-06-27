@@ -48,6 +48,7 @@ export function useDebouncedFetch<T extends Record<string, any>>(
 
     // Cleanup timer on unmount
     useEffect(() => {
+        console.log('🔍 useDebouncedFetch useEffect');
         return () => {
             if (debounceTimer.current) {
                 clearTimeout(debounceTimer.current);

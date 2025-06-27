@@ -2,6 +2,15 @@ import { ColumnPinningState, SortingState, ColumnOrderState, TableState } from '
 
 import { CustomColumnFilterState } from './table.types';
 
+// Selection payload types
+export interface SelectionPayload {
+    mode: 'page' | 'all';
+    selectedIds?: string[];
+    selectAllMatching?: boolean;
+    excludedIds?: string[];
+    totalCount?: number;
+}
+
 export interface DataTableApi<T = any> {
     // Column Management
     columnVisibility: {
@@ -66,15 +75,45 @@ export interface DataTableApi<T = any> {
         goToLastPage: () => void;
     };
 
-    // Row Selection
+    // Enhanced Row Selection with automatic mode detection
     selection: {
+        // Basic selection (works with current selectMode)
         selectRow: (rowId: string) => void;
         deselectRow: (rowId: string) => void;
         toggleRowSelection: (rowId: string) => void;
-        selectAllRows: () => void;
-        deselectAllRows: () => void;
+        
+        // Smart selection methods (automatically handle page vs all modes)
+        selectAll: () => void; // Selects all based on current selectMode
+        deselectAll: () => void; // Deselects all
+        toggleSelectAll: () => void; // Toggles select all
+        
+        // Page-specific selection (regardless of selectMode)
+        selectAllOnPage: () => void;
+        deselectAllOnPage: () => void;
+        toggleSelectAllOnPage: () => void;
+        
+        // Server selection methods (only work in server mode)
+        selectAllMatching: () => void; // Select all matching across pages
+        excludeRow: (rowId: string) => void; // Exclude specific row when selectAllMatching
+        includeRow: (rowId: string) => void; // Include specific row when selectAllMatching
+        
+        // Selection state getters
         getSelectedRows: () => T[];
         getSelectedRowIds: () => string[];
+        getSelectionPayload: () => SelectionPayload; // Get payload for bulk actions
+        getSelectedCount: () => number; // Get total selected count
+        
+        // Selection state checks
+        isRowSelected: (rowId: string) => boolean;
+        isAllSelected: () => boolean;
+        isAllPageSelected: () => boolean;
+        isSomeSelected: () => boolean;
+        isSomePageSelected: () => boolean;
+        isSelectAllMatching: () => boolean; // For server mode
+        
+        // Selection mode management
+        getSelectionMode: () => 'page' | 'all';
+        setSelectionMode: (mode: 'page' | 'all') => void;
     };
 
     // Data Management

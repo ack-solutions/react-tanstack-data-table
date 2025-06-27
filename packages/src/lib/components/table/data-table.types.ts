@@ -9,9 +9,16 @@ import { DataTableColumn } from '../../types';
 import { DataTableSlots, PartialSlotProps } from '../../types/slots.types';
 import { DataTableSize } from '../../utils/table-helpers';
 
+// Selection mode type
+export type SelectMode = 'page' | 'all';
+
+// Server selection state (only used when dataMode='server' && selectMode='all')
+export interface ServerSelectionState {
+    selectAllMatching: boolean;
+    excludedIds: string[];
+}
 
 // Import consolidated types
-
 
 declare module '@tanstack/table-core' {
     interface ColumnMeta<TData extends RowData, TValue> { // eslint-disable-line @typescript-eslint/no-unused-vars
@@ -52,6 +59,7 @@ export interface DataTableProps<T> {
     // Selection props
     enableRowSelection?: boolean | ((row: Row<T>) => boolean);
     enableMultiRowSelection?: boolean;
+    selectMode?: SelectMode; // 'page' | 'all' - defines selection scope
     onRowSelectionChange?: (selectedRows: T[]) => void;
 
     // Bulk action props

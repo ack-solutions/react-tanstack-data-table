@@ -9,7 +9,6 @@ export {
     CustomColumnFilterFeature,
     matchesCustomColumnFilters,
     type ColumnFilterRule,
-    type CustomColumnFilterState,
     type CustomColumnFilterOptions,
     type CustomColumnFilterTableState,
     type CustomColumnFilterInstance,

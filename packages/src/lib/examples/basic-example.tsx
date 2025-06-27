@@ -436,6 +436,7 @@ export function DataTableExample() {
                 enableColumnVisibility
                 enableExport
                 enableReset
+                selectMode="page"
                 onColumnFiltersChange={handleColumnFiltersChange}
                 enableStickyHeaderOrFooter
                 draggable
@@ -461,6 +462,11 @@ export function DataTableExample() {
                         </Button>
                     </>
                 )}
+                slotProps={{
+                    pagination: {
+                        rowsPerPageOptions: [5, 20, 50, 100],
+                    },
+                }}
             />
         </div>
     );

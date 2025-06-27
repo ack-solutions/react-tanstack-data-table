@@ -18,7 +18,6 @@ import {
     useReactTable,
     SortingState,
     getSortedRowModel,
-    getFilteredRowModel,
     getPaginationRowModel,
     RowSelectionState,
     ColumnOrderState,
@@ -26,8 +25,7 @@ import {
 } from '@tanstack/react-table';
 
 // Import custom features
-import { CustomColumnFilterFeature } from '../../features/custom-column-filter.feature';
-import { matchesCustomColumnFilters } from '../../features/custom-column-filter.feature';
+import { CustomColumnFilterFeature, getCombinedFilteredRowModel } from '../../features/custom-column-filter.feature';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { useState, useCallback, useMemo, useRef, useEffect, forwardRef } from 'react';
 
@@ -35,14 +33,14 @@ import { useState, useCallback, useMemo, useRef, useEffect, forwardRef } from 'r
 // Import from new organized structure
 import { DataTableProvider } from '../../contexts/data-table-context';
 import { useDataTableApi } from '../../hooks/use-data-table-api';
-import { DataTableSize, generateRowId, getFormattedValue } from '../../utils';
+import { DataTableSize, generateRowId } from '../../utils';
 import { useDebouncedFetch } from '../../utils/debounced-fetch.utils';
 import { getSlotComponent } from '../../utils/slot-helpers';
 import { TableHeader } from '../headers';
 import { DataTablePagination } from '../pagination';
 import { DataTableRow, LoadingRows, EmptyDataRow } from '../rows';
 import { DataTableToolbar, BulkActionsToolbar } from '../toolbar';
-import { DataTableProps } from './data-table.types';
+import { DataTableProps, ServerSelectionState } from './data-table.types';
 import { CustomColumnFilterState, TableFilters, TableFiltersForFetch, TableState } from '../../types';
 import { DataTableApi } from '../../types/data-table-api';
 import {
@@ -95,6 +93,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     // Selection props
     enableRowSelection = false,
     enableMultiRowSelection = true,
+    selectMode = 'page',
     onRowSelectionChange,
 
     // Bulk action props
@@ -200,6 +199,12 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     const [pagination, setPagination] = useState(initialStateConfig.pagination);
     const [rowSelection, setRowSelection] = useState<RowSelectionState>(initialStateConfig.rowSelection);
     const [globalFilter, setGlobalFilter] = useState(initialStateConfig.globalFilter);
+    
+    // Server-side selection state (only used when dataMode='server' && selectMode='all')
+    const [serverSelection, setServerSelection] = useState<ServerSelectionState>({
+        selectAllMatching: false,
+        excludedIds: [],
+    });
     const [customColumnsFilter, setCustomColumnsFilter] = useState<CustomColumnFilterState>({
         filters: [],
         logic: 'AND',
@@ -211,25 +216,13 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     const [columnOrder, setColumnOrder] = useState<ColumnOrderState>(initialStateConfig.columnOrder);
     const [columnPinning, setColumnPinning] = useState<ColumnPinningState>(initialStateConfig.columnPinning);
 
+    // Create internal ref for API (needs to be before enhancedColumns)
+    const internalApiRef = useRef<DataTableApi<T>>(null);
+
     // Build enhanced columns with special columns
     const enhancedColumns = useMemo(
         () => {
-            let columnsMap = [...columns].map((col: any) => {
-                // Auto-create cell for valueGetter/valueFormatter
-                if ((col.valueGetter || col.valueFormatter) && !col.cell) {
-                    return {
-                        ...col,
-                        cell: ({ row, getValue }: any) => {
-                            return getFormattedValue({
-                                row,
-                                getValue,
-                                column: col,
-                            });
-                        },
-                    };
-                }
-                return col;
-            });
+            let columnsMap = [...columns];
 
             // Add expanding column first if enabled
             if (enableExpanding) {
@@ -244,6 +237,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                 const selectionColumnMap = createSelectionColumn<T>({
                     ...(slotProps?.selectionColumn || {}),
                     multiSelect: enableMultiRowSelection,
+                    apiRef: internalApiRef,
                 });
                 columnsMap = [selectionColumnMap, ...columnsMap];
             }
@@ -294,28 +288,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     const tableData = onFetchData ? serverData : data;
     const tableTotalRow = onFetchData ? serverTotal : totalRow;
     const tableLoading = onFetchData ? (loading || fetchLoading) : loading;
-    
-    // Apply custom column filters for client-side filtering
-    const filteredData = useMemo(() => {
-        if (isServerFiltering || !customColumnsFilter?.filters?.length) {
-            return tableData;
-        }
-        
-        console.log('🔍 Applying client-side custom filters', customColumnsFilter);
-        
-        return tableData.filter(row => {
-            const result = matchesCustomColumnFilters(
-                { getValue: (columnId: string) => (row as any)[columnId] } as any,
-                customColumnsFilter.filters,
-                customColumnsFilter.logic
-            );
-            console.log('Row filter result:', { row, result });
-            return result;
-        });
-    }, [tableData, customColumnsFilter, isServerFiltering]);
 
-    // Use filtered data for actual table rendering
-    const finalTableData = filteredData;
 
     // Common function to notify data state changes
     const notifyDataStateChange = useCallback((overrides: Partial<TableFilters> = {}) => {
@@ -414,7 +387,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     // Create table instance with initial state
     const table = useReactTable({
         _features: [CustomColumnFilterFeature], // Add the custom feature
-        data: finalTableData,
+        data: tableData,
         columns: enhancedColumns,
         initialState: {
             ...initialStateConfig,
@@ -477,18 +450,17 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                 pendingFilters: newState.pendingFilters,
                 pendingLogic: newState.pendingLogic
             };
-            
             handleColumnFilterStateChange(legacyFilterState);
         },
 
         // Handle when filters are actually applied (only then fetch data)
         onCustomColumnFilterApply: (appliedState) => {
-            // For server-side filtering, fetch data only when filters are applied
             if (isServerFiltering) {
-                // Only pass the active filters to server (not pending state)
                 const serverFilterState = {
                     filters: appliedState.filters,
-                    logic: appliedState.logic
+                    logic: appliedState.logic,
+                    pendingFilters: appliedState.pendingFilters,
+                    pendingLogic: appliedState.pendingLogic,
                 };
 
                 notifyDataStateChange({
@@ -503,7 +475,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
 
         getCoreRowModel: getCoreRowModel(),
         getSortedRowModel: enableSorting && !isServerSorting ? getSortedRowModel() : undefined,
-        getFilteredRowModel: (enableGlobalFilter || enableColumnFilters || customColumnsFilter?.filters?.length > 0) && !isServerFiltering ? getFilteredRowModel() : undefined,
+        getFilteredRowModel: !isServerFiltering ? getCombinedFilteredRowModel<T>() : undefined,
         getPaginationRowModel: enablePagination && !isServerPagination ? getPaginationRowModel() : undefined,
 
         // Sorting
@@ -535,7 +507,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         getRowId: (row, index) => generateRowId(row, index, idKey),
 
         // Debug
-        debugTable: process.env.NODE_ENV === 'development',
+        debugTable: false, // Disabled to prevent infinite logs
     });
 
     // Virtualization setup - with safety checks
@@ -758,8 +730,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         slots,
     ]);
 
-    // Create internal ref for API
-    const internalApiRef = useRef<DataTableApi<T>>(null);
+
 
     // Export state management
     const [exportController, setExportController] = useState<AbortController | null>(null);
@@ -778,7 +749,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     // Expose imperative API via ref using custom hook
     useDataTableApi({
         table,
-        data: finalTableData,
+        data: tableData,
         idKey,
         globalFilter,
         customColumnsFilter,
@@ -792,6 +763,15 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         initialPageIndex: pagination.pageIndex,
         initialPageSize: pagination.pageSize,
         pageSize: pagination.pageSize,
+        // Selection props
+        selectMode,
+        serverSelection,
+        onServerSelectionChange: setServerSelection,
+        onSelectModeChange: (mode) => {
+            // You could add a prop for this if needed
+            console.log('Selection mode changed to:', mode);
+        },
+        totalRow: tableTotalRow,
         handleColumnFilterStateChange,
         onDataStateChange,
         onFetchData: onFetchData,
@@ -828,7 +808,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     // Base props for all slots
     const baseSlotProps = {
         table,
-        data: finalTableData,
+        data: tableData,
         columns: enhancedColumns,
     };
 
@@ -875,25 +855,23 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                 ) : null}
 
                 {/* Bulk Actions Toolbar - shown when rows are selected */}
-                {enableBulkActions && enableRowSelection && Object.keys(rowSelection).length > 0 ? (
+                {enableBulkActions && enableRowSelection && (
+                    Object.keys(rowSelection).length > 0 || 
+                    (isServerMode && selectMode === 'all' && serverSelection.selectAllMatching)
+                ) ? (
                     <BulkActionsSlot
                         {...baseSlotProps}
-                        selectedRows={Object.keys(rowSelection)
-                            .filter(key => rowSelection[key])
-                            .map(key => finalTableData.find(row => String(row[idKey]) === key))
-                            .filter(Boolean) as T[]}
-                        selectedRowCount={Object.keys(rowSelection).filter(key => rowSelection[key]).length}
-                        bulkActions={bulkActions}
-                        enableSelectAll={enableMultiRowSelection}
-                        onSelectAll={() => {
-                            const allRowIds = finalTableData.reduce((acc, row) => {
-                                acc[String(row[idKey])] = true;
-                                return acc;
-                            }, {} as RowSelectionState);
-                            setRowSelection(allRowIds);
-                        }}
-                        onDeselectAll={() => {
-                            setRowSelection({});
+                        selectedRows={table.getSelectedRowModel().rows.map(row => row.original)}
+                        selectedRowCount={isServerMode && selectMode === 'all' && serverSelection.selectAllMatching
+                            ? tableTotalRow - serverSelection.excludedIds.length
+                            : Object.keys(rowSelection).filter(key => rowSelection[key]).length
+                        }
+                        bulkActions={(selectedRows) => {
+                            // Pass the selection payload to bulk actions
+                            const api = internalApiRef.current;
+                            const payload = api?.selection.getSelectionPayload();
+                            console.log('Bulk action payload:', payload);
+                            return bulkActions ? bulkActions(selectedRows) : null;
                         }}
                         sx={{
                             position: 'relative',

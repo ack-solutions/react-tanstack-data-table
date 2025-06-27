@@ -26,6 +26,8 @@ export function useTableState(options: UseTableStateOptions = {}) {
         initialColumnFilters = {
             filters: [],
             logic: 'AND',
+            pendingFilters: [],
+            pendingLogic: 'AND',
         },
         initialGlobalFilter = '',
         initialColumnVisibility = {},
