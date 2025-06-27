@@ -1,6 +1,6 @@
 import { ColumnPinningState, SortingState, ColumnOrderState, TableState } from '@tanstack/react-table';
 
-import { ICustomColumnFilter } from './table.types';
+import { CustomColumnFilterState } from './table.types';
 
 export interface DataTableApi<T = any> {
     // Column Management
@@ -41,7 +41,7 @@ export interface DataTableApi<T = any> {
     filtering: {
         setGlobalFilter: (filter: string) => void;
         clearGlobalFilter: () => void;
-        setCustomColumnFilters: (filters: ICustomColumnFilter) => void;
+        setCustomColumnFilters: (filters: CustomColumnFilterState) => void;
         addColumnFilter: (columnId: string, operator: string, value: any) => void;
         removeColumnFilter: (filterId: string) => void;
         clearAllFilters: () => void;
@@ -121,7 +121,7 @@ export interface DataTableApi<T = any> {
     // Table State
     state: {
         getTableState: () => any;
-        getCurrentFilters: () => ICustomColumnFilter;
+        getCurrentFilters: () => CustomColumnFilterState;
         getCurrentSorting: () => SortingState;
         getCurrentPagination: () => { pageIndex: number; pageSize: number };
         getCurrentSelection: () => string[];

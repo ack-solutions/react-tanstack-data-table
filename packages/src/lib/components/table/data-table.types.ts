@@ -4,7 +4,7 @@
 import { Row, SortingState, ColumnResizeMode, ColumnPinningState, RowData, TableState } from '@tanstack/react-table';
 import { ReactNode } from 'react';
 
-import type { ICustomColumnFilter } from '../../types';
+import type { CustomColumnFilterState } from '../../types';
 import { DataTableColumn } from '../../types';
 import { DataTableSlots, PartialSlotProps } from '../../types/slots.types';
 import { DataTableSize } from '../../utils/table-helpers';
@@ -117,7 +117,10 @@ export interface DataTableProps<T> {
     skeletonRows?: number;
 
     // Column filters props
-    onColumnFiltersChange?: (filterState: ICustomColumnFilter) => void;
+    onColumnFiltersChange?: (filterState: CustomColumnFilterState) => void;
+
+    // Custom column filters props
+    enableCustomColumnsFilter?: boolean;
 
     // Data CRUD callbacks
     onDataChange?: (data: T[]) => void;

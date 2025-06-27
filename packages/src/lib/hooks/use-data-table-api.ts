@@ -1,7 +1,7 @@
 import { ColumnOrderState, ColumnPinningState, SortingState, Table } from '@tanstack/react-table';
 import { Ref, useImperativeHandle } from 'react';
 
-import { ICustomColumnFilter, TableFilters, TableState } from '../types';
+import { CustomColumnFilterState, TableFilters, TableState } from '../types';
 import { DataTableApi } from '../types/data-table-api';
 import { exportClientData, exportServerData } from '../utils/export-utils';
 
@@ -11,7 +11,7 @@ interface UseDataTableApiProps<T> {
     data: T[];
     idKey: keyof T;
     globalFilter: string;
-    customColumnsFilter: ICustomColumnFilter;
+    customColumnsFilter: CustomColumnFilterState;
     sorting: SortingState;
     pagination: { pageIndex: number; pageSize: number };
     columnOrder: ColumnOrderState;
@@ -24,7 +24,7 @@ interface UseDataTableApiProps<T> {
     pageSize: number;
 
     // Handlers
-    handleColumnFilterStateChange: (filterState: ICustomColumnFilter) => void;
+    handleColumnFilterStateChange: (filterState: CustomColumnFilterState) => void;
 
     // Callbacks
     onDataStateChange?: (state: Partial<TableState>) => void;
@@ -205,7 +205,7 @@ export function useDataTableApi<T extends Record<string, any>>(
             clearGlobalFilter: () => {
                 table.setGlobalFilter('');
             },
-            setCustomColumnFilters: (filters: ICustomColumnFilter) => {
+            setCustomColumnFilters: (filters: CustomColumnFilterState) => {
                 handleColumnFilterStateChange(filters);
             },
             addColumnFilter: (columnId: string, operator: string, value: any) => {

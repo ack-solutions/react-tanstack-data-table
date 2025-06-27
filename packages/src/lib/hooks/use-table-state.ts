@@ -14,7 +14,7 @@ import { useState, useCallback, useMemo } from 'react';
 
 
 // Import types from centralized location
-import type { UseTableStateOptions, TableStateActions, ICustomColumnFilter } from '../types';
+import type { UseTableStateOptions, TableStateActions, CustomColumnFilterState } from '../types';
 
 
 /**
@@ -39,7 +39,7 @@ export function useTableState(options: UseTableStateOptions = {}) {
 
     // State
     const [sorting, setSorting] = useState<SortingState>(initialSorting);
-    const [columnFilters, setColumnFilters] = useState<ICustomColumnFilter>(initialColumnFilters);
+    const [columnFilters, setColumnFilters] = useState<CustomColumnFilterState>(initialColumnFilters);
     const [globalFilter, setGlobalFilter] = useState<string>(initialGlobalFilter);
     const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(initialColumnVisibility);
     const [columnOrder, setColumnOrder] = useState<ColumnOrderState>(initialColumnOrder);

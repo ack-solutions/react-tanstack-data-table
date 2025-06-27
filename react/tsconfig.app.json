@@ -1,6 +1,7 @@
 {
   "extends": "../tsconfig.base.json",
   "compilerOptions": {
+    "baseUrl": ".",
     "outDir": "dist",
     "tsBuildInfoFile": "dist/tsconfig.app.tsbuildinfo",
     "jsx": "react-jsx",
@@ -13,9 +14,11 @@
       "@nx/react/typings/image.d.ts",
       "vite/client"
     ],
-    "rootDir": "src",
     "module": "esnext",
-    "moduleResolution": "bundler"
+    "moduleResolution": "bundler",
+    "paths": {
+      "@ackplus/react-mui-tanstack-data-table": ["../packages/src"]
+    }
   },
   "exclude": [
     "out-tsc",
@@ -33,6 +36,13 @@
     "src/**/*.js",
     "src/**/*.jsx",
     "src/**/*.ts",
-    "src/**/*.tsx"
+    "src/**/*.tsx",
+    "../packages/src/**/*.ts",
+    "../packages/src/**/*.tsx"
+  ],
+  "references": [
+    {
+      "path": "../packages/tsconfig.lib.json"
+    }
   ]
 }

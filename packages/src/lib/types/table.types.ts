@@ -1,6 +1,6 @@
 import { SortingState, TableState as TanstackTableState } from '@tanstack/react-table';
 
-import { ColumnFilterRule } from '../components/toolbar/column-custum-filter-control';
+import { ColumnFilterRule, CustomColumnFilterState } from '../features';
 
 
 /**
@@ -16,17 +16,17 @@ export type TableSize = 'small' | 'medium';
 
 // declare module '@tanstack/react-table' {
 //     interface TableState {
-//         customColumnsFilter: ICustomColumnFilter;
+//         customColumnsFilter: CustomColumnFilterState;
 //     }
 // }
 
 export interface TableState extends TanstackTableState {
-    customColumnsFilter: ICustomColumnFilter;
+    customColumnsFilter: CustomColumnFilterState;
 }
 
 export interface TableFilters {
     globalFilter: string;
-    customColumnsFilter: ICustomColumnFilter;
+    customColumnsFilter: CustomColumnFilterState;
     sorting: SortingState;
     pagination: {
         pageIndex: number;
@@ -44,12 +44,15 @@ export interface TableFiltersForFetch {
     page?: number;
     pageSize?: number;
     sorting?: SortingState;
-    customColumnsFilter?: ICustomColumnFilter;
+    customColumnsFilter?: CustomColumnFilterState;
 }
 
-export interface ICustomColumnFilter {
+export interface CustomColumnFilterState {
     filters: ColumnFilterRule[];
     logic: 'AND' | 'OR';
+    // Add pending state for draft filters before applying
+    pendingFilters: ColumnFilterRule[];
+    pendingLogic: 'AND' | 'OR';
 }
 
 /**

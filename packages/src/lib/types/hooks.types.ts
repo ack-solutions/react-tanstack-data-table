@@ -10,7 +10,7 @@ import {
     PaginationState,
 } from '@tanstack/react-table';
 
-import { ICustomColumnFilter } from './table.types';
+import { CustomColumnFilterState } from './table.types';
 
 
 /**
@@ -18,7 +18,7 @@ import { ICustomColumnFilter } from './table.types';
  */
 export interface UseTableStateOptions {
     initialSorting?: SortingState;
-    initialColumnFilters?: ICustomColumnFilter;
+    initialColumnFilters?: CustomColumnFilterState;
     initialGlobalFilter?: string;
     initialColumnVisibility?: VisibilityState;
     initialColumnOrder?: ColumnOrderState;
@@ -31,7 +31,7 @@ export interface UseTableStateOptions {
  */
 export interface TableStateActions {
     setSorting: (sorting: SortingState) => void;
-    setColumnFilters: (filters: ICustomColumnFilter) => void;
+    setColumnFilters: (filters: CustomColumnFilterState) => void;
     setGlobalFilter: (filter: string) => void;
     setColumnVisibility: (visibility: VisibilityState) => void;
     setColumnOrder: (order: ColumnOrderState) => void;

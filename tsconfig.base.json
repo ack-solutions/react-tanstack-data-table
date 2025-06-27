@@ -1,12 +1,16 @@
 {
   "compilerOptions": {
+    "baseUrl": ".",
     "composite": true,
     "declaration": true,
     "declarationMap": true,
     "emitDeclarationOnly": false,
     "importHelpers": true,
     "isolatedModules": true,
-    "lib": ["es2022", "dom"],
+    "lib": [
+      "es2022",
+      "dom"
+    ],
     "module": "esnext",
     "moduleResolution": "bundler",
     "noEmitOnError": false,
@@ -19,6 +23,11 @@
     "target": "es2022",
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    "paths": {
+      "@ackplus/react-mui-tanstack-data-table": [
+        "packages/src/index.ts"
+      ]
+    }
   }
 }

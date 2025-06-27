@@ -58,3 +58,9 @@ export type {
     ColumnPinningState,
     PaginationState,
 } from '@tanstack/react-table';
+
+// Custom features
+export * from './lib/features';
+
+// Examples
+export { CustomColumnFilterExample } from './lib/examples/custom-column-filter-example';
