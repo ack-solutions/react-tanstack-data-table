@@ -9,6 +9,7 @@ import { ImprovedExportExample } from '../../../packages/src/lib/examples/improv
 import { VirtualizedExample } from '../../../packages/src/lib/examples/virtualized-example';
 import { DataTableExample } from '../../../packages/src/lib/examples/basic-example';
 import { SimpleServerSelectionExample } from '../../../packages/src/lib/examples/simple-server-selection-example';
+import { ImprovedServerSelectionExample } from '../../../packages/src/lib/examples/improved-server-selection-example';
 
 const theme = createTheme();
 
@@ -16,8 +17,8 @@ export function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
+      <ImprovedServerSelectionExample  />
       <DataTableExample />
-      <VirtualizedExample />
       <CustomColumnFilterExample />
       <ImprovedExportExample />
       <SimpleServerSelectionExample />

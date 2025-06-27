@@ -27,7 +27,7 @@ import {
 // Import custom features
 import { CustomColumnFilterFeature, getCombinedFilteredRowModel } from '../../features/custom-column-filter.feature';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { useState, useCallback, useMemo, useRef, useEffect, forwardRef } from 'react';
+import { useState, useCallback, useMemo, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
 
 
 // Import from new organized structure
@@ -95,6 +95,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     enableMultiRowSelection = true,
     selectMode = 'page',
     onRowSelectionChange,
+    onServerSelectionChange,
 
     // Bulk action props
     enableBulkActions = false,
@@ -219,45 +220,13 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     // Create internal ref for API (needs to be before enhancedColumns)
     const internalApiRef = useRef<DataTableApi<T>>(null);
 
-    // Build enhanced columns with special columns
-    const enhancedColumns = useMemo(
-        () => {
-            let columnsMap = [...columns];
-
-            // Add expanding column first if enabled
-            if (enableExpanding) {
-                const expandingColumnMap = createExpandingColumn<T>({
-                    ...(slotProps?.expandColumn || {}),
-                });
-                columnsMap = [expandingColumnMap, ...columnsMap];
-            }
-
-            // Add selection column second if enabled
-            if (enableRowSelection) {
-                const selectionColumnMap = createSelectionColumn<T>({
-                    ...(slotProps?.selectionColumn || {}),
-                    multiSelect: enableMultiRowSelection,
-                    apiRef: internalApiRef,
-                });
-                columnsMap = [selectionColumnMap, ...columnsMap];
-            }
-            return columnsMap;
-        },
-        [
-            columns,
-            slotProps?.selectionColumn,
-            slotProps?.expandColumn,
-            enableRowSelection,
-            enableExpanding,
-            enableMultiRowSelection,
-        ],
-    );
-
     const { debouncedFetch, isLoading: fetchLoading } = useDebouncedFetch(onFetchData);
 
     // Server data state (only used when onFetchData is provided)
     const [serverData, setServerData] = useState<T[]>([]);
     const [serverTotal, setServerTotal] = useState(0);
+
+
 
     const fetchData = useCallback(async (overrides: Partial<TableState> = {}) => {
         if (!onFetchData) return;
@@ -288,6 +257,89 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     const tableData = onFetchData ? serverData : data;
     const tableTotalRow = onFetchData ? serverTotal : totalRow;
     const tableLoading = onFetchData ? (loading || fetchLoading) : loading;
+
+    // Handle server selection changes (defined after tableData to avoid reference errors)
+    const handleServerSelectionChange = useCallback((newServerSelection: ServerSelectionState) => {
+        setServerSelection(newServerSelection);
+        
+        // Trigger onServerSelectionChange callback with comprehensive selection data
+        if (onServerSelectionChange && dataMode === 'server' && selectMode === 'all') {
+            const selectedIds = Object.keys(rowSelection).filter(key => rowSelection[key]);
+            const totalSelected = newServerSelection.selectAllMatching 
+                ? (tableTotalRow || 0) - newServerSelection.excludedIds.length
+                : selectedIds.length;
+
+            onServerSelectionChange({
+                selectAllMatching: newServerSelection.selectAllMatching,
+                excludedIds: newServerSelection.excludedIds,
+                selectedIds,
+                totalSelected,
+            });
+        }
+        
+        // Also trigger onRowSelectionChange for server selection
+        if (onRowSelectionChange && dataMode === 'server' && selectMode === 'all') {
+            if (newServerSelection.selectAllMatching) {
+                // Return current page rows excluding excluded ones
+                const selectedRows = tableData.filter(row => !newServerSelection.excludedIds.includes(String(row[idKey])));
+                onRowSelectionChange(selectedRows);
+            } else {
+                // Not in select all matching mode, use normal TanStack Table selection
+                const selectedRows = Object.keys(rowSelection)
+                    .filter(key => rowSelection[key])
+                    .map(key => tableData.find(row => String(row[idKey]) === key))
+                    .filter(Boolean) as T[];
+                onRowSelectionChange(selectedRows);
+            }
+        }
+    }, [onRowSelectionChange, onServerSelectionChange, dataMode, selectMode, tableData, idKey, rowSelection, tableTotalRow]);
+
+    // Build enhanced columns with special columns (after tableTotalRow is defined)
+    const enhancedColumns = useMemo(
+        () => {
+            let columnsMap = [...columns];
+
+            // Add expanding column first if enabled
+            if (enableExpanding) {
+                const expandingColumnMap = createExpandingColumn<T>({
+                    ...(slotProps?.expandColumn || {}),
+                });
+                columnsMap = [expandingColumnMap, ...columnsMap];
+            }
+
+            // Add selection column second if enabled
+            if (enableRowSelection) {
+                const selectionConfig = {
+                    dataMode,
+                    selectMode,
+                    serverSelection,
+                    onServerSelectionChange: handleServerSelectionChange,
+                    totalRow: tableTotalRow,
+                };
+
+                const selectionColumnMap = createSelectionColumn<T>({
+                    ...(slotProps?.selectionColumn || {}),
+                    multiSelect: enableMultiRowSelection,
+                    selectionConfig,
+                });
+                columnsMap = [selectionColumnMap, ...columnsMap];
+            }
+            return columnsMap;
+        },
+        [
+            columns,
+            slotProps?.selectionColumn,
+            slotProps?.expandColumn,
+            enableRowSelection,
+            enableExpanding,
+            enableMultiRowSelection,
+            dataMode,
+            selectMode,
+            serverSelection,
+            tableTotalRow,
+            handleServerSelectionChange,
+        ],
+    );
 
 
     // Common function to notify data state changes
@@ -361,7 +413,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     }, [onColumnPinningChange]);
 
 
-    // Handle row selection change
+    // Handle row selection change with server-side support
     const handleRowSelectionChange = useCallback((updaterOrValue: any) => {
         // Handle both updater function and direct value
         const newSelection = typeof updaterOrValue === 'function'
@@ -371,18 +423,30 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         setRowSelection(newSelection);
 
         if (onRowSelectionChange) {
-            const selectedRows = Object.keys(newSelection)
-                .filter(key => newSelection[key])
-                .map(key => tableData.find(row => String(row[idKey]) === key))
-                .filter(Boolean) as T[];
-            onRowSelectionChange(selectedRows);
+            if (dataMode === 'server' && selectMode === 'all' && serverSelection?.selectAllMatching) {
+                // Server mode with "select all matching" - return current page selected rows
+                const selectedRows = tableData.filter(row => !serverSelection.excludedIds.includes(String(row[idKey])));
+                onRowSelectionChange(selectedRows);
+            } else {
+                // Standard selection - return selected rows from TanStack Table state
+                const selectedRows = Object.keys(newSelection)
+                    .filter(key => newSelection[key])
+                    .map(key => tableData.find(row => String(row[idKey]) === key))
+                    .filter(Boolean) as T[];
+                onRowSelectionChange(selectedRows);
+            }
         }
     }, [
         rowSelection,
         tableData,
         idKey,
         onRowSelectionChange,
+        dataMode,
+        selectMode,
+        serverSelection,
     ]);
+
+
 
     // Create table instance with initial state
     const table = useReactTable({
@@ -766,7 +830,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         // Selection props
         selectMode,
         serverSelection,
-        onServerSelectionChange: setServerSelection,
+        onServerSelectionChange: handleServerSelectionChange,
         onSelectModeChange: (mode) => {
             // You could add a prop for this if needed
             console.log('Selection mode changed to:', mode);
@@ -786,14 +850,10 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         setExportController,
         isExporting,
         dataMode,
-    }, ref);
+    }, internalApiRef);
 
-    // Also assign to internal ref for context
-    useEffect(() => {
-        if (ref && 'current' in ref) {
-            internalApiRef.current = ref.current;
-        }
-    }, [ref]);
+    // Forward the internal ref to the external ref
+    useImperativeHandle(ref, () => internalApiRef.current!, []);
 
     // Get slot components with fallbacks
     const RootSlot = getSlotComponent(slots, 'root', Box);

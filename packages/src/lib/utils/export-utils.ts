@@ -9,9 +9,17 @@ export interface ExportOptions {
     onError?: (error: { message: string; code: string }) => void;
 }
 
+export interface SelectionData {
+    selectAllMatching?: boolean;
+    excludedIds?: string[];
+    selectedIds?: string[];
+    hasSelection?: boolean;
+}
+
 export interface ServerExportOptions extends ExportOptions {
-    fetchData: (filters?: any) => Promise<{ data: any[]; total: number }>;
+    fetchData: (filters?: any, selection?: SelectionData) => Promise<{ data: any[]; total: number }>;
     currentFilters?: any;
+    selection?: SelectionData;
 }
 
 /**
@@ -83,13 +91,14 @@ export async function exportClientData<TData>(
 /**
  * Export data for server-side tables
  * - Fetch data using provided fetchData function
+ * - Pass selection information to server for filtering
  * - Export all returned data (server handles selection/filtering)
  */
 export async function exportServerData<TData>(
     table: Table<TData>,
     options: ServerExportOptions,
 ): Promise<void> {
-    const { format, filename, fetchData, currentFilters, onProgress, onComplete, onError } = options;
+    const { format, filename, fetchData, currentFilters, selection, onProgress, onComplete, onError } = options;
 
     try {
         onProgress?.({
@@ -98,8 +107,8 @@ export async function exportServerData<TData>(
             percentage: 0,
         });
 
-        // Fetch data from server
-        const { data } = await fetchData(currentFilters);
+        // Fetch data from server with selection information
+        const { data } = await fetchData(currentFilters, selection);
 
         if (!data || !Array.isArray(data)) {
             throw new Error('Invalid data received from server');

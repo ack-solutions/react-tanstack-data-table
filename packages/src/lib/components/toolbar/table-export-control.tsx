@@ -13,13 +13,13 @@ import { MenuDropdown } from '../droupdown/menu-dropdown';
 import { useDataTableContext } from '../../contexts/data-table-context';
 import { ExcelIcon, CsvIcon } from '../../icons';
 import { TableState } from '../../types';
-import { exportClientData, exportServerData } from '../../utils/export-utils';
+import { exportClientData, exportServerData, SelectionData } from '../../utils/export-utils';
 import { getSlotComponent } from '../../utils/slot-helpers';
 
 interface TableExportControlProps {
     // Optional props to override context defaults
     exportFilename?: string;
-    onServerExport?: (filters?: Partial<TableState>) => Promise<{ data: any[]; total: number }>;
+    onServerExport?: (filters?: Partial<TableState>, selection?: SelectionData) => Promise<{ data: any[]; total: number }>;
     onExportProgress?: (progress: { processedRows: number; totalRows: number; percentage: number }) => void;
     onExportComplete?: (result: { success: boolean; filename: string; totalRows: number }) => void;
     onExportError?: (error: { message: string; code: string }) => void;
@@ -34,6 +34,7 @@ export function TableExportControl({
 }: TableExportControlProps = {}) {
     const {
         table,
+        apiRef,
         slots,
         slotProps,
         dataMode,
@@ -61,7 +62,7 @@ export function TableExportControl({
     const handleExport = async (format: 'csv' | 'excel') => {
         try {
             if (dataMode === 'server' && onServerExport) {
-                // Server mode export - fetch all data with current filters
+                // Server mode export - fetch data with current filters and selection
                 const currentState = table.getState();
                 const currentFilters = {
                     globalFilter: currentState.globalFilter,
@@ -69,11 +70,20 @@ export function TableExportControl({
                     columnFilters: currentState.columnFilters,
                 };
 
+                // Get selection data from apiRef if available
+                const selectionData = apiRef?.current ? {
+                    selectAllMatching: apiRef.current.selection.getSelectionPayload().selectAllMatching,
+                    excludedIds: apiRef.current.selection.getSelectionPayload().excludedIds,
+                    selectedIds: apiRef.current.selection.getSelectedRowIds(),
+                    hasSelection: apiRef.current.selection.getSelectedRowIds().length > 0 || apiRef.current.selection.getSelectionPayload().selectAllMatching,
+                } : undefined;
+                console.log({ selectionData }, apiRef.current.selection.getSelectionPayload(), {apiRef});
                 await exportServerData(table, {
                     format,
                     filename: exportFilename,
-                    fetchData: (filters) => onServerExport(filters || currentFilters),
+                    fetchData: (filters, selection) => onServerExport(filters || currentFilters, selection),
                     currentFilters,
+                    selection: selectionData,
                     onProgress: onExportProgress,
                     onComplete: onExportComplete,
                     onError: onExportError,

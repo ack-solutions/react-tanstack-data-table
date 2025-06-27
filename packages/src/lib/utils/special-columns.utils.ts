@@ -3,14 +3,14 @@ import { Checkbox, IconButton } from '@mui/material';
 import { createElement } from 'react';
 
 import { DataTableColumn, DEFAULT_EXPANDING_COLUMN_NAME, DEFAULT_SELECTION_COLUMN_NAME } from '../types';
-
+import { SelectionHelperConfig, toggleSelectAll, toggleRowSelection, isAllSelected, isSomeSelected, isRowSelected } from './selection-helpers';
 
 /**
- * Creates a default selection column with smart selection logic using API
+ * Creates a default selection column with smart selection logic using selection helpers
  */
 export const createSelectionColumn = <T>(config: Partial<DataTableColumn<T>> & { 
     multiSelect?: boolean;
-    apiRef?: React.RefObject<any>; // DataTableApi ref
+    selectionConfig: SelectionHelperConfig;
 }): DataTableColumn<T> => ({
     id: DEFAULT_SELECTION_COLUMN_NAME,
     size: 60,
@@ -24,56 +24,36 @@ export const createSelectionColumn = <T>(config: Partial<DataTableColumn<T>> & {
     header: ({ table }) => {
         if (!config.multiSelect) return null;
         
-        const api = config.apiRef?.current;
-        if (!api) {
-            // Fallback to basic TanStack Table behavior
-            return createElement(Checkbox, {
-                checked: table.getIsAllRowsSelected(),
-                indeterminate: table.getIsSomeRowsSelected(),
-                onChange: table.getToggleAllRowsSelectedHandler(),
-                size: 'small',
-                sx: { p: 0 },
-            });
-        }
+        const selectionConfig = config.selectionConfig;
+
         
-        // Use API for smart selection logic
-        const isAllSelected = api.selection.isAllSelected();
-        const isIndeterminate = api.selection.isSomeSelected();
+        // Use selection helper functions
+        const allSelected = isAllSelected(table, selectionConfig);
+        const someSelected = isSomeSelected(table, selectionConfig);
 
         return createElement(Checkbox, {
-            checked: isAllSelected,
-            indeterminate: isIndeterminate,
+            checked: allSelected,
+            indeterminate: someSelected,
             onChange: () => {
-                api.selection.toggleSelectAll();
+                toggleSelectAll(table, selectionConfig);
             },
             size: 'small',
             sx: { p: 0 },
         });
     },
 
-    cell: ({ row }) => {
-        const api = config.apiRef?.current;
+    cell: ({ row, table }) => {
+        const selectionConfig = config.selectionConfig;
         const rowId = row.id as string;
 
-        if (!api) {
-            // Fallback to basic TanStack Table behavior
-            return createElement(Checkbox, {
-                checked: row.getIsSelected(),
-                disabled: !row.getCanSelect(),
-                onChange: row.getToggleSelectedHandler(),
-                size: 'small',
-                sx: { p: 0 },
-            });
-        }
-
-        // Use API for smart selection logic
-        const checked = api.selection.isRowSelected(rowId);
+        // Use selection helper functions
+        const checked = isRowSelected(table, rowId, selectionConfig);
 
         return createElement(Checkbox, {
             checked,
             disabled: !row.getCanSelect(),
             onChange: () => {
-                api.selection.toggleRowSelection(rowId);
+                toggleRowSelection(table, rowId, selectionConfig);
             },
             size: 'small',
             sx: { p: 0 },

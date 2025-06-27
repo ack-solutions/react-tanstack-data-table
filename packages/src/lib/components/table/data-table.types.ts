@@ -8,6 +8,7 @@ import type { CustomColumnFilterState } from '../../types';
 import { DataTableColumn } from '../../types';
 import { DataTableSlots, PartialSlotProps } from '../../types/slots.types';
 import { DataTableSize } from '../../utils/table-helpers';
+import { SelectionData } from '../../utils/export-utils';
 
 // Selection mode type
 export type SelectMode = 'page' | 'all';
@@ -50,8 +51,8 @@ export interface DataTableProps<T> {
     onExportComplete?: (result: { success: boolean; filename: string; totalRows: number }) => void;
     onExportError?: (error: { message: string; code: string }) => void;
 
-    // Server export callback - receives current table state/filters
-    onServerExport?: (filters?: Partial<TableState>) => Promise<{ data: any[]; total: number }>;
+    // Server export callback - receives current table state/filters and selection data
+    onServerExport?: (filters?: Partial<TableState>, selection?: SelectionData) => Promise<{ data: any[]; total: number }>;
 
     // Export cancellation callback - called when export is cancelled
     onExportCancel?: () => void;
@@ -61,6 +62,14 @@ export interface DataTableProps<T> {
     enableMultiRowSelection?: boolean;
     selectMode?: SelectMode; // 'page' | 'all' - defines selection scope
     onRowSelectionChange?: (selectedRows: T[]) => void;
+    
+    // Server selection callbacks
+    onServerSelectionChange?: (selection: { 
+        selectAllMatching: boolean; 
+        excludedIds: string[]; 
+        selectedIds: string[];
+        totalSelected: number;
+    }) => void;
 
     // Bulk action props
     enableBulkActions?: boolean;

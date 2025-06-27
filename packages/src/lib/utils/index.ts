@@ -12,3 +12,6 @@ export * from './column-helpers';
 
 // Export utilities
 export * from './export-utils';
+
+// Selection utilities
+export * from './selection-helpers';

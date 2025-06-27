@@ -5,6 +5,17 @@ import { CustomColumnFilterState, TableFilters, TableState } from '../types';
 import { DataTableApi, SelectionPayload } from '../types/data-table-api';
 import { exportClientData, exportServerData } from '../utils/export-utils';
 import { ServerSelectionState } from '../components/table/data-table.types';
+import { 
+    toggleSelectAll as helperToggleSelectAll,
+    selectAll as helperSelectAll,
+    deselectAll as helperDeselectAll,
+    toggleRowSelection as helperToggleRowSelection,
+    isAllSelected as helperIsAllSelected,
+    isSomeSelected as helperIsSomeSelected,
+    isRowSelected as helperIsRowSelected,
+    getSelectedCount as helperGetSelectedCount,
+    SelectionHelperConfig
+} from '../utils/selection-helpers';
 
 
 interface UseDataTableApiProps<T> {
@@ -44,7 +55,7 @@ interface UseDataTableApiProps<T> {
     onExportProgress?: (progress: { processedRows: number; totalRows: number; percentage: number }) => void;
     onExportComplete?: (result: { success: boolean; filename: string; totalRows: number }) => void;
     onExportError?: (error: { message: string; code: string }) => void;
-    onServerExport?: (filters?: Partial<TableState>) => Promise<{ data: any[]; total: number }>;
+    onServerExport?: (filters?: Partial<TableState>, selection?: any) => Promise<{ data: any[]; total: number }>;
     exportController?: AbortController | null;
     setExportController?: (controller: AbortController | null) => void;
     isExporting?: boolean;
@@ -92,6 +103,15 @@ export function useDataTableApi<T extends Record<string, any>>(
         isExporting,
         dataMode = 'client',
     } = props;
+
+    // Create selection helper config
+    const selectionConfig: SelectionHelperConfig = {
+        dataMode: dataMode || 'client',
+        selectMode: selectMode || 'page',
+        serverSelection,
+        onServerSelectionChange,
+        totalRow,
+    };
 
     useImperativeHandle(ref, () => ({
         table: {
@@ -355,7 +375,7 @@ export function useDataTableApi<T extends Record<string, any>>(
                 const isSelected = dataMode === 'server' && selectMode === 'all' && serverSelection?.selectAllMatching
                     ? !serverSelection.excludedIds.includes(rowId)
                     : table.getRow(rowId)?.getIsSelected() || false;
-                
+
                 if (isSelected) {
                     // Deselect
                     if (dataMode === 'server' && selectMode === 'all' && onServerSelectionChange && serverSelection) {
@@ -378,7 +398,7 @@ export function useDataTableApi<T extends Record<string, any>>(
                     }
                 }
             },
-            
+
             // Smart selection methods (automatically handle page vs all modes)
             selectAll: () => {
                 if (dataMode === 'server' && selectMode === 'all' && onServerSelectionChange) {
@@ -402,36 +422,9 @@ export function useDataTableApi<T extends Record<string, any>>(
                 table.toggleAllRowsSelected(false);
             },
             toggleSelectAll: () => {
-                const isAllSelected = dataMode === 'server' && selectMode === 'all' && serverSelection?.selectAllMatching
-                    ? serverSelection.selectAllMatching && serverSelection.excludedIds.length === 0
-                    : selectMode === 'page'
-                        ? table.getIsAllPageRowsSelected()
-                        : table.getIsAllRowsSelected();
-                
-                if (isAllSelected) {
-                    // Deselect all
-                    if (dataMode === 'server' && selectMode === 'all' && onServerSelectionChange) {
-                        onServerSelectionChange({
-                            selectAllMatching: false,
-                            excludedIds: [],
-                        });
-                    }
-                    table.toggleAllRowsSelected(false);
-                } else {
-                    // Select all
-                    if (dataMode === 'server' && selectMode === 'all' && onServerSelectionChange) {
-                        onServerSelectionChange({
-                            selectAllMatching: true,
-                            excludedIds: [],
-                        });
-                    } else if (selectMode === 'page') {
-                        table.toggleAllPageRowsSelected(true);
-                    } else {
-                        table.toggleAllRowsSelected(true);
-                    }
-                }
+                helperToggleSelectAll(table, selectionConfig);
             },
-            
+
             // Page-specific selection (regardless of selectMode)
             selectAllOnPage: () => {
                 table.toggleAllPageRowsSelected(true);
@@ -442,7 +435,7 @@ export function useDataTableApi<T extends Record<string, any>>(
             toggleSelectAllOnPage: () => {
                 table.toggleAllPageRowsSelected();
             },
-            
+
             // Server selection methods (only work in server mode)
             selectAllMatching: () => {
                 if (dataMode === 'server' && onServerSelectionChange) {
@@ -468,17 +461,37 @@ export function useDataTableApi<T extends Record<string, any>>(
                     });
                 }
             },
-            
+
             // Selection state getters
             getSelectedRows: () => {
-                return Object.keys(table.getState().rowSelection)
-                    .filter(key => table.getState().rowSelection[key])
-                    .map(key => data.find(row => String(row[idKey]) === key))
-                    .filter(Boolean) as T[];
+                if (dataMode === 'server' && selectMode === 'all' && serverSelection?.selectAllMatching) {
+                    // In server mode with "select all matching", return current page data excluding excluded rows
+                    return data.filter(row => !serverSelection.excludedIds.includes(String(row[idKey])));
+                } else if (dataMode === 'server') {
+                    // In server mode but not "select all matching", only return rows from current page that are selected
+                    return Object.keys(table.getState().rowSelection)
+                        .filter(key => table.getState().rowSelection[key])
+                        .map(key => data.find(row => String(row[idKey]) === key))
+                        .filter(Boolean) as T[];
+                } else {
+                    // Client mode - can return all selected rows
+                    return Object.keys(table.getState().rowSelection)
+                        .filter(key => table.getState().rowSelection[key])
+                        .map(key => data.find(row => String(row[idKey]) === key))
+                        .filter(Boolean) as T[];
+                }
             },
             getSelectedRowIds: () => {
-                return Object.keys(table.getState().rowSelection)
-                    .filter(key => table.getState().rowSelection[key]);
+                if (dataMode === 'server' && selectMode === 'all' && serverSelection?.selectAllMatching) {
+                    // In server mode with "select all matching", return current page row IDs excluding excluded rows
+                    return data
+                        .filter(row => !serverSelection.excludedIds.includes(String(row[idKey])))
+                        .map(row => String(row[idKey]));
+                } else {
+                    // Standard client-side or page-based selection
+                    return Object.keys(table.getState().rowSelection)
+                        .filter(key => table.getState().rowSelection[key]);
+                }
             },
             getSelectionPayload: (): SelectionPayload => {
                 if (dataMode === 'server' && selectMode === 'all' && serverSelection) {
@@ -497,35 +510,21 @@ export function useDataTableApi<T extends Record<string, any>>(
                 }
             },
             getSelectedCount: () => {
-                if (dataMode === 'server' && selectMode === 'all' && serverSelection?.selectAllMatching) {
-                    return (totalRow || 0) - serverSelection.excludedIds.length;
-                } else {
-                    return Object.keys(table.getState().rowSelection)
-                        .filter(key => table.getState().rowSelection[key]).length;
-                }
+                return helperGetSelectedCount(table, selectionConfig);
             },
-            
+
             // Selection state checks
             isRowSelected: (rowId: string) => {
-                if (dataMode === 'server' && selectMode === 'all' && serverSelection?.selectAllMatching) {
-                    return !serverSelection.excludedIds.includes(rowId);
-                }
-                return table.getRow(rowId)?.getIsSelected() || false;
+                return helperIsRowSelected(table, rowId, selectionConfig);
             },
             isAllSelected: () => {
-                if (dataMode === 'server' && selectMode === 'all' && serverSelection) {
-                    return serverSelection.selectAllMatching && serverSelection.excludedIds.length === 0;
-                }
-                return selectMode === 'page' ? table.getIsAllPageRowsSelected() : table.getIsAllRowsSelected();
+                return helperIsAllSelected(table, selectionConfig);
             },
             isAllPageSelected: () => {
                 return table.getIsAllPageRowsSelected();
             },
             isSomeSelected: () => {
-                if (dataMode === 'server' && selectMode === 'all' && serverSelection) {
-                    return serverSelection.selectAllMatching && serverSelection.excludedIds.length > 0;
-                }
-                return selectMode === 'page' ? table.getIsSomePageRowsSelected() : table.getIsSomeRowsSelected();
+                return helperIsSomeSelected(table, selectionConfig);
             },
             isSomePageSelected: () => {
                 return table.getIsSomePageRowsSelected();
@@ -533,7 +532,7 @@ export function useDataTableApi<T extends Record<string, any>>(
             isSelectAllMatching: () => {
                 return dataMode === 'server' && serverSelection?.selectAllMatching || false;
             },
-            
+
             // Selection mode management
             getSelectionMode: () => {
                 return selectMode || 'page';
@@ -824,7 +823,7 @@ export function useDataTableApi<T extends Record<string, any>>(
                     setExportController?.(controller);
 
                     if (dataMode === 'server' && onServerExport) {
-                        // Server export
+                        // Server export with selection data
                         const currentFilters = {
                             globalFilter,
                             customColumnsFilter,
@@ -834,11 +833,19 @@ export function useDataTableApi<T extends Record<string, any>>(
                             columnPinning,
                         };
 
+                        const selectionData = {
+                            selectAllMatching: serverSelection?.selectAllMatching || false,
+                            excludedIds: serverSelection?.excludedIds || [],
+                            selectedIds: Object.keys(table.getState().rowSelection).filter(key => table.getState().rowSelection[key]),
+                            hasSelection: (serverSelection?.selectAllMatching) || Object.keys(table.getState().rowSelection).length > 0,
+                        };
+
                         await exportServerData(table, {
                             format: 'csv',
                             filename,
-                            fetchData: onServerExport,
+                            fetchData: (filters, selection) => onServerExport(filters, selection),
                             currentFilters,
+                            selection: selectionData,
                             onProgress: onExportProgress,
                             onComplete: onExportComplete,
                             onError: onExportError,
@@ -883,7 +890,7 @@ export function useDataTableApi<T extends Record<string, any>>(
                     setExportController?.(controller);
 
                     if (dataMode === 'server' && onServerExport) {
-                        // Server export
+                        // Server export with selection data
                         const currentFilters = {
                             globalFilter,
                             customColumnsFilter,
@@ -893,11 +900,19 @@ export function useDataTableApi<T extends Record<string, any>>(
                             columnPinning,
                         };
 
+                        const selectionData = {
+                            selectAllMatching: serverSelection?.selectAllMatching || false,
+                            excludedIds: serverSelection?.excludedIds || [],
+                            selectedIds: Object.keys(table.getState().rowSelection).filter(key => table.getState().rowSelection[key]),
+                            hasSelection: (serverSelection?.selectAllMatching) || Object.keys(table.getState().rowSelection).length > 0,
+                        };
+
                         await exportServerData(table, {
                             format: 'excel',
                             filename,
-                            fetchData: onServerExport,
+                            fetchData: (filters, selection) => onServerExport(filters, selection),
                             currentFilters,
+                            selection: selectionData,
                             onProgress: onExportProgress,
                             onComplete: onExportComplete,
                             onError: onExportError,
@@ -952,11 +967,19 @@ export function useDataTableApi<T extends Record<string, any>>(
                         columnPinning,
                     };
 
+                    const selectionData = {
+                        selectAllMatching: serverSelection?.selectAllMatching || false,
+                        excludedIds: serverSelection?.excludedIds || [],
+                        selectedIds: Object.keys(table.getState().rowSelection).filter(key => table.getState().rowSelection[key]),
+                        hasSelection: (serverSelection?.selectAllMatching) || Object.keys(table.getState().rowSelection).length > 0,
+                    };
+
                     await exportServerData(table, {
                         format,
                         filename,
-                        fetchData,
+                        fetchData: (filters, selection) => fetchData(filters, selection),
                         currentFilters,
+                        selection: selectionData,
                         onProgress: onExportProgress,
                         onComplete: onExportComplete,
                         onError: onExportError,
@@ -1007,5 +1030,8 @@ export function useDataTableApi<T extends Record<string, any>>(
         setExportController,
         isExporting,
         dataMode,
+        serverSelection,
+        selectMode,
+        onServerSelectionChange,
     ]);
 }

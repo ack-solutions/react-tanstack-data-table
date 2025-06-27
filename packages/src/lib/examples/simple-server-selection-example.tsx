@@ -2,7 +2,7 @@
  * Simple Server Selection Example
  * Demonstrates the clean, straightforward approach to server-side selection using selectMode
  */
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { Box, Typography, Card, CardContent, Button, Alert, Chip, Stack } from '@mui/material';
 import { DataTable } from '../components/table/data-table';
 import { DataTableColumn } from '../types/column.types';
@@ -44,6 +44,8 @@ export function SimpleServerSelectionExample() {
     // Selection mode state
     const [selectMode, setSelectMode] = useState<'page' | 'all'>('page');
     
+    // API ref for debugging
+    const apiRef = useRef<any>(null);
 
     const handleFetchData = (filters: Partial<TableState>) => {
         console.log('filters', filters);
@@ -161,6 +163,7 @@ export function SimpleServerSelectionExample() {
             {/* Data Table with New Selection Logic */}
             <DataTable
                 ref={(api) => {
+                    apiRef.current = api;
                     // You can access the selection API here
                     if (api) {
                         console.log('api', api);
@@ -198,6 +201,53 @@ export function SimpleServerSelectionExample() {
                     </Button>
                 )}
             />
+
+            {/* Debug Controls */}
+            <Card sx={{ mt: 3 }}>
+                <CardContent>
+                    <Typography variant="h6" gutterBottom>
+                        Debug Controls
+                    </Typography>
+                    <Stack direction="row" spacing={2}>
+                        <Button
+                            variant="outlined"
+                            onClick={() => {
+                                if (apiRef.current) {
+                                    console.log('Manual selectAll trigger');
+                                    apiRef.current.selection.selectAll();
+                                }
+                            }}
+                        >
+                            Manual Select All
+                        </Button>
+                        <Button
+                            variant="outlined"
+                            onClick={() => {
+                                if (apiRef.current) {
+                                    console.log('Manual toggleSelectAll trigger');
+                                    apiRef.current.selection.toggleSelectAll();
+                                }
+                            }}
+                        >
+                            Manual Toggle Select All
+                        </Button>
+                        <Button
+                            variant="outlined"
+                            onClick={() => {
+                                if (apiRef.current) {
+                                    const payload = apiRef.current.selection.getSelectionPayload();
+                                    console.log('Current Selection Payload:', payload);
+                                    console.log('Selected Count:', apiRef.current.selection.getSelectedCount());
+                                    console.log('Is All Selected:', apiRef.current.selection.isAllSelected());
+                                    console.log('Is Some Selected:', apiRef.current.selection.isSomeSelected());
+                                }
+                            }}
+                        >
+                            Debug Selection State
+                        </Button>
+                    </Stack>
+                </CardContent>
+            </Card>
 
             {/* Code Example */}
             <Card sx={{ mt: 3 }}>
