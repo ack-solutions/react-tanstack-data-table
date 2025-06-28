@@ -12,4 +12,14 @@ export {
     type CustomColumnFilterOptions,
     type CustomColumnFilterTableState,
     type CustomColumnFilterInstance,
-} from './custom-column-filter.feature'; 
+} from './custom-column-filter.feature';
+
+// Export custom selection feature
+export {
+    CustomSelectionFeature,
+    type SelectionState as CustomSelectionState,
+    type SelectMode as CustomSelectMode,
+    type CustomSelectionOptions,
+    type CustomSelectionTableState,
+    type CustomSelectionInstance,
+} from './custom-selection.feature'; 

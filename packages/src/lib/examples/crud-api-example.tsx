@@ -223,16 +223,17 @@ export function CrudApiExample() {
     }, []);
 
     const handleBulkUpdateStatus = useCallback(() => {
-        const selectedRows = dataTableRef.current?.selection.getSelectedRows();
-        if (selectedRows && selectedRows.length > 0) {
+        const selectionState = dataTableRef.current?.selection.getSelectionState();
+        if (selectionState?.ids.length) {
             const newStatus = prompt('Enter new status for selected users (active/inactive/pending):') as User['status'];
             if (newStatus && [
                 'active',
                 'inactive',
                 'pending',
             ].includes(newStatus)) {
-                const updates = selectedRows.map(user => ({
-                    rowId: String(user.id),
+                // Get the selected user IDs and update them
+                const updates = selectionState.ids.map(id => ({
+                    rowId: id,
                     data: { status: newStatus },
                 }));
                 dataTableRef.current?.data.updateMultipleRows(updates);
@@ -300,9 +301,9 @@ export function CrudApiExample() {
     }, []);
 
     const handleDeleteSelected = useCallback(() => {
-        const selectedRows = dataTableRef.current?.selection.getSelectedRows();
-        if (selectedRows && selectedRows.length > 0) {
-            const confirmed = window.confirm(`Delete ${selectedRows.length} selected users?`);
+        const selectionState = dataTableRef.current?.selection.getSelectionState();
+        if (selectionState?.ids.length) {
+            const confirmed = window.confirm(`Delete ${selectionState.ids.length} selected users?`);
             if (confirmed) {
                 dataTableRef.current?.data.deleteSelectedRows();
             }

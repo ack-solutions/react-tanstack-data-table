@@ -1,23 +1,17 @@
 /**
  * Type definitions for DataTable components
  */
-import { Row, SortingState, ColumnResizeMode, ColumnPinningState, RowData, TableState } from '@tanstack/react-table';
+import { Row, SortingState, ColumnResizeMode, ColumnPinningState, RowData } from '@tanstack/react-table';
 import { ReactNode } from 'react';
 
-import type { CustomColumnFilterState } from '../../types';
+import type { CustomColumnFilterState, TableState } from '../../types';
 import { DataTableColumn } from '../../types';
 import { DataTableSlots, PartialSlotProps } from '../../types/slots.types';
 import { DataTableSize } from '../../utils/table-helpers';
-import { SelectionData } from '../../utils/export-utils';
+import { SelectionState } from '../../features/custom-selection.feature';
 
 // Selection mode type
 export type SelectMode = 'page' | 'all';
-
-// Server selection state (only used when dataMode='server' && selectMode='all')
-export interface ServerSelectionState {
-    selectAllMatching: boolean;
-    excludedIds: string[];
-}
 
 // Import consolidated types
 
@@ -52,7 +46,7 @@ export interface DataTableProps<T> {
     onExportError?: (error: { message: string; code: string }) => void;
 
     // Server export callback - receives current table state/filters and selection data
-    onServerExport?: (filters?: Partial<TableState>, selection?: SelectionData) => Promise<{ data: any[]; total: number }>;
+    onServerExport?: (filters?: Partial<TableState>, selection?: SelectionState) => Promise<{ data: any[]; total: number }>;
 
     // Export cancellation callback - called when export is cancelled
     onExportCancel?: () => void;
@@ -61,15 +55,12 @@ export interface DataTableProps<T> {
     enableRowSelection?: boolean | ((row: Row<T>) => boolean);
     enableMultiRowSelection?: boolean;
     selectMode?: SelectMode; // 'page' | 'all' - defines selection scope
-    onRowSelectionChange?: (selectedRows: T[]) => void;
     
-    // Server selection callbacks
-    onServerSelectionChange?: (selection: { 
-        selectAllMatching: boolean; 
-        excludedIds: string[]; 
-        selectedIds: string[];
-        totalSelected: number;
-    }) => void;
+    // Row selection control (like MUI DataGrid)
+    isRowSelectable?: (params: { row: T; id: string }) => boolean;
+    
+    onRowSelectionChange?: (selectedRows: T[], selection?: SelectionState) => void;
+    onSelectionChange?: (selection: SelectionState) => void;
 
     // Bulk action props
     enableBulkActions?: boolean;

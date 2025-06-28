@@ -48,7 +48,6 @@ export function SimpleServerSelectionExample() {
     const apiRef = useRef<any>(null);
 
     const handleFetchData = (filters: Partial<TableState>) => {
-        console.log('filters', filters);
         if (filters?.pagination?.pageSize) {
             const data = employees.slice(filters.pagination.pageIndex * filters.pagination.pageSize, (filters.pagination.pageIndex + 1) * filters.pagination.pageSize);
             console.log('data', data?.length);
@@ -166,13 +165,7 @@ export function SimpleServerSelectionExample() {
                     apiRef.current = api;
                     // You can access the selection API here
                     if (api) {
-                        console.log('api', api);
-                        console.log('getSelectionPayload', api.selection.getSelectionPayload());
-                        console.log('getSelectedRowIds', api.selection.getSelectedRowIds());
-                        console.log('getSelectedRows', api.selection.getSelectedRows());
-                        console.log('getRowSelection', api.selection.getSelectedCount());
-                        console.log('getRowSelection', api.selection.getSelectionMode());
-                        // Example: api.selection.getSelectionPayload()
+                        // Example: api.selection.getSelectionState()
                         // Example: api.selection.selectAll()
                         // Example: api.selection.setSelectionMode('all')
                     }
@@ -235,7 +228,7 @@ export function SimpleServerSelectionExample() {
                             variant="outlined"
                             onClick={() => {
                                 if (apiRef.current) {
-                                    const payload = apiRef.current.selection.getSelectionPayload();
+                                    const payload = apiRef.current.selection.getSelectionState();
                                     console.log('Current Selection Payload:', payload);
                                     console.log('Selected Count:', apiRef.current.selection.getSelectedCount());
                                     console.log('Is All Selected:', apiRef.current.selection.isAllSelected());

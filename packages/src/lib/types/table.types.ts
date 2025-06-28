@@ -1,6 +1,6 @@
 import { SortingState, TableState as TanstackTableState } from '@tanstack/react-table';
 
-import { ColumnFilterRule } from '../features';
+import { ColumnFilterRule, CustomSelectionState as SelectionState } from '../features';
 
 
 /**
@@ -14,14 +14,22 @@ import { ColumnFilterRule } from '../features';
 
 export type TableSize = 'small' | 'medium';
 
-// declare module '@tanstack/react-table' {
-//     interface TableState {
-//         customColumnsFilter: CustomColumnFilterState;
-//     }
-// }
+// Extended table state interface with custom column filter support
 
-export interface TableState extends TanstackTableState {
+export interface TableState {
     customColumnsFilter: CustomColumnFilterState;
+    selectionState?: SelectionState; // Selection state for CustomSelectionFeature
+    globalFilter?: string;
+    sorting?: SortingState;
+    pagination?: {
+        pageIndex: number;
+        pageSize: number;
+    };
+    columnOrder?: string[];
+    columnPinning?: {
+        left?: string[];
+        right?: string[];
+    };
 }
 
 export interface TableFilters {

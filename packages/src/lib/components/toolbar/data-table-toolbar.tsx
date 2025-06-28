@@ -6,7 +6,7 @@ import {
 } from '@mui/material';
 import { ReactNode } from 'react';
 
-import { ColumnCustomFilterControl } from './column-custum-filter-control';
+import { ColumnCustomFilterControl } from './column-custom-filter-control';
 import { ColumnPinningControl } from './column-pinning-control';
 import { ColumnResetControl } from './column-reset-control';
 import { ColumnVisibilityControl } from './column-visibility-control';

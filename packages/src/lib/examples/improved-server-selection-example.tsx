@@ -1,6 +1,7 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { DataTable } from '../components/table/data-table';
 import { DataTableApi, DataTableColumn } from '../types';
+import { SelectionState } from '../features/custom-selection.feature';
 
 interface User {
     id: string;
@@ -36,21 +37,25 @@ export const ImprovedServerSelectionExample = () => {
             id: 'name',
             header: 'Name',
             accessorKey: 'name',
+            enableGlobalFilter: true,
         },
         {
             id: 'email',
             header: 'Email',
             accessorKey: 'email',
+            enableGlobalFilter: true,
         },
         {
             id: 'role',
             header: 'Role',
             accessorKey: 'role',
+            enableGlobalFilter: true,
         },
         {
             id: 'status',
             header: 'Status',
             accessorKey: 'status',
+            enableGlobalFilter: true,
         },
     ];
 
@@ -100,23 +105,23 @@ export const ImprovedServerSelectionExample = () => {
             }
         }
 
-        console.log(`Exporting ${dataToExport.length} records`);
-
         return {
             data: dataToExport,
             total: dataToExport.length,
         };
     }, []);
 
-    const handleServerSelectionChange = useCallback((selection: {
-        selectAllMatching: boolean;
-        excludedIds: string[];
-        selectedIds: string[];
-        totalSelected: number;
-    }) => {
+    const handleServerSelectionChange = useCallback((selection: SelectionState) => {
         console.log('Server selection changed:', selection);
-        setSelectionInfo(selection);
-    }, []);
+        // Convert new selection state to old format for display compatibility
+        const legacyFormat = {
+            selectAllMatching: selection.type === 'exclude' && selection.ids.length === 0,
+            excludedIds: selection.type === 'exclude' ? selection.ids : [],
+            selectedIds: selection.type === 'include' ? selection.ids : [],
+            totalSelected: selection.type === 'exclude' ? (total - selection.ids.length) : selection.ids.length,
+        };
+        setSelectionInfo(legacyFormat);
+    }, [total]);
 
     const handleRowSelectionChange = useCallback((selectedRows: User[]) => {
         console.log('Row selection changed:', selectedRows.length, 'rows selected');
@@ -124,7 +129,6 @@ export const ImprovedServerSelectionExample = () => {
     }, []);
 
     const handleExportProgress = (progress: any) => {
-        console.log('Export progress:', progress);
     };
 
     const handleExportComplete = (result: any) => {
@@ -156,8 +160,8 @@ export const ImprovedServerSelectionExample = () => {
             <div className="mb-4 space-x-2">
                 <button
                     onClick={() => {
-                        const payload = apiRef.current?.selection.getSelectionPayload();
-                        console.log('Selection Payload:', payload);
+                        const payload = apiRef.current?.selection.getSelectionState();
+                        console.log('Selection State:', payload);
                     }}
                     className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
                 >
@@ -165,21 +169,21 @@ export const ImprovedServerSelectionExample = () => {
                 </button>
                 <button
                     onClick={() => {
-                        const selectedRows = apiRef.current?.selection.getSelectedRows();
-                        console.log('Selected Rows:', selectedRows);
+                        const selectionState = apiRef.current?.selection.getSelectionState();
+                        console.log('Selection State:', selectionState);
                     }}
                     className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
                 >
-                    Get Selected Rows
+                    Get Selection State
                 </button>
                 <button
                     onClick={() => {
-                        const selectedIds = apiRef.current?.selection.getSelectedRowIds();
-                        console.log('Selected Row IDs:', selectedIds);
+                        const selectedCount = apiRef.current?.selection.getSelectedCount();
+                        console.log('Selected Count:', selectedCount);
                     }}
                     className="px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600"
                 >
-                    Get Selected IDs
+                    Get Selected Count
                 </button>
             </div>
 
@@ -191,11 +195,12 @@ export const ImprovedServerSelectionExample = () => {
                 loading={loading}
                 dataMode="server"
                 selectMode="all"
+                enableGlobalFilter
                 enableRowSelection={true}
                 enableMultiRowSelection={true}
                 onFetchData={fetchData}
                 onRowSelectionChange={handleRowSelectionChange}
-                onServerSelectionChange={handleServerSelectionChange}
+                onSelectionChange={handleServerSelectionChange}
                 onServerExport={fetchExportData}
                 exportFilename="selected-users"
                 onExportProgress={handleExportProgress}

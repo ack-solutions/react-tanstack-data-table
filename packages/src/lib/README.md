@@ -45,8 +45,8 @@ The DataTable has been reorganized into a clean, maintainable structure:
 - **Table helpers**: Performance, formatting, and calculation utilities
 
 ### ✅ **Custom Hooks**
-- **State management**: Centralized table state with `useTableState`
-- **Reusable logic**: Extract common patterns into hooks
+- **API management**: Reusable data table API hooks
+- **Reusable logic**: Extract common patterns into hooks  
 - **Better performance**: Optimized state updates and memoization
 
 ## 📦 Component Structure
@@ -87,8 +87,8 @@ import { getEstimatedRowHeight, formatCellValue } from './utils/table-helpers';
 
 ### 🎣 Hooks
 ```typescript
-// State management
-import { useTableState } from './hooks/use-table-state';
+// API management
+import { useDataTableApi } from './hooks/use-data-table-api';
 ```
 
 ## 🚀 Usage
@@ -122,23 +122,19 @@ const MyTable = () => {
 };
 ```
 
-### Advanced Example with Custom State
+### Advanced Example with Custom Configuration
 ```typescript
-import { useTableState } from './hooks/use-table-state';
-
 const AdvancedTable = () => {
-  const { state, actions } = useTableState({
-    initialPagination: { pageIndex: 0, pageSize: 25 },
-    initialSorting: [{ id: 'name', desc: false }],
-  });
-
   return (
     <DataTable
       columns={columns}
       data={data}
+      enableSorting
+      enableColumnFilters
+      enablePagination
+      initialPagination={{ pageIndex: 0, pageSize: 25 }}
+      initialSorting={[{ id: 'name', desc: false }]}
       // ... other props
-      onSortingChange={actions.setSorting}
-      onPaginationChange={actions.setPagination}
     />
   );
 };

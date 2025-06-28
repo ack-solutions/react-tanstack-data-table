@@ -334,11 +334,6 @@ export function DataTableExample() {
         setSelectedUsers(selected);
     };
 
-    const handleExport = (rows: User[]) => {
-        console.log('Exporting:', rows.length > 0 ? rows : sampleData);
-        // Implement your export logic here (CSV, Excel, etc.)
-    };
-
     const handleColumnFiltersChange = (filterState: any) => {
         console.log('Column filters changed:', filterState);
         // You can implement custom filtering logic here
@@ -365,24 +360,6 @@ export function DataTableExample() {
         // You can implement custom column pinning logic here
         // pinning contains { left: string[], right: string[] }
     };
-
-    // Extra actions for the more menu
-    const extraActions = (
-        <>
-            <MenuItem onClick={() => window.print()}>
-                <ListItemIcon>
-                    <PrintIcon fontSize="small" />
-                </ListItemIcon>
-                <ListItemText>Print Table</ListItemText>
-            </MenuItem>
-            <MenuItem onClick={() => alert('Share functionality')}>
-                <ListItemIcon>
-                    <ShareIcon fontSize="small" />
-                </ListItemIcon>
-                <ListItemText>Share</ListItemText>
-            </MenuItem>
-        </>
-    );
 
     return (
         <div style={{ padding: '20px' }}>

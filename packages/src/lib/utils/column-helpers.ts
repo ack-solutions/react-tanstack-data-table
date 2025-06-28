@@ -11,20 +11,16 @@ export type ColumnType = 'text' | 'number' | 'date' | 'boolean' | 'select' | 'ac
  * Get the type of a column from its metadata
  */
 export function getColumnType(column: Column<any, unknown>): ColumnType {
-
-    console.log('🔍 Column:', column);
-
     // Check if column has explicit type in columnDef
     if (column?.columnDef?.type) {
         return column.columnDef.type;
     }
-
     return 'text'; // Default to text
 }
 
 export function getCustomFilterComponent(column: Column<any, unknown>): any {
     // Check if column has custom filter component in meta
-    return (column?.columnDef?.meta as any)?.filterComponent;
+    return column?.columnDef?.filterComponent || column?.columnDef?.editComponent;
 }
 
 

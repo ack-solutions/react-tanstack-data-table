@@ -12,14 +12,15 @@ import {
 import { MenuDropdown } from '../droupdown/menu-dropdown';
 import { useDataTableContext } from '../../contexts/data-table-context';
 import { ExcelIcon, CsvIcon } from '../../icons';
-import { TableState } from '../../types';
-import { exportClientData, exportServerData, SelectionData } from '../../utils/export-utils';
+import {  TableState } from '../../types';
+import { exportClientData, exportServerData } from '../../utils/export-utils';
 import { getSlotComponent } from '../../utils/slot-helpers';
+import { SelectionState } from '../../features/custom-selection.feature';
 
 interface TableExportControlProps {
     // Optional props to override context defaults
     exportFilename?: string;
-    onServerExport?: (filters?: Partial<TableState>, selection?: SelectionData) => Promise<{ data: any[]; total: number }>;
+    onServerExport?: (filters?: Partial<TableState>, selection?: SelectionState) => Promise<{ data: any[]; total: number }>;
     onExportProgress?: (progress: { processedRows: number; totalRows: number; percentage: number }) => void;
     onExportComplete?: (result: { success: boolean; filename: string; totalRows: number }) => void;
     onExportError?: (error: { message: string; code: string }) => void;
@@ -71,13 +72,7 @@ export function TableExportControl({
                 };
 
                 // Get selection data from apiRef if available
-                const selectionData = apiRef?.current ? {
-                    selectAllMatching: apiRef.current.selection.getSelectionPayload().selectAllMatching,
-                    excludedIds: apiRef.current.selection.getSelectionPayload().excludedIds,
-                    selectedIds: apiRef.current.selection.getSelectedRowIds(),
-                    hasSelection: apiRef.current.selection.getSelectedRowIds().length > 0 || apiRef.current.selection.getSelectionPayload().selectAllMatching,
-                } : undefined;
-                console.log({ selectionData }, apiRef.current.selection.getSelectionPayload(), {apiRef});
+                const selectionData = apiRef?.current?.selection?.getSelectionState();
                 await exportServerData(table, {
                     format,
                     filename: exportFilename,

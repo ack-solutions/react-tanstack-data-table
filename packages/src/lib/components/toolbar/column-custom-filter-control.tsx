@@ -13,7 +13,7 @@ import {
     Divider,
     Badge,
 } from '@mui/material';
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useMemo, useCallback, useEffect } from 'react';
 
 import { MenuDropdown } from '../droupdown/menu-dropdown';
 import { useDataTableContext } from '../../contexts/data-table-context';
@@ -31,19 +31,19 @@ import { ColumnFilterRule } from '../../features';
 export function ColumnCustomFilterControl() {
     const { table, slots, slotProps } = useDataTableContext();
     const FilterIconSlot = getSlotComponent(slots, 'filterIcon', FilterList);
-    
+
     // Use the custom feature state from the table - now using pending filters for UI
-    const customFilterState = table.getCustomColumnFilterState?.() || { 
-        filters: [], 
+    const customFilterState = table.getCustomColumnFilterState?.() || {
+        filters: [],
         logic: 'AND',
         pendingFilters: [],
         pendingLogic: 'AND'
     };
-    
+
     // Use pending filters for the UI (draft state)
     const filters = customFilterState.pendingFilters;
     const filterLogic = customFilterState.pendingLogic;
-    
+
     // Active filters are the actual applied filters
     const activeFiltersCount = table.getActiveColumnFilters?.()?.length || 0;
 
@@ -56,14 +56,14 @@ export function ColumnCustomFilterControl() {
         // If no column specified, use empty (user will select)
         // If column specified, get its appropriate default operator
         let defaultOperator = operator || '';
-        
+
         if (columnId && !operator) {
             const column = filterableColumns.find(col => col.id === columnId);
             const columnType = getColumnType(column as any);
             const operators = FILTER_OPERATORS[columnType as keyof typeof FILTER_OPERATORS] || FILTER_OPERATORS.text;
             defaultOperator = operators[0]?.value || 'contains';
         }
-        
+
         table.addPendingColumnFilter?.(columnId || '', defaultOperator, '');
     }, [table, filterableColumns]);
 
@@ -121,11 +121,11 @@ export function ColumnCustomFilterControl() {
         const newColumn = filterableColumns.find(col => col.id === newColumnId);
         const columnType = getColumnType(newColumn as any);
         const operators = FILTER_OPERATORS[columnType as keyof typeof FILTER_OPERATORS] || FILTER_OPERATORS.text;
-        
+
         // Only reset operator if current operator is not valid for new column type
         const currentOperatorValid = operators.some(op => op.value === currentFilter.operator);
         const newOperator = currentOperatorValid ? currentFilter.operator : operators[0]?.value || '';
-        
+
         updateFilter(filterId, {
             columnId: newColumnId,
             operator: newOperator,
@@ -164,19 +164,18 @@ export function ColumnCustomFilterControl() {
 
     // Check if we need to show "Clear Applied Filters" button
     const hasAppliedFilters = activeFiltersCount > 0;
-    
+
     // Determine if there are pending changes that can be applied
     const hasPendingChanges = pendingFiltersCount > 0 || (filters.length === 0 && hasAppliedFilters);
 
     // Auto-add default filter when opening if no filters exist AND no applied filters
     useEffect(() => {
-        console.log('🔍 filters', filters);
         if (filters.length === 0 && filterableColumns.length > 0 && activeFiltersCount === 0) {
             const firstColumn = filterableColumns[0];
             const columnType = getColumnType(firstColumn as any);
             const operators = FILTER_OPERATORS[columnType as keyof typeof FILTER_OPERATORS] || FILTER_OPERATORS.text;
             const defaultOperator = operators[0]?.value || 'contains';
-            
+
             // Add default filter with first column and its first operator
             addFilter(firstColumn.id, defaultOperator);
         }
@@ -391,10 +390,10 @@ export function ColumnCustomFilterControl() {
                                 Reset
                             </Button>
                         )}
-                        
+
                         {/* Spacer when no reset button */}
                         {!(hasAppliedFilters || filters.length > 0) && <Box />}
-                        
+
                         {/* Close and Apply buttons */}
                         <Stack
                             direction="row"
@@ -411,7 +410,7 @@ export function ColumnCustomFilterControl() {
                                 onClick={() => handleApplyFilters(handleClose)}
                                 disabled={!hasPendingChanges}
                             >
-                                {pendingFiltersCount === 0 && hasAppliedFilters ? 'Clear All Filters' : 
+                                {pendingFiltersCount === 0 && hasAppliedFilters ? 'Clear All Filters' :
                                     `Apply ${pendingFiltersCount} Filter${pendingFiltersCount !== 1 ? 's' : ''}${pendingFiltersCount > 1 ? ` (${filterLogic})` : ''}`
                                 }
                             </Button>

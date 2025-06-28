@@ -52,8 +52,6 @@ export function TableSearchControl() {
     };
 
     useEffect(() => {
-        console.log('🔍 searchVisible', searchVisible);
-        console.log('🔍 searchInputRef.current', searchInputRef.current);
         if (searchVisible && searchInputRef.current) {
             // Add a delay to ensure the Collapse animation completes
             const timer = setTimeout(() => {

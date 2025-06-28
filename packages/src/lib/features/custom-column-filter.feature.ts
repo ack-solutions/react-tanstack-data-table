@@ -13,6 +13,7 @@ import {
     makeStateUpdater,
     RowModel,
     Row,
+    getFilteredRowModel as getDefaultFilter,
 } from '@tanstack/react-table';
 
 // Import from types to avoid circular dependency
@@ -301,21 +302,18 @@ export function matchesCustomColumnFilters<TData extends RowData>(
 
 export const getCombinedFilteredRowModel = <TData,>() => {
     return (table: Table<TData>) => (): RowModel<TData> => {
-        // Get the pre-filtered row model (avoids infinite recursion)
-        const preFilteredRowModel = table.getPreFilteredRowModel();
-        
+        // Run the built-in global + column filters first:
+        const baseFilteredModel = getDefaultFilter<TData>()(table)();
+
         const { filters, logic } = table.getState().customColumnFilter ?? {
             filters: [],
             logic: 'AND',
         };
 
-        // If no custom filters, return the pre-filtered model
-        if (!filters.length) {
-            return preFilteredRowModel;
-        }
+        if (!filters.length) return baseFilteredModel;
 
         // Apply custom column filters to pre-filtered rows
-        const filteredRows = preFilteredRowModel.rows.filter(row =>
+        const filteredRows = baseFilteredModel.rows.filter(row =>
             matchesCustomColumnFilters(row, filters, logic)
         );
 

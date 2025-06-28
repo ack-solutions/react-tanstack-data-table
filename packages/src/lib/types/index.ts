@@ -12,9 +12,6 @@ export * from './table.types';
 // Export functionality types
 export * from './export.types';
 
-// Hook-related types
-export * from './hooks.types';
-
 // API types (already exists)
 export * from './data-table-api';
 

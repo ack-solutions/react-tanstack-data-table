@@ -3,15 +3,19 @@ import { Checkbox, IconButton } from '@mui/material';
 import { createElement } from 'react';
 
 import { DataTableColumn, DEFAULT_EXPANDING_COLUMN_NAME, DEFAULT_SELECTION_COLUMN_NAME } from '../types';
-import { SelectionHelperConfig, toggleSelectAll, toggleRowSelection, isAllSelected, isSomeSelected, isRowSelected } from './selection-helpers';
 
 /**
- * Creates a default selection column with smart selection logic using selection helpers
+ * Enhanced configuration for selection column  
  */
-export const createSelectionColumn = <T>(config: Partial<DataTableColumn<T>> & { 
+export interface SelectionColumnConfig<T> {
     multiSelect?: boolean;
-    selectionConfig: SelectionHelperConfig;
-}): DataTableColumn<T> => ({
+    isRowSelectable?: (params: { row: T; id: string }) => boolean;
+}
+
+/**
+ * Creates a default selection column using TanStack Table custom feature methods
+ */
+export const createSelectionColumn = <T>(config: Partial<DataTableColumn<T>> & SelectionColumnConfig<T>): DataTableColumn<T> => ({
     id: DEFAULT_SELECTION_COLUMN_NAME,
     size: 60,
     align: 'center',
@@ -23,19 +27,17 @@ export const createSelectionColumn = <T>(config: Partial<DataTableColumn<T>> & {
     hideInExport: true,
     header: ({ table }) => {
         if (!config.multiSelect) return null;
-        
-        const selectionConfig = config.selectionConfig;
 
-        
-        // Use selection helper functions
-        const allSelected = isAllSelected(table, selectionConfig);
-        const someSelected = isSomeSelected(table, selectionConfig);
+        // Use TanStack Table custom feature methods (same pattern as TanStack documentation)
+        const allSelected = table.getIsAllRowsSelected?.() || false;
+        const someSelected = table.getIsSomeRowsSelected?.() || false;
 
         return createElement(Checkbox, {
             checked: allSelected,
-            indeterminate: someSelected,
+            indeterminate: someSelected && !allSelected,
+            disabled: false,
             onChange: () => {
-                toggleSelectAll(table, selectionConfig);
+                table.toggleAllRowsSelected?.();
             },
             size: 'small',
             sx: { p: 0 },
@@ -43,20 +45,25 @@ export const createSelectionColumn = <T>(config: Partial<DataTableColumn<T>> & {
     },
 
     cell: ({ row, table }) => {
-        const selectionConfig = config.selectionConfig;
         const rowId = row.id as string;
 
-        // Use selection helper functions
-        const checked = isRowSelected(table, rowId, selectionConfig);
+        // Use TanStack Table custom feature methods (same pattern as TanStack documentation)
+        const checked = table.getIsRowSelected?.(rowId) || false;
+        const canSelect = table.canSelectRow?.(rowId) ?? true;
 
         return createElement(Checkbox, {
             checked,
-            disabled: !row.getCanSelect(),
+            disabled: !canSelect,
             onChange: () => {
-                toggleRowSelection(table, rowId, selectionConfig);
+                if (canSelect) {
+                    table.toggleRowSelected?.(rowId);
+                }
             },
             size: 'small',
-            sx: { p: 0 },
+            sx: { 
+                p: 0,
+                opacity: canSelect ? 1 : 0.5
+            },
         });
     },
     ...config,

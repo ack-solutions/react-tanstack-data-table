@@ -26,6 +26,7 @@ import {
 
 // Import custom features
 import { CustomColumnFilterFeature, getCombinedFilteredRowModel } from '../../features/custom-column-filter.feature';
+import { CustomSelectionFeature, CustomSelectionState as SelectionState } from '../../features';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { useState, useCallback, useMemo, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
 
@@ -40,8 +41,8 @@ import { TableHeader } from '../headers';
 import { DataTablePagination } from '../pagination';
 import { DataTableRow, LoadingRows, EmptyDataRow } from '../rows';
 import { DataTableToolbar, BulkActionsToolbar } from '../toolbar';
-import { DataTableProps, ServerSelectionState } from './data-table.types';
-import { CustomColumnFilterState, TableFilters, TableFiltersForFetch, TableState } from '../../types';
+import { DataTableProps } from './data-table.types';
+import { CustomColumnFilterState, TableFiltersForFetch, TableState } from '../../types';
 import { DataTableApi } from '../../types/data-table-api';
 import {
     createExpandingColumn,
@@ -49,12 +50,13 @@ import {
 } from '../../utils/special-columns.utils';
 
 
+
 // Static default initial state - defined outside component
 const DEFAULT_INITIAL_STATE = {
     sorting: [] as SortingState,
     pagination: {
         pageIndex: 0,
-        pageSize: 50,
+        pageSize: 10,
     },
     rowSelection: {} as RowSelectionState,
     globalFilter: '',
@@ -94,8 +96,9 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     enableRowSelection = false,
     enableMultiRowSelection = true,
     selectMode = 'page',
+    isRowSelectable,
     onRowSelectionChange,
-    onServerSelectionChange,
+    onSelectionChange,
 
     // Bulk action props
     enableBulkActions = false,
@@ -198,14 +201,12 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     // Local state management - using the initial state
     const [sorting, setSorting] = useState<SortingState>(initialStateConfig.sorting);
     const [pagination, setPagination] = useState(initialStateConfig.pagination);
-    const [rowSelection, setRowSelection] = useState<RowSelectionState>(initialStateConfig.rowSelection);
     const [globalFilter, setGlobalFilter] = useState(initialStateConfig.globalFilter);
     
-    // Server-side selection state (only used when dataMode='server' && selectMode='all')
-    const [serverSelection, setServerSelection] = useState<ServerSelectionState>({
-        selectAllMatching: false,
-        excludedIds: [],
-    });
+    // Selection state - same pattern as other table states
+    const [selectionState, setSelectionState] = useState<SelectionState>(
+        initialState?.selectionState || { ids: [], type: 'include' as const }
+    );
     const [customColumnsFilter, setCustomColumnsFilter] = useState<CustomColumnFilterState>({
         filters: [],
         logic: 'AND',
@@ -258,41 +259,23 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     const tableTotalRow = onFetchData ? serverTotal : totalRow;
     const tableLoading = onFetchData ? (loading || fetchLoading) : loading;
 
-    // Handle server selection changes (defined after tableData to avoid reference errors)
-    const handleServerSelectionChange = useCallback((newServerSelection: ServerSelectionState) => {
-        setServerSelection(newServerSelection);
-        
-        // Trigger onServerSelectionChange callback with comprehensive selection data
-        if (onServerSelectionChange && dataMode === 'server' && selectMode === 'all') {
-            const selectedIds = Object.keys(rowSelection).filter(key => rowSelection[key]);
-            const totalSelected = newServerSelection.selectAllMatching 
-                ? (tableTotalRow || 0) - newServerSelection.excludedIds.length
-                : selectedIds.length;
-
-            onServerSelectionChange({
-                selectAllMatching: newServerSelection.selectAllMatching,
-                excludedIds: newServerSelection.excludedIds,
-                selectedIds,
-                totalSelected,
-            });
-        }
-        
-        // Also trigger onRowSelectionChange for server selection
-        if (onRowSelectionChange && dataMode === 'server' && selectMode === 'all') {
-            if (newServerSelection.selectAllMatching) {
-                // Return current page rows excluding excluded ones
-                const selectedRows = tableData.filter(row => !newServerSelection.excludedIds.includes(String(row[idKey])));
-                onRowSelectionChange(selectedRows);
-            } else {
-                // Not in select all matching mode, use normal TanStack Table selection
-                const selectedRows = Object.keys(rowSelection)
-                    .filter(key => rowSelection[key])
-                    .map(key => tableData.find(row => String(row[idKey]) === key))
-                    .filter(Boolean) as T[];
-                onRowSelectionChange(selectedRows);
+    // Handle selection state changes - same pattern as other table states
+    const handleSelectionStateChange = useCallback((updaterOrValue: any) => {
+        // Use React state updater pattern (same as pagination, sorting in TanStack)
+        setSelectionState((prevState) => {
+            // Handle both updater function and direct value
+            const newSelectionState = typeof updaterOrValue === 'function' 
+                ? updaterOrValue(prevState)  // ✅ Use React's current state, not stale closure
+                : updaterOrValue;
+                
+            // Trigger callback with new state
+            if (onSelectionChange) {
+                onSelectionChange(newSelectionState);
             }
-        }
-    }, [onRowSelectionChange, onServerSelectionChange, dataMode, selectMode, tableData, idKey, rowSelection, tableTotalRow]);
+            
+            return newSelectionState;
+        });
+    }, [onSelectionChange]); // ✅ Only onSelectionChange needed
 
     // Build enhanced columns with special columns (after tableTotalRow is defined)
     const enhancedColumns = useMemo(
@@ -309,18 +292,10 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
 
             // Add selection column second if enabled
             if (enableRowSelection) {
-                const selectionConfig = {
-                    dataMode,
-                    selectMode,
-                    serverSelection,
-                    onServerSelectionChange: handleServerSelectionChange,
-                    totalRow: tableTotalRow,
-                };
-
                 const selectionColumnMap = createSelectionColumn<T>({
                     ...(slotProps?.selectionColumn || {}),
                     multiSelect: enableMultiRowSelection,
-                    selectionConfig,
+                    isRowSelectable,
                 });
                 columnsMap = [selectionColumnMap, ...columnsMap];
             }
@@ -333,19 +308,14 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
             enableRowSelection,
             enableExpanding,
             enableMultiRowSelection,
-            dataMode,
-            selectMode,
-            serverSelection,
-            tableTotalRow,
-            handleServerSelectionChange,
         ],
     );
 
 
     // Common function to notify data state changes
-    const notifyDataStateChange = useCallback((overrides: Partial<TableFilters> = {}) => {
+    const notifyDataStateChange = useCallback((overrides: Partial<TableState> = {}) => {
         if (onDataStateChange) {
-            const currentState: TableFilters = {
+            const currentState: Partial<TableState> = {
                 globalFilter,
                 customColumnsFilter,
                 sorting,
@@ -413,44 +383,9 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     }, [onColumnPinningChange]);
 
 
-    // Handle row selection change with server-side support
-    const handleRowSelectionChange = useCallback((updaterOrValue: any) => {
-        // Handle both updater function and direct value
-        const newSelection = typeof updaterOrValue === 'function'
-            ? updaterOrValue(rowSelection)
-            : updaterOrValue;
-
-        setRowSelection(newSelection);
-
-        if (onRowSelectionChange) {
-            if (dataMode === 'server' && selectMode === 'all' && serverSelection?.selectAllMatching) {
-                // Server mode with "select all matching" - return current page selected rows
-                const selectedRows = tableData.filter(row => !serverSelection.excludedIds.includes(String(row[idKey])));
-                onRowSelectionChange(selectedRows);
-            } else {
-                // Standard selection - return selected rows from TanStack Table state
-                const selectedRows = Object.keys(newSelection)
-                    .filter(key => newSelection[key])
-                    .map(key => tableData.find(row => String(row[idKey]) === key))
-                    .filter(Boolean) as T[];
-                onRowSelectionChange(selectedRows);
-            }
-        }
-    }, [
-        rowSelection,
-        tableData,
-        idKey,
-        onRowSelectionChange,
-        dataMode,
-        selectMode,
-        serverSelection,
-    ]);
-
-
-
     // Create table instance with initial state
     const table = useReactTable({
-        _features: [CustomColumnFilterFeature], // Add the custom feature
+        _features: [CustomColumnFilterFeature, CustomSelectionFeature], // Add custom features
         data: tableData,
         columns: enhancedColumns,
         initialState: {
@@ -459,13 +394,18 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         state: {
             sorting,
             pagination: enablePagination ? pagination : undefined,
-            rowSelection: enableRowSelection ? rowSelection : {},
             globalFilter: enableGlobalFilter ? globalFilter : undefined,
             expanded: enableExpanding ? expanded : {},
             columnOrder: draggable ? columnOrder : undefined,
             columnPinning: columnPinning,
             customColumnFilter: customColumnsFilter,
+            selectionState: enableRowSelection ? selectionState : undefined, // Same pattern as other states
         },
+        
+        // Selection options (same pattern as column filter)
+        selectMode: selectMode,
+        isRowSelectable: isRowSelectable,
+        onSelectionStateChange: enableRowSelection ? handleSelectionStateChange : undefined,
         onSortingChange: enableSorting ? handleSortingChange : undefined,
         onPaginationChange: enablePagination ? (updater) => {
             const newPagination = typeof updater === 'function' ? updater(pagination) : updater;
@@ -477,13 +417,14 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                 pagination: newPagination,
             });
         } : undefined,
-        onRowSelectionChange: enableRowSelection ? handleRowSelectionChange : undefined,
+        // Custom selection handled by TanStack Table CustomSelectionFeature
         onGlobalFilterChange: enableGlobalFilter ? (updaterOrValue: any) => {
             // Handle both updater function and direct value
             const newFilter = typeof updaterOrValue === 'function'
                 ? updaterOrValue(globalFilter)
                 : updaterOrValue;
 
+            // Apply the new filter state
             setGlobalFilter(newFilter);
 
             // Notify state change for dynamic data
@@ -494,19 +435,18 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         onColumnOrderChange: draggable ? handleColumnOrderChange : undefined,
         onColumnPinningChange: enableColumnPinning ? handleColumnPinningChange : undefined,
         // Handle column filters change (this will be triggered by our custom feature)
-    
-        
+
         onCustomColumnFilterChange: (updater) => {
-            const currentState = table.getCustomColumnFilterState?.() || { 
-                filters: [], 
+            const currentState = table.getCustomColumnFilterState?.() || {
+                filters: [],
                 logic: 'AND',
                 pendingFilters: [],
                 pendingLogic: 'AND'
             };
-            const newState = typeof updater === 'function' 
+            const newState = typeof updater === 'function'
                 ? updater(currentState)
                 : updater;
-            
+
             // Convert the custom feature state to the expected CustomColumnFilterState format
             const legacyFilterState = {
                 filters: newState.filters,
@@ -549,9 +489,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         // Filtering
         manualFiltering: isServerFiltering,
 
-        // Selection
-        enableRowSelection: enableRowSelection,
-        enableMultiRowSelection: enableMultiRowSelection,
+        // Note: Using standard TanStack features, custom selection handled separately
 
         // Column resizing
         enableColumnResizing: enableColumnResizing,
@@ -565,7 +503,8 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
 
         // Pagination
         manualPagination: isServerPagination,
-        pageCount: enablePagination ? Math.ceil(tableTotalRow / pagination.pageSize) : -1,
+        rowCount: tableTotalRow,
+        // pageCount: enablePagination ? Math.ceil(tableTotalRow / pagination.pageSize) : -1,
 
         // Row ID
         getRowId: (row, index) => generateRowId(row, index, idKey),
@@ -589,7 +528,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     const handleColumnFilterStateChange = useCallback((filterState: CustomColumnFilterState) => {
         if (filterState && typeof filterState === 'object') {
             setCustomColumnsFilter(filterState);
-            
+
             // Call external column filters handler
             if (onColumnFiltersChange) {
                 onColumnFiltersChange(filterState);
@@ -829,13 +768,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         pageSize: pagination.pageSize,
         // Selection props
         selectMode,
-        serverSelection,
-        onServerSelectionChange: handleServerSelectionChange,
-        onSelectModeChange: (mode) => {
-            // You could add a prop for this if needed
-            console.log('Selection mode changed to:', mode);
-        },
-        totalRow: tableTotalRow,
+        onSelectionChange: handleSelectionStateChange,
         handleColumnFilterStateChange,
         onDataStateChange,
         onFetchData: onFetchData,
@@ -915,24 +848,12 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                 ) : null}
 
                 {/* Bulk Actions Toolbar - shown when rows are selected */}
-                {enableBulkActions && enableRowSelection && (
-                    Object.keys(rowSelection).length > 0 || 
-                    (isServerMode && selectMode === 'all' && serverSelection.selectAllMatching)
-                ) ? (
+                {enableBulkActions && enableRowSelection && table.getIsSomeRowsSelected() ? (
                     <BulkActionsSlot
                         {...baseSlotProps}
-                        selectedRows={table.getSelectedRowModel().rows.map(row => row.original)}
-                        selectedRowCount={isServerMode && selectMode === 'all' && serverSelection.selectAllMatching
-                            ? tableTotalRow - serverSelection.excludedIds.length
-                            : Object.keys(rowSelection).filter(key => rowSelection[key]).length
-                        }
-                        bulkActions={(selectedRows) => {
-                            // Pass the selection payload to bulk actions
-                            const api = internalApiRef.current;
-                            const payload = api?.selection.getSelectionPayload();
-                            console.log('Bulk action payload:', payload);
-                            return bulkActions ? bulkActions(selectedRows) : null;
-                        }}
+                        selectionState={selectionState}
+                        selectedRowCount={table.getSelectedCount()}
+                        bulkActions={bulkActions}
                         sx={{
                             position: 'relative',
                             zIndex: 2, // Higher than sticky header

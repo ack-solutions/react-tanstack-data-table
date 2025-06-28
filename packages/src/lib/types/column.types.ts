@@ -1,4 +1,5 @@
-import { ColumnDef, RowData } from '@tanstack/react-table';
+import { ColumnDef, RowData, Column } from '@tanstack/react-table';
+import { ColumnFilterRule } from '../features';
 
 
 export const DEFAULT_SELECTION_COLUMN_NAME = '_selection';
@@ -23,6 +24,18 @@ declare module '@tanstack/table-core' {
         align?: 'left' | 'center' | 'right';
         filterable?: boolean;
         hideInExport?: boolean;
+        editComponent?: React.ComponentType<{
+            value: any;
+            onChange: (value: any) => void;
+            filter: ColumnFilterRule;
+            column: Column<TData, TValue>;
+        }>;
+        filterComponent?: React.ComponentType<{
+            value: any;
+            onChange: (value: any) => void;
+            filter: ColumnFilterRule;
+            column: Column<TData, TValue>;
+        }>;
     }
 }
 export type DataTableColumn<TData extends RowData, TValue = unknown> = ColumnDef<TData, TValue> & {

@@ -1,6 +1,8 @@
 import { Table } from '@tanstack/react-table';
 import * as XLSX from 'xlsx';
+import { SelectionState } from '../features/custom-selection.feature';
 
+// Local types for the utility functions (keep simpler for actual implementation)
 export interface ExportOptions {
     format: 'csv' | 'excel';
     filename: string;
@@ -9,17 +11,11 @@ export interface ExportOptions {
     onError?: (error: { message: string; code: string }) => void;
 }
 
-export interface SelectionData {
-    selectAllMatching?: boolean;
-    excludedIds?: string[];
-    selectedIds?: string[];
-    hasSelection?: boolean;
-}
 
 export interface ServerExportOptions extends ExportOptions {
-    fetchData: (filters?: any, selection?: SelectionData) => Promise<{ data: any[]; total: number }>;
+    fetchData: (filters?: any, selection?: SelectionState) => Promise<{ data: any[]; total: number }>;
     currentFilters?: any;
-    selection?: SelectionData;
+    selection?: SelectionState;
 }
 
 /**
@@ -43,9 +39,7 @@ export async function exportClientData<TData>(
         const hasSelectedRows = selectedRowIds.length > 0;
         
         // Get the rows to export
-        const rowsToExport = hasSelectedRows 
-            ? table.getSelectedRowModel().rows
-            : table.getFilteredRowModel().rows;
+        const rowsToExport = hasSelectedRows ? table.getSelectedRowModel().rows : table.getFilteredRowModel().rows;
 
         // Prepare data for export - just get all visible columns and their values
         const exportData = rowsToExport.map((row, index) => {

@@ -21,7 +21,7 @@ Created a complete TanStack Table custom feature that includes:
 - Integrated custom filter change handler
 - Connected existing filter state to the new feature
 
-#### Column Custom Filter Control (`packages/src/lib/components/toolbar/column-custum-filter-control.tsx`)
+#### Column Custom Filter Control (`packages/src/lib/components/toolbar/column-custom-filter-control.tsx`)
 - Refactored to use table's custom feature methods instead of local state
 - Simplified component logic by leveraging the feature's built-in state management
 - Maintained existing UI while improving backend integration

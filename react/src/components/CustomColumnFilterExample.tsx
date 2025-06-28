@@ -33,7 +33,6 @@ export const CustomColumnFilterExample: React.FC = () => {
 
     // Simulate server-side data fetching
     const handleServerFetchData = useCallback(async (params: any) => {
-        console.log('🚀 Server fetch triggered with params:', params);
         setServerFetchCount(prev => prev + 1);
         setServerLoading(true);
 
@@ -45,7 +44,6 @@ export const CustomColumnFilterExample: React.FC = () => {
 
         if (params.customColumnsFilter?.filters?.length > 0) {
             const { filters, logic } = params.customColumnsFilter;
-            console.log('🔍 Server filtering with:', { filters, logic });
 
             filteredData = filteredData.filter(item => {
                 const results = filters.map((filter: any) => {
@@ -77,9 +75,9 @@ export const CustomColumnFilterExample: React.FC = () => {
 
     const columns: DataTableColumn<Person>[] = [
         { accessorKey: 'id', header: 'ID', size: 80, type: 'number' },
-        { accessorKey: 'name', header: 'Name', size: 150 },
-        { accessorKey: 'age', header: 'Age', size: 80, type: 'number', },
-        { accessorKey: 'email', header: 'Email', size: 200 },
+        { accessorKey: 'name', header: 'Name', size: 150, enableGlobalFilter: true },
+        { accessorKey: 'age', header: 'Age', size: 80, type: 'number', enableGlobalFilter: true },
+        { accessorKey: 'email', header: 'Email', size: 200, enableGlobalFilter: true },
         { accessorKey: 'city', header: 'City', size: 120, type: 'select', options: [{ label: 'New York', value: 'New York' }, { label: 'Los Angeles', value: 'Los Angeles' }, { label: 'Chicago', value: 'Chicago' }, { label: 'Houston', value: 'Houston' }, { label: 'Phoenix', value: 'Phoenix' }] },
     ];
 

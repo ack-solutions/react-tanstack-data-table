@@ -411,7 +411,6 @@ function ExportableTable() {
 
   const handleExportComplete = (result) => {
     setExportProgress(null);
-    console.log('Export completed:', result);
   };
 
   return (
@@ -473,7 +472,6 @@ function MyComponent() {
 
   const handleGetData = () => {
     const allData = tableRef.current?.data.getAllData();
-    console.log('All data:', allData);
   };
 
   return (

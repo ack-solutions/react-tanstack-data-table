@@ -10,6 +10,7 @@ import { VirtualizedExample } from '../../../packages/src/lib/examples/virtualiz
 import { DataTableExample } from '../../../packages/src/lib/examples/basic-example';
 import { SimpleServerSelectionExample } from '../../../packages/src/lib/examples/simple-server-selection-example';
 import { ImprovedServerSelectionExample } from '../../../packages/src/lib/examples/improved-server-selection-example';
+import { SelectionTestExample } from '../../../packages/src/lib/examples/selection-test-example';
 
 const theme = createTheme();
 
@@ -17,11 +18,13 @@ export function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <ImprovedServerSelectionExample  />
+      <SelectionTestExample />
+      <ImprovedServerSelectionExample />
+      {/* <ImprovedServerSelectionExample  />
       <DataTableExample />
       <CustomColumnFilterExample />
       <ImprovedExportExample />
-      <SimpleServerSelectionExample />
+      <SimpleServerSelectionExample /> */}
     </ThemeProvider>
   );
 }
