@@ -7,7 +7,7 @@ import {
     alpha,
     Theme,
 } from '@mui/material';
-import { ReactNode } from 'react';
+import { ReactNode, useMemo } from 'react';
 
 import { useDataTableContext } from '../../contexts/data-table-context';
 import { getSlotComponent } from '../../utils/slot-helpers';
@@ -29,6 +29,12 @@ export function BulkActionsToolbar<T = any>({
 }: BulkActionsToolbarProps<T>) {
     const { slots, slotProps } = useDataTableContext();
     const ToolbarSlot = getSlotComponent(slots, 'toolbar', Toolbar);
+
+    // Memoize the bulk actions rendering to prevent infinite re-renders
+    const renderedBulkActions = useMemo(() => {
+        if (!bulkActions) return null;
+        return bulkActions(selectionState) as any;
+    }, [bulkActions, selectionState]);
 
     return (
         <Fade in={selectedRowCount > 0}>
@@ -71,7 +77,7 @@ export function BulkActionsToolbar<T = any>({
                         gap: 1,
                     }}
                 >
-                    {bulkActions ? (bulkActions(selectionState) as any) : null}
+                    {renderedBulkActions}
                 </Box>
             </ToolbarSlot>
         </Fade>

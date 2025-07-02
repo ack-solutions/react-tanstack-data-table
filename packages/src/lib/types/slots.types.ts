@@ -254,16 +254,10 @@ export interface DataTableSlotProps<T = any> {
 
     // Bulk action slot props
     bulkActionsToolbar: BaseSlotProps<T> & {
-        selectedRows: T[];
+        selectionState: any;
         selectedRowCount: number;
-        onBulkAction?: (action: string, selectedRows: T[]) => void;
-        bulkActions?: Array<{
-            id: string;
-            label: string;
-            icon?: ReactNode;
-            disabled?: boolean | ((selectedRows: T[]) => boolean);
-            onClick: (selectedRows: T[]) => void;
-        }>;
+        bulkActions?: (selectionState: any) => ReactNode;
+        onBulkAction?: (action: string, selectionState: T[]) => void;
         enableSelectAll?: boolean;
         onSelectAll?: () => void;
         onDeselectAll?: () => void;

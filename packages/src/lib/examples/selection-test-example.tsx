@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import {
     Box,
     Typography,
@@ -91,36 +91,37 @@ export function SelectionTestExample() {
     const tableRef = useRef<DataTableApi<User>>(null);
 
     // Handle selection state changes
-    const handleSelectionChange = (newSelectionState: CustomSelectionState) => {
+    const handleSelectionChange = useCallback((newSelectionState: CustomSelectionState) => {
         setSelectionState(newSelectionState);
-    };
+    }, []);
 
     // Test selection operations
-    const handleSelectAll = () => {
+    const handleSelectAll = useCallback(() => {
         tableRef.current?.selection.selectAll();
-    };
+    }, []);
 
-    const handleDeselectAll = () => {
+    const handleDeselectAll = useCallback(() => {
         tableRef.current?.selection.deselectAll();
-    };
+    }, []);
 
-    const handleSelectFirst5 = () => {
+    const handleSelectFirst5 = useCallback(() => {
         // Select first 5 users manually
         const firstFiveIds = sampleData.slice(0, 5).map(user => user.id.toString());
         firstFiveIds.forEach(id => {
             tableRef.current?.selection.selectRow(id);
         });
-    };
+    }, []);
 
-    const handleToggleRow = () => {
+    const handleToggleRow = useCallback(() => {
         // Toggle selection of user with id 3
         tableRef.current?.selection.toggleRowSelection('3');
-    };
+    }, []);
 
     // Row selectability function - disable users with salary > 100000
-    const isRowSelectable = ({ row }: { row: User; id: string }) => {
+    // ⚠️ IMPORTANT: This must be memoized to prevent infinite re-renders
+    const isRowSelectable = useCallback(({ row }: { row: User; id: string }) => {
         return row.salary <= 100000;
-    };
+    }, []);
 
     // Get selection info for display
     const selectedCount = selectionState.ids.length;
@@ -218,13 +219,16 @@ export function SelectionTestExample() {
                 
                 // Enable bulk actions to test selection
                 enableBulkActions={true}
-                bulkActions={(selectedRows) => (
+                bulkActions={(selectionState) => (
                     <Box sx={{ display: 'flex', gap: 1 }}>
                         <Button
                             variant="outlined"
                             size="small"
                             onClick={() => {
-                                alert(`Exporting ${selectedRows.length} selected users`);
+                                const count = selectionState.type === 'include' 
+                                    ? selectionState.ids.length 
+                                    : sampleData.length - selectionState.ids.length;
+                                alert(`Exporting ${count} selected users (${selectionState.type} mode)`);
                             }}
                         >
                             📤 Export Selected
@@ -234,7 +238,10 @@ export function SelectionTestExample() {
                             size="small"
                             color="error"
                             onClick={() => {
-                                alert(`Would delete ${selectedRows.length} selected users`);
+                                const count = selectionState.type === 'include' 
+                                    ? selectionState.ids.length 
+                                    : sampleData.length - selectionState.ids.length;
+                                alert(`Would delete ${count} selected users (${selectionState.type} mode)`);
                             }}
                         >
                             🗑️ Delete Selected

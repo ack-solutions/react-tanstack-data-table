@@ -9,7 +9,7 @@ import { DataTableColumn, DEFAULT_EXPANDING_COLUMN_NAME, DEFAULT_SELECTION_COLUM
  */
 export interface SelectionColumnConfig<T> {
     multiSelect?: boolean;
-    isRowSelectable?: (params: { row: T; id: string }) => boolean;
+    // Note: isRowSelectable is handled by table options via table.canSelectRow(), not column config
 }
 
 /**

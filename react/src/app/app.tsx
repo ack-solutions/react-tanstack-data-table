@@ -11,6 +11,8 @@ import { DataTableExample } from '../../../packages/src/lib/examples/basic-examp
 import { SimpleServerSelectionExample } from '../../../packages/src/lib/examples/simple-server-selection-example';
 import { ImprovedServerSelectionExample } from '../../../packages/src/lib/examples/improved-server-selection-example';
 import { SelectionTestExample } from '../../../packages/src/lib/examples/selection-test-example';
+import { AdvancedFeaturesExample } from '../../../packages/src/lib/examples/advanced-features-example';
+import { SimpleLocalExample } from '../../../packages/src/lib/examples/simple-local-example';
 
 const theme = createTheme();
 
@@ -18,7 +20,9 @@ export function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <SelectionTestExample />
+      {/* <SelectionTestExample /> */}
+      <AdvancedFeaturesExample />
+      <SimpleLocalExample />
       <ImprovedServerSelectionExample />
       {/* <ImprovedServerSelectionExample  />
       <DataTableExample />

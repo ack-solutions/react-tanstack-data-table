@@ -64,7 +64,7 @@ export interface DataTableProps<T> {
 
     // Bulk action props
     enableBulkActions?: boolean;
-    bulkActions?: (selectedRows: T[]) => ReactNode;
+    bulkActions?: (selectionState: SelectionState) => ReactNode;
 
     // Column resizing props
     enableColumnResizing?: boolean;
