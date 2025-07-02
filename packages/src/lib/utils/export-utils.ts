@@ -32,15 +32,18 @@ export async function exportClientData<TData>(
 
     try {
         // Get selected rows if any are selected
-        const selectedRowIds = Object.keys(table.getState().rowSelection).filter(
-            key => table.getState().rowSelection[key]
-        );
+        // const selectedRowIds = Object.keys(table.getState().rowSelection).filter(
+        //     key => table.getState().rowSelection[key]
+        // );
         
-        const hasSelectedRows = selectedRowIds.length > 0;
+        // const hasSelectedRows = selectedRowIds.length > 0;
         
-        // Get the rows to export
-        const rowsToExport = hasSelectedRows ? table.getSelectedRowModel().rows : table.getFilteredRowModel().rows;
+        // // Get the rows to export
+        // const rowsToExport = hasSelectedRows ? table.getSelectedRowModel().rows : table.getFilteredRowModel().rows;
 
+        const selectedRows = table.getSelectedRows ? table.getSelectedRows() : [];
+        const hasSelectedRows = selectedRows.length > 0;
+        const rowsToExport = hasSelectedRows ? selectedRows : table.getFilteredRowModel().rows;
         // Prepare data for export - just get all visible columns and their values
         const exportData = rowsToExport.map((row, index) => {
             onProgress?.({

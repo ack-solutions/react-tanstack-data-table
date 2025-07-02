@@ -397,6 +397,19 @@ export function AdvancedFeaturesExample() {
                 type: 'number',
             },
             {
+                accessorKey: 'startDate',
+                header: 'Start Date',
+                size: 140,
+                enableSorting: true,
+                filterable: true,
+                type: 'date',
+                cell: ({ row }: { row: { original: Employee } }) => (
+                    <Typography variant="body2">
+                        {new Date(row.original.startDate).toLocaleDateString()}
+                    </Typography>
+                ),
+            },
+            {
                 accessorKey: 'performance.rating',
                 header: 'Performance',
                 size: 200,

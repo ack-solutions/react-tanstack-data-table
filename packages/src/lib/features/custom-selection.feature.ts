@@ -11,6 +11,7 @@ import {
     Updater,
     functionalUpdate,
     makeStateUpdater,
+    Row,
 } from '@tanstack/react-table';
 
 // Selection state interface
@@ -41,10 +42,10 @@ export interface CustomSelectionTableState {
 
 // Declaration merging to extend TanStack Table types
 declare module '@tanstack/table-core' {
-    interface TableState extends CustomSelectionTableState {}
+    interface TableState extends CustomSelectionTableState { }
     interface TableOptionsResolved<TData extends RowData>
-        extends CustomSelectionOptions {}
-    interface Table<TData extends RowData> extends CustomSelectionInstance<TData> {}
+        extends CustomSelectionOptions { }
+    interface Table<TData extends RowData> extends CustomSelectionInstance<TData> { }
 }
 
 // Table instance methods for custom selection
@@ -57,18 +58,18 @@ export interface CustomSelectionInstance<TData extends RowData> {
     deselectRow: (rowId: string) => void;
     selectAll: () => void;
     deselectAll: () => void;
-    
+
     // State checkers
     getIsAllRowsSelected: () => boolean;
     getIsSomeRowsSelected: () => boolean;
     getIsRowSelected: (rowId: string) => boolean;
-    
+
     // Getters
     getSelectionState: () => SelectionState;
     getSelectedCount: () => number;
-    getSelectedRows: () => TData[];
+    getSelectedRows: () => Row<TData>[];
     getSelectedRowIds: () => string[];
-    
+
     // Helper methods
     canSelectRow: (rowId: string) => boolean;
 }
@@ -111,7 +112,7 @@ export const CustomSelectionFeature: TableFeature<any> = {
         // === BASIC SELECTION METHODS ===
         table.selectRow = (rowId: string) => {
             if (!table.canSelectRow(rowId)) return;
-            
+
             table.setSelectionState((old) => {
                 if (old.type === 'exclude') {
                     // In exclude mode, selecting means removing from exclude list
@@ -159,7 +160,7 @@ export const CustomSelectionFeature: TableFeature<any> = {
 
         table.selectAll = () => {
             const selectMode = table.options.selectMode || 'page';
-            
+
             if (selectMode === 'all') {
                 // In 'all' mode, use exclude type with empty list (select all)
                 table.setSelectionState((old) => ({
@@ -173,7 +174,7 @@ export const CustomSelectionFeature: TableFeature<any> = {
                 const selectableRowIds = currentPageRows
                     .filter(row => table.canSelectRow(row.id))
                     .map(row => row.id);
-                
+
                 table.setSelectionState((old) => ({
                     ...old,
                     ids: selectableRowIds,
@@ -213,7 +214,7 @@ export const CustomSelectionFeature: TableFeature<any> = {
         table.getIsAllRowsSelected = () => {
             const state = table.getSelectionState();
             const selectMode = table.options.selectMode || 'page';
-            
+
             if (selectMode === 'all') {
                 if (state.type === 'exclude') {
                     return state.ids.length === 0;
@@ -225,7 +226,7 @@ export const CustomSelectionFeature: TableFeature<any> = {
                 // Page mode - check if all selectable rows on current page are selected
                 const currentPageRows = table.getPaginationRowModel().rows;
                 const selectableRows = currentPageRows.filter(row => table.canSelectRow(row.id));
-                
+
                 if (selectableRows.length === 0) return false;
                 return selectableRows.every(row => table.getIsRowSelected(row.id));
             }
@@ -234,7 +235,7 @@ export const CustomSelectionFeature: TableFeature<any> = {
         table.getIsSomeRowsSelected = () => {
             const state = table.getSelectionState();
             const selectMode = table.options.selectMode || 'page';
-            
+
             if (selectMode === 'all' && state.type === 'exclude') {
                 // In exclude mode, we have some selected if not all are excluded
                 const totalCount = table.getRowCount();
@@ -257,7 +258,7 @@ export const CustomSelectionFeature: TableFeature<any> = {
         table.getSelectedCount = () => {
             const state = table.getSelectionState();
             const selectMode = table.options.selectMode || 'page';
-            
+
             if (selectMode === 'all' && state.type === 'exclude') {
                 const totalCount = table.getRowCount();
                 return totalCount - state.ids.length;
@@ -268,7 +269,7 @@ export const CustomSelectionFeature: TableFeature<any> = {
 
         table.getSelectedRowIds = () => {
             const state = table.getSelectionState();
-            
+
             if (state.type === 'exclude') {
                 // In exclude mode, return all row IDs minus excluded ones
                 // Note: This is simplified - for full functionality, you'd need all possible row IDs
@@ -282,27 +283,23 @@ export const CustomSelectionFeature: TableFeature<any> = {
         table.getSelectedRows = () => {
             const state = table.getSelectionState();
             const allRows = table.getRowModel().rows;
-            
+
             if (state.type === 'exclude') {
                 // Return all rows except excluded ones
-                return allRows
-                    .filter(row => !state.ids.includes(row.id))
-                    .map(row => row.original);
+                return allRows.filter(row => !state.ids.includes(row.id))
             } else {
                 // Return only included rows
-                return allRows
-                    .filter(row => state.ids.includes(row.id))
-                    .map(row => row.original);
+                return allRows.filter(row => state.ids.includes(row.id))
             }
         };
 
         // === HELPER METHODS ===
         table.canSelectRow = (rowId: string) => {
             if (!table.options.isRowSelectable) return true;
-            
+
             const row = table.getRowModel().rows.find(r => r.id === rowId);
             if (!row) return false;
-            
+
             return table.options.isRowSelectable({ row: row.original, id: rowId });
         };
     },

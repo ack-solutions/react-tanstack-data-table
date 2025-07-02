@@ -18,6 +18,7 @@ import {
 
 // Import from types to avoid circular dependency
 import type { CustomColumnFilterState } from '../types/table.types';
+import moment from 'moment';
 
 // Types for the custom column filter feature
 export interface ColumnFilterRule {
@@ -43,33 +44,33 @@ export interface CustomColumnFilterTableState {
 
 // Declaration merging to extend TanStack Table types
 declare module '@tanstack/table-core' {
-    interface TableState extends CustomColumnFilterTableState {}
+    interface TableState extends CustomColumnFilterTableState { }
     interface TableOptionsResolved<TData extends RowData>
-        extends CustomColumnFilterOptions {}
-    interface Table<TData extends RowData> extends CustomColumnFilterInstance<TData> {}
+        extends CustomColumnFilterOptions { }
+    interface Table<TData extends RowData> extends CustomColumnFilterInstance<TData> { }
 }
 
 // Table instance methods for custom column filtering
 export interface CustomColumnFilterInstance<TData extends RowData> {
     setCustomColumnFilter: (updater: Updater<CustomColumnFilterState>) => void;
-    
+
     // Pending filter methods (for draft state)
     addPendingColumnFilter: (columnId: string, operator: string, value: any) => void;
     updatePendingColumnFilter: (filterId: string, updates: Partial<ColumnFilterRule>) => void;
     removePendingColumnFilter: (filterId: string) => void;
     clearAllPendingColumnFilters: () => void;
     setPendingFilterLogic: (logic: 'AND' | 'OR') => void;
-    
+
     // Apply pending filters to active filters
     applyPendingColumnFilters: () => void;
-    
+
     // Legacy methods (for backward compatibility)
     addColumnFilter: (columnId: string, operator: string, value: any) => void;
     updateColumnFilter: (filterId: string, updates: Partial<ColumnFilterRule>) => void;
     removeColumnFilter: (filterId: string) => void;
     clearAllColumnFilters: () => void;
     setFilterLogic: (logic: 'AND' | 'OR') => void;
-    
+
     // Getters
     getActiveColumnFilters: () => ColumnFilterRule[];
     getPendingColumnFilters: () => ColumnFilterRule[];
@@ -171,12 +172,12 @@ export const CustomColumnFilterFeature: TableFeature<any> = {
                     filters: [...old.pendingFilters],
                     logic: old.pendingLogic,
                 };
-                
+
                 // Call the apply callback after state update
                 setTimeout(() => {
                     table.options.onCustomColumnFilterApply?.(newState);
                 }, 0);
-                
+
                 return newState;
             });
         };
@@ -264,35 +265,22 @@ export function matchesCustomColumnFilters<TData extends RowData>(
 
     const results = activeFilters.map((filter) => {
         let columnValue;
-        
+        let columnType = filter.columnType || 'text';
         try {
             // Try to get the value safely to avoid infinite loops
             const column = row.getAllCells().find((cell: any) => cell.column.id === filter.columnId);
             if (column) {
-                // Get the raw value from the row data instead of using getValue() to avoid accessorFn loops
-                const rowData = row.original;
-                const columnDef = column.column.columnDef;
-                
-                if (columnDef.accessorFn) {
-                    // Use accessorFn directly on the row data
-                    columnValue = columnDef.accessorFn(rowData);
-                } else if (columnDef.accessorKey) {
-                    // Use direct property access
-                    columnValue = rowData[columnDef.accessorKey];
-                } else {
-                    // Fallback to getValue if no other option
-                    columnValue = column.getValue();
+                columnValue = column.getValue();
+                // Try to get type from columnDef if not set
+                if (!filter.columnType && column.column.columnDef && column.column.columnDef.type) {
+                    columnType = column.column.columnDef.type;
                 }
-            } else {
-                // Fallback: try direct property access on row data
-                columnValue = row.original[filter.columnId];
             }
         } catch (error) {
             console.warn(`Error getting value for column ${filter.columnId}:`, error);
-            columnValue = row.original[filter.columnId];
+            columnValue = row.original?.[filter.columnId] || '';
         }
-        
-        return evaluateFilterCondition(columnValue, filter.operator, filter.value);
+        return evaluateFilterCondition(columnValue, filter.operator, filter.value, columnType);
     });
 
     return logic === 'AND' ? results.every(Boolean) : results.some(Boolean);
@@ -338,12 +326,69 @@ export const getCombinedFilteredRowModel = <TData,>() => {
 /**
  * Evaluate a single filter condition
  */
-function evaluateFilterCondition(columnValue: any, operator: string, filterValue: any): boolean {
+function evaluateFilterCondition(columnValue: any, operator: string, filterValue: any, type: string = 'text'): boolean {
+    // --- Date helpers using moment ---
+    function toMoment(val: any) {
+        if (!val) return null;
+        const m = moment(val);
+        return m.isValid() ? m : null;
+    }
+
+    // --- Date type logic ---
+    if (type === 'date') {
+        const mCol = toMoment(columnValue);
+        const mFilter = toMoment(filterValue);
+        if (!mCol || !mFilter) return false;
+        switch (operator) {
+            case 'equals':
+                return mCol.isSame(mFilter, 'day');
+            case 'notEquals':
+                return !mCol.isSame(mFilter, 'day');
+            case 'after':
+                return mCol.isAfter(mFilter, 'day');
+            case 'before':
+                return mCol.isBefore(mFilter, 'day');
+            case 'isEmpty':
+                return !columnValue;
+            case 'isNotEmpty':
+                return !!columnValue;
+            default:
+                return true;
+        }
+    }
+
+    // --- Boolean type logic ---
+    if (type === 'boolean') {
+        switch (operator) {
+            case 'is':
+                if (filterValue === 'any') return true;
+                if (filterValue === 'true') return (columnValue === true || columnValue === 'true' || columnValue === 1 || columnValue === '1' || columnValue === 'Yes' || columnValue === 'yes');
+                if (filterValue === 'false') return (columnValue === false || columnValue === 'false' || columnValue === 0 || columnValue === '0' || columnValue === 'No' || columnValue === 'no');
+                return false;
+
+            default:
+                return true;
+        }
+    }
+
+    // --- Select type logic (in, notIn, single select) ---
+    if (type === 'select') {
+        if (operator === 'in' || operator === 'notIn') {
+            if (Array.isArray(filterValue)) {
+                if (operator === 'in') return filterValue.includes(columnValue);
+                if (operator === 'notIn') return !filterValue.includes(columnValue);
+            }
+            return false;
+        }
+        if (operator === 'equals' || operator === 'notEquals') {
+            return operator === 'equals'
+                ? columnValue === filterValue
+                : columnValue !== filterValue;
+        }
+    }
+
+    // --- Text/Number type logic ---
     switch (operator) {
-        case 'equals':
-            return columnValue === filterValue;
-        case 'notEquals':
-            return columnValue !== filterValue;
         case 'contains':
             return String(columnValue).toLowerCase().includes(String(filterValue).toLowerCase());
         case 'notContains':
@@ -364,22 +409,6 @@ function evaluateFilterCondition(columnValue: any, operator: string, filterValue
             return Number(columnValue) < Number(filterValue);
         case 'lessThanOrEqual':
             return Number(columnValue) <= Number(filterValue);
-        case 'between':
-            if (Array.isArray(filterValue) && filterValue.length === 2) {
-                const [min, max] = filterValue;
-                return Number(columnValue) >= Number(min) && Number(columnValue) <= Number(max);
-            }
-            return false;
-        case 'in':
-            if (Array.isArray(filterValue)) {
-                return filterValue.includes(columnValue);
-            }
-            return false;
-        case 'notIn':
-            if (Array.isArray(filterValue)) {
-                return !filterValue.includes(columnValue);
-            }
-            return true;
         default:
             return true;
     }

@@ -335,12 +335,9 @@ export function useDataTableApi<T extends Record<string, any>>(
             deselectAll: () => table.deselectAll?.(),
             toggleSelectAll: () => table.toggleAllRowsSelected?.(),
             getSelectionState: () => table.getSelectionState?.() || { ids: [], type: 'include' as const },
-            getIsRowSelected: (rowId: string) => table.getIsRowSelected?.(rowId) || false,
-            getSelectedCount: () => 0,
-            isRowSelected: () => false,
-            isAllSelected: () => false,
-            isSomeSelected: () => false,
-            getSelectionMode: () => 'page' as const,
+            getSelectedRows: ()=>table.getSelectedRows(),
+            getSelectedCount: () => table.getSelectedCount(),
+            isRowSelected: (rowId) => table.getIsRowSelected(rowId) || false,
         },
 
         // Data Management

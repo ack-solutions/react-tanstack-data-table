@@ -20,15 +20,15 @@ export function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      {/* <SelectionTestExample /> */}
-      {/* <AdvancedFeaturesExample /> */}
+      <SelectionTestExample /> 
+      <AdvancedFeaturesExample />
       <SimpleLocalExample />
-      {/* <ImprovedServerSelectionExample /> */}
-      {/* <ImprovedServerSelectionExample  />
+       <ImprovedServerSelectionExample />
+       <ImprovedServerSelectionExample  />
       <DataTableExample />
       <CustomColumnFilterExample />
       <ImprovedExportExample />
-      <SimpleServerSelectionExample /> */}
+      <SimpleServerSelectionExample /> 
     </ThemeProvider>
   );
 }

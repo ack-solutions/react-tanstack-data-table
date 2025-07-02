@@ -31,20 +31,8 @@ export const FILTER_OPERATORS = {
     ],
     boolean: [
         {
-            value: 'equals',
-            label: 'Equals',
-        },
-        {
-            value: 'notEquals',
-            label: 'Not equals',
-        },
-        {
-            value: 'isEmpty',
-            label: 'Is empty',
-        },
-        {
-            value: 'isNotEmpty',
-            label: 'Is not empty',
+            value: 'is',
+            label: 'Is',
         },
     ],
     number: [
@@ -97,10 +85,6 @@ export const FILTER_OPERATORS = {
         {
             value: 'before',
             label: 'Before',
-        },
-        {
-            value: 'between',
-            label: 'Between',
         },
         {
             value: 'isEmpty',

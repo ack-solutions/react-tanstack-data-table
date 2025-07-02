@@ -1,4 +1,4 @@
-import { ColumnPinningState, SortingState, ColumnOrderState, TableState } from '@tanstack/react-table';
+import { ColumnPinningState, SortingState, ColumnOrderState, TableState, Row } from '@tanstack/react-table';
 
 import { CustomColumnFilterState } from './table.types';
 import { SelectionState } from '../features/custom-selection.feature';
@@ -73,23 +73,18 @@ export interface DataTableApi<T = any> {
         selectRow: (rowId: string) => void;
         deselectRow: (rowId: string) => void;
         toggleRowSelection: (rowId: string) => void;
-        
+
         // Smart selection methods (automatically handle page vs all modes)
         selectAll: () => void; // Selects all based on current selectMode
         deselectAll: () => void; // Deselects all
         toggleSelectAll: () => void; // Toggles select all
-        
+
         // Selection state getters
         getSelectionState: () => SelectionState; // Get selection state
         getSelectedCount: () => number; // Get total selected count
-        
+        getSelectedRows: () => Row<T>[]
         // Selection state checks
         isRowSelected: (rowId: string) => boolean;
-        isAllSelected: () => boolean;
-        isSomeSelected: () => boolean;
-        
-        // Selection mode management
-        getSelectionMode: () => 'page' | 'all';
     };
 
     // Data Management
