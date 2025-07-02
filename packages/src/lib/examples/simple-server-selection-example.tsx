@@ -170,7 +170,7 @@ export function SimpleServerSelectionExample() {
                         // Example: api.selection.setSelectionMode('all')
                     }
                 }}
-                initilaLoadData
+                initialLoadData
                 columns={columns}
                 onFetchData={handleFetchData}
                 dataMode="server" // Server mode to demonstrate server selection

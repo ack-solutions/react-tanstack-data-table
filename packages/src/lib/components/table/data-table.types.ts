@@ -35,7 +35,7 @@ export interface DataTableProps<T> {
     // Data management modes (MUI DataGrid style)
     dataMode?: 'client' | 'server'; // Data management mode (default: 'client')
     initialState?: Partial<TableState>;
-    initilaLoadData?: boolean; // Initial load data (default: true)
+    initialLoadData?: boolean; // Initial load data (default: true)
     onDataStateChange?: (filters: Partial<TableState>) => void; // Callback when any filter/state changes
     onFetchData?: (filters: Partial<TableFilters>) => Promise<{ data: T[]; total: number }>;
 

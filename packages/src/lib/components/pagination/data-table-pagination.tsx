@@ -42,7 +42,6 @@ export const DataTablePagination = memo(({
                 page={pagination?.pageIndex}
                 onPageChange={(_, page) => {
                     // Use TanStack Table's native pagination methods
-                    console.log('Pagination: changing to page', page);
                     table.setPageIndex(page);
                 }}
                 onRowsPerPageChange={e => {

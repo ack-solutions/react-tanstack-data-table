@@ -88,7 +88,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
 
     // Data management mode (MUI DataGrid style)
     dataMode = 'client',
-    initilaLoadData = true,
+    initialLoadData = true,
     onFetchData,
     onDataStateChange,
 
@@ -419,8 +419,6 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
 
     // TanStack-style pagination handler - keep it simple
     const handlePaginationChange = useCallback((updater: any) => {
-        console.log('handlePaginationChange called');
-        
         // Standard TanStack pattern - direct state update
         setPagination(updater);
         
@@ -430,39 +428,17 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         
         // Only trigger side effects for server mode or when explicitly requested
         if (isServerMode || isServerPagination) {
-            console.log('handlePaginationChange - server mode, will fetch');
             // Schedule side effects to run after state update
             setTimeout(() => {
                 stateChangeRef.current({ pagination: newPagination });
                 fetchDataRef?.current({ pagination: newPagination });
             }, 0);
         } else if (onDataStateChange) {
-            console.log('handlePaginationChange - client mode, notifying state change');
             setTimeout(() => {
                 stateChangeRef.current({ pagination: newPagination });
             }, 0);
         }
     }, [pagination, isServerMode, isServerPagination, onDataStateChange]);
-    // const onPaginationChangeHandler = useCallback((updater: any) => {
-    //     console.log('onPaginationChangeHandler', updater);
-    //     const newPagination = typeof updater === 'function' ? updater(pagination) : updater;
-    //     console.log('onPaginationChangeHandler', newPagination);
-    //     // setPagination(newPagination as any);
-    //     if ( newPagination.pageIndex === pagination.pageIndex && newPagination.pageSize === pagination.pageSize ) {
-    //         return; // Prevent infinite loop from redundant updates
-    //     }
-    //     setPagination(newPagination); 
-    //     // Only notify state change and fetch data for server-side operations
-    //     if (isServerMode || isServerPagination) {
-    //         stateChangeRef.current({ pagination: newPagination });
-    //         fetchDataRef?.current({
-    //             pagination: newPagination,
-    //         });
-    //     } else if (onDataStateChange) {
-    //         // For client-side, only notify state change if callback is provided
-    //         stateChangeRef.current({ pagination: newPagination });
-    //     }
-    // }, [pagination, isServerMode, isServerPagination, onDataStateChange]);
 
     // Memoized global filter handler to prevent table recreation  
     const handleGlobalFilterChange = useCallback((updaterOrValue: any) => {
@@ -594,7 +570,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         // Row ID
         getRowId: (row: any, index: number) => generateRowId(row, index, idKey),
         // Debug
-        debugAll: true, // Disabled to prevent infinite logs
+        debugAll: false, // Disabled for production
     });
 
     // Virtualization setup - with safety checks
@@ -651,10 +627,10 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
 
 
     useEffect(() => {
-        if (initilaLoadData && onFetchData) {
+        if (initialLoadData && onFetchData) {
             fetchDataRef.current();
         }
-    }, [initilaLoadData]);
+    }, [initialLoadData]);
 
     // Initialize column order when columns change
     useEffect(() => {
