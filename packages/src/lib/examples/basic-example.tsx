@@ -405,7 +405,7 @@ export function DataTableExample() {
                 columnResizeMode="onChange"
                 enablePagination
                 enableGlobalFilter
-                enableColumnFilters
+                enableColumnFilter
                 enableSorting
                 onSortingChange={handleSortingChange}
                 enableHover

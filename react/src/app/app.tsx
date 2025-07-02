@@ -21,9 +21,9 @@ export function App() {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       {/* <SelectionTestExample /> */}
-      <AdvancedFeaturesExample />
+      {/* <AdvancedFeaturesExample /> */}
       <SimpleLocalExample />
-      <ImprovedServerSelectionExample />
+      {/* <ImprovedServerSelectionExample /> */}
       {/* <ImprovedServerSelectionExample  />
       <DataTableExample />
       <CustomColumnFilterExample />

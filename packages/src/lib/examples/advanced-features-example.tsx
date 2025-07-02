@@ -28,6 +28,7 @@ import {
     TrendingDown as TrendingDownIcon,
 } from '@mui/icons-material';
 import { DataTable } from '../components';
+import { DataTableColumn } from '../types';
 
 // Complex data interface with nested objects
 interface Employee {
@@ -80,7 +81,7 @@ const generateEmployeeData = (): Employee[] => {
     return Array.from({ length: 20 }, (_, index) => {
         const dept = departments[index % departments.length];
         const employeeSkills = skills.sort(() => 0.5 - Math.random()).slice(0, Math.floor(Math.random() * 4) + 2);
-        
+
         return {
             id: index + 1,
             name: names[index % names.length] || `Employee ${index + 1}`,
@@ -142,8 +143,8 @@ export function AdvancedFeaturesExample() {
     }, []);
 
     const handleFieldChange = useCallback((employeeId: number, field: string, value: any) => {
-        setEmployees(prev => prev.map(emp => 
-            emp.id === employeeId 
+        setEmployees(prev => prev.map(emp =>
+            emp.id === employeeId
                 ? { ...emp, [field]: value }
                 : emp
         ));
@@ -178,7 +179,7 @@ export function AdvancedFeaturesExample() {
 
     const SalaryCell = ({ row }: { row: Employee }) => {
         const isEditing = editingRows.has(row.id);
-        
+
         if (isEditing) {
             return (
                 <TextField
@@ -190,7 +191,7 @@ export function AdvancedFeaturesExample() {
                 />
             );
         }
-        
+
         return (
             <Typography variant="body2" fontWeight="medium">
                 ${row.salary.toLocaleString()}
@@ -266,7 +267,7 @@ export function AdvancedFeaturesExample() {
 
     const ActionsCell = ({ row }: { row: Employee }) => {
         const isEditing = editingRows.has(row.id);
-        
+
         if (isEditing) {
             return (
                 <Box sx={{ display: 'flex', gap: 0.5 }}>
@@ -283,7 +284,7 @@ export function AdvancedFeaturesExample() {
                 </Box>
             );
         }
-        
+
         return (
             <Box sx={{ display: 'flex', gap: 0.5 }}>
                 <Tooltip title="Edit employee">
@@ -292,8 +293,8 @@ export function AdvancedFeaturesExample() {
                     </IconButton>
                 </Tooltip>
                 <Tooltip title="Delete employee">
-                    <IconButton 
-                        size="small" 
+                    <IconButton
+                        size="small"
                         onClick={() => {
                             setEmployees(prev => prev.filter(emp => emp.id !== row.id));
                         }}
@@ -310,7 +311,7 @@ export function AdvancedFeaturesExample() {
     const renderSubComponent = useCallback(({ row }: { row: Employee }) => (
         <Box sx={{ p: 2, backgroundColor: 'grey.50', borderRadius: 1 }}>
             <Grid container spacing={2}>
-                <Grid item xs={12} md={6}>
+                <Grid size={{ xs: 12, md: 6 }}>
                     <Typography variant="subtitle2" gutterBottom>
                         Contact Information
                     </Typography>
@@ -324,7 +325,7 @@ export function AdvancedFeaturesExample() {
                         <strong>Start Date:</strong> {new Date(row.startDate).toLocaleDateString()}
                     </Typography>
                 </Grid>
-                <Grid item xs={12} md={6}>
+                <Grid size={{ xs: 12, md: 6 }}>
                     <Typography variant="subtitle2" gutterBottom>
                         Metadata
                     </Typography>
@@ -338,7 +339,7 @@ export function AdvancedFeaturesExample() {
                         <strong>Certifications:</strong> {row.metadata.certifications}
                     </Typography>
                 </Grid>
-                <Grid item xs={12}>
+                <Grid size={{ xs: 12 }}>
                     <Typography variant="subtitle2" gutterBottom>
                         All Skills
                     </Typography>
@@ -360,17 +361,15 @@ export function AdvancedFeaturesExample() {
 
     // Dynamic column configuration
     const columns = useMemo(() => {
-        const baseColumns = [
+        const baseColumns:DataTableColumn<Employee>[] = [
             {
                 accessorKey: 'name',
                 header: 'Employee',
                 size: 200,
                 cell: ({ row }: { row: { original: Employee } }) => <NameCell row={row.original} />,
                 enableSorting: true,
-                meta: {
-                    filterable: true,
-                    type: 'text',
-                },
+                filterable: true,
+                type: 'text',
             },
             {
                 accessorKey: 'department.name',
@@ -378,17 +377,15 @@ export function AdvancedFeaturesExample() {
                 size: 120,
                 cell: ({ row }: { row: { original: Employee } }) => <DepartmentCell row={row.original} />,
                 enableSorting: true,
-                meta: {
-                    filterable: true,
-                    type: 'select',
-                    options: [
-                        { value: 'Engineering', label: 'Engineering' },
-                        { value: 'Design', label: 'Design' },
-                        { value: 'Marketing', label: 'Marketing' },
-                        { value: 'Sales', label: 'Sales' },
-                        { value: 'HR', label: 'HR' },
-                    ],
-                },
+                filterable: true,
+                type: 'select',
+                options: [
+                    { value: 'Engineering', label: 'Engineering' },
+                    { value: 'Design', label: 'Design' },
+                    { value: 'Marketing', label: 'Marketing' },
+                    { value: 'Sales', label: 'Sales' },
+                    { value: 'HR', label: 'HR' },
+                ],
             },
             {
                 accessorKey: 'salary',
@@ -396,10 +393,8 @@ export function AdvancedFeaturesExample() {
                 size: 120,
                 cell: ({ row }: { row: { original: Employee } }) => <SalaryCell row={row.original} />,
                 enableSorting: true,
-                meta: {
-                    filterable: true,
-                    type: 'number',
-                },
+                filterable: true,
+                type: 'number',
             },
             {
                 accessorKey: 'performance.rating',
@@ -434,9 +429,7 @@ export function AdvancedFeaturesExample() {
                 size: 100,
                 cell: ({ row }: { row: { original: Employee } }) => <ActionsCell row={row.original} />,
                 enableSorting: false,
-                meta: {
-                    filterable: false,
-                },
+                filterable: false,
             });
         }
 
@@ -463,7 +456,7 @@ export function AdvancedFeaturesExample() {
                 certifications: 0,
             },
         };
-        
+
         setEmployees(prev => [...prev, newEmployee]);
         handleStartEdit(newEmployee.id);
     }, [employees, handleStartEdit]);
@@ -473,9 +466,9 @@ export function AdvancedFeaturesExample() {
             <Typography variant="h4" gutterBottom>
                 Advanced Features Demo
             </Typography>
-            
+
             <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-                A comprehensive example showcasing inline editing, custom cell renderers, 
+                A comprehensive example showcasing inline editing, custom cell renderers,
                 row expansion, dynamic columns, and complex local data operations.
             </Typography>
 
@@ -525,7 +518,7 @@ export function AdvancedFeaturesExample() {
                     Statistics
                 </Typography>
                 <Grid container spacing={2}>
-                    <Grid item xs={6} sm={3}>
+                    <Grid size={{ xs: 6, sm: 3 }}>
                         <Typography variant="body2" color="text.secondary">
                             Total Employees
                         </Typography>
@@ -533,7 +526,7 @@ export function AdvancedFeaturesExample() {
                             {employees.length}
                         </Typography>
                     </Grid>
-                    <Grid item xs={6} sm={3}>
+                    <Grid size={{ xs: 6, sm: 3 }}>
                         <Typography variant="body2" color="text.secondary">
                             Active Employees
                         </Typography>
@@ -541,7 +534,7 @@ export function AdvancedFeaturesExample() {
                             {employees.filter(e => e.isActive).length}
                         </Typography>
                     </Grid>
-                    <Grid item xs={6} sm={3}>
+                    <Grid size={{ xs: 6, sm: 3 }}>
                         <Typography variant="body2" color="text.secondary">
                             Avg Salary
                         </Typography>
@@ -549,7 +542,7 @@ export function AdvancedFeaturesExample() {
                             ${Math.round(employees.reduce((sum, e) => sum + e.salary, 0) / employees.length).toLocaleString()}
                         </Typography>
                     </Grid>
-                    <Grid item xs={6} sm={3}>
+                    <Grid size={{ xs: 6, sm: 3 }}>
                         <Typography variant="body2" color="text.secondary">
                             Currently Editing
                         </Typography>
@@ -567,21 +560,21 @@ export function AdvancedFeaturesExample() {
                 data={employees}
                 totalRow={employees.length}
                 columns={columns}
-                
+
                 // Advanced features
                 enableRowSelection={true}
                 enableMultiRowSelection={true}
                 enableSorting={true}
                 enableGlobalFilter={true}
-                enableColumnFilters={true}
-                enableColumnOrdering={true}
+                enableColumnFilter={true}
+                enableColumnDragging={true}
                 enableColumnPinning={true}
                 enablePagination={true}
-                
+
                 // Row expansion
                 getRowCanExpand={() => true}
-                renderSubComponent={renderSubComponent}
-                
+                renderSubComponent={(row) => renderSubComponent({ row: row.original as Employee })}
+
                 // Initial state
                 initialState={{
                     pagination: {
@@ -590,18 +583,20 @@ export function AdvancedFeaturesExample() {
                     },
                     columnOrder: ['name', 'department.name', 'salary', 'performance.rating', 'skills'],
                 }}
-                
+
                 // Styling
-                sx={{
-                    '& .MuiTableRow-root:hover': {
-                        backgroundColor: 'action.hover',
-                    },
-                    '& .MuiTableCell-root': {
-                        borderBottom: '1px solid',
-                        borderColor: 'divider',
-                    },
+                tableContainerProps={{
+                    sx: {
+                        '& .MuiTableRow-root:hover': {
+                            backgroundColor: 'action.hover',
+                        },
+                        '& .MuiTableCell-root': {
+                            borderBottom: '1px solid',
+                            borderColor: 'divider',
+                        },
+                    }
                 }}
-                
+
                 // Bulk actions
                 enableBulkActions={true}
                 bulkActions={(selectionState) => (
@@ -627,10 +622,10 @@ export function AdvancedFeaturesExample() {
                             size="small"
                             onClick={() => {
                                 const updatedEmployees = employees.map(emp => {
-                                    const isSelected = selectionState.type === 'include' 
+                                    const isSelected = selectionState.type === 'include'
                                         ? selectionState.ids.includes(emp.id.toString())
                                         : !selectionState.ids.includes(emp.id.toString());
-                                    
+
                                     return isSelected
                                         ? { ...emp, performance: { ...emp.performance, rating: 5 } }
                                         : emp;
@@ -651,7 +646,7 @@ export function AdvancedFeaturesExample() {
                                 } else {
                                     selectedEmployees = employees.filter(emp => !selectionState.ids.includes(emp.id.toString()));
                                 }
-                                
+
                                 if (window.confirm(`Delete ${selectedEmployees.length} selected employees?`)) {
                                     const selectedIds = selectedEmployees.map(emp => emp.id);
                                     setEmployees(prev => prev.filter(emp => !selectedIds.includes(emp.id)));
@@ -662,11 +657,11 @@ export function AdvancedFeaturesExample() {
                         </Button>
                     </Box>
                 )}
-                
+
                 // Fit to screen
                 fitToScreen={true}
             />
-            
+
             <Box sx={{ mt: 2 }}>
                 <Typography variant="body2" color="text.secondary">
                     💡 <strong>Features demonstrated:</strong>

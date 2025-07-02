@@ -107,7 +107,7 @@ export const CustomColumnFilterExample: React.FC = () => {
                         data={clientData}
                         dataMode="client"
                         filterMode="client"
-                        enableCustomColumnsFilter={true}
+                        enableColumnFilter={true}
                         enableGlobalFilter={true}
                         enablePagination={false}
                         maxHeight="400px"
@@ -134,7 +134,7 @@ export const CustomColumnFilterExample: React.FC = () => {
                         dataMode="server"
                         filterMode="server"
                         onFetchData={handleServerFetchData}
-                        enableCustomColumnsFilter={true}
+                        enableColumnFilter={true}
                         enableGlobalFilter={true}
                         enablePagination={false}
                         maxHeight="400px"

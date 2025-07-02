@@ -115,7 +115,7 @@ const MyTable = () => {
       columns={columns}
       data={data}
       enableSorting
-      enableColumnFilters
+      enableColumnFilter
       enablePagination
     />
   );
@@ -130,7 +130,7 @@ const AdvancedTable = () => {
       columns={columns}
       data={data}
       enableSorting
-      enableColumnFilters
+      enableColumnFilter
       enablePagination
       initialPagination={{ pageIndex: 0, pageSize: 25 }}
       initialSorting={[{ id: 'name', desc: false }]}

@@ -165,7 +165,7 @@ This allows for efficient handling of large datasets where you might select "all
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
 | `enableGlobalFilter` | `boolean` | `true` | Enable global search |
-| `enableColumnFilters` | `boolean` | `false` | Enable individual column filters |
+| `enableColumnFilter` | `boolean` | `false` | Enable individual column filters |
 | `filterMode` | `'client' \| 'server'` | `'client'` | Filtering mode |
 | `onColumnFiltersChange` | `(filters) => void` | - | Column filters change callback |
 | `extraFilter` | `ReactNode` | - | Additional filter components |
@@ -362,7 +362,7 @@ function FilterableTable() {
     <DataTable
       columns={columns}
       data={data}
-      enableColumnFilters
+      enableColumnFilter
       enableGlobalFilter
     />
   );

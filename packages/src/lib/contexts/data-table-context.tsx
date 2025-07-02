@@ -9,7 +9,7 @@ import { DataTableApi } from '../types/data-table-api';
  * Context value for the DataTable
  */
 interface DataTableContextValue<T = any> {
-    table: Table<T>;
+    table?: Table<T>;
     apiRef?: RefObject<DataTableApi<T>>;
     dataMode?: 'client' | 'server';
     tableSize?: TableSize;

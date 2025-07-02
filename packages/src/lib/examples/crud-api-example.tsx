@@ -541,7 +541,7 @@ export function CrudApiExample() {
                 enableColumnPinning
                 enableSorting
                 enableGlobalFilter
-                enableColumnFilters
+                enableColumnFilter
                 enablePagination
             />
 

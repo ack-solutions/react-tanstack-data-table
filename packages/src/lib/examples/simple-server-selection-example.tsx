@@ -6,7 +6,7 @@ import { useState, useMemo, useRef } from 'react';
 import { Box, Typography, Card, CardContent, Button, Alert, Chip, Stack } from '@mui/material';
 import { DataTable } from '../components/table/data-table';
 import { DataTableColumn } from '../types/column.types';
-import { TableState } from '../types';
+import { TableFilters } from '../types';
 
 // Sample data interface
 interface Employee {
@@ -47,9 +47,9 @@ export function SimpleServerSelectionExample() {
     // API ref for debugging
     const apiRef = useRef<any>(null);
 
-    const handleFetchData = (filters: Partial<TableState>) => {
+    const handleFetchData = (filters: Partial<TableFilters>) => {
         if (filters?.pagination?.pageSize) {
-            const data = employees.slice(filters.pagination.pageIndex * filters.pagination.pageSize, (filters.pagination.pageIndex + 1) * filters.pagination.pageSize);
+            const data = employees.slice(filters.pagination.pageIndex * filters?.pagination?.pageSize, (filters.pagination.pageIndex + 1) * filters?.pagination?.pageSize);
             console.log('data', data?.length);
             return Promise.resolve({
                 data,
@@ -179,7 +179,7 @@ export function SimpleServerSelectionExample() {
                 enableMultiRowSelection={true}
                 enableBulkActions={true}
                 enablePagination={true}
-                bulkActions={(selectedRows) => (
+                bulkActions={(selectionState) => (
                     <Button
                         variant="contained"
                         size="small"
@@ -187,10 +187,10 @@ export function SimpleServerSelectionExample() {
                             // The bulk action payload is automatically logged in console
                             // You can also access it via the API ref
                             console.log('Bulk action triggered with selection mode:', selectMode);
-                            console.log('Selected rows:', selectedRows);
+                            console.log('Selected rows:', selectionState?.ids);
                         }}
                     >
-                        Delete Selected ({selectedRows.length})
+                        Delete Selected ({selectionState?.ids.length})
                     </Button>
                 )}
             />

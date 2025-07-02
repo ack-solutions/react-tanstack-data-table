@@ -81,7 +81,7 @@ export function CustomColumnFilterExample() {
             <DataTable
                 data={data}
                 columns={columns}
-                enableColumnFilters={true}
+                enableColumnFilter={true}
                 enableGlobalFilter={true}
                 enablePagination={true}
                 enableSorting={true}

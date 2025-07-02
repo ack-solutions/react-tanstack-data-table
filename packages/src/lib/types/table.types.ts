@@ -1,4 +1,4 @@
-import { SortingState, TableState as TanstackTableState } from '@tanstack/react-table';
+import { SortingState } from '@tanstack/react-table';
 
 import { ColumnFilterRule, CustomSelectionState as SelectionState } from '../features';
 
@@ -30,6 +30,8 @@ export interface TableState {
         left?: string[];
         right?: string[];
     };
+    columnVisibility?: Record<string, boolean>;
+    columnSizing?: Record<string, number>;
 }
 
 export interface TableFilters {

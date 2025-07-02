@@ -4,7 +4,7 @@
 import { Row, SortingState, ColumnResizeMode, ColumnPinningState, RowData } from '@tanstack/react-table';
 import { ReactNode } from 'react';
 
-import type { CustomColumnFilterState, TableState } from '../../types';
+import type { CustomColumnFilterState, TableFilters, TableState } from '../../types';
 import { DataTableColumn } from '../../types';
 import { DataTableSlots, PartialSlotProps } from '../../types/slots.types';
 import { DataTableSize } from '../../utils/table-helpers';
@@ -37,7 +37,7 @@ export interface DataTableProps<T> {
     initialState?: Partial<TableState>;
     initilaLoadData?: boolean; // Initial load data (default: true)
     onDataStateChange?: (filters: Partial<TableState>) => void; // Callback when any filter/state changes
-    onFetchData?: (filters: Partial<TableState>) => Promise<{ data: T[]; total: number }>;
+    onFetchData?: (filters: Partial<TableFilters>) => Promise<{ data: T[]; total: number }>;
 
     // Simplified Export props
     exportFilename?: string;
@@ -71,7 +71,7 @@ export interface DataTableProps<T> {
     columnResizeMode?: ColumnResizeMode;
 
     // Column ordering props
-    draggable?: boolean;
+    enableColumnDragging?: boolean;
     onColumnDragEnd?: (columnOrder: string[]) => void;
 
     // Column pinning props
@@ -89,7 +89,7 @@ export interface DataTableProps<T> {
 
     // Filtering props
     enableGlobalFilter?: boolean;
-    enableColumnFilters?: boolean;
+    enableColumnFilter?: boolean;
     filterMode?: 'client' | 'server'; // Filtering mode (default: 'client')
 
     // Sorting props
@@ -126,9 +126,6 @@ export interface DataTableProps<T> {
 
     // Column filters props
     onColumnFiltersChange?: (filterState: CustomColumnFilterState) => void;
-
-    // Custom column filters props
-    enableCustomColumnsFilter?: boolean;
 
     // Data CRUD callbacks
     onDataChange?: (data: T[]) => void;

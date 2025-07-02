@@ -18,10 +18,10 @@ import {
     useReactTable,
     SortingState,
     getSortedRowModel,
-    getPaginationRowModel,
     RowSelectionState,
     ColumnOrderState,
     ColumnPinningState,
+    getPaginationRowModel,
 } from '@tanstack/react-table';
 
 // Import custom features
@@ -97,7 +97,6 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     enableMultiRowSelection = true,
     selectMode = 'page',
     isRowSelectable,
-    onRowSelectionChange,
     onSelectionChange,
 
     // Bulk action props
@@ -109,7 +108,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     columnResizeMode = 'onChange',
 
     // Column ordering props
-    draggable = false,
+    enableColumnDragging = false,
     onColumnDragEnd,
 
     // Column pinning props
@@ -127,7 +126,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
 
     // Filtering props
     enableGlobalFilter = true,
-    enableColumnFilters = false,
+    enableColumnFilter = false,
     filterMode = 'client',
 
     // Sorting props
@@ -171,9 +170,6 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     // Column filters props
     onColumnFiltersChange,
 
-    // Custom column filters props
-    enableCustomColumnsFilter = false,
-
     // Data CRUD callbacks
     onDataChange,
 
@@ -202,7 +198,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     const [sorting, setSorting] = useState<SortingState>(initialStateConfig.sorting);
     const [pagination, setPagination] = useState(initialStateConfig.pagination);
     const [globalFilter, setGlobalFilter] = useState(initialStateConfig.globalFilter);
-    
+
     // Selection state - same pattern as other table states
     const [selectionState, setSelectionState] = useState<SelectionState>(
         initialState?.selectionState || { ids: [], type: 'include' as const }
@@ -244,35 +240,47 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         if (result?.data && result?.total !== undefined) {
             setServerData(result.data);
             setServerTotal(result.total);
+            // if (result.data.length > 0) {
+            //     const newPageIndex filters.pageIndex;
+            //     const newPageSize = filters.pageSize;
+            //     if (
+            //         newPageIndex !== pagination.pageIndex ||
+            //         newPageSize !== pagination.pageSize
+            //     ) {
+            //         setPagination(result.pagination);
+            //     }
+            // }
         }
     }, [
         onFetchData,
         globalFilter,
-        pagination,
+        pagination, // Added pagination to dependencies
         customColumnsFilter,
         sorting,
         debouncedFetch,
     ]);
+    const fetchDataRef = useRef<typeof fetchData>(fetchData);
+    fetchDataRef.current = fetchData; // Always keep ref updated with latest function
 
     // Use server data when available, otherwise use props data
-    const tableData = onFetchData ? serverData : data;
-    const tableTotalRow = onFetchData ? serverTotal : totalRow;
-    const tableLoading = onFetchData ? (loading || fetchLoading) : loading;
+    const tableData = useMemo(() => onFetchData ? serverData : data, [onFetchData, serverData, data]);
+    const tableTotalRow = useMemo(() => onFetchData ? serverTotal : totalRow, [onFetchData, serverTotal, totalRow]);
+    const tableLoading = useMemo(() => onFetchData ? (loading || fetchLoading) : loading, [onFetchData, loading, fetchLoading]);
 
     // Handle selection state changes - same pattern as other table states
     const handleSelectionStateChange = useCallback((updaterOrValue: any) => {
         // Use React state updater pattern (same as pagination, sorting in TanStack)
         setSelectionState((prevState) => {
             // Handle both updater function and direct value
-            const newSelectionState = typeof updaterOrValue === 'function' 
+            const newSelectionState = typeof updaterOrValue === 'function'
                 ? updaterOrValue(prevState)  // ✅ Use React's current state, not stale closure
                 : updaterOrValue;
-                
+
             // Trigger callback with new state
             if (onSelectionChange) {
                 onSelectionChange(newSelectionState);
             }
-            
+
             return newSelectionState;
         });
     }, [onSelectionChange]);
@@ -328,7 +336,6 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         ],
     );
 
-
     // Common function to notify data state changes
     const notifyDataStateChange = useCallback((overrides: Partial<TableState> = {}) => {
         if (onDataStateChange) {
@@ -352,12 +359,16 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         columnOrder,
         columnPinning,
     ]);
+    const stateChangeRef = useRef<typeof notifyDataStateChange>(notifyDataStateChange);
+    stateChangeRef.current = notifyDataStateChange; // Always keep ref updated with latest function
     // Handle sorting change with custom logic for three-state sorting
     const handleSortingChange = useCallback((updaterOrValue: any) => {
         // Handle both updater function and direct value
         let newSorting = typeof updaterOrValue === 'function'
             ? updaterOrValue(sorting)
             : updaterOrValue;
+
+        console.log('handleSortingChange', newSorting);
 
         newSorting = newSorting.filter((sort: any) => sort.id);
         setSorting(newSorting);
@@ -367,16 +378,22 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
             onSortingChange(newSorting);
         }
 
-        // Notify state change for dynamic data
-        notifyDataStateChange({ sorting: newSorting });
-        fetchData({
-            sorting: newSorting,
-        });
+        // Only notify state change and fetch data for server-side operations
+        if (isServerMode || isServerSorting) {
+            stateChangeRef.current({ sorting: newSorting });
+            fetchDataRef?.current({
+                sorting: newSorting,
+            });
+        } else if (onDataStateChange) {
+            // For client-side, only notify state change if callback is provided
+            stateChangeRef.current({ sorting: newSorting });
+        }
     }, [
         sorting,
         onSortingChange,
-        notifyDataStateChange,
-        fetchData,
+        isServerMode,
+        isServerSorting,
+        onDataStateChange,
     ]);
 
     // Handle column order change
@@ -400,20 +417,55 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     }, [onColumnPinningChange]);
 
 
-    // Memoized pagination handler to prevent table recreation
-    const onPaginationChangeHandler = useCallback((updater: any) => {
+    // TanStack-style pagination handler - keep it simple
+    const handlePaginationChange = useCallback((updater: any) => {
+        console.log('handlePaginationChange called');
+        
+        // Standard TanStack pattern - direct state update
+        setPagination(updater);
+        
+        // Handle side effects after state is set
+        // Get the new pagination value for side effects
         const newPagination = typeof updater === 'function' ? updater(pagination) : updater;
-        setPagination(newPagination as any);
-
-        // Notify state change for dynamic data
-        notifyDataStateChange({ pagination: newPagination });
-        fetchData({
-            pagination: newPagination,
-        });
-    }, [pagination, notifyDataStateChange, fetchData]);
+        
+        // Only trigger side effects for server mode or when explicitly requested
+        if (isServerMode || isServerPagination) {
+            console.log('handlePaginationChange - server mode, will fetch');
+            // Schedule side effects to run after state update
+            setTimeout(() => {
+                stateChangeRef.current({ pagination: newPagination });
+                fetchDataRef?.current({ pagination: newPagination });
+            }, 0);
+        } else if (onDataStateChange) {
+            console.log('handlePaginationChange - client mode, notifying state change');
+            setTimeout(() => {
+                stateChangeRef.current({ pagination: newPagination });
+            }, 0);
+        }
+    }, [pagination, isServerMode, isServerPagination, onDataStateChange]);
+    // const onPaginationChangeHandler = useCallback((updater: any) => {
+    //     console.log('onPaginationChangeHandler', updater);
+    //     const newPagination = typeof updater === 'function' ? updater(pagination) : updater;
+    //     console.log('onPaginationChangeHandler', newPagination);
+    //     // setPagination(newPagination as any);
+    //     if ( newPagination.pageIndex === pagination.pageIndex && newPagination.pageSize === pagination.pageSize ) {
+    //         return; // Prevent infinite loop from redundant updates
+    //     }
+    //     setPagination(newPagination); 
+    //     // Only notify state change and fetch data for server-side operations
+    //     if (isServerMode || isServerPagination) {
+    //         stateChangeRef.current({ pagination: newPagination });
+    //         fetchDataRef?.current({
+    //             pagination: newPagination,
+    //         });
+    //     } else if (onDataStateChange) {
+    //         // For client-side, only notify state change if callback is provided
+    //         stateChangeRef.current({ pagination: newPagination });
+    //     }
+    // }, [pagination, isServerMode, isServerPagination, onDataStateChange]);
 
     // Memoized global filter handler to prevent table recreation  
-    const onGlobalFilterChangeHandler = useCallback((updaterOrValue: any) => {
+    const handleGlobalFilterChange = useCallback((updaterOrValue: any) => {
         // Handle both updater function and direct value
         const newFilter = typeof updaterOrValue === 'function'
             ? updaterOrValue(globalFilter)
@@ -422,10 +474,15 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         // Apply the new filter state
         setGlobalFilter(newFilter);
 
-        // Notify state change for dynamic data
-        notifyDataStateChange({ globalFilter: newFilter });
-        fetchData({ globalFilter: newFilter });
-    }, [globalFilter, notifyDataStateChange, fetchData]);
+        // Only notify state change and fetch data for server-side operations
+        if (isServerMode || isServerFiltering) {
+            stateChangeRef.current({ globalFilter: newFilter });
+            fetchDataRef?.current({ globalFilter: newFilter });
+        } else if (onDataStateChange) {
+            // For client-side, only notify state change if callback is provided
+            stateChangeRef.current({ globalFilter: newFilter });
+        }
+    }, [globalFilter, isServerMode, isServerFiltering, onDataStateChange]);
 
     // Memoized custom column filter handler to prevent table recreation
     const onCustomColumnFilterChangeHandler = useCallback((updater: any) => {
@@ -455,19 +512,18 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                 pendingLogic: appliedState.pendingLogic,
             };
 
-            notifyDataStateChange({
+            stateChangeRef.current({
                 customColumnsFilter: serverFilterState,
             });
 
-            fetchData({
+            fetchDataRef?.current({
                 customColumnsFilter: serverFilterState,
             });
         }
-    }, [isServerFiltering, notifyDataStateChange, fetchData]);
+    }, [isServerFiltering]);
 
-    // Memoize table options to prevent table recreation
-    const tableOptions = useMemo(() => ({
-        _features: [CustomColumnFilterFeature, CustomSelectionFeature], // Add custom features
+    const table = useReactTable({
+        _features: [CustomColumnFilterFeature, CustomSelectionFeature], 
         data: tableData,
         columns: enhancedColumns,
         initialState: {
@@ -475,39 +531,41 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         },
         state: {
             sorting,
-            pagination: enablePagination ? pagination : undefined,
-            globalFilter: enableGlobalFilter ? globalFilter : undefined,
-            expanded: enableExpanding ? expanded : {},
-            columnOrder: draggable ? columnOrder : undefined,
-            columnPinning: columnPinning,
-            customColumnFilter: customColumnsFilter,
-            selectionState: enableRowSelection ? selectionState : undefined, // Same pattern as other states
+            ...(enablePagination ? { pagination } : {}),
+            ...(enableGlobalFilter ? { globalFilter } : {}),
+            ...(enableExpanding ? { expanded } : {}),
+            ...(enableColumnDragging ? { columnOrder } : {}),
+            ...(enableColumnPinning ? { columnPinning } : {}),
+            ...(enableColumnFilter ? { customColumnFilter: customColumnsFilter } : {}),
+            ...(enableRowSelection ? { selectionState } : {}),
         },
-        
         // Selection options (same pattern as column filter)
+        // Add custom features
         selectMode: selectMode,
+        enableCustomSelection: !!enableRowSelection,
         isRowSelectable: isRowSelectable,
         onSelectionStateChange: enableRowSelection ? handleSelectionStateChange : undefined,
+        // Sorting
         onSortingChange: enableSorting ? handleSortingChange : undefined,
-        onPaginationChange: enablePagination ? onPaginationChangeHandler : undefined,
-        
-        // Custom selection handled by TanStack Table CustomSelectionFeature
-        onGlobalFilterChange: enableGlobalFilter ? onGlobalFilterChangeHandler : undefined,
+        onPaginationChange: enablePagination ? handlePaginationChange : undefined,
+        onRowSelectionChange: enableRowSelection ? handleSelectionStateChange : undefined,
+
+        onGlobalFilterChange: enableGlobalFilter ? handleGlobalFilterChange : undefined,
         onExpandedChange: enableExpanding ? setExpanded : undefined,
-        onColumnOrderChange: draggable ? handleColumnOrderChange : undefined,
+        onColumnOrderChange: enableColumnDragging ? handleColumnOrderChange : undefined,
         onColumnPinningChange: enableColumnPinning ? handleColumnPinningChange : undefined,
-        
         // Handle column filters change (this will be triggered by our custom feature)
         onCustomColumnFilterChange: onCustomColumnFilterChangeHandler,
-
-        // Handle when filters are actually applied (only then fetch data)
+        // // Handle when filters are actually applied (only then fetch data)
         onCustomColumnFilterApply: onCustomColumnFilterApplyHandler,
 
+        // Row model
         getCoreRowModel: getCoreRowModel(),
-        getSortedRowModel: enableSorting && !isServerSorting ? getSortedRowModel() : undefined,
-        getFilteredRowModel: !isServerFiltering ? getCombinedFilteredRowModel<T>() : undefined,
-        getPaginationRowModel: enablePagination && !isServerPagination ? getPaginationRowModel() : undefined,
+        getSortedRowModel: (enableSorting && !isServerSorting) ? getSortedRowModel() : undefined,
+        getFilteredRowModel: (enableColumnFilter && !isServerFiltering) ? getCombinedFilteredRowModel<T>() : undefined,
+        getPaginationRowModel: (enablePagination && !isServerPagination) ? getPaginationRowModel() : undefined,
 
+       
         // Sorting
         enableSorting: enableSorting,
         manualSorting: isServerSorting,
@@ -529,66 +587,15 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
 
         // Pagination
         manualPagination: isServerPagination,
-        rowCount: tableTotalRow,
+        autoResetPageIndex: false, // Prevent automatic page reset on state changes
         // pageCount: enablePagination ? Math.ceil(tableTotalRow / pagination.pageSize) : -1,
+        rowCount: tableTotalRow,
 
         // Row ID
         getRowId: (row: any, index: number) => generateRowId(row, index, idKey),
-
         // Debug
-        debugTable: false, // Disabled to prevent infinite logs
-    }), [
-        // Data dependencies
-        tableData,
-        enhancedColumns,
-        tableTotalRow,
-        idKey,
-        
-        // State dependencies
-        sorting,
-        pagination,
-        globalFilter,
-        expanded,
-        columnOrder,
-        columnPinning,
-        customColumnsFilter,
-        selectionState,
-        
-        // Boolean flags (stable)
-        enablePagination,
-        enableGlobalFilter,
-        enableExpanding,
-        draggable,
-        enableRowSelection,
-        enableSorting,
-        enableColumnPinning,
-        enableColumnResizing,
-        isServerSorting,
-        isServerFiltering,
-        isServerPagination,
-        
-        // Configuration (should be stable)
-        selectMode,
-        columnResizeMode,
-        
-        // Memoized callbacks (should be stable)
-        handleSelectionStateChange,
-        handleSortingChange,
-        onPaginationChangeHandler,
-        onGlobalFilterChangeHandler,
-        handleColumnOrderChange,
-        handleColumnPinningChange,
-        onCustomColumnFilterChangeHandler,
-        onCustomColumnFilterApplyHandler,
-        
-        // Functions from props (might change, but rarely)
-        isRowSelectable,
-        getRowCanExpand,
-        setExpanded,
-    ]);
-
-    // Create table instance with memoized options
-    const table = useReactTable(tableOptions);
+        debugAll: true, // Disabled to prevent infinite logs
+    });
 
     // Virtualization setup - with safety checks
     const rows = table.getRowModel()?.rows || [];
@@ -622,7 +629,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
 
     // Handle column reorder via drag and drop
     const handleColumnReorder = useCallback((draggedColumnId: string, targetColumnId: string) => {
-        const currentOrder = table.getState().columnOrder || table.getAllLeafColumns().map((col, index) => {
+        const currentOrder = columnOrder.length > 0 ? columnOrder : enhancedColumns.map((col, index) => {
             if (col.id) return col.id;
             const anyCol = col as any;
             if (anyCol.accessorKey && typeof anyCol.accessorKey === 'string') {
@@ -640,19 +647,18 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         newOrder.splice(targetIndex, 0, draggedColumnId);
 
         handleColumnOrderChange(newOrder);
-    }, [table, handleColumnOrderChange]);
+    }, [columnOrder, enhancedColumns, handleColumnOrderChange]);
 
 
     useEffect(() => {
-        if (initilaLoadData) {
-            fetchData();
+        if (initilaLoadData && onFetchData) {
+            fetchDataRef.current();
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [initilaLoadData]);
 
     // Initialize column order when columns change
     useEffect(() => {
-        if (draggable && columnOrder.length === 0) {
+        if (enableColumnDragging && columnOrder.length === 0) {
             const initialOrder = enhancedColumns.map((col, index) => {
                 // Use id if available, otherwise use accessorKey, otherwise generate unique id
                 if (col.id) return col.id;
@@ -665,7 +671,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
             setColumnOrder(initialOrder);
         }
     }, [
-        draggable,
+        enableColumnDragging,
         enhancedColumns,
         columnOrder.length,
     ]);
@@ -851,7 +857,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     // Calculate bulk actions values directly from selection state to prevent infinite re-renders
     const isSomeRowsSelected = useMemo(() => {
         if (!enableBulkActions || !enableRowSelection) return false;
-        
+
         if (selectionState.type === 'exclude') {
             // In exclude mode, we have some selected if not all are excluded
             return selectionState.ids.length < tableTotalRow;
@@ -863,7 +869,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
 
     const selectedRowCount = useMemo(() => {
         if (!enableBulkActions || !enableRowSelection) return 0;
-        
+
         if (selectionState.type === 'exclude') {
             // In exclude mode, selected count is total minus excluded
             return tableTotalRow - selectionState.ids.length;
@@ -884,46 +890,38 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     const PaginationSlot = getSlotComponent(slots, 'pagination', DataTablePagination);
 
     // Base props for all slots
-    const baseSlotProps = {
-        table,
-        data: tableData,
-        columns: enhancedColumns,
-    };
-
     return (
         <DataTableProvider
-            table={table}
-            apiRef={internalApiRef}
-            dataMode={dataMode}
-            tableSize={tableSize}
-            onTableSizeChange={(size) => {
-                setTableSize(size);
-            }}
-            customColumnsFilter={customColumnsFilter}
-            onChangeCustomColumnsFilter={handleColumnFilterStateChange}
-            slots={slots}
-            slotProps={slotProps}
-            isExporting={isExporting}
-            exportController={exportController}
-            onCancelExport={handleCancelExport}
-            exportFilename={exportFilename}
-            onExportProgress={onExportProgress}
-            onExportComplete={onExportComplete}
-            onExportError={onExportError}
-            onServerExport={onServerExport}
+             table={table}
+            // apiRef={internalApiRef}
+            // dataMode={dataMode}
+            // tableSize={tableSize}
+            // onTableSizeChange={(size) => {
+            //     setTableSize(size);
+            // }}
+            // customColumnsFilter={customColumnsFilter}
+            // onChangeCustomColumnsFilter={handleColumnFilterStateChange}
+            // slots={slots}
+            // slotProps={slotProps}
+            // isExporting={isExporting}
+            // exportController={exportController}
+            // onCancelExport={handleCancelExport}
+            // exportFilename={exportFilename}
+            // onExportProgress={onExportProgress}
+            // onExportComplete={onExportComplete}
+            // onExportError={onExportError}
+            // onServerExport={onServerExport}
         >
             <RootSlot
-                {...baseSlotProps}
                 {...slotProps?.root}
             >
                 {/* Toolbar */}
                 {(enableGlobalFilter || extraFilter) ? (
                     <ToolbarSlot
-                        {...baseSlotProps}
                         extraFilter={extraFilter}
                         enableGlobalFilter={enableGlobalFilter}
                         enableColumnVisibility={enableColumnVisibility}
-                        enableColumnFilter={enableCustomColumnsFilter}
+                        enableColumnFilter={enableColumnFilter}
                         enableExport={enableExport}
                         enableReset={enableReset}
                         enableTableSizeControl={enableTableSizeControl}
@@ -935,7 +933,6 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                 {/* Bulk Actions Toolbar - shown when rows are selected */}
                 {enableBulkActions && enableRowSelection && isSomeRowsSelected ? (
                     <BulkActionsSlot
-                        {...baseSlotProps}
                         selectionState={selectionState}
                         selectedRowCount={selectedRowCount}
                         bulkActions={bulkActions}
@@ -980,7 +977,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                     >
                         {/* Table Headers */}
                         <TableHeader
-                            draggable={draggable}
+                            draggable={enableColumnDragging}
                             enableColumnResizing={enableColumnResizing}
                             enableStickyHeader={enableStickyHeaderOrFooter}
                             fitToScreen={fitToScreen}
@@ -1014,7 +1011,6 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                         {...slotProps?.footer}
                     >
                         <PaginationSlot
-                            {...baseSlotProps}
                             footerFilter={footerFilter}
                             {...slotProps?.pagination}
                             pagination={pagination}

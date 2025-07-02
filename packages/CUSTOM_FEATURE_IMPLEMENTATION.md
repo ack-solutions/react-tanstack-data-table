@@ -101,7 +101,7 @@ import { DataTable, CustomColumnFilterFeature } from 'your-package';
 <DataTable
     columns={columns}
     data={data}
-    enableColumnFilters={true}
+    enableColumnFilter={true}
     onColumnFiltersChange={(filterState) => {
         // filterState contains the new custom filter configuration
         console.log(filterState);
@@ -124,7 +124,7 @@ const MyComponent = () => {
             ref={tableRef}
             columns={columns}
             data={data}
-            enableColumnFilters={true}
+            enableColumnFilter={true}
         />
     );
 };

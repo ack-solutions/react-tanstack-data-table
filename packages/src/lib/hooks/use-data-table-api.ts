@@ -1,7 +1,7 @@
 import { ColumnOrderState, ColumnPinningState, SortingState, Table } from '@tanstack/react-table';
 import { Ref, useImperativeHandle } from 'react';
 
-import { CustomColumnFilterState, TableFilters, TableState } from '../types';
+import { CustomColumnFilterState,  TableFilters,  TableState } from '../types';
 import { DataTableApi } from '../types/data-table-api';
 import { exportClientData, exportServerData } from '../utils/export-utils';
 import { CustomSelectionState as SelectionState } from '../features';
@@ -45,7 +45,7 @@ interface UseDataTableApiProps<T> {
 
     // Callbacks
     onDataStateChange?: (state: Partial<TableState>) => void;
-    onFetchData?: (filters: Partial<TableState>) => void;
+    onFetchData?: (filters: Partial<TableFilters>) => void;
     onDataChange?: (newData: T[]) => void;
 
     // Export props
@@ -53,7 +53,7 @@ interface UseDataTableApiProps<T> {
     onExportProgress?: (progress: { processedRows: number; totalRows: number; percentage: number }) => void;
     onExportComplete?: (result: { success: boolean; filename: string; totalRows: number }) => void;
     onExportError?: (error: { message: string; code: string }) => void;
-    onServerExport?: (filters?: Partial<TableState>, selection?: any) => Promise<{ data: any[]; total: number }>;
+    onServerExport?: (filters?: Partial<TableFilters>, selection?: any) => Promise<{ data: any[]; total: number }>;
     exportController?: AbortController | null;
     setExportController?: (controller: AbortController | null) => void;
     isExporting?: boolean;
@@ -354,7 +354,7 @@ export function useDataTableApi<T extends Record<string, any>>(
                     pagination,
                 };
                 if (onDataStateChange) {
-                    const currentState: TableFilters = {
+                    const currentState: Partial<TableState> = {
                         ...currentFilters,
                         columnOrder,
                         columnPinning,
