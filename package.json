@@ -10,7 +10,9 @@
     "lint": "nx lint",
     "format": "nx format",
     "clean": "nx reset",
-    "start": "nx serve"
+    "start": "nx serve",
+    "check-naming": "node scripts/check-file-naming.js",
+    "check-rules": "npm run check-naming && npm run lint"
   },
   "private": true,
   "devDependencies": {
@@ -32,9 +34,14 @@
     "@types/node": "^20.0.0",
     "@types/react": "19.0.0",
     "@types/react-dom": "19.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.35.0",
+    "@typescript-eslint/parser": "^8.35.0",
     "@vitejs/plugin-react": "^4.2.0",
     "@vitest/ui": "^3.0.0",
     "core-js": "^3.36.1",
+    "eslint": "^9.29.0",
+    "eslint-plugin-react": "^7.37.5",
+    "glob": "^11.0.3",
     "jiti": "2.4.2",
     "jsdom": "~22.1.0",
     "nx": "21.2.0",

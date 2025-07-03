@@ -1,6 +1,6 @@
-import { SortingState, TableState as TanstackTableState } from '@tanstack/react-table';
+import { SortingState } from '@tanstack/react-table';
 
-import { ColumnFilterRule } from '../components/toolbar/column-custum-filter-control';
+import { ColumnFilterRule, CustomSelectionState as SelectionState } from '../features';
 
 
 /**
@@ -14,19 +14,29 @@ import { ColumnFilterRule } from '../components/toolbar/column-custum-filter-con
 
 export type TableSize = 'small' | 'medium';
 
-// declare module '@tanstack/react-table' {
-//     interface TableState {
-//         customColumnsFilter: ICustomColumnFilter;
-//     }
-// }
+// Extended table state interface with custom column filter support
 
-export interface TableState extends TanstackTableState {
-    customColumnsFilter: ICustomColumnFilter;
+export interface TableState {
+    customColumnsFilter: CustomColumnFilterState;
+    selectionState?: SelectionState; // Selection state for CustomSelectionFeature
+    globalFilter?: string;
+    sorting?: SortingState;
+    pagination?: {
+        pageIndex: number;
+        pageSize: number;
+    };
+    columnOrder?: string[];
+    columnPinning?: {
+        left?: string[];
+        right?: string[];
+    };
+    columnVisibility?: Record<string, boolean>;
+    columnSizing?: Record<string, number>;
 }
 
 export interface TableFilters {
     globalFilter: string;
-    customColumnsFilter: ICustomColumnFilter;
+    customColumnsFilter: CustomColumnFilterState;
     sorting: SortingState;
     pagination: {
         pageIndex: number;
@@ -44,12 +54,15 @@ export interface TableFiltersForFetch {
     page?: number;
     pageSize?: number;
     sorting?: SortingState;
-    customColumnsFilter?: ICustomColumnFilter;
+    customColumnsFilter?: CustomColumnFilterState;
 }
 
-export interface ICustomColumnFilter {
+export interface CustomColumnFilterState {
     filters: ColumnFilterRule[];
     logic: 'AND' | 'OR';
+    // Add pending state for draft filters before applying
+    pendingFilters: ColumnFilterRule[];
+    pendingLogic: 'AND' | 'OR';
 }
 
 /**

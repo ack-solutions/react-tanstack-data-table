@@ -134,7 +134,23 @@ function MyDataTable() {
 | `enableMultiRowSelection` | `boolean` | `true` | Allow multiple row selection |
 | `onRowSelectionChange` | `(selectedRows: T[]) => void` | - | Selection change callback |
 | `enableBulkActions` | `boolean` | `false` | Enable bulk actions toolbar |
-| `bulkActions` | `(selectedRows: T[]) => ReactNode` | - | Custom bulk actions component |
+| `bulkActions` | `(selectionState: SelectionState) => ReactNode` | - | Custom bulk actions component |
+
+### Selection State
+
+The `SelectionState` interface provides detailed information about the current selection:
+
+```typescript
+interface SelectionState {
+  ids: string[];           // Array of selected/excluded row IDs
+  type: 'include' | 'exclude';  // Selection mode
+}
+```
+
+- **Include mode**: `ids` contains the selected row IDs
+- **Exclude mode**: `ids` contains the excluded row IDs (all others are selected)
+
+This allows for efficient handling of large datasets where you might select "all except these few".
 
 ### Pagination
 
@@ -149,7 +165,7 @@ function MyDataTable() {
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
 | `enableGlobalFilter` | `boolean` | `true` | Enable global search |
-| `enableColumnFilters` | `boolean` | `false` | Enable individual column filters |
+| `enableColumnFilter` | `boolean` | `false` | Enable individual column filters |
 | `filterMode` | `'client' \| 'server'` | `'client'` | Filtering mode |
 | `onColumnFiltersChange` | `(filters) => void` | - | Column filters change callback |
 | `extraFilter` | `ReactNode` | - | Additional filter components |
@@ -268,23 +284,35 @@ function ServerSideTable() {
 function SelectableTable() {
   const [selectedUsers, setSelectedUsers] = useState([]);
 
-  const bulkActions = (selectedRows) => (
-    <Stack direction="row" spacing={1}>
-      <Button 
-        variant="contained" 
-        color="error"
-        onClick={() => deleteUsers(selectedRows)}
-      >
-        Delete ({selectedRows.length})
-      </Button>
-      <Button 
-        variant="outlined"
-        onClick={() => exportUsers(selectedRows)}
-      >
-        Export Selected
-      </Button>
-    </Stack>
-  );
+  const bulkActions = (selectionState) => {
+    // Calculate selected count based on selection type
+    const selectedCount = selectionState.type === 'include' 
+      ? selectionState.ids.length 
+      : data.length - selectionState.ids.length;
+
+    // Get actual selected data
+    const selectedRows = selectionState.type === 'include'
+      ? data.filter(item => selectionState.ids.includes(item.id.toString()))
+      : data.filter(item => !selectionState.ids.includes(item.id.toString()));
+
+    return (
+      <Stack direction="row" spacing={1}>
+        <Button 
+          variant="contained" 
+          color="error"
+          onClick={() => deleteUsers(selectedRows)}
+        >
+          Delete ({selectedCount})
+        </Button>
+        <Button 
+          variant="outlined"
+          onClick={() => exportUsers(selectedRows)}
+        >
+          Export Selected
+        </Button>
+      </Stack>
+    );
+  };
 
   return (
     <DataTable
@@ -334,7 +362,7 @@ function FilterableTable() {
     <DataTable
       columns={columns}
       data={data}
-      enableColumnFilters
+      enableColumnFilter
       enableGlobalFilter
     />
   );
@@ -411,7 +439,6 @@ function ExportableTable() {
 
   const handleExportComplete = (result) => {
     setExportProgress(null);
-    console.log('Export completed:', result);
   };
 
   return (
@@ -450,11 +477,6 @@ Columns are defined using TanStack Table's column definition format with additio
 interface DataTableColumn<T> extends ColumnDef<T> {
   // Display properties
   align?: 'left' | 'center' | 'right';
-  
-  // Data processing
-  valueGetter?: (params: { row: any; data: any }) => any;
-  valueFormatter?: (params: { value: any; row: any }) => string;
-  
   // Filtering
   filterable?: boolean;
   type?: 'boolean' | 'number' | 'date' | 'select' | 'text';
@@ -478,7 +500,6 @@ function MyComponent() {
 
   const handleGetData = () => {
     const allData = tableRef.current?.data.getAllData();
-    console.log('All data:', allData);
   };
 
   return (

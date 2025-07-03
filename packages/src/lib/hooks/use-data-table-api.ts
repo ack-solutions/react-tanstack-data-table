@@ -1,9 +1,21 @@
 import { ColumnOrderState, ColumnPinningState, SortingState, Table } from '@tanstack/react-table';
 import { Ref, useImperativeHandle } from 'react';
 
-import { ICustomColumnFilter, TableFilters, TableState } from '../types';
+import { CustomColumnFilterState,  TableFilters,  TableState } from '../types';
 import { DataTableApi } from '../types/data-table-api';
 import { exportClientData, exportServerData } from '../utils/export-utils';
+import { CustomSelectionState as SelectionState } from '../features';
+// import { 
+//     toggleSelectAll as helperToggleSelectAll,
+//     selectAll as helperSelectAll,
+//     deselectAll as helperDeselectAll,
+//     toggleRowSelection as helperToggleRowSelection,
+//     isAllSelected as helperIsAllSelected,
+//     isSomeSelected as helperIsSomeSelected,
+//     isRowSelected as helperIsRowSelected,
+//     getSelectedCount as helperGetSelectedCount,
+//     SelectionHelperConfig
+// } from '../utils/selection-helpers';
 
 
 interface UseDataTableApiProps<T> {
@@ -11,7 +23,7 @@ interface UseDataTableApiProps<T> {
     data: T[];
     idKey: keyof T;
     globalFilter: string;
-    customColumnsFilter: ICustomColumnFilter;
+    customColumnsFilter: CustomColumnFilterState;
     sorting: SortingState;
     pagination: { pageIndex: number; pageSize: number };
     columnOrder: ColumnOrderState;
@@ -23,12 +35,17 @@ interface UseDataTableApiProps<T> {
     initialPageSize?: number;
     pageSize: number;
 
+    // Selection props
+    selectMode?: 'page' | 'all';
+    // Selection state now handled by TanStack Table custom feature
+    onSelectionChange?: (state: SelectionState) => void;
+
     // Handlers
-    handleColumnFilterStateChange: (filterState: ICustomColumnFilter) => void;
+    handleColumnFilterStateChange: (filterState: CustomColumnFilterState) => void;
 
     // Callbacks
     onDataStateChange?: (state: Partial<TableState>) => void;
-    onFetchData?: (filters: Partial<TableState>) => void;
+    onFetchData?: (filters: Partial<TableFilters>) => void;
     onDataChange?: (newData: T[]) => void;
 
     // Export props
@@ -36,7 +53,7 @@ interface UseDataTableApiProps<T> {
     onExportProgress?: (progress: { processedRows: number; totalRows: number; percentage: number }) => void;
     onExportComplete?: (result: { success: boolean; filename: string; totalRows: number }) => void;
     onExportError?: (error: { message: string; code: string }) => void;
-    onServerExport?: (filters?: Partial<TableState>) => Promise<{ data: any[]; total: number }>;
+    onServerExport?: (filters?: Partial<TableFilters>, selection?: any) => Promise<{ data: any[]; total: number }>;
     exportController?: AbortController | null;
     setExportController?: (controller: AbortController | null) => void;
     isExporting?: boolean;
@@ -63,6 +80,9 @@ export function useDataTableApi<T extends Record<string, any>>(
         initialPageIndex,
         initialPageSize,
         pageSize,
+        // Selection props
+        selectMode = 'page',
+        onSelectionChange,
         handleColumnFilterStateChange,
         onDataStateChange,
         onFetchData,
@@ -78,6 +98,8 @@ export function useDataTableApi<T extends Record<string, any>>(
         isExporting,
         dataMode = 'client',
     } = props;
+
+    // Note: Custom selection is now handled by TanStack Table CustomSelectionFeature
 
     useImperativeHandle(ref, () => ({
         table: {
@@ -205,7 +227,7 @@ export function useDataTableApi<T extends Record<string, any>>(
             clearGlobalFilter: () => {
                 table.setGlobalFilter('');
             },
-            setCustomColumnFilters: (filters: ICustomColumnFilter) => {
+            setCustomColumnFilters: (filters: CustomColumnFilterState) => {
                 handleColumnFilterStateChange(filters);
             },
             addColumnFilter: (columnId: string, operator: string, value: any) => {
@@ -221,6 +243,8 @@ export function useDataTableApi<T extends Record<string, any>>(
                 handleColumnFilterStateChange({
                     filters: newFilters,
                     logic: customColumnsFilter.logic,
+                    pendingFilters: customColumnsFilter.pendingFilters || [],
+                    pendingLogic: customColumnsFilter.pendingLogic || 'AND',
                 });
             },
             removeColumnFilter: (filterId: string) => {
@@ -229,6 +253,8 @@ export function useDataTableApi<T extends Record<string, any>>(
                 handleColumnFilterStateChange({
                     filters: newFilters,
                     logic: customColumnsFilter.logic,
+                    pendingFilters: customColumnsFilter.pendingFilters || [],
+                    pendingLogic: customColumnsFilter.pendingLogic || 'AND',
                 });
             },
             clearAllFilters: () => {
@@ -236,6 +262,8 @@ export function useDataTableApi<T extends Record<string, any>>(
                 handleColumnFilterStateChange({
                     filters: [],
                     logic: 'AND',
+                    pendingFilters: [],
+                    pendingLogic: 'AND',
                 });
             },
             resetFilters: () => {
@@ -243,6 +271,8 @@ export function useDataTableApi<T extends Record<string, any>>(
                 handleColumnFilterStateChange({
                     filters: [],
                     logic: 'AND',
+                    pendingFilters: [],
+                    pendingLogic: 'AND',
                 });
             },
         },
@@ -295,33 +325,19 @@ export function useDataTableApi<T extends Record<string, any>>(
             },
         },
 
-        // Row Selection
+        // Selection methods now use TanStack Table CustomSelectionFeature
+        // Access via table methods: table.selectRow(), table.getIsRowSelected(), etc.
         selection: {
-            selectRow: (rowId: string) => {
-                table.getRow(rowId)?.toggleSelected(true);
-            },
-            deselectRow: (rowId: string) => {
-                table.getRow(rowId)?.toggleSelected(false);
-            },
-            toggleRowSelection: (rowId: string) => {
-                table.getRow(rowId)?.toggleSelected();
-            },
-            selectAllRows: () => {
-                table.toggleAllRowsSelected(true);
-            },
-            deselectAllRows: () => {
-                table.toggleAllRowsSelected(false);
-            },
-            getSelectedRows: () => {
-                return Object.keys(table.getState().rowSelection)
-                    .filter(key => table.getState().rowSelection[key])
-                    .map(key => data.find(row => String(row[idKey]) === key))
-                    .filter(Boolean) as T[];
-            },
-            getSelectedRowIds: () => {
-                return Object.keys(table.getState().rowSelection)
-                    .filter(key => table.getState().rowSelection[key]);
-            },
+            selectRow: (rowId: string) => table.selectRow?.(rowId),
+            deselectRow: (rowId: string) => table.deselectRow?.(rowId),
+            toggleRowSelection: (rowId: string) => table.toggleRowSelected?.(rowId),
+            selectAll: () => table.selectAll?.(),
+            deselectAll: () => table.deselectAll?.(),
+            toggleSelectAll: () => table.toggleAllRowsSelected?.(),
+            getSelectionState: () => table.getSelectionState?.() || { ids: [], type: 'include' as const },
+            getSelectedRows: ()=>table.getSelectedRows(),
+            getSelectedCount: () => table.getSelectedCount(),
+            isRowSelected: (rowId) => table.getIsRowSelected(rowId) || false,
         },
 
         // Data Management
@@ -335,7 +351,7 @@ export function useDataTableApi<T extends Record<string, any>>(
                     pagination,
                 };
                 if (onDataStateChange) {
-                    const currentState: TableFilters = {
+                    const currentState: Partial<TableState> = {
                         ...currentFilters,
                         columnOrder,
                         columnPinning,
@@ -511,6 +527,8 @@ export function useDataTableApi<T extends Record<string, any>>(
                 handleColumnFilterStateChange({
                     filters: [],
                     logic: 'AND',
+                    pendingFilters: [],
+                    pendingLogic: 'AND',
                 });
 
                 if (enablePagination) {
@@ -588,12 +606,7 @@ export function useDataTableApi<T extends Record<string, any>>(
         // Simplified Export
         export: {
             exportCSV: async (options = {}) => {
-                const {
-                    filename = exportFilename,
-                    onlyVisibleColumns = true,
-                    onlySelectedRows,
-                    includeHeaders = true,
-                } = options;
+                const { filename = exportFilename, } = options;
 
                 try {
                     // Create abort controller for this export
@@ -601,7 +614,7 @@ export function useDataTableApi<T extends Record<string, any>>(
                     setExportController?.(controller);
 
                     if (dataMode === 'server' && onServerExport) {
-                        // Server export
+                        // Server export with selection data
                         const currentFilters = {
                             globalFilter,
                             customColumnsFilter,
@@ -610,33 +623,21 @@ export function useDataTableApi<T extends Record<string, any>>(
                             columnOrder,
                             columnPinning,
                         };
-
                         await exportServerData(table, {
                             format: 'csv',
                             filename,
-                            fetchData: onServerExport,
+                            fetchData: (filters, selection) => onServerExport(filters, selection),
                             currentFilters,
-                            pageSize: 1000,
-                            includeHeaders,
+                            selection: table.getSelectionState?.(),
                             onProgress: onExportProgress,
                             onComplete: onExportComplete,
                             onError: onExportError,
                         });
                     } else {
                         // Client export - auto-detect selected rows if not specified
-                        const hasSelectedRows = Object.keys(table.getState().rowSelection).some(
-                            key => table.getState().rowSelection[key],
-                        );
-                        const shouldExportSelected = onlySelectedRows !== undefined
-                            ? onlySelectedRows
-                            : hasSelectedRows;
-
                         await exportClientData(table, {
                             format: 'csv',
                             filename,
-                            onlyVisibleColumns,
-                            onlySelectedRows: shouldExportSelected,
-                            includeHeaders,
                             onProgress: onExportProgress,
                             onComplete: onExportComplete,
                             onError: onExportError,
@@ -652,12 +653,7 @@ export function useDataTableApi<T extends Record<string, any>>(
                 }
             },
             exportExcel: async (options = {}) => {
-                const {
-                    filename = exportFilename,
-                    onlyVisibleColumns = true,
-                    onlySelectedRows,
-                    includeHeaders = true,
-                } = options;
+                const { filename = exportFilename } = options;
 
                 try {
                     // Create abort controller for this export
@@ -665,7 +661,7 @@ export function useDataTableApi<T extends Record<string, any>>(
                     setExportController?.(controller);
 
                     if (dataMode === 'server' && onServerExport) {
-                        // Server export
+                        // Server export with selection data
                         const currentFilters = {
                             globalFilter,
                             customColumnsFilter,
@@ -678,29 +674,18 @@ export function useDataTableApi<T extends Record<string, any>>(
                         await exportServerData(table, {
                             format: 'excel',
                             filename,
-                            fetchData: onServerExport,
+                            fetchData: (filters, selection) => onServerExport(filters, selection),
                             currentFilters,
-                            pageSize: 1000,
-                            includeHeaders,
+                            selection: table.getSelectionState?.(),
                             onProgress: onExportProgress,
                             onComplete: onExportComplete,
                             onError: onExportError,
                         });
                     } else {
                         // Client export - auto-detect selected rows if not specified
-                        const hasSelectedRows = Object.keys(table.getState().rowSelection).some(
-                            key => table.getState().rowSelection[key],
-                        );
-                        const shouldExportSelected = onlySelectedRows !== undefined
-                            ? onlySelectedRows
-                            : hasSelectedRows;
-
                         await exportClientData(table, {
                             format: 'excel',
                             filename,
-                            onlyVisibleColumns,
-                            onlySelectedRows: shouldExportSelected,
-                            includeHeaders,
                             onProgress: onExportProgress,
                             onComplete: onExportComplete,
                             onError: onExportError,
@@ -720,8 +705,6 @@ export function useDataTableApi<T extends Record<string, any>>(
                     format,
                     filename = exportFilename,
                     fetchData = onServerExport,
-                    pageSize = 1000,
-                    includeHeaders = true,
                 } = options;
 
                 if (!fetchData) {
@@ -745,14 +728,12 @@ export function useDataTableApi<T extends Record<string, any>>(
                         columnOrder,
                         columnPinning,
                     };
-
                     await exportServerData(table, {
                         format,
                         filename,
-                        fetchData,
+                        fetchData: (filters, selection) => fetchData(filters, selection),
                         currentFilters,
-                        pageSize,
-                        includeHeaders,
+                        selection: table.getSelectionState?.(),
                         onProgress: onExportProgress,
                         onComplete: onExportComplete,
                         onError: onExportError,
@@ -803,5 +784,8 @@ export function useDataTableApi<T extends Record<string, any>>(
         setExportController,
         isExporting,
         dataMode,
+        selectMode,
+        onSelectionChange,
+        // Note: custom selection removed from dependency array
     ]);
 }

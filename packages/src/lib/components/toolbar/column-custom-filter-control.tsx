@@ -13,7 +13,7 @@ import {
     Divider,
     Badge,
 } from '@mui/material';
-import { useState, useMemo, useCallback } from 'react';
+import { useMemo, useCallback, useEffect } from 'react';
 
 import { MenuDropdown } from '../droupdown/menu-dropdown';
 import { useDataTableContext } from '../../contexts/data-table-context';
@@ -25,92 +25,90 @@ import { getColumnType, isColumnFilterable } from '../../utils/column-helpers';
 import { getSlotComponent } from '../../utils/slot-helpers';
 import { FILTER_OPERATORS } from '../filters';
 import { FilterValueInput } from '../filters/filter-value-input';
-
-
-export interface ColumnFilterRule {
-    id: string;
-    columnId: string;
-    operator: string;
-    value: any;
-    columnType?: string;
-}
+import { ColumnFilterRule } from '../../features';
 
 
 export function ColumnCustomFilterControl() {
-    const { table, customColumnsFilter, onChangeCustomColumnsFilter, slots, slotProps } = useDataTableContext();
+    const { table, slots, slotProps } = useDataTableContext();
     const FilterIconSlot = getSlotComponent(slots, 'filterIcon', FilterList);
-    const [filters, setFilters] = useState<ColumnFilterRule[]>(customColumnsFilter?.filters || []);
-    const [filterLogic, setFilterLogic] = useState<'AND' | 'OR'>('AND');
+
+    // Use the custom feature state from the table - now using pending filters for UI
+    const customFilterState = table.getCustomColumnFilterState?.() || {
+        filters: [],
+        logic: 'AND',
+        pendingFilters: [],
+        pendingLogic: 'AND'
+    };
+
+    // Use pending filters for the UI (draft state)
+    const filters = customFilterState.pendingFilters;
+    const filterLogic = customFilterState.pendingLogic;
+
+    // Active filters are the actual applied filters
+    const activeFiltersCount = table.getActiveColumnFilters?.()?.length || 0;
 
     const filterableColumns = useMemo(() => {
         return table.getAllLeafColumns()
             .filter(column => isColumnFilterable(column));
     }, [table]);
 
-    const addFilter = useCallback(() => {
-        const newFilter: ColumnFilterRule = {
-            id: `filter_${Date.now()}`,
-            columnId: '',
-            operator: '',
-            value: '',
-        };
-        const updatedFilters = [...filters, newFilter];
-        setFilters(updatedFilters);
-    }, [filters]);
+    const addFilter = useCallback((columnId?: string, operator?: string) => {
+        // If no column specified, use empty (user will select)
+        // If column specified, get its appropriate default operator
+        let defaultOperator = operator || '';
+
+        if (columnId && !operator) {
+            const column = filterableColumns.find(col => col.id === columnId);
+            const columnType = getColumnType(column as any);
+            const operators = FILTER_OPERATORS[columnType as keyof typeof FILTER_OPERATORS] || FILTER_OPERATORS.text;
+            defaultOperator = operators[0]?.value || 'contains';
+        }
+
+        table.addPendingColumnFilter?.(columnId || '', defaultOperator, '');
+    }, [table, filterableColumns]);
+
+    const handleAddFilter = useCallback(() => {
+        addFilter();
+    }, [addFilter]);
 
     const updateFilter = useCallback((filterId: string, updates: Partial<ColumnFilterRule>) => {
-        const updatedFilters = filters.map(filter => filter.id === filterId ? {
-            ...filter,
-            ...updates,
-        } : filter);
-        setFilters(updatedFilters);
-
-        const activeFilters = updatedFilters.filter(f => f.columnId && f.operator);
-        if (activeFilters.length > 0 || filters.some(f => f.columnId && f.operator)) {
-            onChangeCustomColumnsFilter?.({
-                filters: activeFilters,
-                logic: filterLogic,
-            });
-        }
-    }, [
-        filterLogic,
-        filters,
-        onChangeCustomColumnsFilter,
-    ]);
+        table.updatePendingColumnFilter?.(filterId, updates);
+    }, [table]);
 
     const removeFilter = useCallback((filterId: string) => {
-        const updatedFilters = filters.filter(filter => filter.id !== filterId);
-        setFilters(updatedFilters);
+        table.removePendingColumnFilter?.(filterId);
+    }, [table]);
 
-        const activeFilters = updatedFilters.filter(f => f.columnId && f.operator);
-        onChangeCustomColumnsFilter?.({
-            filters: activeFilters,
-            logic: filterLogic,
-        });
-    }, [
-        filterLogic,
-        filters,
-        onChangeCustomColumnsFilter,
-    ]);
+    const clearAllFilters = useCallback((closeDialog?: () => void) => {
+        // Clear all pending filters
+        table.clearAllPendingColumnFilters?.();
+        // Immediately apply the clear (which will clear active filters too)
+        setTimeout(() => {
+            table.applyPendingColumnFilters?.();
+            // Close dialog if callback provided
+            if (closeDialog) {
+                closeDialog();
+            }
+        }, 0);
+    }, [table]);
 
-    const clearAllFilters = useCallback(() => {
-        setFilters([]);
-        onChangeCustomColumnsFilter?.({
-            filters: [],
-            logic: filterLogic,
-        });
-    }, [filterLogic, onChangeCustomColumnsFilter]);
 
+
+    // Handle filter logic change (AND/OR)
     const handleLogicChange = useCallback((newLogic: 'AND' | 'OR') => {
-        setFilterLogic(newLogic);
-        const activeFilters = filters.filter(f => f.columnId && f.operator);
-        if (activeFilters.length > 0) {
-            onChangeCustomColumnsFilter?.({
-                filters: activeFilters,
-                logic: newLogic,
-            });
-        }
-    }, [filters, onChangeCustomColumnsFilter]);
+        table.setPendingFilterLogic?.(newLogic);
+    }, [table]);
+
+    // Apply all pending filters
+    const applyFilters = useCallback(() => {
+        table.applyPendingColumnFilters?.();
+    }, [table]);
+
+    // Handle apply button click
+    const handleApplyFilters = useCallback((closeDialog: () => void) => {
+        applyFilters();
+        closeDialog();
+    }, [applyFilters]);
 
     const getOperatorsForColumn = useCallback((columnId: string) => {
         const column = filterableColumns.find(col => col.id === columnId);
@@ -118,7 +116,70 @@ export function ColumnCustomFilterControl() {
         return FILTER_OPERATORS[type as keyof typeof FILTER_OPERATORS] || FILTER_OPERATORS.text;
     }, [filterableColumns]);
 
-    const activeFiltersCount = filters.filter(f => f.columnId && f.operator).length;
+    // Handle column selection change
+    const handleColumnChange = useCallback((filterId: string, newColumnId: string, currentFilter: ColumnFilterRule) => {
+        const newColumn = filterableColumns.find(col => col.id === newColumnId);
+        const columnType = getColumnType(newColumn as any);
+        const operators = FILTER_OPERATORS[columnType as keyof typeof FILTER_OPERATORS] || FILTER_OPERATORS.text;
+
+        // Only reset operator if current operator is not valid for new column type
+        const currentOperatorValid = operators.some(op => op.value === currentFilter.operator);
+        const newOperator = currentOperatorValid ? currentFilter.operator : operators[0]?.value || '';
+
+        updateFilter(filterId, {
+            columnId: newColumnId,
+            operator: newOperator,
+            // Keep the current value unless operator is empty/notEmpty
+            value: ['isEmpty', 'isNotEmpty'].includes(newOperator) ? '' : currentFilter.value,
+        });
+    }, [filterableColumns, updateFilter]);
+
+    // Handle operator selection change
+    const handleOperatorChange = useCallback((filterId: string, newOperator: string, currentFilter: ColumnFilterRule) => {
+        updateFilter(filterId, {
+            operator: newOperator,
+            // Only reset value if operator is empty/notEmpty, otherwise preserve it
+            value: ['isEmpty', 'isNotEmpty'].includes(newOperator) ? '' : currentFilter.value,
+        });
+    }, [updateFilter]);
+
+    // Handle filter value change
+    const handleFilterValueChange = useCallback((filterId: string, value: any) => {
+        updateFilter(filterId, { value });
+    }, [updateFilter]);
+
+    // Handle filter removal
+    const handleRemoveFilter = useCallback((filterId: string) => {
+        removeFilter(filterId);
+    }, [removeFilter]);
+
+    // Count pending filters that are ready to apply (have column, operator, and value OR are empty/notEmpty operators)
+    const pendingFiltersCount = filters.filter(f => {
+        if (!f.columnId || !f.operator) return false;
+        // For empty/notEmpty operators, no value is needed
+        if (['isEmpty', 'isNotEmpty'].includes(f.operator)) return true;
+        // For other operators, value is required
+        return f.value && f.value.toString().trim() !== '';
+    }).length;
+
+    // Check if we need to show "Clear Applied Filters" button
+    const hasAppliedFilters = activeFiltersCount > 0;
+
+    // Determine if there are pending changes that can be applied
+    const hasPendingChanges = pendingFiltersCount > 0 || (filters.length === 0 && hasAppliedFilters);
+
+    // Auto-add default filter when opening if no filters exist AND no applied filters
+    useEffect(() => {
+        if (filters.length === 0 && filterableColumns.length > 0 && activeFiltersCount === 0) {
+            const firstColumn = filterableColumns[0];
+            const columnType = getColumnType(firstColumn as any);
+            const operators = FILTER_OPERATORS[columnType as keyof typeof FILTER_OPERATORS] || FILTER_OPERATORS.text;
+            const defaultOperator = operators[0]?.value || 'contains';
+
+            // Add default filter with first column and its first operator
+            addFilter(firstColumn.id, defaultOperator);
+        }
+    }, [filters.length, filterableColumns, addFilter, activeFiltersCount]);
 
     return (
         <MenuDropdown
@@ -182,24 +243,15 @@ export function ColumnCustomFilterControl() {
                                 size="small"
                                 variant="outlined"
                                 startIcon={<AddIcon />}
-                                onClick={addFilter}
+                                onClick={handleAddFilter}
                             >
                                 Add Filter
                             </Button>
-                            {filters.length > 0 && (
-                                <Button
-                                    size="small"
-                                    variant="text"
-                                    onClick={clearAllFilters}
-                                >
-                                    Clear All
-                                </Button>
-                            )}
                         </Stack>
                     </Stack>
 
                     {/* Logic Selection for Multiple Filters */}
-                    {filters.filter(f => f.columnId && f.operator).length > 1 && (
+                    {filters.length > 1 && (
                         <Box sx={{ mb: 2 }}>
                             <Typography
                                 variant="body2"
@@ -260,11 +312,7 @@ export function ColumnCustomFilterControl() {
                                             <Select
                                                 value={filter.columnId}
                                                 label="Column"
-                                                onChange={(e) => updateFilter(filter.id, {
-                                                    columnId: e.target.value,
-                                                    operator: '', // Reset operator when column changes
-                                                    value: '', // Reset value when column changes
-                                                })}
+                                                onChange={(e) => handleColumnChange(filter.id, e.target.value, filter)}
                                             >
                                                 {filterableColumns.map(column => (
                                                     <MenuItem
@@ -286,10 +334,7 @@ export function ColumnCustomFilterControl() {
                                             <Select
                                                 value={filter.operator}
                                                 label="Operator"
-                                                onChange={(e) => updateFilter(filter.id, {
-                                                    operator: e.target.value,
-                                                    value: '', // Reset value when operator changes
-                                                })}
+                                                onChange={(e) => handleOperatorChange(filter.id, e.target.value, filter)}
                                             >
                                                 {getOperatorsForColumn(filter.columnId).map(op => (
                                                     <MenuItem
@@ -306,7 +351,7 @@ export function ColumnCustomFilterControl() {
                                             <FilterValueInput
                                                 filter={filter}
                                                 column={filterableColumns.find(col => col.id === filter.columnId) as any}
-                                                onValueChange={(value) => updateFilter(filter.id, { value })}
+                                                onValueChange={(value) => handleFilterValueChange(filter.id, value)}
                                             />
                                         ) : (
                                             <Box sx={{ flex: 1 }} /> /* Spacer when no value input needed */
@@ -314,7 +359,7 @@ export function ColumnCustomFilterControl() {
 
                                         <IconButton
                                             size="small"
-                                            onClick={() => removeFilter(filter.id)}
+                                            onClick={() => handleRemoveFilter(filter.id)}
                                             color="error"
                                         >
                                             <DeleteIcon />
@@ -329,28 +374,47 @@ export function ColumnCustomFilterControl() {
 
                     <Stack
                         direction="row"
-                        justifyContent="flex-end"
+                        justifyContent="space-between"
+                        alignItems="center"
                         spacing={1}
                     >
-                        <Button
-                            variant="outlined"
-                            onClick={handleClose}
+                        {/* Reset button - show when there are any filters (pending or applied) */}
+                        {(hasAppliedFilters || filters.length > 0) && (
+                            <Button
+                                size="small"
+                                variant="text"
+                                color="warning"
+                                onClick={() => clearAllFilters(handleClose)}
+                                startIcon={<DeleteIcon />}
+                            >
+                                Reset
+                            </Button>
+                        )}
+
+                        {/* Spacer when no reset button */}
+                        {!(hasAppliedFilters || filters.length > 0) && <Box />}
+
+                        {/* Close and Apply buttons */}
+                        <Stack
+                            direction="row"
+                            spacing={1}
                         >
-                            Close
-                        </Button>
-                        <Button
-                            variant="contained"
-                            onClick={handleClose}
-                            disabled={filters.filter(f => f.columnId && f.operator).length === 0}
-                        >
-                            Apply
-                            {' '}
-                            {activeFiltersCount}
-                            {' '}
-                            Filter
-                            {activeFiltersCount !== 1 ? 's' : ''}
-                            {activeFiltersCount > 1 ? ` (${filterLogic})` : ''}
-                        </Button>
+                            <Button
+                                variant="outlined"
+                                onClick={handleClose}
+                            >
+                                Close
+                            </Button>
+                            <Button
+                                variant="contained"
+                                onClick={() => handleApplyFilters(handleClose)}
+                                disabled={!hasPendingChanges}
+                            >
+                                {pendingFiltersCount === 0 && hasAppliedFilters ? 'Clear All Filters' :
+                                    `Apply ${pendingFiltersCount} Filter${pendingFiltersCount !== 1 ? 's' : ''}${pendingFiltersCount > 1 ? ` (${filterLogic})` : ''}`
+                                }
+                            </Button>
+                        </Stack>
                     </Stack>
                 </Box>
             )}

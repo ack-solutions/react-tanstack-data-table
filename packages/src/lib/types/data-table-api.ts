@@ -1,6 +1,7 @@
-import { ColumnPinningState, SortingState, ColumnOrderState, TableState } from '@tanstack/react-table';
+import { ColumnPinningState, SortingState, ColumnOrderState, TableState, Row } from '@tanstack/react-table';
 
-import { ICustomColumnFilter } from './table.types';
+import { CustomColumnFilterState } from './table.types';
+import { SelectionState } from '../features/custom-selection.feature';
 
 export interface DataTableApi<T = any> {
     // Column Management
@@ -41,7 +42,7 @@ export interface DataTableApi<T = any> {
     filtering: {
         setGlobalFilter: (filter: string) => void;
         clearGlobalFilter: () => void;
-        setCustomColumnFilters: (filters: ICustomColumnFilter) => void;
+        setCustomColumnFilters: (filters: CustomColumnFilterState) => void;
         addColumnFilter: (columnId: string, operator: string, value: any) => void;
         removeColumnFilter: (filterId: string) => void;
         clearAllFilters: () => void;
@@ -66,15 +67,24 @@ export interface DataTableApi<T = any> {
         goToLastPage: () => void;
     };
 
-    // Row Selection
+    // Enhanced Row Selection with automatic mode detection
     selection: {
+        // Basic selection (works with current selectMode)
         selectRow: (rowId: string) => void;
         deselectRow: (rowId: string) => void;
         toggleRowSelection: (rowId: string) => void;
-        selectAllRows: () => void;
-        deselectAllRows: () => void;
-        getSelectedRows: () => T[];
-        getSelectedRowIds: () => string[];
+
+        // Smart selection methods (automatically handle page vs all modes)
+        selectAll: () => void; // Selects all based on current selectMode
+        deselectAll: () => void; // Deselects all
+        toggleSelectAll: () => void; // Toggles select all
+
+        // Selection state getters
+        getSelectionState: () => SelectionState; // Get selection state
+        getSelectedCount: () => number; // Get total selected count
+        getSelectedRows: () => Row<T>[]
+        // Selection state checks
+        isRowSelected: (rowId: string) => boolean;
     };
 
     // Data Management
@@ -121,7 +131,7 @@ export interface DataTableApi<T = any> {
     // Table State
     state: {
         getTableState: () => any;
-        getCurrentFilters: () => ICustomColumnFilter;
+        getCurrentFilters: () => CustomColumnFilterState;
         getCurrentSorting: () => SortingState;
         getCurrentPagination: () => { pageIndex: number; pageSize: number };
         getCurrentSelection: () => string[];

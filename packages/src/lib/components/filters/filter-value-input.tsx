@@ -1,42 +1,13 @@
-import { FormControl, InputLabel, Select, MenuItem, TextField } from '@mui/material';
+import { FormControl, InputLabel, Select, MenuItem, TextField, Checkbox, ListItemText, Box } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { Column } from '@tanstack/react-table';
 import moment from 'moment';
 
-import { getColumnType } from '../../utils/column-helpers';
-import { ColumnFilterRule } from '../toolbar/column-custum-filter-control';
+import { getColumnOptions, getColumnType, getCustomFilterComponent } from '../../utils/column-helpers';
 import { AdapterMoment } from '@mui/x-date-pickers/AdapterMoment';
 import { LocalizationProvider } from '@mui/x-date-pickers';
+import { ColumnFilterRule } from '../../features';
 
-
-function getColumnOptions(column: Column<any, unknown>): any[] {
-    // Check if column has explicit options in meta
-    if ((column?.columnDef as any)?.options) {
-        return (column?.columnDef as any)?.options || [];
-    }
-
-    // Default options for boolean type
-    const columnType = getColumnType(column);
-    if (columnType === 'boolean') {
-        return [
-            {
-                value: true,
-                label: 'Yes',
-            },
-            {
-                value: false,
-                label: 'No',
-            },
-        ];
-    }
-
-    return [];
-}
-
-function getCustomFilterComponent(column: Column<any, unknown>): any {
-    // Check if column has custom filter component in meta
-    return (column?.columnDef?.meta as any)?.filterComponent;
-}
 
 interface FilterValueInputProps<T> {
     filter: ColumnFilterRule;
@@ -52,6 +23,7 @@ export function FilterValueInput<T>({
     const columnType = getColumnType(column);
     const customComponent = getCustomFilterComponent(column);
     const options = getColumnOptions(column);
+    const operator = filter.operator;
 
     // If custom component is provided, use it
     if (customComponent) {
@@ -78,15 +50,73 @@ export function FilterValueInput<T>({
             >
                 <InputLabel>Value</InputLabel>
                 <Select
+                    value={filter.value || 'any'}
+                    label="Value"
+                    onChange={(e) => onValueChange(e.target.value)}
+                >
+                    <MenuItem
+                        key={'any'}
+                        value={'any'}
+                    >
+                        Any
+                    </MenuItem>
+                    <MenuItem
+                        key={'true'}
+                        value={'true'}
+                    >
+                        True
+                    </MenuItem>
+                    <MenuItem
+                        key={'false'}
+                        value={'false'}
+                    >
+                        False
+                    </MenuItem>
+                </Select>
+            </FormControl>
+        );
+    }
+
+    // Select type with options
+    if (columnType === 'select' && options.length > 0) {
+        // Multi-select for 'in' and 'notIn' operators
+        if (operator === 'in' || operator === 'notIn') {
+            return (
+                <FormControl size="small" sx={{ flex: 1, minWidth: 120 }}>
+                    <InputLabel>Value</InputLabel>
+                    <Select
+                        multiple
+                        value={Array.isArray(filter.value) ? filter.value : []}
+                        label="Value"
+                        onChange={(e) => onValueChange(e.target.value)}
+                        renderValue={(selected) =>
+                            (selected as any[]).map(val => {
+                                const opt = options.find(o => o.value === val);
+                                return opt ? opt.label : val;
+                            }).join(', ')
+                        }
+                    >
+                        {options.map(option => (
+                            <MenuItem key={String(option.value)} value={option.value}>
+                                <Checkbox checked={Array.isArray(filter.value) && filter.value.indexOf(option.value) > -1} />
+                                <ListItemText primary={option.label} />
+                            </MenuItem>
+                        ))}
+                    </Select>
+                </FormControl>
+            );
+        }
+        // Single select for other operators
+        return (
+            <FormControl size="small" sx={{ flex: 1, minWidth: 120 }}>
+                <InputLabel>Value</InputLabel>
+                <Select
                     value={filter.value}
                     label="Value"
                     onChange={(e) => onValueChange(e.target.value)}
                 >
                     {options.map(option => (
-                        <MenuItem
-                            key={String(option.value)}
-                            value={option.value}
-                        >
+                        <MenuItem key={String(option.value)} value={option.value}>
                             {option.label}
                         </MenuItem>
                     ))}
@@ -95,55 +125,32 @@ export function FilterValueInput<T>({
         );
     }
 
-    // Select type with options
-    if (columnType === 'select' && options.length > 0) {
-        return (
-            <FormControl
-                size="small"
-                sx={{
-                    flex: 1,
-                    minWidth: 120,
-                }}
-            >
-                <InputLabel>Value</InputLabel>
-                <Select
-                    value={filter.value}
-                    label="Value"
-                    onChange={(e) => onValueChange(e.target.value)}
-                >
-                    {options.map(option => (
-                        <MenuItem
-                            key={String(option.value)}
-                            value={option.value}
-                        >
-                            {option.label}
-                        </MenuItem>
-                    ))}
-                </Select>
-            </FormControl>
-        );
-    }
+    // Date type
     if (columnType === 'date') {
+        // Only single date picker, no 'between' support
         return (
             <LocalizationProvider dateAdapter={AdapterMoment}>
-            <DatePicker
-                value={filter.value ? moment(filter.value) : null}
-                onChange={(e) => onValueChange(e?.toDate())}
-                slotProps={{
-                    textField: {
-                        size: 'small',
-                        label: 'Value',
-                        sx: {
-                            flex: 1,
-                            minWidth: 120,
+                <DatePicker
+                    value={filter.value ? moment(filter.value) : null}
+                    onChange={(e) => onValueChange(e?.toDate())}
+                    slotProps={{
+                        textField: {
+                            size: 'small',
+                            label: 'Value',
+                            sx: {
+                                flex: 1,
+                                minWidth: 120,
+                            },
                         },
-                    },
-                }}
-            />
+                    }}
+                />
             </LocalizationProvider>
         );
     }
+
+    // Number type
     if (columnType === 'number') {
+        // Only single number input, no 'between' support
         return (
             <TextField
                 size="small"
@@ -158,6 +165,8 @@ export function FilterValueInput<T>({
             />
         );
     }
+
+    // Default: text input
     return (
         <TextField
             size="small"

@@ -127,10 +127,21 @@ export interface SimpleExportOptions {
     onlySelectedRows?: boolean;
 }
 
+/**
+ * Selection data for server exports
+ */
+export interface SelectionExportData {
+    selectAllMatching?: boolean;
+    excludedIds?: string[];
+    selectedIds?: string[];
+    hasSelection?: boolean;
+}
+
 export interface ServerExportOptions extends SimpleExportOptions {
-    fetchData: (filters?: Partial<TableState>) => Promise<{ data: any[]; total: number }>;
+    fetchData: (filters?: Partial<TableState>, selection?: SelectionExportData) => Promise<{ data: any[]; total: number }>;
     currentFilters?: any; // Current table filters/state
     pageSize?: number;
+    selection?: SelectionExportData;
 }
 
 export interface ExportCallbacks {

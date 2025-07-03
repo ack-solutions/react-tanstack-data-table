@@ -1,17 +1,19 @@
 /**
  * Type definitions for DataTable components
  */
-import { Row, SortingState, ColumnResizeMode, ColumnPinningState, RowData, TableState } from '@tanstack/react-table';
+import { Row, SortingState, ColumnResizeMode, ColumnPinningState, RowData } from '@tanstack/react-table';
 import { ReactNode } from 'react';
 
-import type { ICustomColumnFilter } from '../../types';
+import type { CustomColumnFilterState, TableFilters, TableState } from '../../types';
 import { DataTableColumn } from '../../types';
 import { DataTableSlots, PartialSlotProps } from '../../types/slots.types';
 import { DataTableSize } from '../../utils/table-helpers';
+import { SelectionState } from '../../features/custom-selection.feature';
 
+// Selection mode type
+export type SelectMode = 'page' | 'all';
 
 // Import consolidated types
-
 
 declare module '@tanstack/table-core' {
     interface ColumnMeta<TData extends RowData, TValue> { // eslint-disable-line @typescript-eslint/no-unused-vars
@@ -33,9 +35,9 @@ export interface DataTableProps<T> {
     // Data management modes (MUI DataGrid style)
     dataMode?: 'client' | 'server'; // Data management mode (default: 'client')
     initialState?: Partial<TableState>;
-    initilaLoadData?: boolean; // Initial load data (default: true)
+    initialLoadData?: boolean; // Initial load data (default: true)
     onDataStateChange?: (filters: Partial<TableState>) => void; // Callback when any filter/state changes
-    onFetchData?: (filters: Partial<TableState>) => Promise<{ data: T[]; total: number }>;
+    onFetchData?: (filters: Partial<TableFilters>) => Promise<{ data: T[]; total: number }>;
 
     // Simplified Export props
     exportFilename?: string;
@@ -43,8 +45,8 @@ export interface DataTableProps<T> {
     onExportComplete?: (result: { success: boolean; filename: string; totalRows: number }) => void;
     onExportError?: (error: { message: string; code: string }) => void;
 
-    // Server export callback - receives current table state/filters
-    onServerExport?: (filters?: Partial<TableState>) => Promise<{ data: any[]; total: number }>;
+    // Server export callback - receives current table state/filters and selection data
+    onServerExport?: (filters?: Partial<TableState>, selection?: SelectionState) => Promise<{ data: any[]; total: number }>;
 
     // Export cancellation callback - called when export is cancelled
     onExportCancel?: () => void;
@@ -52,18 +54,24 @@ export interface DataTableProps<T> {
     // Selection props
     enableRowSelection?: boolean | ((row: Row<T>) => boolean);
     enableMultiRowSelection?: boolean;
-    onRowSelectionChange?: (selectedRows: T[]) => void;
+    selectMode?: SelectMode; // 'page' | 'all' - defines selection scope
+    
+    // Row selection control (like MUI DataGrid)
+    isRowSelectable?: (params: { row: T; id: string }) => boolean;
+    
+    onRowSelectionChange?: (selectedRows: T[], selection?: SelectionState) => void;
+    onSelectionChange?: (selection: SelectionState) => void;
 
     // Bulk action props
     enableBulkActions?: boolean;
-    bulkActions?: (selectedRows: T[]) => ReactNode;
+    bulkActions?: (selectionState: SelectionState) => ReactNode;
 
     // Column resizing props
     enableColumnResizing?: boolean;
     columnResizeMode?: ColumnResizeMode;
 
     // Column ordering props
-    draggable?: boolean;
+    enableColumnDragging?: boolean;
     onColumnDragEnd?: (columnOrder: string[]) => void;
 
     // Column pinning props
@@ -81,7 +89,7 @@ export interface DataTableProps<T> {
 
     // Filtering props
     enableGlobalFilter?: boolean;
-    enableColumnFilters?: boolean;
+    enableColumnFilter?: boolean;
     filterMode?: 'client' | 'server'; // Filtering mode (default: 'client')
 
     // Sorting props
@@ -117,7 +125,7 @@ export interface DataTableProps<T> {
     skeletonRows?: number;
 
     // Column filters props
-    onColumnFiltersChange?: (filterState: ICustomColumnFilter) => void;
+    onColumnFiltersChange?: (filterState: CustomColumnFilterState) => void;
 
     // Data CRUD callbacks
     onDataChange?: (data: T[]) => void;

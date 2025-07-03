@@ -1,7 +1,7 @@
 import { Table } from '@tanstack/react-table';
 import { createContext, useContext, ReactNode, useMemo, RefObject } from 'react';
 
-import { ICustomColumnFilter, TableSize } from '../types';
+import { CustomColumnFilterState, TableSize } from '../types';
 import { DataTableApi } from '../types/data-table-api';
 
 
@@ -9,13 +9,13 @@ import { DataTableApi } from '../types/data-table-api';
  * Context value for the DataTable
  */
 interface DataTableContextValue<T = any> {
-    table: Table<T>;
+    table?: Table<T>;
     apiRef?: RefObject<DataTableApi<T>>;
     dataMode?: 'client' | 'server';
     tableSize?: TableSize;
     onTableSizeChange?: (size: TableSize) => void;
-    customColumnsFilter?: ICustomColumnFilter;
-    onChangeCustomColumnsFilter?: (filter: ICustomColumnFilter) => void;
+    customColumnsFilter?: CustomColumnFilterState;
+    onChangeCustomColumnsFilter?: (filter: CustomColumnFilterState) => void;
     slots?: Record<string, any>;
     slotProps?: Record<string, any>;
 

@@ -37,7 +37,7 @@ export function useDebouncedFetch<T extends Record<string, any>>(
                     const result = await onFetchData(filters);
                     resolve(result);
                 } catch (error) {
-                    console.error('Fetch data error:', error);
+                    // Handle fetch error silently or could be passed to onError callback
                     resolve(null);
                 } finally {
                     setIsLoading(false);
@@ -48,6 +48,7 @@ export function useDebouncedFetch<T extends Record<string, any>>(
 
     // Cleanup timer on unmount
     useEffect(() => {
+        // Fetch data when dependencies change
         return () => {
             if (debounceTimer.current) {
                 clearTimeout(debounceTimer.current);

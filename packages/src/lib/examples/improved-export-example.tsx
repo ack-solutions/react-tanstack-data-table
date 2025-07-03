@@ -29,7 +29,7 @@ const sampleData = Array.from({ length: 100 }, (_, i) => ({
     },
 }));
 
-// Columns with valueFormatter and valueGetter examples
+// Columns using TanStack Table's built-in methods
 const columns = [
     {
         accessorKey: 'id',
@@ -51,26 +51,26 @@ const columns = [
         accessorKey: 'age',
         header: 'Age',
         size: 80,
-        valueFormatter: ({ value }: any) => `${value} years`, // Shows "25 years" in export
+        // Use cell for custom display formatting
+        cell: ({ getValue }: any) => `${getValue()} years`,
     },
     {
         accessorKey: 'salary',
         header: 'Salary',
         size: 120,
-        valueFormatter: ({ value }: any) => {
-            return new Intl.NumberFormat('en-US', {
-                style: 'currency',
-                currency: 'USD',
-            }).format(value);
-        },
+        accessorFn: (row: any) => new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: 'USD',
+        }).format(row.salary),
         exportHeader: 'Annual Salary', // Different header for export
     },
     {
         accessorKey: 'joinDate',
         header: 'Join Date',
         size: 120,
-        valueFormatter: ({ value }: any) => {
-            return new Date(value).toLocaleDateString('en-US', {
+        // Use cell for custom display formatting
+        cell: ({ getValue }: any) => {
+            return new Date(getValue()).toLocaleDateString('en-US', {
                 year: 'numeric',
                 month: 'short',
                 day: 'numeric',
@@ -97,15 +97,17 @@ const columns = [
         id: 'department',
         header: 'Department',
         size: 120,
-        valueGetter: ({ row }: any) => row.metadata?.department || 'N/A', // Extract from nested object
+        // Use accessorFn for custom data extraction
+        accessorFn: (row: any) => row.metadata?.department || 'N/A',
         exportHeader: 'Employee Department',
     },
     {
         id: 'skillLevel',
         header: 'Skill Level',
         size: 100,
-        valueGetter: ({ row }: any) => row.metadata?.skills || 0,
-        valueFormatter: ({ value }: any) => {
+        // Use accessorFn for custom data extraction and cell for display formatting
+        cell: ({ getValue }: any) => {
+            const value = getValue();
             if (value >= 8) return 'Expert';
             if (value >= 6) return 'Advanced';
             if (value >= 4) return 'Intermediate';
@@ -166,9 +168,9 @@ export function ImprovedExportExample() {
             </Typography>
             <ul>
                 <li>
-                    <strong>Uses Column Logic:</strong>
+                    <strong>Uses TanStack Table Logic:</strong>
                     {' '}
-                    Respects valueFormatter and valueGetter
+                    Uses accessorFn and cell rendering for data processing
                 </li>
                 <li>
                     <strong>Only Visible Columns:</strong>
@@ -186,9 +188,9 @@ export function ImprovedExportExample() {
                     Uses exportHeader property if defined
                 </li>
                 <li>
-                    <strong>Proper Value Formatting:</strong>
+                    <strong>Raw Data Export:</strong>
                     {' '}
-                    Formats values like in the table display
+                    Exports raw data values, not formatted display values
                 </li>
             </ul>
 
@@ -261,6 +263,7 @@ export function ImprovedExportExample() {
                     <DataTable
                         ref={tableRef}
                         data={sampleData}
+                        totalRow={sampleData.length}
                         columns={columns}
                         dataMode="client"
                         enableGlobalFilter

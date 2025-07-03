@@ -9,19 +9,18 @@ import {
     Box,
 } from '@mui/material';
 
-
 import { MenuDropdown } from '../droupdown/menu-dropdown';
 import { useDataTableContext } from '../../contexts/data-table-context';
 import { ExcelIcon, CsvIcon } from '../../icons';
-import { TableState } from '../../types';
+import {  TableFilters } from '../../types';
 import { exportClientData, exportServerData } from '../../utils/export-utils';
 import { getSlotComponent } from '../../utils/slot-helpers';
-
+import { SelectionState } from '../../features/custom-selection.feature';
 
 interface TableExportControlProps {
-    // Optional props to override context defaults (now optional since we get from context)
+    // Optional props to override context defaults
     exportFilename?: string;
-    onServerExport?: (filters?: Partial<TableState>) => Promise<{ data: any[]; total: number }>;
+    onServerExport?: (filters?: Partial<TableFilters>, selection?: SelectionState) => Promise<{ data: any[]; total: number }>;
     onExportProgress?: (progress: { processedRows: number; totalRows: number; percentage: number }) => void;
     onExportComplete?: (result: { success: boolean; filename: string; totalRows: number }) => void;
     onExportError?: (error: { message: string; code: string }) => void;
@@ -36,6 +35,7 @@ export function TableExportControl({
 }: TableExportControlProps = {}) {
     const {
         table,
+        apiRef,
         slots,
         slotProps,
         dataMode,
@@ -63,7 +63,7 @@ export function TableExportControl({
     const handleExport = async (format: 'csv' | 'excel') => {
         try {
             if (dataMode === 'server' && onServerExport) {
-                // Server mode export - fetch all data with current filters
+                // Server mode export - fetch data with current filters and selection
                 const currentState = table.getState();
                 const currentFilters = {
                     globalFilter: currentState.globalFilter,
@@ -71,27 +71,23 @@ export function TableExportControl({
                     columnFilters: currentState.columnFilters,
                 };
 
-                // Use our simple server export utility
+                // Get selection data from apiRef if available
+                const selectionData = apiRef?.current?.selection?.getSelectionState();
                 await exportServerData(table, {
                     format,
                     filename: exportFilename,
-                    fetchData: (filters) => onServerExport(filters || currentFilters),
+                    fetchData: (filters, selection) => onServerExport(filters || currentFilters, selection),
                     currentFilters,
+                    selection: selectionData,
                     onProgress: onExportProgress,
                     onComplete: onExportComplete,
                     onError: onExportError,
                 });
             } else {
-                // Client mode export - automatically detect selected rows
-                const hasSelectedRows = Object.keys(table.getState().rowSelection).some(
-                    key => table.getState().rowSelection[key],
-                );
-
+                // Client mode export - export selected rows if any, otherwise all filtered rows
                 await exportClientData(table, {
                     format,
                     filename: exportFilename,
-                    onlyVisibleColumns: true,
-                    onlySelectedRows: hasSelectedRows, // Export selected if any are selected
                     onProgress: onExportProgress,
                     onComplete: onExportComplete,
                     onError: onExportError,

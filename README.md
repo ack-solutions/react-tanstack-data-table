@@ -6,6 +6,7 @@ A powerful, feature-rich, and highly customizable React data table component bui
 
 - 📦 **NPM Package**: [@ackplus/react-tanstack-data-table](https://www.npmjs.com/package/@ackplus/react-tanstack-data-table)
 - 📖 **Documentation**: [Package README](./packages/README.md)
+- 📚 **Development Docs**: [docs/](./docs/) - Coding standards, setup guides, and technical documentation
 - 🔗 **Repository**: [GitHub](https://github.com/ack-solutions/react-tanstack-data-table)
 
 ## 📂 Project Structure
@@ -13,21 +14,24 @@ A powerful, feature-rich, and highly customizable React data table component bui
 This is a monorepo containing:
 
 ```
+├── docs/               # 📚 Development documentation
+│   ├── README.md           # Documentation index
+│   ├── CODING_RULES.md     # Coding standards
+│   └── ...                 # Other dev docs
 ├── packages/           # Main data table library
 │   ├── src/
 │   │   ├── lib/
 │   │   │   ├── components/    # React components
-│   │   │   │   ├── components/    # React components
-│   │   │   │   ├── types/         # TypeScript definitions
-│   │   │   │   ├── utils/         # Utility functions
-│   │   │   │   ├── hooks/         # Custom React hooks
-│   │   │   │   ├── contexts/      # React contexts
-│   │   │   │   └── examples/      # Usage examples
+│   │   │   ├── types/         # TypeScript definitions
+│   │   │   ├── utils/         # Utility functions
+│   │   │   ├── hooks/         # Custom React hooks
+│   │   │   ├── contexts/      # React contexts
+│   │   │   └── examples/      # Usage examples
 │   │   │   └── index.ts
 │   │   ├── package.json
 │   │   └── README.md      # 📖 Main documentation
-│   ├── react/             # Demo/development app
-│   └── react-e2e/         # End-to-end tests
+├── react/             # Demo/development app
+└── react-e2e/         # End-to-end tests
 ```
 
 ## ✨ Features
@@ -192,11 +196,13 @@ We welcome contributions! Please follow these steps:
 
 ### Development Guidelines
 
-- Follow TypeScript best practices
-- Add comprehensive tests for new features
-- Update documentation for API changes
-- Follow the existing code style
-- Use conventional commit messages
+- **Read the docs**: Check [docs/CODING_RULES.md](./docs/CODING_RULES.md) for coding standards
+- **Follow TypeScript best practices**
+- **Add comprehensive tests** for new features
+- **Update documentation** for API changes
+- **Follow the existing code style**
+- **Use conventional commit messages**
+- **Run code checks**: `npm run check-rules` before committing
 
 ## 📋 Roadmap
 

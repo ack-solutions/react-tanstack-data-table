@@ -1,4 +1,3 @@
-import { SelectAll, Deselect } from '@mui/icons-material';
 import {
     Box,
     Toolbar,
@@ -6,40 +5,36 @@ import {
     Chip,
     Fade,
     alpha,
-    IconButton,
-    Tooltip,
     Theme,
 } from '@mui/material';
-import { ReactNode } from 'react';
+import { ReactNode, useMemo } from 'react';
 
 import { useDataTableContext } from '../../contexts/data-table-context';
 import { getSlotComponent } from '../../utils/slot-helpers';
+import { SelectionState } from '../../features/custom-selection.feature';
 
 
 export interface BulkActionsToolbarProps<T = any> {
-    selectedRows: T[];
+    selectionState: SelectionState;
     selectedRowCount: number;
-    bulkActions?: (selectedRows: T[]) => ReactNode;
-    enableSelectAll?: boolean;
-    onSelectAll?: () => void;
-    onDeselectAll?: () => void;
+    bulkActions?: (selectionState: SelectionState) => ReactNode;
     sx?: any;
 }
 
 export function BulkActionsToolbar<T = any>({
+    selectionState,
     selectedRowCount,
     bulkActions,
-    enableSelectAll = true,
-    onSelectAll,
-    onDeselectAll,
-    selectedRows,
     sx,
 }: BulkActionsToolbarProps<T>) {
     const { slots, slotProps } = useDataTableContext();
     const ToolbarSlot = getSlotComponent(slots, 'toolbar', Toolbar);
-    const SelectAllIconSlot = getSlotComponent(slots, 'selectAllIcon', SelectAll);
-    const DeselectIconSlot = getSlotComponent(slots, 'deselectIcon', Deselect);
 
+    // Memoize the bulk actions rendering to prevent infinite re-renders
+    const renderedBulkActions = useMemo(() => {
+        if (!bulkActions) return null;
+        return bulkActions(selectionState) as any;
+    }, [bulkActions, selectionState]);
 
     return (
         <Fade in={selectedRowCount > 0}>
@@ -82,40 +77,7 @@ export function BulkActionsToolbar<T = any>({
                         gap: 1,
                     }}
                 >
-                    {/* Select/Deselect All icons */}
-                    {enableSelectAll ? (
-                        <Box
-                            sx={{
-                                display: 'flex',
-                                gap: 0.5,
-                            }}
-                        >
-                            {onSelectAll ? (
-                                <Tooltip title="Select All">
-                                    <IconButton
-                                        onClick={onSelectAll}
-                                        size="small"
-                                        color="primary"
-                                    >
-                                        <SelectAllIconSlot {...slotProps?.selectAllIcon} />
-                                    </IconButton>
-                                </Tooltip>
-                            ) : null}
-                            {onDeselectAll ? (
-                                <Tooltip title="Deselect All">
-                                    <IconButton
-                                        onClick={onDeselectAll}
-                                        size="small"
-                                    >
-                                        <DeselectIconSlot {...slotProps?.deselectIcon} />
-                                    </IconButton>
-                                </Tooltip>
-                            ) : null}
-                        </Box>
-                    ) : null}
-
-                    {/* Custom bulk actions */}
-                    {bulkActions ? (bulkActions(selectedRows) as any) : null}
+                    {renderedBulkActions}
                 </Box>
             </ToolbarSlot>
         </Fade>

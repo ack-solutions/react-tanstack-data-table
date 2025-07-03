@@ -75,7 +75,6 @@ export function ColumnPinningControl() {
     // Count only user-pinned columns (exclude system columns like select and action)
     const userPinnedLeft = (columnPinning.left?.filter((id) => allColumns.some((column: any) => column.id === id)) || []);
     const userPinnedRight = (columnPinning.right?.filter((id) => allColumns.some((column: any) => column.id === id)) || []);
-    console.log('userPinnedLeft', userPinnedLeft, userPinnedRight);
     const totalPinned = userPinnedLeft.length + userPinnedRight.length;
 
     return (

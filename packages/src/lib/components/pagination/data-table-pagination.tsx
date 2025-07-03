@@ -1,6 +1,6 @@
 // data-table-pagination.tsx
 import { TablePagination, Box, TablePaginationProps } from '@mui/material';
-import { ReactNode, useCallback } from 'react';
+import { memo, ReactNode } from 'react';
 
 import { useDataTableContext } from '../../contexts/data-table-context';
 
@@ -14,19 +14,15 @@ export interface DataTablePaginationProps extends Omit<TablePaginationProps, 'co
     };
 }
 
-export function DataTablePagination({
+export const DataTablePagination = memo(({
     footerFilter = null,
     pagination,
     totalRow,
     ...props
-}: DataTablePaginationProps) {
+}: DataTablePaginationProps) => {
     const { table } = useDataTableContext();
-    const handlePaginationChange = useCallback((pageIndex: number, pageSize: number) => {
-        table.setPagination({
-            pageIndex,
-            pageSize,
-        });
-    }, [table]);
+
+    // console.log('DataTablePagination', pagination);
     return (
         <Box
             sx={{
@@ -42,14 +38,17 @@ export function DataTablePagination({
             <TablePagination
                 component="div"
                 count={totalRow}
-                rowsPerPage={pagination.pageSize}
-                page={pagination.pageIndex}
+                rowsPerPage={pagination?.pageSize}
+                page={pagination?.pageIndex}
                 onPageChange={(_, page) => {
-                    handlePaginationChange?.(page, pagination.pageSize);
+                    // Use TanStack Table's native pagination methods
+                    table.setPageIndex(page);
                 }}
                 onRowsPerPageChange={e => {
                     const newPageSize = Number(e.target.value);
-                    handlePaginationChange?.(0, newPageSize);
+                    // Use TanStack Table's native pagination methods
+                    table.setPageIndex(0);
+                    table.setPageSize(newPageSize);
                 }}
                 showFirstButton
                 showLastButton
@@ -59,4 +58,4 @@ export function DataTablePagination({
             />
         </Box>
     );
-}
+})
