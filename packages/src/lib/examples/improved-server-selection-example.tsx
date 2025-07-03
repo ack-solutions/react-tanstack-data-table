@@ -208,22 +208,6 @@ export const ImprovedServerSelectionExample = () => {
                 onExportError={handleExportError}
                 enableExport={true}
                 enableBulkActions={true}
-                bulkActions={(selectedRows) => (
-                    <div className="flex space-x-2">
-                        <button
-                            onClick={() => console.log('Bulk action on', selectedRows.length, 'rows')}
-                            className="px-3 py-1 bg-red-500 text-white rounded text-sm hover:bg-red-600"
-                        >
-                            Delete Selected ({selectionInfo?.totalSelected || 0})
-                        </button>
-                        <button
-                            onClick={() => console.log('Bulk edit on', selectedRows.length, 'rows')}
-                            className="px-3 py-1 bg-yellow-500 text-white rounded text-sm hover:bg-yellow-600"
-                        >
-                            Edit Selected ({selectionInfo?.totalSelected || 0})
-                        </button>
-                    </div>
-                )}
             />
         </div>
     );
