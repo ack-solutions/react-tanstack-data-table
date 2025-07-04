@@ -26,8 +26,8 @@
   "bugs": {
     "url": "https://github.com/ack-solutions/react-tanstack-data-table/issues"
   },
-  "main": "./index.js",
-  "types": "./index.d.ts",
+  "main": "./src/index.js",
+  "types": "./src/index.d.ts",
   "peerDependencies": {
     "@emotion/react": ">=11.0.0",
     "@emotion/styled": ">=11.0.0",
