@@ -44,23 +44,12 @@ jobs:
       - name: Publish package
         run: |
           # Create publish directory outside workspace
-          mkdir -p /tmp/publish-pkg
+       
           
-          # Copy built files and additional files
-          cp -r packages/dist/* /tmp/publish-pkg/
-          cp packages/README.md /tmp/publish-pkg/
-          cp packages/LICENSE /tmp/publish-pkg/
-          cp packages/package.json /tmp/publish-pkg/
+          cp packages/README.md ./packages/dist
+          cp packages/LICENSE ./packages/dist
           
-          # Fix package.json files field to include all built files
-          cd /tmp/publish-pkg
-          node -e "
-            const fs = require('fs');
-            const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
-            pkg.files = ['index.js', 'index.d.ts', 'index.d.ts.map', 'lib/', 'README.md', 'LICENSE', '!**/*.tsbuildinfo'];
-            fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));
-          "
-          
+            cd packages/dist
           # Publish the package
           npm publish --access public || echo "⚠️ Failed to publish (maybe already published)"
         env:

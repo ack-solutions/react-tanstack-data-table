@@ -1,6 +1,6 @@
 import { SortingState } from '@tanstack/react-table';
 
-import { ColumnFilterRule, CustomSelectionState as SelectionState } from '../features';
+import { ColumnFilterRule, SelectionState } from '../features';
 
 
 /**

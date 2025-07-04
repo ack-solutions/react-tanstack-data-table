@@ -18,8 +18,16 @@
  * - Loading states and empty data handling
  */
 
-// Main components
-export * from './lib/components';
+// Main components - be specific to avoid conflicts
+export { DataTable } from './lib/components/table';
+export type { DataTableProps } from './lib/components/table';
+
+// Other component exports
+export * from './lib/components/headers';
+export * from './lib/components/rows';
+export * from './lib/components/filters';
+export * from './lib/components/pagination';
+export * from './lib/components/droupdown/menu-dropdown';
 
 // Individual toolbar components for custom toolbars
 export {
@@ -29,6 +37,7 @@ export {
     TableExportControl,
     TableSizeControl,
     BulkActionsToolbar,
+    DataTableToolbar,
 } from './lib/components/toolbar';
 
 // Export bulk action types
@@ -59,8 +68,10 @@ export type {
     PaginationState,
 } from '@tanstack/react-table';
 
-// Custom features
+// Custom features (this includes SelectMode from features)
 export * from './lib/features';
 
 // Examples
 export { CustomColumnFilterExample } from './lib/examples/custom-column-filter-example';
+export { SimpleLocalExample } from './lib/examples/simple-local-example';
+export { AdvancedFeaturesExample } from './lib/examples/advanced-features-example';

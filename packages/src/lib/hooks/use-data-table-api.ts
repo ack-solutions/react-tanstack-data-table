@@ -4,7 +4,7 @@ import { Ref, useImperativeHandle } from 'react';
 import { CustomColumnFilterState,  TableFilters,  TableState } from '../types';
 import { DataTableApi } from '../types/data-table-api';
 import { exportClientData, exportServerData } from '../utils/export-utils';
-import { CustomSelectionState as SelectionState } from '../features';
+import { SelectionState } from '../features';
 // import { 
 //     toggleSelectAll as helperToggleSelectAll,
 //     selectAll as helperSelectAll,

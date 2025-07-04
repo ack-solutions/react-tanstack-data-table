@@ -13,7 +13,7 @@ import {
 } from '@mui/material';
 import { DataTable } from '../components';
 import type { DataTableApi } from '../types/data-table-api';
-import type { CustomSelectionState } from '../features';
+import type { SelectionState } from '../features';
 
 // Sample data interface
 interface User {
@@ -83,7 +83,7 @@ const columns = [
 
 export function SelectionTestExample() {
     const [selectMode, setSelectMode] = useState<'page' | 'all'>('page');
-    const [selectionState, setSelectionState] = useState<CustomSelectionState>({
+    const [selectionState, setSelectionState] = useState<SelectionState>({
         ids: [],
         type: 'include',
     });
@@ -91,7 +91,7 @@ export function SelectionTestExample() {
     const tableRef = useRef<DataTableApi<User>>(null);
 
     // Handle selection state changes
-    const handleSelectionChange = useCallback((newSelectionState: CustomSelectionState) => {
+    const handleSelectionChange = useCallback((newSelectionState: SelectionState) => {
         setSelectionState(newSelectionState);
     }, []);
 

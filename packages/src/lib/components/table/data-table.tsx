@@ -26,7 +26,7 @@ import {
 
 // Import custom features
 import { CustomColumnFilterFeature, getCombinedFilteredRowModel } from '../../features/custom-column-filter.feature';
-import { CustomSelectionFeature, CustomSelectionState as SelectionState } from '../../features';
+import { CustomSelectionFeature, SelectionState } from '../../features';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { useState, useCallback, useMemo, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
 

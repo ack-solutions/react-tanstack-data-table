@@ -17,8 +17,8 @@ export {
 // Export custom selection feature
 export {
     CustomSelectionFeature,
-    type SelectionState as CustomSelectionState,
-    type SelectMode as CustomSelectMode,
+    type SelectionState,
+    type SelectMode,
     type CustomSelectionOptions,
     type CustomSelectionTableState,
     type CustomSelectionInstance,
