@@ -1,0 +1,748 @@
+{
+    "openapi": "3.0.0",
+    "paths": {
+        "/auth/signup": {
+            "post": {
+                "operationId": "AuthController_signup",
+                "parameters": [],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SignupRequestDto"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AuthResponseDto"
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "Signup",
+                "tags": [
+                    "Auth"
+                ]
+            }
+        },
+        "/auth/login": {
+            "post": {
+                "operationId": "AuthController_login",
+                "parameters": [],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/LoginRequestDto"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AuthResponseDto"
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "Login",
+                "tags": [
+                    "Auth"
+                ]
+            }
+        },
+        "/auth/refresh-token": {
+            "post": {
+                "operationId": "AuthController_refreshToken",
+                "parameters": [],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/RefreshTokenRequestDto"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AuthResponseDto"
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "Refresh Token",
+                "tags": [
+                    "Auth"
+                ]
+            }
+        },
+        "/auth/send-2fa-code": {
+            "post": {
+                "operationId": "AuthController_send2faCode",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MessageResponseDto"
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "Send 2FA Code",
+                "tags": [
+                    "Auth"
+                ]
+            }
+        },
+        "/auth/verify-2fa": {
+            "post": {
+                "operationId": "AuthController_verify2fa",
+                "parameters": [],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Verify2faRequestDto"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Verify2faResponseDto"
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "Verify 2FA",
+                "tags": [
+                    "Auth"
+                ]
+            }
+        },
+        "/auth/logout": {
+            "post": {
+                "operationId": "AuthController_logout",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MessageResponseDto"
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "Logout",
+                "tags": [
+                    "Auth"
+                ]
+            }
+        },
+        "/auth/logout-all": {
+            "post": {
+                "operationId": "AuthController_logoutAll",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MessageResponseDto"
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "Logout All",
+                "tags": [
+                    "Auth"
+                ]
+            }
+        },
+        "/auth/forgot-password": {
+            "post": {
+                "operationId": "AuthController_forgotPassword",
+                "parameters": [],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ForgotPasswordRequestDto"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MessageResponseDto"
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "Forgot Password",
+                "tags": [
+                    "Auth"
+                ]
+            }
+        },
+        "/auth/reset-password": {
+            "post": {
+                "operationId": "AuthController_resetPassword",
+                "parameters": [],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ResetPasswordRequestDto"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MessageResponseDto"
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "Reset Password",
+                "tags": [
+                    "Auth"
+                ]
+            }
+        },
+        "/auth/user": {
+            "get": {
+                "operationId": "AuthController_getUser",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/UserResponseDto"
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "Get Logged In User",
+                "tags": [
+                    "Auth"
+                ]
+            }
+        },
+        "/auth/devices": {
+            "get": {
+                "operationId": "AuthController_listDevices",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DeviceInfoDto"
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "List Devices",
+                "tags": [
+                    "Auth"
+                ]
+            }
+        },
+        "/auth/devices/{deviceId}": {
+            "delete": {
+                "operationId": "AuthController_deleteDevice",
+                "parameters": [
+                    {
+                        "name": "deviceId",
+                        "required": true,
+                        "in": "path",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MessageResponseDto"
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "Delete Device",
+                "tags": [
+                    "Auth"
+                ]
+            }
+        },
+        "/auth/mfa/send-mfa-code": {
+            "post": {
+                "operationId": "MfaController_sendMfaCode",
+                "parameters": [],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SendMfaCodeRequestDto"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MessageResponseDto"
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "Send MFA Code",
+                "tags": [
+                    "Mfa"
+                ]
+            }
+        },
+        "/auth/mfa/setup-totp": {
+            "post": {
+                "operationId": "MfaController_setupTotp",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MessageResponseDto"
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "Setup TOTP Device",
+                "tags": [
+                    "Mfa"
+                ]
+            }
+        },
+        "/auth/mfa/verify-totp-setup": {
+            "post": {
+                "operationId": "MfaController_verifyTotpSetup",
+                "parameters": [],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/VerifyTotpSetupRequestDto"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MessageResponseDto"
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "Verify TOTP Setup",
+                "tags": [
+                    "Mfa"
+                ]
+            }
+        },
+        "/auth/mfa/generate-recovery-code": {
+            "post": {
+                "operationId": "MfaController_generateRecoveryCodes",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MessageResponseDto"
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "Generate Recovery Codes",
+                "tags": [
+                    "Mfa"
+                ]
+            }
+        },
+        "/auth/mfa/reset-totp": {
+            "post": {
+                "operationId": "MfaController_resetTotp",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MessageResponseDto"
+                                }
+                            }
+                        }
+                    }
+                },
+                "summary": "Reset TOTP Device",
+                "tags": [
+                    "Mfa"
+                ]
+            }
+        }
+    },
+    "info": {
+        "title": "NestAuth API",
+        "description": "",
+        "version": "0.0.1",
+        "contact": {}
+    },
+    "tags": [],
+    "servers": [],
+    "components": {
+        "schemas": {
+            "SignupRequestDto": {
+                "type": "object",
+                "properties": {
+                    "email": {
+                        "type": "string",
+                        "description": "User email address"
+                    },
+                    "phone": {
+                        "type": "string",
+                        "description": "User phone number"
+                    },
+                    "password": {
+                        "type": "string",
+                        "description": "User password (min 8 characters)"
+                    },
+                    "tenantId": {
+                        "type": "string",
+                        "description": "Optional tenant ID for multi-tenant applications"
+                    }
+                },
+                "required": [
+                    "password"
+                ]
+            },
+            "AuthResponseDto": {
+                "type": "object",
+                "properties": {
+                    "accessToken": {
+                        "type": "string",
+                        "description": "JWT access token"
+                    },
+                    "refreshToken": {
+                        "type": "string",
+                        "description": "JWT refresh token"
+                    },
+                    "isRequiresMfa": {
+                        "type": "boolean",
+                        "description": "Whether the user requires MFA"
+                    }
+                },
+                "required": [
+                    "accessToken",
+                    "refreshToken",
+                    "isRequiresMfa"
+                ]
+            },
+            "LoginRequestDto": {
+                "type": "object",
+                "properties": {
+                    "providerId": {
+                        "type": "string",
+                        "description": "Provider ID"
+                    },
+                    "credentials": {
+                        "type": "object",
+                        "description": "Credentials"
+                    },
+                    "tenantId": {
+                        "type": "string",
+                        "description": "Tenant ID"
+                    },
+                    "createUserIfNotExists": {
+                        "type": "boolean",
+                        "description": "Create user if not exists"
+                    }
+                }
+            },
+            "RefreshTokenRequestDto": {
+                "type": "object",
+                "properties": {
+                    "refreshToken": {
+                        "type": "string",
+                        "description": "Refresh token to get new access token"
+                    }
+                },
+                "required": [
+                    "refreshToken"
+                ]
+            },
+            "MessageResponseDto": {
+                "type": "object",
+                "properties": {
+                    "message": {
+                        "type": "string",
+                        "description": "Response message"
+                    }
+                },
+                "required": [
+                    "message"
+                ]
+            },
+            "Verify2faRequestDto": {
+                "type": "object",
+                "properties": {
+                    "method": {
+                        "type": "string",
+                        "enum": [
+                            "totp",
+                            "sms",
+                            "email"
+                        ]
+                    },
+                    "otp": {
+                        "type": "string",
+                        "description": "The OTP to verify"
+                    }
+                },
+                "required": [
+                    "method",
+                    "otp"
+                ]
+            },
+            "Verify2faResponseDto": {
+                "type": "object",
+                "properties": {
+                    "accessToken": {
+                        "type": "string",
+                        "description": "JWT access token"
+                    },
+                    "refreshToken": {
+                        "type": "string",
+                        "description": "JWT refresh token"
+                    }
+                },
+                "required": [
+                    "accessToken",
+                    "refreshToken"
+                ]
+            },
+            "ForgotPasswordRequestDto": {
+                "type": "object",
+                "properties": {
+                    "email": {
+                        "type": "string",
+                        "description": "User email address"
+                    },
+                    "phone": {
+                        "type": "string",
+                        "description": "User phone number"
+                    },
+                    "tenantId": {
+                        "type": "string",
+                        "description": "Tenant ID"
+                    }
+                }
+            },
+            "ResetPasswordRequestDto": {
+                "type": "object",
+                "properties": {
+                    "email": {
+                        "type": "string",
+                        "description": "User email address"
+                    },
+                    "phone": {
+                        "type": "string",
+                        "description": "User phone number"
+                    },
+                    "otp": {
+                        "type": "string",
+                        "description": "One-time password (OTP) received via email or SMS"
+                    },
+                    "newPassword": {
+                        "type": "string",
+                        "description": "New password"
+                    },
+                    "tenantId": {
+                        "type": "string",
+                        "description": "Tenant ID"
+                    }
+                },
+                "required": [
+                    "otp",
+                    "newPassword"
+                ]
+            },
+            "UserResponseDto": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "description": "User ID"
+                    },
+                    "email": {
+                        "type": "string",
+                        "description": "User email"
+                    },
+                    "phone": {
+                        "type": "string",
+                        "description": "User phone number"
+                    },
+                    "isVerified": {
+                        "type": "boolean",
+                        "description": "User verification status"
+                    },
+                    "metadata": {
+                        "type": "object",
+                        "description": "User metadata"
+                    }
+                },
+                "required": [
+                    "id",
+                    "email",
+                    "phone",
+                    "isVerified",
+                    "metadata"
+                ]
+            },
+            "DeviceInfoDto": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "description": "Device ID"
+                    },
+                    "name": {
+                        "type": "string",
+                        "description": "Device name or identifier"
+                    },
+                    "lastActive": {
+                        "format": "date-time",
+                        "type": "string",
+                        "description": "Last active timestamp"
+                    },
+                    "ipAddress": {
+                        "type": "string",
+                        "description": "IP address of the device"
+                    }
+                },
+                "required": [
+                    "id",
+                    "name",
+                    "lastActive",
+                    "ipAddress"
+                ]
+            },
+            "SendMfaCodeRequestDto": {
+                "type": "object",
+                "properties": {
+                    "method": {
+                        "type": "string",
+                        "enum": [
+                            "totp",
+                            "sms",
+                            "email"
+                        ]
+                    }
+                },
+                "required": [
+                    "method"
+                ]
+            },
+            "VerifyTotpSetupRequestDto": {
+                "type": "object",
+                "properties": {
+                    "otp": {
+                        "type": "string",
+                        "description": "The OTP token to verify"
+                    },
+                    "secret": {
+                        "type": "string",
+                        "description": "Device secret to verify"
+                    }
+                },
+                "required": [
+                    "otp",
+                    "secret"
+                ]
+            }
+        }
+    }
+}

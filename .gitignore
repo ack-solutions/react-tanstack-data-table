@@ -1,5 +1,7 @@
 # See https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files for more about ignoring files.
 
+.env
+
 # compiled output
 dist
 tmp
@@ -40,9 +42,7 @@ Thumbs.db
 
 .nx/cache
 .nx/workspace-data
+temp-nest-auth.db
+
 .cursor/rules/nx-rules.mdc
 .github/instructions/nx.instructions.md
-
-vite.config.*.timestamp*
-vitest.config.*.timestamp*
-test-output

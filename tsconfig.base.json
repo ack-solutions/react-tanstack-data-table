@@ -1,33 +1,42 @@
 {
+  "compileOnSave": false,
   "compilerOptions": {
-    "baseUrl": ".",
-    "composite": true,
-    "declaration": true,
-    "declarationMap": true,
-    "emitDeclarationOnly": false,
+    "rootDir": ".",
+    "sourceMap": true,
+    "declaration": false,
+    "moduleResolution": "node",
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
     "importHelpers": true,
-    "isolatedModules": true,
-    "lib": [
-      "es2022",
-      "dom"
-    ],
+    "target": "es2015",
     "module": "esnext",
-    "moduleResolution": "bundler",
-    "noEmitOnError": false,
-    "noFallthroughCasesInSwitch": true,
-    "noImplicitOverride": true,
-    "noImplicitReturns": true,
-    "noUnusedLocals": false,
+    "lib": ["es2020", "dom"],
     "skipLibCheck": true,
-    "strict": true,
-    "target": "es2022",
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noImplicitReturns": false,
+    "noImplicitAny": false,
+    "strictPropertyInitialization": false,
+    "strict": false,
+    "skipDefaultLibCheck": true,
+    "noFallthroughCasesInSwitch": true,
+    "removeComments": true,
     "allowSyntheticDefaultImports": true,
+    "incremental": true,
+    "allowJs": false,
+    "resolveJsonModule": true,
     "esModuleInterop": true,
-    "jsx": "react-jsx",
+    "forceConsistentCasingInFileNames": true,
+    "noImplicitOverride": true,
+    "noPropertyAccessFromIndexSignature": false,
+    "strictNullChecks": false,
+    "noUncheckedIndexedAccess": false,
+    "baseUrl": ".",
     "paths": {
-      "@ackplus/react-mui-tanstack-data-table": [
-        "packages/src/index.ts"
+      "@ackplus/react-tanstack-data-table": [
+        "packages/react-tanstack-data-table/src/index.ts"
       ]
     }
-  }
+  },
+  "exclude": ["node_modules", "tmp"]
 }

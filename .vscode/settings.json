@@ -1,4 +1,3 @@
 {
-    "deepscan.enable": true,
-    "nxConsole.generateAiAgentRules": true
+    "deepscan.enable": true
 }

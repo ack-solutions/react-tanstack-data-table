@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>NestAuth API Docs</title>
+    <link
+      href="https://unpkg.com/swagger-ui-dist/swagger-ui.css"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div id="swagger-ui"></div>
+    <script src="https://unpkg.com/swagger-ui-dist/swagger-ui-bundle.js"></script>
+    <script>
+      SwaggerUIBundle({
+        url: 'openapi.json', // place your file in docs/
+        dom_id: '#swagger-ui',
+      });
+    </script>
+  </body>
+</html>
