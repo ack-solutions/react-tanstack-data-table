@@ -15,14 +15,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 ## Packages
 
-### 1. [@ackplus/nest-crud](./packages/nest-crud/README.md)
-A NestJS package that provides CRUD (Create, Read, Update, Delete) operations functionality. This package helps in quickly implementing CRUD endpoints in your NestJS applications.
-
-### 2. [@ackplus/nest-crud-request](./packages/nest-crud-request/README.md)
-A companion package for @ackplus/nest-crud that handles request parsing and validation for CRUD operations. It provides utilities for processing and validating incoming requests.
-
-### 3. [@ackplus/nest-auth](./packages/nest-auth/README.md)
-A companion package for @ackplus/nest-auth that handles auth Operation. It provides utilities for auth.
+### 2. [@ackplus/react-tanstack-data-table](./packages/react-tanstack-data-table/README.md)
+A companion package for @ackplus/react-tanstack-data-table that handles
 
 ## Installation
 
@@ -30,15 +24,11 @@ You can install these packages using npm or yarn:
 
 ```bash
 # Install specific package
-npm install @ackplus/nest-crud
-npm install @ackplus/nest-crud-request
-npm install @ackplus/nest-auth
+npm install  @ackplus/react-tanstack-data-table
 
 
 # Or using yarn
-yarn add @ackplus/nest-crud
-yarn add @ackplus/nest-crud-request
-yarn add @ackplus/nest-auth
+yarn add @ackplus/react-tanstack-data-table
 ```
 
 ## Contributing

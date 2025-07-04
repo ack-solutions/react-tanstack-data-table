@@ -9,8 +9,9 @@ import { Table, Row, Column } from '@tanstack/react-table';
 import { ComponentType, ReactNode } from 'react';
 
 import { DataTableColumn, TableFilters, ExportProgress, ExportResult, ExportError, ServerExportColumn } from './index';
-import { DataTablePaginationProps } from '../components/pagination/data-table-pagination';
 import { DataTableSize } from '../utils/table-helpers';
+import { DataTablePaginationProps } from "../components/pagination";
+
 
 
 /**

@@ -1,17 +1,17 @@
 {
-  "name": "nest-crud-request",
+  "name": "react-tanstack-data-table",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "packages/nest-crud-request/src",
+  "sourceRoot": "packages/react-tanstack-data-table/src",
   "projectType": "library",
   "targets": {
     "build": {
       "executor": "@nx/js:tsc",
       "outputs": ["{options.outputPath}"],
       "options": {
-        "outputPath": "dist/packages/nest-crud-request",
-        "main": "packages/nest-crud-request/src/index.ts",
-        "tsConfig": "packages/nest-crud-request/tsconfig.lib.json",
-        "assets": ["packages/nest-crud-request/*.md"]
+        "outputPath": "dist/packages/react-tanstack-data-table",
+        "main": "packages/react-tanstack-data-table/src/index.ts",
+        "tsConfig": "packages/react-tanstack-data-table/tsconfig.lib.json",
+        "assets": ["packages/react-tanstack-data-table/*.md"]
       }
     }
   },

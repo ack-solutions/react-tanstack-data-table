@@ -32,6 +32,7 @@
     "strictNullChecks": false,
     "noUncheckedIndexedAccess": false,
     "baseUrl": ".",
+    "jsx": "react-jsx",
     "paths": {
       "@ackplus/react-tanstack-data-table": [
         "packages/react-tanstack-data-table/src/index.ts"

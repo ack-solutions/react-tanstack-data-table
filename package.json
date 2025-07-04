@@ -4,7 +4,7 @@
   "scripts": {
     "set-version": "node tools/set-version.js",
     "lint": "nx lint",
-    "build": "nx build --exclude nest",
+    "build": "nx build",
     "start": "nx serve",
     "test": "nx test",
     "lint:all": "nx run-many -t lint --exclude nest",
