@@ -62,6 +62,7 @@ export function TableExportControl({
 
     const handleExport = async (format: 'csv' | 'excel') => {
         try {
+            console.log('handleExport', dataMode, onServerExport);
             if (dataMode === 'server' && onServerExport) {
                 // Server mode export - fetch data with current filters and selection
                 const currentState = table.getState();
@@ -102,15 +103,26 @@ export function TableExportControl({
         }
     };
 
-    const selectedRowCount = Object.keys(table.getState().rowSelection).filter(
-        key => table.getState().rowSelection[key],
-    ).length;
+    // Get selection count using our custom selection feature
+    const selectedRowCount = table.getSelectedCount ? table.getSelectedCount() : 0;
+    const hasSelection = table.getIsSomeRowsSelected ? table.getIsSomeRowsSelected() : false;
+
+    const visibleColumns = table.getVisibleLeafColumns().filter(col => col.getIsVisible());
+    const exportableColumns = visibleColumns.filter(col => {
+        const columnDef = col.columnDef as any;
+        return columnDef.hideInExport !== true;
+    });
+    const hiddenFromExportColumns = visibleColumns.filter(col => {
+        const columnDef = col.columnDef as any;
+        return columnDef.hideInExport === true;
+    });
 
     const summary = {
         filteredRows: table.getFilteredRowModel().rows.length,
-        totalColumns: table.getVisibleLeafColumns().filter(col => col.getIsVisible()).length,
+        totalColumns: exportableColumns.length,
+        hiddenColumns: hiddenFromExportColumns.length,
         selectedRows: selectedRowCount,
-        hasSelection: selectedRowCount > 0,
+        hasSelection: hasSelection,
     };
 
     return (
@@ -159,9 +171,14 @@ export function TableExportControl({
                             color="text.secondary"
                         >
                             {summary.hasSelection
-                                ? `${summary.selectedRows} selected • ${summary.totalColumns} visible columns`
-                                : `${summary.filteredRows} filtered • ${summary.totalColumns} visible columns`
+                                ? `${summary.selectedRows} selected • ${summary.totalColumns} exportable columns`
+                                : `${summary.filteredRows} filtered • ${summary.totalColumns} exportable columns`
                             }
+                            {summary.hiddenColumns > 0 && (
+                                <span style={{ color: 'orange' }}>
+                                    {' '}• {summary.hiddenColumns} hidden from export
+                                </span>
+                            )}
                         </Typography>
                         {summary.hasSelection ? (
                             <Typography

@@ -72,6 +72,7 @@ export type {
 export * from './lib/features';
 
 // Examples
+export { ServerSideTest } from './lib/examples/server-side-test';
 export { CustomColumnFilterExample } from './lib/examples/custom-column-filter-example';
 export { SimpleLocalExample } from './lib/examples/simple-local-example';
 export { AdvancedFeaturesExample } from './lib/examples/advanced-features-example';

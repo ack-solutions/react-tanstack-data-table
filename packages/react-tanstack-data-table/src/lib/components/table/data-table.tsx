@@ -22,6 +22,8 @@ import {
     ColumnOrderState,
     ColumnPinningState,
     getPaginationRowModel,
+    OnChangeFn,
+    Updater,
 } from '@tanstack/react-table';
 
 // Import custom features
@@ -397,24 +399,30 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     ]);
 
     // Handle column order change
-    const handleColumnOrderChange = useCallback((updatedColumnOrder: ColumnOrderState) => {
-        setColumnOrder(updatedColumnOrder);
+    const handleColumnOrderChange = useCallback((updatedColumnOrder: Updater<ColumnOrderState>) => {
+        const newColumnOrder = typeof updatedColumnOrder === 'function'
+            ? updatedColumnOrder(columnOrder)
+            : updatedColumnOrder;
+        setColumnOrder(newColumnOrder);
 
         // Call external column order handler
         if (onColumnDragEnd) {
-            onColumnDragEnd(updatedColumnOrder);
+            onColumnDragEnd(newColumnOrder);
         }
-    }, [onColumnDragEnd]);
+    }, [onColumnDragEnd, columnOrder]);
 
     // Handle column pinning change with special columns logic
-    const handleColumnPinningChange = useCallback((updatedColumnPinning: ColumnPinningState) => {
-        setColumnPinning(updatedColumnPinning);
+    const handleColumnPinningChange = useCallback((updatedColumnPinning: Updater<ColumnPinningState>) => {
+        const newColumnPinning = typeof updatedColumnPinning === 'function'
+            ? updatedColumnPinning(columnPinning)
+            : updatedColumnPinning;
+        setColumnPinning(newColumnPinning);
 
         // Call external column pinning handler
         if (onColumnPinningChange) {
-            onColumnPinningChange(updatedColumnPinning);
+            onColumnPinningChange(newColumnPinning);
         }
-    }, [onColumnPinningChange]);
+    }, [onColumnPinningChange, columnPinning]);
 
 
     // TanStack-style pagination handler - keep it simple
@@ -869,24 +877,24 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     return (
         <DataTableProvider
              table={table}
-            // apiRef={internalApiRef}
-            // dataMode={dataMode}
-            // tableSize={tableSize}
-            // onTableSizeChange={(size) => {
-            //     setTableSize(size);
-            // }}
-            // customColumnsFilter={customColumnsFilter}
-            // onChangeCustomColumnsFilter={handleColumnFilterStateChange}
-            // slots={slots}
-            // slotProps={slotProps}
-            // isExporting={isExporting}
-            // exportController={exportController}
-            // onCancelExport={handleCancelExport}
-            // exportFilename={exportFilename}
-            // onExportProgress={onExportProgress}
-            // onExportComplete={onExportComplete}
-            // onExportError={onExportError}
-            // onServerExport={onServerExport}
+             apiRef={internalApiRef}
+             dataMode={dataMode}
+             tableSize={tableSize}
+             onTableSizeChange={(size) => {
+                 setTableSize(size);
+             }}
+            customColumnsFilter={customColumnsFilter}
+            onChangeCustomColumnsFilter={handleColumnFilterStateChange}
+            slots={slots}
+            slotProps={slotProps}
+            isExporting={isExporting}
+            exportController={exportController}
+            onCancelExport={handleCancelExport}
+            exportFilename={exportFilename}
+            onExportProgress={onExportProgress}
+            onExportComplete={onExportComplete}
+            onExportError={onExportError}
+            onServerExport={onServerExport}
         >
             <RootSlot
                 {...slotProps?.root}

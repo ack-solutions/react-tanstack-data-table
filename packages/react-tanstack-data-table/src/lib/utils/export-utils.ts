@@ -35,16 +35,16 @@ export async function exportClientData<TData>(
         // const selectedRowIds = Object.keys(table.getState().rowSelection).filter(
         //     key => table.getState().rowSelection[key]
         // );
-        
+
         // const hasSelectedRows = selectedRowIds.length > 0;
-        
+
         // // Get the rows to export
         // const rowsToExport = hasSelectedRows ? table.getSelectedRowModel().rows : table.getFilteredRowModel().rows;
 
         const selectedRows = table.getSelectedRows ? table.getSelectedRows() : [];
         const hasSelectedRows = selectedRows.length > 0;
         const rowsToExport = hasSelectedRows ? selectedRows : table.getFilteredRowModel().rows;
-        // Prepare data for export - just get all visible columns and their values
+        // Prepare data for export - get all visible columns and their values, excluding hideInExport columns
         const exportData = rowsToExport.map((row, index) => {
             onProgress?.({
                 processedRows: index + 1,
@@ -53,17 +53,22 @@ export async function exportClientData<TData>(
             });
 
             const rowData: Record<string, any> = {};
-            
-            // Get all visible cells for this row
+
+            // Get all visible cells for this row, excluding columns marked as hideInExport
             row.getVisibleCells().forEach(cell => {
-                const header = typeof cell.column.columnDef.header === 'string' 
-                    ? cell.column.columnDef.header 
-                    : cell.column.id;
-                
+                const columnDef = cell.column.columnDef
+
+                // Skip columns marked as hideInExport
+                if (columnDef.hideInExport === true) {
+                    return;
+                }
+
+                const header = typeof columnDef.header === 'string' ? columnDef.header : cell.column.id;
+
                 // Use getValue() - it already handles all formatting
                 rowData[header] = cell.getValue() || '';
             });
-            
+
             return rowData;
         });
 
@@ -111,8 +116,11 @@ export async function exportServerData<TData>(
             throw new Error('Invalid data received from server');
         }
 
-        // Get visible columns for proper headers and data processing
-        const visibleColumns = table.getVisibleLeafColumns().filter(col => col.getIsVisible());
+        // Get visible columns for proper headers and data processing, excluding hideInExport columns
+        const visibleColumns = table.getVisibleLeafColumns().filter(col => {
+            const columnDef = col.columnDef;
+            return col.getIsVisible() && columnDef.hideInExport !== true;
+        });
 
         // Prepare data for export with proper column processing
         const exportData = data.map((rowData, index) => {
@@ -123,22 +131,22 @@ export async function exportServerData<TData>(
             });
 
             const exportRow: Record<string, any> = {};
-            
+
             visibleColumns.forEach(column => {
                 const columnId = column.id;
-                const header = typeof column.columnDef.header === 'string' 
-                    ? column.columnDef.header 
+                const columnDef = column.columnDef;
+                const header = typeof columnDef.header === 'string'
+                    ? columnDef.header
                     : columnId;
-                
+
                 // Get value from raw data
                 let value = rowData[columnId];
-                
+
                 // Apply accessorFn if defined
-                const columnDef = column.columnDef as any;
-                if (columnDef.accessorFn && typeof columnDef.accessorFn === 'function') {
-                    value = columnDef.accessorFn(rowData);
+                if (column.accessorFn && typeof column.accessorFn === 'function') {
+                    value = (column.accessorFn(rowData, index) || '')?.toString() || '';
                 }
-                
+
                 // Convert to string for export
                 if (value === null || value === undefined) {
                     value = '';
@@ -147,10 +155,10 @@ export async function exportServerData<TData>(
                 } else {
                     value = String(value);
                 }
-                
+
                 exportRow[header] = value;
             });
-            
+
             return exportRow;
         });
 
@@ -191,7 +199,7 @@ async function exportToFile(
         const workbook = XLSX.utils.book_new();
         const worksheet = XLSX.utils.json_to_sheet(data);
         XLSX.utils.book_append_sheet(workbook, worksheet, 'Data');
-        
+
         const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
         const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
         downloadFile(blob, `${filename}.xlsx`, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
@@ -228,15 +236,15 @@ function convertToCSV(data: Record<string, any>[]): string {
 function downloadFile(content: string | Blob, filename: string, mimeType: string): void {
     const blob = content instanceof Blob ? content : new Blob([content], { type: mimeType });
     const url = URL.createObjectURL(blob);
-    
+
     const link = document.createElement('a');
     link.href = url;
     link.download = filename;
     link.style.display = 'none';
-    
+
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    
+
     URL.revokeObjectURL(url);
 }

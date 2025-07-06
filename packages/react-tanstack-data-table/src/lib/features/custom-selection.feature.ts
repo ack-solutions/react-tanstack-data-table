@@ -239,7 +239,7 @@ export const CustomSelectionFeature: TableFeature<any> = {
             if (selectMode === 'all' && state.type === 'exclude') {
                 // In exclude mode, we have some selected if not all are excluded
                 const totalCount = table.getRowCount();
-                return state.ids.length < totalCount;
+                return state.ids.length < totalCount && totalCount > 0;
             } else {
                 // In include mode, we have some selected if list has items
                 return state.ids.length > 0;
@@ -260,8 +260,10 @@ export const CustomSelectionFeature: TableFeature<any> = {
             const selectMode = table.options.selectMode || 'page';
 
             if (selectMode === 'all' && state.type === 'exclude') {
+                // For server-side data, use rowCount which includes total from server
+                // For client-side data, this will be the same as getRowModel().rows.length
                 const totalCount = table.getRowCount();
-                return totalCount - state.ids.length;
+                return Math.max(0, totalCount - state.ids.length);
             } else {
                 return state.ids.length;
             }
