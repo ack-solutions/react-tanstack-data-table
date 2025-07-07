@@ -7,7 +7,7 @@ A powerful, feature-rich, and highly customizable React data table component bui
 - 🚀 **High Performance**: Built on TanStack Table for excellent performance with large datasets
 - 🎨 **Material Design**: Beautiful UI components using MUI with consistent design system
 - 📱 **Responsive**: Mobile-friendly responsive design with adaptive layouts
-- 🔍 **Advanced Filtering**: Global search, column filters, and custom filter components
+- 🔍 **Advanced Filtering**: Global search, column filters, and filter components
 - 📊 **Multi-Column Sorting**: Powerful sorting with multiple columns support
 - 📄 **Flexible Pagination**: Client-side and server-side pagination options
 - 🎯 **Column Management**: Show/hide, resize, reorder, and pin columns
@@ -328,7 +328,7 @@ function SelectableTable() {
 }
 ```
 
-### Custom Column Filters
+### Column Filters
 
 ```tsx
 const columns = [

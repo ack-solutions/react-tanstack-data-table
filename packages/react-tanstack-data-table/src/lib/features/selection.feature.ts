@@ -28,28 +28,28 @@ export type IsRowSelectableFunction<T = any> = (params: { row: T; id: string }) 
 export type SelectMode = 'page' | 'all';
 
 // Options for the custom selection feature
-export interface CustomSelectionOptions {
-    enableCustomSelection?: boolean;
+export interface SelectionOptions {
+    enableAdvanceSelection?: boolean;
     selectMode?: SelectMode;
     isRowSelectable?: IsRowSelectableFunction;
     onSelectionStateChange?: (updater: Updater<SelectionState>) => void;
 }
 
 // Table state interface for selection
-export interface CustomSelectionTableState {
+export interface SelectionTableState {
     selectionState: SelectionState;
 }
 
 // Declaration merging to extend TanStack Table types
 declare module '@tanstack/table-core' {
-    interface TableState extends CustomSelectionTableState { }
+    interface TableState extends SelectionTableState { }
     interface TableOptionsResolved<TData extends RowData>
-        extends CustomSelectionOptions { }
-    interface Table<TData extends RowData> extends CustomSelectionInstance<TData> { }
+        extends SelectionOptions { }
+    interface Table<TData extends RowData> extends SelectionInstance<TData> { }
 }
 
 // Table instance methods for custom selection
-export interface CustomSelectionInstance<TData extends RowData> {
+export interface SelectionInstance<TData extends RowData> {
     // Basic selection methods
     setSelectionState: (updater: Updater<SelectionState>) => void;
     toggleAllRowsSelected: () => void;
@@ -75,9 +75,9 @@ export interface CustomSelectionInstance<TData extends RowData> {
 }
 
 // The custom selection feature implementation (same pattern as CustomColumnFilterFeature)
-export const CustomSelectionFeature: TableFeature<any> = {
+export const SelectionFeature: TableFeature<any> = {
     // Define the feature's initial state
-    getInitialState: (state): CustomSelectionTableState => {
+    getInitialState: (state): SelectionTableState => {
         return {
             selectionState: {
                 ids: [],
@@ -91,17 +91,18 @@ export const CustomSelectionFeature: TableFeature<any> = {
     // Define the feature's default options
     getDefaultOptions: <TData extends RowData>(
         table: Table<TData>
-    ): CustomSelectionOptions => {
+    ): SelectionOptions => {
         return {
-            enableCustomSelection: true,
+            enableAdvanceSelection: true,
             selectMode: 'page',
             onSelectionStateChange: makeStateUpdater('selectionState', table),
-        } as CustomSelectionOptions;
+        } as SelectionOptions;
     },
 
     // Define the feature's table instance methods
     createTable: <TData extends RowData>(table: Table<TData>): void => {
         table.setSelectionState = (updater) => {
+            if (!table.options.enableAdvanceSelection) return;
             const safeUpdater: Updater<SelectionState> = (old) => {
                 const newState = functionalUpdate(updater, old);
                 return newState;
@@ -111,6 +112,7 @@ export const CustomSelectionFeature: TableFeature<any> = {
 
         // === BASIC SELECTION METHODS ===
         table.selectRow = (rowId: string) => {
+            if (!table.options.enableAdvanceSelection) return;
             if (!table.canSelectRow(rowId)) return;
 
             table.setSelectionState((old) => {
@@ -132,6 +134,7 @@ export const CustomSelectionFeature: TableFeature<any> = {
         };
 
         table.deselectRow = (rowId: string) => {
+            if (!table.options.enableAdvanceSelection) return;
             table.setSelectionState((old) => {
                 if (old.type === 'exclude') {
                     // In exclude mode, deselecting means adding to exclude list
@@ -151,6 +154,7 @@ export const CustomSelectionFeature: TableFeature<any> = {
         };
 
         table.toggleRowSelected = (rowId: string) => {
+            if (!table.options.enableAdvanceSelection) return;
             if (table.getIsRowSelected(rowId)) {
                 table.deselectRow(rowId);
             } else {
@@ -159,6 +163,7 @@ export const CustomSelectionFeature: TableFeature<any> = {
         };
 
         table.selectAll = () => {
+            if (!table.options.enableAdvanceSelection) return;
             const selectMode = table.options.selectMode || 'page';
 
             if (selectMode === 'all') {
@@ -184,6 +189,7 @@ export const CustomSelectionFeature: TableFeature<any> = {
         };
 
         table.deselectAll = () => {
+            if (!table.options.enableAdvanceSelection) return;
             table.setSelectionState((old) => ({
                 ...old,
                 ids: [],
@@ -192,6 +198,7 @@ export const CustomSelectionFeature: TableFeature<any> = {
         };
 
         table.toggleAllRowsSelected = () => {
+            if (!table.options.enableAdvanceSelection) return;
             if (table.getIsAllRowsSelected()) {
                 table.deselectAll();
             } else {
@@ -271,15 +278,13 @@ export const CustomSelectionFeature: TableFeature<any> = {
 
         table.getSelectedRowIds = () => {
             const state = table.getSelectionState();
-
             if (state.type === 'exclude') {
-                // In exclude mode, return all row IDs minus excluded ones
-                // Note: This is simplified - for full functionality, you'd need all possible row IDs
-                console.warn('getSelectedRowIds() in exclude mode returns exclude list. Use getSelectionState() instead.');
-                return state.ids;
-            } else {
-                return state.ids;
+                console.warn(
+                    '[SelectionFeature] getSelectedRowIds() is not accurate in exclude mode. Use getSelectionState() to interpret selection properly.'
+                );
+                return []; // Return empty to avoid misleading API
             }
+            return state.ids;
         };
 
         table.getSelectedRows = () => {
@@ -305,4 +310,4 @@ export const CustomSelectionFeature: TableFeature<any> = {
             return table.options.isRowSelectable({ row: row.original, id: rowId });
         };
     },
-}; 
+};

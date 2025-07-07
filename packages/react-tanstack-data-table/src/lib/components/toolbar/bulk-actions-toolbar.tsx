@@ -11,7 +11,7 @@ import { ReactNode, useMemo } from 'react';
 
 import { useDataTableContext } from '../../contexts/data-table-context';
 import { getSlotComponent } from '../../utils/slot-helpers';
-import { SelectionState } from '../../features/custom-selection.feature';
+import { SelectionState } from '../../features';
 
 
 export interface BulkActionsToolbarProps<T = any> {

@@ -18,19 +18,17 @@ import {
     useReactTable,
     SortingState,
     getSortedRowModel,
-    RowSelectionState,
     ColumnOrderState,
     ColumnPinningState,
     getPaginationRowModel,
-    OnChangeFn,
     Updater,
 } from '@tanstack/react-table';
 
 // Import custom features
-import { CustomColumnFilterFeature, getCombinedFilteredRowModel } from '../../features/custom-column-filter.feature';
-import { CustomSelectionFeature, SelectionState } from '../../features';
+import { ColumnFilterFeature, getCombinedFilteredRowModel } from '../../features/column-filter.feature';
+import { SelectionFeature, SelectionState } from '../../features';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { useState, useCallback, useMemo, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
+import React, { useState, useCallback, useMemo, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
 
 
 // Import from new organized structure
@@ -44,7 +42,7 @@ import { DataTablePagination } from '../pagination';
 import { DataTableRow, LoadingRows, EmptyDataRow } from '../rows';
 import { DataTableToolbar, BulkActionsToolbar } from '../toolbar';
 import { DataTableProps } from './data-table.types';
-import { CustomColumnFilterState, TableFiltersForFetch, TableState } from '../../types';
+import { ColumnFilterState, TableFiltersForFetch, TableState } from '../../types';
 import { DataTableApi } from '../../types/data-table-api';
 import {
     createExpandingColumn,
@@ -55,26 +53,26 @@ import {
 
 // Static default initial state - defined outside component
 const DEFAULT_INITIAL_STATE = {
-    sorting: [] as SortingState,
+    sorting: [],
     pagination: {
         pageIndex: 0,
         pageSize: 10,
     },
-    rowSelection: {} as RowSelectionState,
+    rowSelection: {},
     globalFilter: '',
     expanded: {},
-    columnOrder: [] as ColumnOrderState,
+    columnOrder: [],
     columnPinning: {
         left: [],
         right: [],
-    } as ColumnPinningState,
+    },
     customColumnFilter: {
         filters: [],
-        logic: 'AND',
+        logic: 'AND' as const,
         pendingFilters: [],
-        pendingLogic: 'AND',
+        pendingLogic: 'AND' as const,
     },
-} as const;
+};
 
 /**
  * Main DataTable component with all features
@@ -103,7 +101,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
 
     // Bulk action props
     enableBulkActions = false,
-    bulkActions = null,
+    bulkActions,
 
     // Column resizing props
     enableColumnResizing = false,
@@ -186,9 +184,38 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     const isServerFiltering = filterMode === 'server' || isServerMode;
     const isServerSorting = sortingMode === 'server' || isServerMode;
 
-    // Virtualization setup
-    const tableContainerRef = useRef<HTMLDivElement>(null);
+    // -------------------------------
+    // State hooks (grouped together)
+    // -------------------------------
+    const [sorting, setSorting] = useState<SortingState>(DEFAULT_INITIAL_STATE.sorting);
+    const [pagination, setPagination] = useState(DEFAULT_INITIAL_STATE.pagination);
+    const [globalFilter, setGlobalFilter] = useState(DEFAULT_INITIAL_STATE.globalFilter);
+    const [selectionState, setSelectionState] = useState<SelectionState>(
+        initialState?.selectionState || { ids: [], type: 'include' as const }
+    );
+    const [columnFilter, setColumnFilter] = useState<ColumnFilterState>({
+        filters: [],
+        logic: 'AND',
+        pendingFilters: [],
+        pendingLogic: 'AND'
+    });
+    const [expanded, setExpanded] = useState(DEFAULT_INITIAL_STATE.expanded);
+    const [tableSize, setTableSize] = useState<DataTableSize>(initialTableSize);
+    const [columnOrder, setColumnOrder] = useState<ColumnOrderState>(DEFAULT_INITIAL_STATE.columnOrder);
+    const [columnPinning, setColumnPinning] = useState<ColumnPinningState>(DEFAULT_INITIAL_STATE.columnPinning);
+    const [serverData, setServerData] = useState<T[]>([]);
+    const [serverTotal, setServerTotal] = useState(0);
+    const [exportController, setExportController] = useState<AbortController | null>(null);
 
+    // -------------------------------
+    // Ref hooks (grouped together)
+    // -------------------------------
+    const tableContainerRef = useRef<HTMLDivElement>(null);
+    const internalApiRef = useRef<DataTableApi<T>>(null);
+
+    // -------------------------------
+    // Memoized values (grouped together)
+    // -------------------------------
     const initialStateConfig = useMemo(() => {
         return {
             ...DEFAULT_INITIAL_STATE,
@@ -196,133 +223,33 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         };
     }, [initialState]);
 
-    // Local state management - using the initial state
-    const [sorting, setSorting] = useState<SortingState>(initialStateConfig.sorting);
-    const [pagination, setPagination] = useState(initialStateConfig.pagination);
-    const [globalFilter, setGlobalFilter] = useState(initialStateConfig.globalFilter);
-
-    // Selection state - same pattern as other table states
-    const [selectionState, setSelectionState] = useState<SelectionState>(
-        initialState?.selectionState || { ids: [], type: 'include' as const }
-    );
-    const [customColumnsFilter, setCustomColumnsFilter] = useState<CustomColumnFilterState>({
-        filters: [],
-        logic: 'AND',
-        pendingFilters: [],
-        pendingLogic: 'AND'
-    });
-    const [expanded, setExpanded] = useState(initialStateConfig.expanded);
-    const [tableSize, setTableSize] = useState<DataTableSize>(initialTableSize);
-    const [columnOrder, setColumnOrder] = useState<ColumnOrderState>(initialStateConfig.columnOrder);
-    const [columnPinning, setColumnPinning] = useState<ColumnPinningState>(initialStateConfig.columnPinning);
-
-    // Create internal ref for API (needs to be before enhancedColumns)
-    const internalApiRef = useRef<DataTableApi<T>>(null);
+    // Re-initialize state if initialState changes
+    useEffect(() => {
+        setSorting(initialStateConfig.sorting);
+        setPagination(initialStateConfig.pagination);
+        setGlobalFilter(initialStateConfig.globalFilter);
+        setExpanded(initialStateConfig.expanded);
+        setColumnOrder(initialStateConfig.columnOrder);
+        setColumnPinning(initialStateConfig.columnPinning);
+    }, [initialStateConfig]);
 
     const { debouncedFetch, isLoading: fetchLoading } = useDebouncedFetch(onFetchData);
-
-    // Server data state (only used when onFetchData is provided)
-    const [serverData, setServerData] = useState<T[]>([]);
-    const [serverTotal, setServerTotal] = useState(0);
-
-
-
-    const fetchData = useCallback(async (overrides: Partial<TableState> = {}) => {
-        if (!onFetchData) return;
-
-        const filters: TableFiltersForFetch = {
-            globalFilter,
-            pagination,
-            customColumnsFilter,
-            sorting,
-            ...overrides,
-        };
-
-        const result = await debouncedFetch(filters);
-        if (result?.data && result?.total !== undefined) {
-            setServerData(result.data);
-            setServerTotal(result.total);
-            // if (result.data.length > 0) {
-            //     const newPageIndex filters.pageIndex;
-            //     const newPageSize = filters.pageSize;
-            //     if (
-            //         newPageIndex !== pagination.pageIndex ||
-            //         newPageSize !== pagination.pageSize
-            //     ) {
-            //         setPagination(result.pagination);
-            //     }
-            // }
-        }
-    }, [
-        onFetchData,
-        globalFilter,
-        pagination, // Added pagination to dependencies
-        customColumnsFilter,
-        sorting,
-        debouncedFetch,
-    ]);
-    const fetchDataRef = useRef<typeof fetchData>(fetchData);
-    fetchDataRef.current = fetchData; // Always keep ref updated with latest function
-
-    // Use server data when available, otherwise use props data
     const tableData = useMemo(() => onFetchData ? serverData : data, [onFetchData, serverData, data]);
     const tableTotalRow = useMemo(() => onFetchData ? serverTotal : totalRow, [onFetchData, serverTotal, totalRow]);
     const tableLoading = useMemo(() => onFetchData ? (loading || fetchLoading) : loading, [onFetchData, loading, fetchLoading]);
-
-    // Handle selection state changes - same pattern as other table states
-    const handleSelectionStateChange = useCallback((updaterOrValue: any) => {
-        // Use React state updater pattern (same as pagination, sorting in TanStack)
-        setSelectionState((prevState) => {
-            // Handle both updater function and direct value
-            const newSelectionState = typeof updaterOrValue === 'function'
-                ? updaterOrValue(prevState)  // ✅ Use React's current state, not stale closure
-                : updaterOrValue;
-
-            // Trigger callback with new state
-            if (onSelectionChange) {
-                onSelectionChange(newSelectionState);
-            }
-
-            return newSelectionState;
-        });
-    }, [onSelectionChange]);
-
-    // Handle column filter changes with logic from ColumnFilter component
-    const handleColumnFilterStateChange = useCallback((filterState: CustomColumnFilterState) => {
-        if (filterState && typeof filterState === 'object') {
-            setCustomColumnsFilter(filterState);
-
-            // Call external column filters handler
-            if (onColumnFiltersChange) {
-                onColumnFiltersChange(filterState);
-            }
-
-            // For server-side filtering, don't fetch here - only on apply
-            // Client-side filtering will happen through filterFns automatically
-        }
-    }, [
-        onColumnFiltersChange,
-    ]); // ✅ Only onSelectionChange needed
-
-    // Build enhanced columns with special columns (after tableTotalRow is defined)
     const enhancedColumns = useMemo(
         () => {
             let columnsMap = [...columns];
-
-            // Add expanding column first if enabled
             if (enableExpanding) {
                 const expandingColumnMap = createExpandingColumn<T>({
                     ...(slotProps?.expandColumn || {}),
                 });
                 columnsMap = [expandingColumnMap, ...columnsMap];
             }
-
-            // Add selection column second if enabled
             if (enableRowSelection) {
                 const selectionColumnMap = createSelectionColumn<T>({
                     ...(slotProps?.selectionColumn || {}),
                     multiSelect: enableMultiRowSelection,
-                    // Note: isRowSelectable is handled by table options, not column config
                 });
                 columnsMap = [selectionColumnMap, ...columnsMap];
             }
@@ -337,58 +264,140 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
             enableMultiRowSelection,
         ],
     );
+    const isExporting = useMemo(() => exportController !== null, [exportController]);
+    const isSomeRowsSelected = useMemo(() => {
+        if (!enableBulkActions || !enableRowSelection) return false;
+        if (selectionState.type === 'exclude') {
+            return selectionState.ids.length < tableTotalRow;
+        } else {
+            return selectionState.ids.length > 0;
+        }
+    }, [enableBulkActions, enableRowSelection, selectionState, tableTotalRow]);
+    const selectedRowCount = useMemo(() => {
+        if (!enableBulkActions || !enableRowSelection) return 0;
+        if (selectionState.type === 'exclude') {
+            return tableTotalRow - selectionState.ids.length;
+        } else {
+            return selectionState.ids.length;
+        }
+    }, [enableBulkActions, enableRowSelection, selectionState, tableTotalRow]);
+    const tableWidth = useMemo(() => {
+        if (fitToScreen) {
+            return '100%';
+        }
+        if (enableColumnResizing) {
+            return table.getCenterTotalSize();
+        }
+        return '100%';
+    }, [
+        fitToScreen,
+        enableColumnResizing,
+        // table is defined later, but this is safe as it's only used after table is defined
+    ]);
+    const tableStyle = useMemo(() => ({
+        width: tableWidth,
+        minWidth: '100%',
+    }), [tableWidth]);
 
-    // Common function to notify data state changes
+    // -------------------------------
+    // Callback hooks (grouped together)
+    // -------------------------------
+    const fetchData = useCallback(async (overrides: Partial<TableState> = {}) => {
+        if (!onFetchData) return;
+        const filters: TableFiltersForFetch = {
+            globalFilter,
+            pagination,
+            columnFilter,
+            sorting,
+            ...overrides,
+        };
+        const result = await debouncedFetch(filters);
+        if (result?.data && result?.total !== undefined) {
+            setServerData(result.data);
+            setServerTotal(result.total);
+        }
+    }, [
+        onFetchData,
+        globalFilter,
+        pagination,
+        columnFilter,
+        sorting,
+        debouncedFetch,
+    ]);
+
+    const fetchDataRef = useRef<typeof fetchData>(fetchData);
+    fetchDataRef.current = fetchData;
+
+    const handleSelectionStateChange = useCallback((updaterOrValue: any) => {
+        setSelectionState((prevState) => {
+            const newSelectionState = typeof updaterOrValue === 'function'
+                ? updaterOrValue(prevState)
+                : updaterOrValue;
+            setTimeout(() => {
+                if (onSelectionChange) {
+                    onSelectionChange(newSelectionState);
+                }
+            }, 0);
+            return newSelectionState;
+        });
+    }, [onSelectionChange]);
+
+    const handleColumnFilterStateChange = useCallback((filterState: ColumnFilterState) => {
+        if (filterState && typeof filterState === 'object') {
+            setColumnFilter(filterState);
+            setTimeout(() => {
+                if (onColumnFiltersChange) {
+                    onColumnFiltersChange(filterState);
+                }
+            }, 0);
+        }
+    }, [onColumnFiltersChange]);
+
     const notifyDataStateChange = useCallback((overrides: Partial<TableState> = {}) => {
         if (onDataStateChange) {
             const currentState: Partial<TableState> = {
                 globalFilter,
-                customColumnsFilter,
+                columnFilter,
                 sorting,
                 pagination,
                 columnOrder,
                 columnPinning,
-                ...overrides, // Allow overriding specific parts of the state
+                ...overrides,
             };
             onDataStateChange(currentState);
         }
     }, [
         onDataStateChange,
         globalFilter,
-        customColumnsFilter,
+        columnFilter,
         sorting,
         pagination,
         columnOrder,
         columnPinning,
     ]);
+
     const stateChangeRef = useRef<typeof notifyDataStateChange>(notifyDataStateChange);
-    stateChangeRef.current = notifyDataStateChange; // Always keep ref updated with latest function
-    // Handle sorting change with custom logic for three-state sorting
+    stateChangeRef.current = notifyDataStateChange;
+
     const handleSortingChange = useCallback((updaterOrValue: any) => {
-        // Handle both updater function and direct value
         let newSorting = typeof updaterOrValue === 'function'
             ? updaterOrValue(sorting)
             : updaterOrValue;
-
         console.log('handleSortingChange', newSorting);
-
         newSorting = newSorting.filter((sort: any) => sort.id);
         setSorting(newSorting);
-
-        // Call external sorting handler for server-side sorting
         if (onSortingChange) {
             onSortingChange(newSorting);
         }
-
-        // Only notify state change and fetch data for server-side operations
         if (isServerMode || isServerSorting) {
             stateChangeRef.current({ sorting: newSorting });
             fetchDataRef?.current({
                 sorting: newSorting,
             });
         } else if (onDataStateChange) {
-            // For client-side, only notify state change if callback is provided
-            stateChangeRef.current({ sorting: newSorting });
+            setTimeout(() => {
+                stateChangeRef.current({ sorting: newSorting });
+            }, 0);
         }
     }, [
         sorting,
@@ -398,45 +407,30 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         onDataStateChange,
     ]);
 
-    // Handle column order change
     const handleColumnOrderChange = useCallback((updatedColumnOrder: Updater<ColumnOrderState>) => {
         const newColumnOrder = typeof updatedColumnOrder === 'function'
             ? updatedColumnOrder(columnOrder)
             : updatedColumnOrder;
         setColumnOrder(newColumnOrder);
-
-        // Call external column order handler
         if (onColumnDragEnd) {
             onColumnDragEnd(newColumnOrder);
         }
     }, [onColumnDragEnd, columnOrder]);
 
-    // Handle column pinning change with special columns logic
     const handleColumnPinningChange = useCallback((updatedColumnPinning: Updater<ColumnPinningState>) => {
         const newColumnPinning = typeof updatedColumnPinning === 'function'
             ? updatedColumnPinning(columnPinning)
             : updatedColumnPinning;
         setColumnPinning(newColumnPinning);
-
-        // Call external column pinning handler
         if (onColumnPinningChange) {
             onColumnPinningChange(newColumnPinning);
         }
     }, [onColumnPinningChange, columnPinning]);
 
-
-    // TanStack-style pagination handler - keep it simple
     const handlePaginationChange = useCallback((updater: any) => {
-        // Standard TanStack pattern - direct state update
         setPagination(updater);
-        
-        // Handle side effects after state is set
-        // Get the new pagination value for side effects
         const newPagination = typeof updater === 'function' ? updater(pagination) : updater;
-        
-        // Only trigger side effects for server mode or when explicitly requested
         if (isServerMode || isServerPagination) {
-            // Schedule side effects to run after state update
             setTimeout(() => {
                 stateChangeRef.current({ pagination: newPagination });
                 fetchDataRef?.current({ pagination: newPagination });
@@ -448,35 +442,28 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         }
     }, [pagination, isServerMode, isServerPagination, onDataStateChange]);
 
-    // Memoized global filter handler to prevent table recreation  
     const handleGlobalFilterChange = useCallback((updaterOrValue: any) => {
-        // Handle both updater function and direct value
         const newFilter = typeof updaterOrValue === 'function'
             ? updaterOrValue(globalFilter)
             : updaterOrValue;
-
-        // Apply the new filter state
         setGlobalFilter(newFilter);
-
-        // Only notify state change and fetch data for server-side operations
         if (isServerMode || isServerFiltering) {
-            stateChangeRef.current({ globalFilter: newFilter });
-            fetchDataRef?.current({ globalFilter: newFilter });
+            setTimeout(() => {
+                stateChangeRef.current({ globalFilter: newFilter });
+                fetchDataRef?.current({ globalFilter: newFilter });
+            }, 0);
         } else if (onDataStateChange) {
-            // For client-side, only notify state change if callback is provided
-            stateChangeRef.current({ globalFilter: newFilter });
+            setTimeout(() => {
+                stateChangeRef.current({ globalFilter: newFilter });
+            }, 0);
         }
     }, [globalFilter, isServerMode, isServerFiltering, onDataStateChange]);
 
-    // Memoized custom column filter handler to prevent table recreation
-    const onCustomColumnFilterChangeHandler = useCallback((updater: any) => {
-        // Get current state from the stable reference instead of the table
-        const currentState = customColumnsFilter;
+    const onColumnFilterChangeHandler = useCallback((updater: any) => {
+        const currentState = columnFilter;
         const newState = typeof updater === 'function'
             ? updater(currentState)
             : updater;
-
-        // Convert the custom feature state to the expected CustomColumnFilterState format
         const legacyFilterState = {
             filters: newState.filters,
             logic: newState.logic,
@@ -484,10 +471,9 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
             pendingLogic: newState.pendingLogic
         };
         handleColumnFilterStateChange(legacyFilterState);
-    }, [customColumnsFilter, handleColumnFilterStateChange]);
+    }, [columnFilter, handleColumnFilterStateChange]);
 
-    // Memoized custom column filter apply handler
-    const onCustomColumnFilterApplyHandler = useCallback((appliedState: any) => {
+    const onColumnFilterApplyHandler = useCallback((appliedState: any) => {
         if (isServerFiltering) {
             const serverFilterState = {
                 filters: appliedState.filters,
@@ -495,19 +481,20 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                 pendingFilters: appliedState.pendingFilters,
                 pendingLogic: appliedState.pendingLogic,
             };
-
             stateChangeRef.current({
-                customColumnsFilter: serverFilterState,
+                columnFilter: serverFilterState,
             });
-
             fetchDataRef?.current({
-                customColumnsFilter: serverFilterState,
+                columnFilter: serverFilterState,
             });
         }
     }, [isServerFiltering]);
 
+    // -------------------------------
+    // Table creation (after callbacks/memo)
+    // -------------------------------
     const table = useReactTable({
-        _features: [CustomColumnFilterFeature, CustomSelectionFeature], 
+        _features: [ColumnFilterFeature, SelectionFeature], 
         data: tableData,
         columns: enhancedColumns,
         initialState: {
@@ -520,98 +507,72 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
             ...(enableExpanding ? { expanded } : {}),
             ...(enableColumnDragging ? { columnOrder } : {}),
             ...(enableColumnPinning ? { columnPinning } : {}),
-            ...(enableColumnFilter ? { customColumnFilter: customColumnsFilter } : {}),
+            ...(enableColumnFilter ? { columnFilter } : {}),
             ...(enableRowSelection ? { selectionState } : {}),
         },
         // Selection options (same pattern as column filter)
         // Add custom features
         selectMode: selectMode,
-        enableCustomSelection: !!enableRowSelection,
+        enableAdvanceSelection: !!enableRowSelection,
         isRowSelectable: isRowSelectable,
         onSelectionStateChange: enableRowSelection ? handleSelectionStateChange : undefined,
+        // Column filter
+        enableAdvanceColumnFilter: enableColumnFilter,
+        onColumnFilterChange: onColumnFilterChangeHandler, // Handle column filters change
+        onColumnFilterApply: onColumnFilterApplyHandler, // Handle when filters are actually applied
+
         // Sorting
         onSortingChange: enableSorting ? handleSortingChange : undefined,
         onPaginationChange: enablePagination ? handlePaginationChange : undefined,
         onRowSelectionChange: enableRowSelection ? handleSelectionStateChange : undefined,
-
         onGlobalFilterChange: enableGlobalFilter ? handleGlobalFilterChange : undefined,
         onExpandedChange: enableExpanding ? setExpanded : undefined,
         onColumnOrderChange: enableColumnDragging ? handleColumnOrderChange : undefined,
         onColumnPinningChange: enableColumnPinning ? handleColumnPinningChange : undefined,
-        // Handle column filters change (this will be triggered by our custom feature)
-        onCustomColumnFilterChange: onCustomColumnFilterChangeHandler,
-        // // Handle when filters are actually applied (only then fetch data)
-        onCustomColumnFilterApply: onCustomColumnFilterApplyHandler,
 
         // Row model
         getCoreRowModel: getCoreRowModel(),
         getSortedRowModel: (enableSorting && !isServerSorting) ? getSortedRowModel() : undefined,
         getFilteredRowModel: (enableColumnFilter && !isServerFiltering) ? getCombinedFilteredRowModel<T>() : undefined,
         getPaginationRowModel: (enablePagination && !isServerPagination) ? getPaginationRowModel() : undefined,
-
-       
         // Sorting
         enableSorting: enableSorting,
         manualSorting: isServerSorting,
-
         // Filtering
         manualFiltering: isServerFiltering,
-
-        // Note: Using standard TanStack features, custom selection handled separately
-
         // Column resizing
         enableColumnResizing: enableColumnResizing,
         columnResizeMode: columnResizeMode,
-
         // Column pinning
         enableColumnPinning: enableColumnPinning,
-
         // Expanding
         getRowCanExpand: enableExpanding ? getRowCanExpand : undefined,
-
         // Pagination
         manualPagination: isServerPagination,
         autoResetPageIndex: false, // Prevent automatic page reset on state changes
         // pageCount: enablePagination ? Math.ceil(tableTotalRow / pagination.pageSize) : -1,
         rowCount: tableTotalRow,
-
         // Row ID
         getRowId: (row: any, index: number) => generateRowId(row, index, idKey),
         // Debug
         debugAll: false, // Disabled for production
     });
 
-    // Virtualization setup - with safety checks
+    // -------------------------------
+    // Virtualization and row memo
+    // -------------------------------
     const rows = table.getRowModel()?.rows || [];
-
     const rowVirtualizer = useVirtualizer({
         count: rows.length,
         getScrollElement: () => tableContainerRef.current,
         estimateSize: () => estimateRowHeight,
         overscan: 10,
-        enabled: enableVirtualization && !enablePagination && rows.length > 0, // Disable with pagination or empty data
+        enabled: enableVirtualization && !enablePagination && rows.length > 0,
     });
 
-    const tableWidth = useMemo(() => {
-        if (fitToScreen) {
-            return '100%';
-        }
-        if (enableColumnResizing) {
-            return table.getCenterTotalSize();
-        }
-        return '100%';
-    }, [
-        table,
-        enableColumnResizing,
-        fitToScreen,
-    ]);
-
-    const tableStyle = useMemo(() => ({
-        width: tableWidth,
-        minWidth: '100%',
-    }), [tableWidth]);
-
-    // Handle column reorder via drag and drop
+    // -------------------------------
+    // Callbacks (after table creation)
+    // -------------------------------
     const handleColumnReorder = useCallback((draggedColumnId: string, targetColumnId: string) => {
         const currentOrder = columnOrder.length > 0 ? columnOrder : enhancedColumns.map((col, index) => {
             if (col.id) return col.id;
@@ -623,28 +584,25 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         });
         const draggedIndex = currentOrder.indexOf(draggedColumnId);
         const targetIndex = currentOrder.indexOf(targetColumnId);
-
         if (draggedIndex === -1 || targetIndex === -1) return;
-
         const newOrder = [...currentOrder];
         newOrder.splice(draggedIndex, 1);
         newOrder.splice(targetIndex, 0, draggedColumnId);
-
         handleColumnOrderChange(newOrder);
     }, [columnOrder, enhancedColumns, handleColumnOrderChange]);
 
-
+    // -------------------------------
+    // Effects (after callbacks)
+    // -------------------------------
     useEffect(() => {
         if (initialLoadData && onFetchData) {
             fetchDataRef.current();
         }
-    }, [initialLoadData]);
+    }, [initialLoadData, onFetchData]);
 
-    // Initialize column order when columns change
     useEffect(() => {
         if (enableColumnDragging && columnOrder.length === 0) {
             const initialOrder = enhancedColumns.map((col, index) => {
-                // Use id if available, otherwise use accessorKey, otherwise generate unique id
                 if (col.id) return col.id;
                 const anyCol = col as any;
                 if (anyCol.accessorKey && typeof anyCol.accessorKey === 'string') {
@@ -654,19 +612,15 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
             });
             setColumnOrder(initialOrder);
         }
-    }, [
-        enableColumnDragging,
-        enhancedColumns,
-        columnOrder.length,
-    ]);
+    }, [enableColumnDragging, enhancedColumns, columnOrder.length]);
 
 
 
-    // Get slot components for rows and cells
+    // -------------------------------
+    // Render table rows with slot support (callback)
+    // -------------------------------
     const LoadingRowSlot = getSlotComponent(slots, 'loadingRow', LoadingRows);
     const EmptyRowSlot = getSlotComponent(slots, 'emptyRow', EmptyDataRow);
-
-    // Render table rows with slot support
     const renderTableRows = useCallback(() => {
         if (tableLoading) {
             return (
@@ -679,7 +633,6 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                 />
             );
         }
-
         if (rows.length === 0) {
             return (
                 <EmptyRowSlot
@@ -691,14 +644,10 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                 />
             );
         }
-
-        // Virtualized rendering
         if (enableVirtualization && !enablePagination && rows.length > 0) {
             const virtualItems = rowVirtualizer.getVirtualItems();
-
             return (
                 <>
-                    {/* Virtual spacer before visible items */}
                     {virtualItems.length > 0 && (
                         <tr>
                             <td
@@ -711,12 +660,9 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                             />
                         </tr>
                     )}
-
-                    {/* Render visible rows with slot support */}
                     {virtualItems.map((virtualRow) => {
                         const row = rows[virtualRow.index];
-                        if (!row) return null; // Safety check
-
+                        if (!row) return null;
                         return (
                             <DataTableRow
                                 key={row.id}
@@ -730,8 +676,6 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                             />
                         );
                     })}
-
-                    {/* Virtual spacer after visible items */}
                     {virtualItems.length > 0 && (
                         <tr>
                             <td
@@ -748,8 +692,6 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                 </>
             );
         }
-
-        // Regular rendering (non-virtualized)
         return rows.map((row, index) => (
             <DataTableRow
                 key={row.id}
@@ -783,12 +725,9 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         slots,
     ]);
 
-
-
-    // Export state management
-    const [exportController, setExportController] = useState<AbortController | null>(null);
-    const isExporting = useMemo(() => exportController !== null, [exportController]);
-
+    // -------------------------------
+    // Export cancel callback
+    // -------------------------------
     const handleCancelExport = useCallback(() => {
         if (exportController) {
             exportController.abort();
@@ -799,13 +738,15 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         }
     }, [exportController, onExportCancel]);
 
+    // -------------------------------
     // Expose imperative API via ref using custom hook
+    // -------------------------------
     useDataTableApi({
         table,
         data: tableData,
         idKey,
         globalFilter,
-        customColumnsFilter,
+        columnFilter,
         sorting,
         pagination,
         columnOrder,
@@ -816,14 +757,12 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         initialPageIndex: pagination.pageIndex,
         initialPageSize: pagination.pageSize,
         pageSize: pagination.pageSize,
-        // Selection props
         selectMode,
         onSelectionChange: handleSelectionStateChange,
         handleColumnFilterStateChange,
         onDataStateChange,
-        onFetchData: onFetchData,
+        onFetchData: fetchData,
         onDataChange,
-        // Export props
         exportFilename,
         onExportProgress,
         onExportComplete,
@@ -835,35 +774,11 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         dataMode,
     }, internalApiRef);
 
-    // Forward the internal ref to the external ref
     useImperativeHandle(ref, () => internalApiRef.current!, []);
 
-    // Calculate bulk actions values directly from selection state to prevent infinite re-renders
-    const isSomeRowsSelected = useMemo(() => {
-        if (!enableBulkActions || !enableRowSelection) return false;
-
-        if (selectionState.type === 'exclude') {
-            // In exclude mode, we have some selected if not all are excluded
-            return selectionState.ids.length < tableTotalRow;
-        } else {
-            // In include mode, we have some selected if list has items
-            return selectionState.ids.length > 0;
-        }
-    }, [enableBulkActions, enableRowSelection, selectionState, tableTotalRow]);
-
-    const selectedRowCount = useMemo(() => {
-        if (!enableBulkActions || !enableRowSelection) return 0;
-
-        if (selectionState.type === 'exclude') {
-            // In exclude mode, selected count is total minus excluded
-            return tableTotalRow - selectionState.ids.length;
-        } else {
-            // In include mode, selected count is the length of included list
-            return selectionState.ids.length;
-        }
-    }, [enableBulkActions, enableRowSelection, selectionState, tableTotalRow]);
-
-    // Get slot components with fallbacks
+    // -------------------------------
+    // Slot components
+    // -------------------------------
     const RootSlot = getSlotComponent(slots, 'root', Box);
     const ToolbarSlot = getSlotComponent(slots, 'toolbar', DataTableToolbar);
     const BulkActionsSlot = getSlotComponent(slots, 'bulkActionsToolbar', BulkActionsToolbar);
@@ -873,18 +788,20 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     const FooterSlot = getSlotComponent(slots, 'footer', Box);
     const PaginationSlot = getSlotComponent(slots, 'pagination', DataTablePagination);
 
-    // Base props for all slots
+    // -------------------------------
+    // Render
+    // -------------------------------
     return (
         <DataTableProvider
-             table={table}
-             apiRef={internalApiRef}
-             dataMode={dataMode}
-             tableSize={tableSize}
-             onTableSizeChange={(size) => {
-                 setTableSize(size);
-             }}
-            customColumnsFilter={customColumnsFilter}
-            onChangeCustomColumnsFilter={handleColumnFilterStateChange}
+            table={table}
+            apiRef={internalApiRef}
+            dataMode={dataMode}
+            tableSize={tableSize}
+            onTableSizeChange={(size) => {
+                setTableSize(size);
+            }}
+            columnFilter={columnFilter}
+            onChangeColumnFilter={handleColumnFilterStateChange}
             slots={slots}
             slotProps={slotProps}
             isExporting={isExporting}
@@ -922,7 +839,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                         bulkActions={bulkActions}
                         sx={{
                             position: 'relative',
-                            zIndex: 2, // Higher than sticky header
+                            zIndex: 2,
                         }}
                         {...slotProps?.bulkActionsToolbar}
                     />

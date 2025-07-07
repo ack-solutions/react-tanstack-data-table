@@ -10,14 +10,14 @@
  * - Export functionality
  */
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { 
-    Box, 
-    Typography, 
-    Card, 
-    CardContent, 
-    Button, 
-    Alert, 
-    Chip, 
+import {
+    Box,
+    Typography,
+    Card,
+    CardContent,
+    Button,
+    Alert,
+    Chip,
     Stack,
     CircularProgress,
     Divider,
@@ -26,7 +26,7 @@ import {
 import { DataTable } from '../components/table/data-table';
 import { DataTableApi, DataTableColumn } from '../types';
 import { TableFilters } from '../types';
-import { SelectionState } from '../features/custom-selection.feature';
+import { SelectionState } from '../features';
 
 // Sample data interface
 interface Employee {
@@ -46,10 +46,10 @@ const MOCK_EMPLOYEES: Employee[] = Array.from({ length: 1000 }, (_, index) => {
     const roles = ['Manager', 'Senior', 'Junior', 'Lead', 'Director', 'Specialist'];
     const firstNames = ['John', 'Jane', 'Bob', 'Alice', 'Charlie', 'Diana', 'Eve', 'Frank', 'Grace', 'Henry'];
     const lastNames = ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis', 'Rodriguez', 'Martinez'];
-    
+
     const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
     const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
-    
+
     return {
         id: index + 1,
         name: `${firstName} ${lastName}`,
@@ -69,13 +69,15 @@ export function ServerSideFetchingExample() {
     const [selectionInfo, setSelectionInfo] = useState<SelectionState | null>(null);
     const [lastFetchParams, setLastFetchParams] = useState<any>(null);
     const [fetchCount, setFetchCount] = useState(0);
-    
+    const [tab, setTab] = useState('all');
+
     // API ref for programmatic control
     const apiRef = useRef<DataTableApi<Employee>>(null);
 
     // Simulate server API call with realistic delays and filtering
     const handleFetchData = useCallback(async (filters: Partial<TableFilters>) => {
         console.log('🔄 Fetching data with filters:', filters);
+        console.log('🔄 Tab:', { tab }, 'Current tab:');
         setLoading(true);
         setError(null);
         setLastFetchParams(filters);
@@ -90,7 +92,7 @@ export function ServerSideFetchingExample() {
             // Apply global filter (search)
             if (filters.globalFilter) {
                 const searchTerm = filters.globalFilter.toLowerCase();
-                filteredData = filteredData.filter(employee => 
+                filteredData = filteredData.filter(employee =>
                     employee.name.toLowerCase().includes(searchTerm) ||
                     employee.email.toLowerCase().includes(searchTerm) ||
                     employee.department.toLowerCase().includes(searchTerm) ||
@@ -99,12 +101,12 @@ export function ServerSideFetchingExample() {
             }
 
             // Apply custom column filters
-            if (filters.customColumnsFilter?.filters?.length) {
+            if (filters.columnFilter?.filters?.length) {
                 filteredData = filteredData.filter(employee => {
-                    return filters.customColumnsFilter!.filters.every((filter: any) => {
+                    return filters.columnFilter!.filters.every((filter: any) => {
                         const value = employee[filter.columnId as keyof Employee];
                         const filterValue = filter.value;
-                        
+
                         switch (filter.operator) {
                             case 'equals':
                                 return value === filterValue;
@@ -131,11 +133,11 @@ export function ServerSideFetchingExample() {
                     for (const sort of filters.sorting!) {
                         const aValue = a[sort.id as keyof Employee];
                         const bValue = b[sort.id as keyof Employee];
-                        
+
                         let comparison = 0;
                         if (aValue < bValue) comparison = -1;
                         else if (aValue > bValue) comparison = 1;
-                        
+
                         if (comparison !== 0) {
                             return sort.desc ? -comparison : comparison;
                         }
@@ -155,10 +157,10 @@ export function ServerSideFetchingExample() {
                 pageData = filteredData.slice(start, end);
             }
 
-            console.log('✅ Data fetched successfully:', { 
-                total, 
-                pageSize: pageData.length, 
-                filters: filters.pagination 
+            console.log('✅ Data fetched successfully:', {
+                total,
+                pageSize: pageData.length,
+                filters: filters.pagination
             });
 
             return {
@@ -180,21 +182,28 @@ export function ServerSideFetchingExample() {
         setSelectionInfo(selection);
     }, []);
 
+    useEffect(() => {
+        console.log('🔄 Tab changed:', tab);
+        if (tab && tab !== 'all') {
+            apiRef.current?.data.refresh();
+        }
+    }, [tab]);
+
     // Handle server export
     const handleServerExport = useCallback(async (filters: any, selection: SelectionState) => {
         console.log('📤 Exporting data with filters:', filters);
         console.log('📤 Export selection:', selection);
-        
+
         // Simulate export API call
         await new Promise(resolve => setTimeout(resolve, 1000));
-        
+
         // In real app, you would send filters and selection to your export API
         let exportData = [...MOCK_EMPLOYEES];
-        
+
         // Apply the same filtering logic as fetch
         if (filters?.globalFilter) {
             const searchTerm = filters.globalFilter.toLowerCase();
-            exportData = exportData.filter(employee => 
+            exportData = exportData.filter(employee =>
                 employee.name.toLowerCase().includes(searchTerm) ||
                 employee.email.toLowerCase().includes(searchTerm) ||
                 employee.department.toLowerCase().includes(searchTerm) ||
@@ -205,12 +214,12 @@ export function ServerSideFetchingExample() {
         // Apply selection filtering for export
         if (selection.type === 'include' && selection.ids.length > 0) {
             // Export only selected rows
-            exportData = exportData.filter(employee => 
+            exportData = exportData.filter(employee =>
                 selection.ids.includes(employee.id.toString())
             );
         } else if (selection.type === 'exclude' && selection.ids.length > 0) {
             // Export all except excluded rows
-            exportData = exportData.filter(employee => 
+            exportData = exportData.filter(employee =>
                 !selection.ids.includes(employee.id.toString())
             );
         }
@@ -266,7 +275,7 @@ export function ServerSideFetchingExample() {
             size: 100,
             accessorFn: (row) => row.isActive ? 'Active' : 'Inactive',
             cell: ({ getValue }) => (
-                <Chip 
+                <Chip
                     label={getValue<boolean>() ? 'Active' : 'Inactive'}
                     color={getValue<boolean>() ? 'success' : 'default'}
                     size="small"
@@ -292,6 +301,10 @@ export function ServerSideFetchingExample() {
                 The Salary column has `hideInExport: true` so it will be excluded from exports.
             </Typography>
 
+            <Button onClick={() => setTab('all')}>All</Button>
+            <Button onClick={() => setTab('active')}>Active</Button>
+            <Button onClick={() => setTab('inactive')}>Inactive</Button>
+
             {/* Status Cards */}
             <Stack direction="row" spacing={2} sx={{ mb: 3 }}>
                 <Card variant="outlined">
@@ -304,7 +317,7 @@ export function ServerSideFetchingExample() {
                         </Typography>
                     </CardContent>
                 </Card>
-                
+
                 <Card variant="outlined">
                     <CardContent sx={{ pb: 2 }}>
                         <Typography variant="h6" color="secondary">
@@ -315,7 +328,7 @@ export function ServerSideFetchingExample() {
                         </Typography>
                     </CardContent>
                 </Card>
-                
+
                 <Card variant="outlined">
                     <CardContent sx={{ pb: 2 }}>
                         <Stack direction="row" alignItems="center" spacing={1}>
@@ -433,7 +446,7 @@ export function ServerSideFetchingExample() {
                     </Typography>
                     <Alert severity="info" sx={{ mb: 2 }}>
                         <Typography variant="body2">
-                            <strong>hideInExport Demo:</strong> The Salary column has `hideInExport: true` 
+                            <strong>hideInExport Demo:</strong> The Salary column has `hideInExport: true`
                             so it will be excluded from CSV/Excel exports. Try exporting to see the difference!
                         </Typography>
                     </Alert>
@@ -474,13 +487,13 @@ export function ServerSideFetchingExample() {
                 initialLoadData={true}
                 onFetchData={handleFetchData}
                 loading={loading}
-                
+
                 // Selection Configuration
                 enableRowSelection={true}
                 enableMultiRowSelection={true}
                 selectMode="page" // Page-based selection
                 onSelectionChange={handleSelectionChange}
-                
+
                 // Bulk Actions
                 enableBulkActions={true}
                 bulkActions={(selectionState) => (
@@ -510,12 +523,12 @@ export function ServerSideFetchingExample() {
                         </Button>
                     </Stack>
                 )}
-                
+
                 // Filtering & Sorting
                 enableGlobalFilter={true}
                 enableColumnFilter={true}
                 enableSorting={true}
-                
+
                 // Pagination
                 enablePagination={true}
                 initialState={{
@@ -524,7 +537,7 @@ export function ServerSideFetchingExample() {
                         pageSize: 10,
                     },
                 }}
-                
+
                 // Export
                 enableExport={true}
                 exportFilename="employees"
@@ -538,17 +551,17 @@ export function ServerSideFetchingExample() {
                 onExportError={(error) => {
                     console.error('Export error:', error);
                 }}
-                
+
                 // Styling
                 enableHover={true}
                 enableStripes={true}
                 tableSize="medium"
-                
+
                 // Other features
                 enableColumnVisibility={true}
                 enableTableSizeControl={true}
                 enableReset={true}
-                
+
                 // Empty state
                 emptyMessage="No employees found matching your criteria"
                 skeletonRows={10}

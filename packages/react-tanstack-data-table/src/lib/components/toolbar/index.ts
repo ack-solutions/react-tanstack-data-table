@@ -11,7 +11,7 @@ export { ColumnPinningControl } from './column-pinning-control';
 export { ColumnResetControl } from './column-reset-control';
 export { TableExportControl } from './table-export-control';
 export { TableSizeControl } from './table-size-control';
-
+export { ColumnFilterControl } from './column-filter-control';
 // Bulk actions
 export { BulkActionsToolbar } from './bulk-actions-toolbar';
 export type { BulkActionsToolbarProps } from './bulk-actions-toolbar';

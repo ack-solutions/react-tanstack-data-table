@@ -6,7 +6,7 @@ import {
 } from '@mui/material';
 import { ReactNode } from 'react';
 
-import { ColumnCustomFilterControl } from './column-custom-filter-control';
+import { ColumnFilterControl } from './column-filter-control';
 import { ColumnPinningControl } from './column-pinning-control';
 import { ColumnResetControl } from './column-reset-control';
 import { ColumnVisibilityControl } from './column-visibility-control';
@@ -47,7 +47,7 @@ export function DataTableToolbar({
     const ToolbarSlot = getSlotComponent(slots, 'toolbar', Toolbar);
     const TableSearchControlSlot = getSlotComponent(slots, 'searchInput', TableSearchControl);
     const TableSizeControlSlot = getSlotComponent(slots, 'tableSizeControl', TableSizeControl);
-    const ColumnCustomFilterControlSlot = getSlotComponent(slots, 'columnCustomFilterControl', ColumnCustomFilterControl);
+    const ColumnCustomFilterControlSlot = getSlotComponent(slots, 'columnCustomFilterControl', ColumnFilterControl);
     const ColumnPinningControlSlot = getSlotComponent(slots, 'columnPinningControl', ColumnPinningControl);
     const ColumnVisibilityControlSlot = getSlotComponent(slots, 'columnVisibilityControl', ColumnVisibilityControl);
     const ColumnResetControlSlot = getSlotComponent(slots, 'resetButton', ColumnResetControl);

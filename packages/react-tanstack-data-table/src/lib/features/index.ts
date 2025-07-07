@@ -6,20 +6,20 @@
  */
 
 export {
-    CustomColumnFilterFeature,
+    ColumnFilterFeature,
     matchesCustomColumnFilters,
     type ColumnFilterRule,
-    type CustomColumnFilterOptions,
-    type CustomColumnFilterTableState,
-    type CustomColumnFilterInstance,
-} from './custom-column-filter.feature';
+    type ColumnFilterOptions,
+    type ColumnFilterTableState,
+    type ColumnFilterInstance,
+} from './column-filter.feature';
 
 // Export custom selection feature
 export {
-    CustomSelectionFeature,
+    SelectionFeature,
     type SelectionState,
     type SelectMode,
-    type CustomSelectionOptions,
-    type CustomSelectionTableState,
-    type CustomSelectionInstance,
-} from './custom-selection.feature'; 
+    type SelectionOptions,
+    type SelectionTableState,
+    type SelectionInstance,
+} from './selection.feature'; 

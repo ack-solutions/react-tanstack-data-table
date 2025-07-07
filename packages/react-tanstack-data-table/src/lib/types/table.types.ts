@@ -17,7 +17,7 @@ export type TableSize = 'small' | 'medium';
 // Extended table state interface with custom column filter support
 
 export interface TableState {
-    customColumnsFilter: CustomColumnFilterState;
+    columnFilter: ColumnFilterState;
     selectionState?: SelectionState; // Selection state for CustomSelectionFeature
     globalFilter?: string;
     sorting?: SortingState;
@@ -36,7 +36,7 @@ export interface TableState {
 
 export interface TableFilters {
     globalFilter: string;
-    customColumnsFilter: CustomColumnFilterState;
+    columnFilter: ColumnFilterState;
     sorting: SortingState;
     pagination: {
         pageIndex: number;
@@ -54,10 +54,10 @@ export interface TableFiltersForFetch {
     page?: number;
     pageSize?: number;
     sorting?: SortingState;
-    customColumnsFilter?: CustomColumnFilterState;
+    columnFilter?: ColumnFilterState;
 }
 
-export interface CustomColumnFilterState {
+export interface ColumnFilterState {
     filters: ColumnFilterRule[];
     logic: 'AND' | 'OR';
     // Add pending state for draft filters before applying

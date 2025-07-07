@@ -1,7 +1,7 @@
 import { ColumnOrderState, ColumnPinningState, SortingState, Table } from '@tanstack/react-table';
 import { Ref, useImperativeHandle } from 'react';
 
-import { CustomColumnFilterState,  TableFilters,  TableState } from '../types';
+import { ColumnFilterState,  TableFilters,  TableState } from '../types';
 import { DataTableApi } from '../types/data-table-api';
 import { exportClientData, exportServerData } from '../utils/export-utils';
 import { SelectionState } from '../features';
@@ -23,7 +23,7 @@ interface UseDataTableApiProps<T> {
     data: T[];
     idKey: keyof T;
     globalFilter: string;
-    customColumnsFilter: CustomColumnFilterState;
+    columnFilter: ColumnFilterState;
     sorting: SortingState;
     pagination: { pageIndex: number; pageSize: number };
     columnOrder: ColumnOrderState;
@@ -41,7 +41,7 @@ interface UseDataTableApiProps<T> {
     onSelectionChange?: (state: SelectionState) => void;
 
     // Handlers
-    handleColumnFilterStateChange: (filterState: CustomColumnFilterState) => void;
+    handleColumnFilterStateChange: (filterState: ColumnFilterState) => void;
 
     // Callbacks
     onDataStateChange?: (state: Partial<TableState>) => void;
@@ -50,7 +50,7 @@ interface UseDataTableApiProps<T> {
 
     // Export props
     exportFilename?: string;
-    onExportProgress?: (progress: { processedRows: number; totalRows: number; percentage: number }) => void;
+    onExportProgress?: (progress: { processedRows?: number; totalRows?: number; percentage?: number }) => void;
     onExportComplete?: (result: { success: boolean; filename: string; totalRows: number }) => void;
     onExportError?: (error: { message: string; code: string }) => void;
     onServerExport?: (filters?: Partial<TableFilters>, selection?: any) => Promise<{ data: any[]; total: number }>;
@@ -69,7 +69,7 @@ export function useDataTableApi<T extends Record<string, any>>(
         data,
         idKey,
         globalFilter,
-        customColumnsFilter,
+        columnFilter,
         sorting,
         pagination,
         columnOrder,
@@ -227,7 +227,7 @@ export function useDataTableApi<T extends Record<string, any>>(
             clearGlobalFilter: () => {
                 table.setGlobalFilter('');
             },
-            setCustomColumnFilters: (filters: CustomColumnFilterState) => {
+            setColumnFilters: (filters: ColumnFilterState) => {
                 handleColumnFilterStateChange(filters);
             },
             addColumnFilter: (columnId: string, operator: string, value: any) => {
@@ -238,23 +238,23 @@ export function useDataTableApi<T extends Record<string, any>>(
                     value,
                 };
 
-                const currentFilters = customColumnsFilter.filters || [];
+                const currentFilters = columnFilter.filters || [];
                 const newFilters = [...currentFilters, newFilter];
                 handleColumnFilterStateChange({
                     filters: newFilters,
-                    logic: customColumnsFilter.logic,
-                    pendingFilters: customColumnsFilter.pendingFilters || [],
-                    pendingLogic: customColumnsFilter.pendingLogic || 'AND',
+                    logic: columnFilter.logic,
+                    pendingFilters: columnFilter.pendingFilters || [],
+                    pendingLogic: columnFilter.pendingLogic || 'AND',
                 });
             },
             removeColumnFilter: (filterId: string) => {
-                const currentFilters = customColumnsFilter.filters || [];
+                const currentFilters = columnFilter.filters || [];
                 const newFilters = currentFilters.filter((f: any) => f.id !== filterId);
                 handleColumnFilterStateChange({
                     filters: newFilters,
-                    logic: customColumnsFilter.logic,
-                    pendingFilters: customColumnsFilter.pendingFilters || [],
-                    pendingLogic: customColumnsFilter.pendingLogic || 'AND',
+                    logic: columnFilter.logic,
+                    pendingFilters: columnFilter.pendingFilters || [],
+                    pendingLogic: columnFilter.pendingLogic || 'AND',
                 });
             },
             clearAllFilters: () => {
@@ -325,7 +325,6 @@ export function useDataTableApi<T extends Record<string, any>>(
             },
         },
 
-        // Selection methods now use TanStack Table CustomSelectionFeature
         // Access via table methods: table.selectRow(), table.getIsRowSelected(), etc.
         selection: {
             selectRow: (rowId: string) => table.selectRow?.(rowId),
@@ -346,7 +345,7 @@ export function useDataTableApi<T extends Record<string, any>>(
                 // Call external data state change handler to trigger refresh
                 const currentFilters = {
                     globalFilter,
-                    customColumnsFilter: customColumnsFilter,
+                    columnFilter: columnFilter,
                     sorting,
                     pagination,
                 };
@@ -366,7 +365,7 @@ export function useDataTableApi<T extends Record<string, any>>(
                 // Same as refresh for now
                 const currentFilters = {
                     globalFilter,
-                    customColumnsFilter: customColumnsFilter,
+                    columnFilter: columnFilter,
                     sorting,
                     pagination,
                 };
@@ -552,7 +551,7 @@ export function useDataTableApi<T extends Record<string, any>>(
                     sorting: table.getState().sorting,
                     pagination: table.getState().pagination,
                     globalFilter: table.getState().globalFilter,
-                    customColumnsFilter: customColumnsFilter,
+                    columnFilter: columnFilter,
                 };
             },
             restoreLayout: (layout: Partial<TableState>) => {
@@ -577,8 +576,8 @@ export function useDataTableApi<T extends Record<string, any>>(
                 if (layout.globalFilter !== undefined) {
                     table.setGlobalFilter(layout.globalFilter);
                 }
-                if (layout.customColumnsFilter) {
-                    handleColumnFilterStateChange(layout.customColumnsFilter);
+                if (layout.columnFilter) {
+                    handleColumnFilterStateChange(layout.columnFilter);
                 }
             },
         },
@@ -589,7 +588,7 @@ export function useDataTableApi<T extends Record<string, any>>(
                 return table.getState();
             },
             getCurrentFilters: () => {
-                return customColumnsFilter;
+                return columnFilter;
             },
             getCurrentSorting: () => {
                 return table.getState().sorting;
@@ -617,7 +616,7 @@ export function useDataTableApi<T extends Record<string, any>>(
                         // Server export with selection data
                         const currentFilters = {
                             globalFilter,
-                            customColumnsFilter,
+                            columnFilter,
                             sorting,
                             pagination,
                             columnOrder,
@@ -664,7 +663,7 @@ export function useDataTableApi<T extends Record<string, any>>(
                         // Server export with selection data
                         const currentFilters = {
                             globalFilter,
-                            customColumnsFilter,
+                            columnFilter,
                             sorting,
                             pagination,
                             columnOrder,
@@ -722,7 +721,7 @@ export function useDataTableApi<T extends Record<string, any>>(
 
                     const currentFilters = {
                         globalFilter,
-                        customColumnsFilter,
+                        columnFilter,
                         sorting,
                         pagination,
                         columnOrder,
@@ -758,7 +757,7 @@ export function useDataTableApi<T extends Record<string, any>>(
         table,
         enhancedColumns,
         handleColumnFilterStateChange,
-        customColumnsFilter,
+        columnFilter,
         data,
         idKey,
         onDataStateChange,

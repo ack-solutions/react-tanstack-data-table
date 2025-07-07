@@ -1,7 +1,7 @@
 import { Table } from '@tanstack/react-table';
 import { createContext, useContext, ReactNode, useMemo, RefObject } from 'react';
 
-import { CustomColumnFilterState, TableSize } from '../types';
+import { ColumnFilterState, TableSize } from '../types';
 import { DataTableApi } from '../types/data-table-api';
 
 
@@ -10,12 +10,12 @@ import { DataTableApi } from '../types/data-table-api';
  */
 interface DataTableContextValue<T = any> {
     table?: Table<T>;
-    apiRef?: RefObject<DataTableApi<T>>;
+    apiRef?: RefObject<DataTableApi<T> | null>;
     dataMode?: 'client' | 'server';
     tableSize?: TableSize;
     onTableSizeChange?: (size: TableSize) => void;
-    customColumnsFilter?: CustomColumnFilterState;
-    onChangeCustomColumnsFilter?: (filter: CustomColumnFilterState) => void;
+    columnFilter?: ColumnFilterState;
+    onChangeColumnFilter?: (filter: ColumnFilterState) => void;
     slots?: Record<string, any>;
     slotProps?: Record<string, any>;
 
@@ -26,7 +26,7 @@ interface DataTableContextValue<T = any> {
 
     // Export callbacks - passed from DataTable props
     exportFilename?: string;
-    onExportProgress?: (progress: { processedRows: number; totalRows: number; percentage: number }) => void;
+    onExportProgress?: (progress: { processedRows?: number; totalRows?: number; percentage?: number }) => void;
     onExportComplete?: (result: { success: boolean; filename: string; totalRows: number }) => void;
     onExportError?: (error: { message: string; code: string }) => void;
     onServerExport?: (filters?: Partial<any>) => Promise<{ data: any[]; total: number }>;
@@ -45,8 +45,8 @@ export function DataTableProvider<T = any>({
     dataMode,
     tableSize,
     onTableSizeChange,
-    customColumnsFilter,
-    onChangeCustomColumnsFilter,
+    columnFilter,
+    onChangeColumnFilter,
     slots = {},
     slotProps = {},
     isExporting,
@@ -64,8 +64,8 @@ export function DataTableProvider<T = any>({
         dataMode,
         tableSize,
         onTableSizeChange,
-        customColumnsFilter,
-        onChangeCustomColumnsFilter,
+        columnFilter,
+        onChangeColumnFilter,
         slots,
         slotProps,
         isExporting,
@@ -82,8 +82,8 @@ export function DataTableProvider<T = any>({
         dataMode,
         tableSize,
         onTableSizeChange,
-        customColumnsFilter,
-        onChangeCustomColumnsFilter,
+        columnFilter,
+        onChangeColumnFilter,
         slots,
         slotProps,
         isExporting,

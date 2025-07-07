@@ -4,11 +4,11 @@
 import { Row, SortingState, ColumnResizeMode, ColumnPinningState, RowData } from '@tanstack/react-table';
 import { ReactNode } from 'react';
 
-import type { CustomColumnFilterState, TableFilters, TableState } from '../../types';
+import type { ColumnFilterState, TableFilters, TableState } from '../../types';
 import { DataTableColumn } from '../../types';
 import { DataTableSlots, PartialSlotProps } from '../../types/slots.types';
 import { DataTableSize } from '../../utils/table-helpers';
-import { SelectionState } from '../../features/custom-selection.feature';
+import { SelectionState } from '../../features';
 
 // Selection mode type
 export type SelectMode = 'page' | 'all';
@@ -41,7 +41,7 @@ export interface DataTableProps<T> {
 
     // Simplified Export props
     exportFilename?: string;
-    onExportProgress?: (progress: { processedRows: number; totalRows: number; percentage: number }) => void;
+    onExportProgress?: (progress: { processedRows?: number; totalRows?: number; percentage?: number }) => void;
     onExportComplete?: (result: { success: boolean; filename: string; totalRows: number }) => void;
     onExportError?: (error: { message: string; code: string }) => void;
 
@@ -125,7 +125,7 @@ export interface DataTableProps<T> {
     skeletonRows?: number;
 
     // Column filters props
-    onColumnFiltersChange?: (filterState: CustomColumnFilterState) => void;
+    onColumnFiltersChange?: (filterState: ColumnFilterState) => void;
 
     // Data CRUD callbacks
     onDataChange?: (data: T[]) => void;
@@ -134,14 +134,14 @@ export interface DataTableProps<T> {
     selectionColumn?: {
         width?: number;
         pinLeft?: boolean;
-        customColumn?: DataTableColumn<any>;
+        customColumn?: DataTableColumn<T>;
         id?: string; // Simple ID override
     };
 
     // Action column customization
     actionColumn?: {
         pinRight?: boolean;
-        customColumn?: DataTableColumn<any>;
+        customColumn?: DataTableColumn<T>;
         id?: string; // Simple ID override
     };
 
@@ -149,7 +149,7 @@ export interface DataTableProps<T> {
     expandingColumn?: {
         width?: number;
         pinLeft?: boolean;
-        customColumn?: DataTableColumn<any>;
+        customColumn?: DataTableColumn<T>;
         id?: string; // Simple ID override
     };
 

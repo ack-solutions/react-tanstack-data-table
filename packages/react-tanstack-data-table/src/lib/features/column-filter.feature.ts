@@ -17,7 +17,7 @@ import {
 } from '@tanstack/react-table';
 
 // Import from types to avoid circular dependency
-import type { CustomColumnFilterState } from '../types/table.types';
+import type { ColumnFilterState } from '../types/table.types';
 import moment from 'moment';
 
 // Types for the custom column filter feature
@@ -29,30 +29,28 @@ export interface ColumnFilterRule {
     columnType?: string;
 }
 
-
-
-export interface CustomColumnFilterOptions {
-    enableCustomColumnFilter?: boolean;
-    onCustomColumnFilterChange?: (updater: Updater<CustomColumnFilterState>) => void;
+export interface ColumnFilterOptions {
+    enableAdvanceColumnFilter?: boolean;
+    onColumnFilterChange?: (updater: Updater<ColumnFilterState>) => void;
     // Add callback for when filters are applied
-    onCustomColumnFilterApply?: (state: CustomColumnFilterState) => void;
+    onColumnFilterApply?: (state: ColumnFilterState) => void;
 }
 
-export interface CustomColumnFilterTableState {
-    customColumnFilter: CustomColumnFilterState;
+export interface ColumnFilterTableState {
+    columnFilter: ColumnFilterState;
 }
 
 // Declaration merging to extend TanStack Table types
 declare module '@tanstack/table-core' {
-    interface TableState extends CustomColumnFilterTableState { }
+    interface TableState extends ColumnFilterTableState { }
     interface TableOptionsResolved<TData extends RowData>
-        extends CustomColumnFilterOptions { }
-    interface Table<TData extends RowData> extends CustomColumnFilterInstance<TData> { }
+        extends ColumnFilterOptions { }
+    interface Table<TData extends RowData> extends ColumnFilterInstance<TData> { }
 }
 
 // Table instance methods for custom column filtering
-export interface CustomColumnFilterInstance<TData extends RowData> {
-    setCustomColumnFilter: (updater: Updater<CustomColumnFilterState>) => void;
+export interface ColumnFilterInstance<TData extends RowData> {
+    setColumnFilterState: (updater: Updater<ColumnFilterState>) => void;
 
     // Pending filter methods (for draft state)
     addPendingColumnFilter: (columnId: string, operator: string, value: any) => void;
@@ -74,15 +72,15 @@ export interface CustomColumnFilterInstance<TData extends RowData> {
     // Getters
     getActiveColumnFilters: () => ColumnFilterRule[];
     getPendingColumnFilters: () => ColumnFilterRule[];
-    getCustomColumnFilterState: () => CustomColumnFilterState;
+    getColumnFilterState: () => ColumnFilterState;
 }
 
 // The custom feature implementation
-export const CustomColumnFilterFeature: TableFeature<any> = {
+export const ColumnFilterFeature: TableFeature<any> = {
     // Define the feature's initial state
-    getInitialState: (state): CustomColumnFilterTableState => {
+    getInitialState: (state): ColumnFilterTableState => {
         return {
-            customColumnFilter: {
+            columnFilter: {
                 filters: [],
                 logic: 'AND',
                 pendingFilters: [],
@@ -95,29 +93,32 @@ export const CustomColumnFilterFeature: TableFeature<any> = {
     // Define the feature's default options
     getDefaultOptions: <TData extends RowData>(
         table: Table<TData>
-    ): CustomColumnFilterOptions => {
+    ): ColumnFilterOptions => {
         return {
-            enableCustomColumnFilter: true,
-            onCustomColumnFilterChange: makeStateUpdater('customColumnFilter', table),
-            onCustomColumnFilterApply: (state) => {
-                // Implementation of onCustomColumnFilterApply
+            enableAdvanceColumnFilter: true,
+            onColumnFilterChange: makeStateUpdater('columnFilter', table),
+            onColumnFilterApply: (state) => {
+                // Implementation of onColumnFilterApply
             },
-        } as CustomColumnFilterOptions;
+        } as ColumnFilterOptions;
     },
 
     // Define the feature's table instance methods
     createTable: <TData extends RowData>(table: Table<TData>): void => {
-        table.setCustomColumnFilter = (updater) => {
-            const safeUpdater: Updater<CustomColumnFilterState> = (old) => {
+        table.setColumnFilterState = (updater) => {
+            if (!table.options.enableAdvanceColumnFilter) return;
+            const safeUpdater: Updater<ColumnFilterState> = (old) => {
                 const newState = functionalUpdate(updater, old);
                 return newState;
             };
-            return table.options.onCustomColumnFilterChange?.(safeUpdater);
+            return table.options.onColumnFilterChange?.(safeUpdater);
         };
 
         // === PENDING FILTER METHODS (Draft state) ===
         table.addPendingColumnFilter = (columnId: string, operator: string, value: any) => {
-            table.setCustomColumnFilter((old) => {
+            if (!table.options.enableAdvanceColumnFilter) return;
+            console.log('addPendingColumnFilter', columnId, operator, value);
+            table.setColumnFilterState((old) => {
                 const newFilter: ColumnFilterRule = {
                     id: `filter_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
                     columnId,
@@ -132,7 +133,8 @@ export const CustomColumnFilterFeature: TableFeature<any> = {
         };
 
         table.updatePendingColumnFilter = (filterId: string, updates: Partial<ColumnFilterRule>) => {
-            table.setCustomColumnFilter((old) => {
+            if (!table.options.enableAdvanceColumnFilter) return;
+            table.setColumnFilterState((old) => {
                 const updatedFilters = old.pendingFilters.map((filter) =>
                     filter.id === filterId ? { ...filter, ...updates } : filter
                 );
@@ -144,21 +146,24 @@ export const CustomColumnFilterFeature: TableFeature<any> = {
         };
 
         table.removePendingColumnFilter = (filterId: string) => {
-            table.setCustomColumnFilter((old) => ({
+            if (!table.options.enableAdvanceColumnFilter) return;
+            table.setColumnFilterState((old) => ({
                 ...old,
                 pendingFilters: old.pendingFilters.filter((filter) => filter.id !== filterId),
             }));
         };
 
         table.clearAllPendingColumnFilters = () => {
-            table.setCustomColumnFilter((old) => ({
+            if (!table.options.enableAdvanceColumnFilter) return;
+            table.setColumnFilterState((old) => ({
                 ...old,
                 pendingFilters: [],
             }));
         };
 
         table.setPendingFilterLogic = (logic: 'AND' | 'OR') => {
-            table.setCustomColumnFilter((old) => ({
+            if (!table.options.enableAdvanceColumnFilter) return;
+            table.setColumnFilterState((old) => ({
                 ...old,
                 pendingLogic: logic,
             }));
@@ -166,7 +171,8 @@ export const CustomColumnFilterFeature: TableFeature<any> = {
 
         // === APPLY PENDING FILTERS ===
         table.applyPendingColumnFilters = () => {
-            table.setCustomColumnFilter((old) => {
+            if (!table.options.enableAdvanceColumnFilter) return;
+            table.setColumnFilterState((old) => {
                 const newState = {
                     ...old,
                     filters: [...old.pendingFilters],
@@ -175,7 +181,7 @@ export const CustomColumnFilterFeature: TableFeature<any> = {
 
                 // Call the apply callback after state update
                 setTimeout(() => {
-                    table.options.onCustomColumnFilterApply?.(newState);
+                    table.options.onColumnFilterApply?.(newState);
                 }, 0);
 
                 return newState;
@@ -184,8 +190,9 @@ export const CustomColumnFilterFeature: TableFeature<any> = {
 
         // === LEGACY METHODS (for backward compatibility) ===
         table.addColumnFilter = (columnId: string, operator: string, value: any) => {
+            if (!table.options.enableAdvanceColumnFilter) return;
             // For backward compatibility, add directly to active filters
-            table.setCustomColumnFilter((old) => {
+            table.setColumnFilterState((old) => {
                 const newFilter: ColumnFilterRule = {
                     id: `filter_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
                     columnId,
@@ -200,7 +207,8 @@ export const CustomColumnFilterFeature: TableFeature<any> = {
         };
 
         table.updateColumnFilter = (filterId: string, updates: Partial<ColumnFilterRule>) => {
-            table.setCustomColumnFilter((old) => {
+            if (!table.options.enableAdvanceColumnFilter) return;
+            table.setColumnFilterState((old) => {
                 const updatedFilters = old.filters.map((filter) =>
                     filter.id === filterId ? { ...filter, ...updates } : filter
                 );
@@ -212,21 +220,24 @@ export const CustomColumnFilterFeature: TableFeature<any> = {
         };
 
         table.removeColumnFilter = (filterId: string) => {
-            table.setCustomColumnFilter((old) => ({
+            if (!table.options.enableAdvanceColumnFilter) return;
+            table.setColumnFilterState((old) => ({
                 ...old,
                 filters: old.filters.filter((filter) => filter.id !== filterId),
             }));
         };
 
         table.clearAllColumnFilters = () => {
-            table.setCustomColumnFilter((old) => ({
+            if (!table.options.enableAdvanceColumnFilter) return;
+            table.setColumnFilterState((old) => ({
                 ...old,
                 filters: [],
             }));
         };
 
         table.setFilterLogic = (logic: 'AND' | 'OR') => {
-            table.setCustomColumnFilter((old) => ({
+            if (!table.options.enableAdvanceColumnFilter) return;
+            table.setColumnFilterState((old) => ({
                 ...old,
                 logic,
             }));
@@ -234,17 +245,17 @@ export const CustomColumnFilterFeature: TableFeature<any> = {
 
         // === GETTERS ===
         table.getActiveColumnFilters = () => {
-            const state = table.getState().customColumnFilter;
+            const state = table.getState().columnFilter;
             return state.filters.filter((f) => f.columnId && f.operator);
         };
 
         table.getPendingColumnFilters = () => {
-            const state = table.getState().customColumnFilter;
+            const state = table.getState().columnFilter;
             return state.pendingFilters.filter((f) => f.columnId && f.operator);
         };
 
-        table.getCustomColumnFilterState = () => {
-            return table.getState().customColumnFilter;
+        table.getColumnFilterState = () => {
+            return table.getState().columnFilter;
         };
     },
 };
@@ -286,19 +297,17 @@ export function matchesCustomColumnFilters<TData extends RowData>(
     return logic === 'AND' ? results.every(Boolean) : results.some(Boolean);
 }
 
-
-
 export const getCombinedFilteredRowModel = <TData,>() => {
     return (table: Table<TData>) => (): RowModel<TData> => {
         // Run the built-in global + column filters first:
         const baseFilteredModel = getDefaultFilter<TData>()(table)();
 
-        const { filters, logic } = table.getState().customColumnFilter ?? {
+        const { filters, logic } = table.getState().columnFilter ?? {
             filters: [],
             logic: 'AND',
         };
 
-        if (!filters.length) return baseFilteredModel;
+        if (!filters.length || !table.options.enableAdvanceColumnFilter) return baseFilteredModel;
 
         // Apply custom column filters to pre-filtered rows
         const filteredRows = baseFilteredModel.rows.filter(row =>
@@ -323,6 +332,7 @@ export const getCombinedFilteredRowModel = <TData,>() => {
         };
     };
 };
+
 /**
  * Evaluate a single filter condition
  */
@@ -412,4 +422,4 @@ function evaluateFilterCondition(columnValue: any, operator: string, filterValue
         default:
             return true;
     }
-} 
+}

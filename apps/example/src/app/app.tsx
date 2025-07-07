@@ -1,12 +1,9 @@
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
-import { Container, Typography, Box } from '@mui/material';
+import { Container } from '@mui/material';
 
 // Import from our published package - start with just the main component
 import {
-  CustomColumnFilterExample,
-  DataTable,
-  SimpleLocalExample,
   ServerSideTest,
   type ColumnDef
 } from '@ackplus/react-tanstack-data-table';

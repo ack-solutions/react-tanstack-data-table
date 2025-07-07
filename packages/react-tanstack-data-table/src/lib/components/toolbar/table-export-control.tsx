@@ -15,13 +15,13 @@ import { ExcelIcon, CsvIcon } from '../../icons';
 import {  TableFilters } from '../../types';
 import { exportClientData, exportServerData } from '../../utils/export-utils';
 import { getSlotComponent } from '../../utils/slot-helpers';
-import { SelectionState } from '../../features/custom-selection.feature';
+import { SelectionState } from '../../features';
 
 interface TableExportControlProps {
     // Optional props to override context defaults
     exportFilename?: string;
     onServerExport?: (filters?: Partial<TableFilters>, selection?: SelectionState) => Promise<{ data: any[]; total: number }>;
-    onExportProgress?: (progress: { processedRows: number; totalRows: number; percentage: number }) => void;
+    onExportProgress?: (progress: { processedRows?: number; totalRows?: number; percentage?: number }) => void;
     onExportComplete?: (result: { success: boolean; filename: string; totalRows: number }) => void;
     onExportError?: (error: { message: string; code: string }) => void;
 }

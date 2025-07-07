@@ -57,7 +57,7 @@ const activeFilters = table.getActiveColumnFilters();
 table.setFilterLogic('OR');
 
 // Get current filter state
-const filterState = table.getCustomColumnFilterState();
+const filterState = table.getColumnFilterState();
 ```
 
 #### 4. Handle State Changes

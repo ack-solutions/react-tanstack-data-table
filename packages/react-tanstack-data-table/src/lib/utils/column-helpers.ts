@@ -52,10 +52,10 @@ export function getColumnOptions(column: Column<any, unknown>): any[] {
 /**
  * Determine if a column should be filterable
  */
-export function isColumnFilterable(column: DataTableColumn<any, unknown>): boolean {
+export function isColumnFilterable(column: Column<any, unknown>): boolean {
     // Check if column is explicitly marked as filterable
-    if (column?.filterable !== undefined) {
-        return column?.filterable;
+    if (column?.columnDef?.filterable !== undefined) {
+        return column?.columnDef?.filterable;
     }
 
     // Default to filterable for data columns

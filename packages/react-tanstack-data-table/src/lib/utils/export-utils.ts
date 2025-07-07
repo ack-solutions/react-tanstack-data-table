@@ -1,12 +1,12 @@
 import { Table } from '@tanstack/react-table';
 import * as XLSX from 'xlsx';
-import { SelectionState } from '../features/custom-selection.feature';
+import { SelectionState } from '../features';
 
 // Local types for the utility functions (keep simpler for actual implementation)
 export interface ExportOptions {
     format: 'csv' | 'excel';
     filename: string;
-    onProgress?: (progress: { processedRows: number; totalRows: number; percentage: number }) => void;
+    onProgress?: (progress: { processedRows?: number; totalRows?: number; percentage?: number }) => void;
     onComplete?: (result: { success: boolean; filename: string; totalRows: number }) => void;
     onError?: (error: { message: string; code: string }) => void;
 }
@@ -103,17 +103,55 @@ export async function exportServerData<TData>(
     const { format, filename, fetchData, currentFilters, selection, onProgress, onComplete, onError } = options;
 
     try {
-        onProgress?.({
-            processedRows: 0,
-            totalRows: 0,
-            percentage: 0,
-        });
+        // Initial progress
+        onProgress?.({ });
 
-        // Fetch data from server with selection information
-        const { data } = await fetchData(currentFilters, selection);
+        // First, get total count to determine if we need chunking
+        const initialResponse = await fetchData({
+            ...currentFilters,
+            pagination: { pageIndex: 0, pageSize: 1 }
+        }, selection);
 
-        if (!data || !Array.isArray(data)) {
+        if (!initialResponse || !initialResponse.data || !Array.isArray(initialResponse.data)) {
             throw new Error('Invalid data received from server');
+        }
+
+        const totalRows = initialResponse.total || initialResponse.data.length;
+        const CHUNK_SIZE = 1000; // Fetch 1000 rows per request
+        const needsChunking = totalRows > CHUNK_SIZE;
+
+        let allData: TData[] = [];
+
+        if (needsChunking) {
+            // Fetch data in chunks (no progress events during fetching)
+            const totalPages = Math.ceil(totalRows / CHUNK_SIZE);
+
+            for (let page = 1; page <= totalPages; page++) {
+                // Fetch current chunk
+                const chunkFilters = {
+                    ...currentFilters,
+                    pagination: {
+                        pageIndex: page - 1,
+                        pageSize: CHUNK_SIZE,
+                    },
+                };
+
+                const chunkResponse = await fetchData(chunkFilters, selection);
+
+                if (!chunkResponse || !chunkResponse.data || !Array.isArray(chunkResponse.data)) {
+                    throw new Error(`Failed to fetch chunk ${page}`);
+                }
+
+                allData = [...allData, ...chunkResponse.data];
+
+                // Small delay to prevent overwhelming the server
+                if (page < totalPages) {
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
+            }
+        } else {
+            // Small dataset, use single request
+            allData = initialResponse.data;
         }
 
         // Get visible columns for proper headers and data processing, excluding hideInExport columns
@@ -123,12 +161,10 @@ export async function exportServerData<TData>(
         });
 
         // Prepare data for export with proper column processing
-        const exportData = data.map((rowData, index) => {
-            onProgress?.({
-                processedRows: index + 1,
-                totalRows: data.length,
-                percentage: Math.round(((index + 1) / data.length) * 100),
-            });
+        const exportData: Record<string, any>[] = [];
+
+        for (let index = 0; index < allData.length; index++) {
+            const rowData = allData[index];
 
             const exportRow: Record<string, any> = {};
 
@@ -159,10 +195,9 @@ export async function exportServerData<TData>(
                 exportRow[header] = value;
             });
 
-            return exportRow;
-        });
+            exportData.push(exportRow);
+        }
 
-        // Export the data
         await exportToFile(exportData, format, filename);
 
         onComplete?.({

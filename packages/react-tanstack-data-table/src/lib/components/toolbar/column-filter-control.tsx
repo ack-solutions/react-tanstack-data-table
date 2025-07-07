@@ -28,12 +28,12 @@ import { FilterValueInput } from '../filters/filter-value-input';
 import { ColumnFilterRule } from '../../features';
 
 
-export function ColumnCustomFilterControl() {
+export function ColumnFilterControl() {
     const { table, slots, slotProps } = useDataTableContext();
     const FilterIconSlot = getSlotComponent(slots, 'filterIcon', FilterList);
 
     // Use the custom feature state from the table - now using pending filters for UI
-    const customFilterState = table.getCustomColumnFilterState?.() || {
+    const filterState = table?.getColumnFilterState?.() || {
         filters: [],
         logic: 'AND',
         pendingFilters: [],
@@ -41,14 +41,14 @@ export function ColumnCustomFilterControl() {
     };
 
     // Use pending filters for the UI (draft state)
-    const filters = customFilterState.pendingFilters;
-    const filterLogic = customFilterState.pendingLogic;
+    const filters = filterState.pendingFilters;
+    const filterLogic = filterState.pendingLogic;
 
     // Active filters are the actual applied filters
-    const activeFiltersCount = table.getActiveColumnFilters?.()?.length || 0;
+    const activeFiltersCount = table?.getActiveColumnFilters?.()?.length || 0;
 
     const filterableColumns = useMemo(() => {
-        return table.getAllLeafColumns()
+        return table?.getAllLeafColumns()
             .filter(column => isColumnFilterable(column));
     }, [table]);
 
@@ -56,15 +56,16 @@ export function ColumnCustomFilterControl() {
         // If no column specified, use empty (user will select)
         // If column specified, get its appropriate default operator
         let defaultOperator = operator || '';
+        console.log('addFilter', columnId, operator, filterableColumns);
 
         if (columnId && !operator) {
-            const column = filterableColumns.find(col => col.id === columnId);
+            const column = filterableColumns?.find(col => col.id === columnId);
             const columnType = getColumnType(column as any);
             const operators = FILTER_OPERATORS[columnType as keyof typeof FILTER_OPERATORS] || FILTER_OPERATORS.text;
             defaultOperator = operators[0]?.value || 'contains';
         }
 
-        table.addPendingColumnFilter?.(columnId || '', defaultOperator, '');
+        table?.addPendingColumnFilter?.(columnId || '', defaultOperator, '');
     }, [table, filterableColumns]);
 
     const handleAddFilter = useCallback(() => {
@@ -72,19 +73,19 @@ export function ColumnCustomFilterControl() {
     }, [addFilter]);
 
     const updateFilter = useCallback((filterId: string, updates: Partial<ColumnFilterRule>) => {
-        table.updatePendingColumnFilter?.(filterId, updates);
+        table?.updatePendingColumnFilter?.(filterId, updates);
     }, [table]);
 
     const removeFilter = useCallback((filterId: string) => {
-        table.removePendingColumnFilter?.(filterId);
+        table?.removePendingColumnFilter?.(filterId);
     }, [table]);
 
     const clearAllFilters = useCallback((closeDialog?: () => void) => {
         // Clear all pending filters
-        table.clearAllPendingColumnFilters?.();
+        table?.clearAllPendingColumnFilters?.();
         // Immediately apply the clear (which will clear active filters too)
         setTimeout(() => {
-            table.applyPendingColumnFilters?.();
+            table?.applyPendingColumnFilters?.();
             // Close dialog if callback provided
             if (closeDialog) {
                 closeDialog();
@@ -96,12 +97,12 @@ export function ColumnCustomFilterControl() {
 
     // Handle filter logic change (AND/OR)
     const handleLogicChange = useCallback((newLogic: 'AND' | 'OR') => {
-        table.setPendingFilterLogic?.(newLogic);
+        table?.setPendingFilterLogic?.(newLogic);
     }, [table]);
 
     // Apply all pending filters
     const applyFilters = useCallback(() => {
-        table.applyPendingColumnFilters?.();
+        table?.applyPendingColumnFilters?.();
     }, [table]);
 
     // Handle apply button click
@@ -111,14 +112,14 @@ export function ColumnCustomFilterControl() {
     }, [applyFilters]);
 
     const getOperatorsForColumn = useCallback((columnId: string) => {
-        const column = filterableColumns.find(col => col.id === columnId);
+        const column = filterableColumns?.find(col => col.id === columnId);
         const type = getColumnType(column as any);
         return FILTER_OPERATORS[type as keyof typeof FILTER_OPERATORS] || FILTER_OPERATORS.text;
     }, [filterableColumns]);
 
     // Handle column selection change
     const handleColumnChange = useCallback((filterId: string, newColumnId: string, currentFilter: ColumnFilterRule) => {
-        const newColumn = filterableColumns.find(col => col.id === newColumnId);
+        const newColumn = filterableColumns?.find(col => col.id === newColumnId);
         const columnType = getColumnType(newColumn as any);
         const operators = FILTER_OPERATORS[columnType as keyof typeof FILTER_OPERATORS] || FILTER_OPERATORS.text;
 
@@ -170,14 +171,16 @@ export function ColumnCustomFilterControl() {
 
     // Auto-add default filter when opening if no filters exist AND no applied filters
     useEffect(() => {
-        if (filters.length === 0 && filterableColumns.length > 0 && activeFiltersCount === 0) {
+        console.log('useEffect', filters.length, filterableColumns, {activeFiltersCount});
+        if (filters.length === 0 && filterableColumns && filterableColumns?.length > 0 && activeFiltersCount === 0) {
             const firstColumn = filterableColumns[0];
             const columnType = getColumnType(firstColumn as any);
             const operators = FILTER_OPERATORS[columnType as keyof typeof FILTER_OPERATORS] || FILTER_OPERATORS.text;
             const defaultOperator = operators[0]?.value || 'contains';
 
+            console.log('useEffect', firstColumn, columnType, operators, defaultOperator);
             // Add default filter with first column and its first operator
-            addFilter(firstColumn.id, defaultOperator);
+            addFilter(firstColumn?.id, defaultOperator);
         }
     }, [filters.length, filterableColumns, addFilter, activeFiltersCount]);
 
