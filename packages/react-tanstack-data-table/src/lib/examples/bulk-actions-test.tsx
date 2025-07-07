@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { Box, Typography, Button } from '@mui/material';
 import { DataTable } from '../components';
-import type { SelectionState } from '../features/custom-selection.feature';
+import type { SelectionState } from '../features';
 
 // Simple test data
 interface TestItem {
