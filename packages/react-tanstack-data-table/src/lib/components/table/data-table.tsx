@@ -170,9 +170,6 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     // Column filters props
     onColumnFiltersChange,
 
-    // Data CRUD callbacks
-    onDataChange,
-
     // Slots
     slots = {},
     slotProps = {},
@@ -187,6 +184,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     // -------------------------------
     // State hooks (grouped together)
     // -------------------------------
+    // const [fetchLoading, setFetchLoading] = useState(false);
     const [sorting, setSorting] = useState<SortingState>(DEFAULT_INITIAL_STATE.sorting);
     const [pagination, setPagination] = useState(DEFAULT_INITIAL_STATE.pagination);
     const [globalFilter, setGlobalFilter] = useState(DEFAULT_INITIAL_STATE.globalFilter);
@@ -203,7 +201,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     const [tableSize, setTableSize] = useState<DataTableSize>(initialTableSize);
     const [columnOrder, setColumnOrder] = useState<ColumnOrderState>(DEFAULT_INITIAL_STATE.columnOrder);
     const [columnPinning, setColumnPinning] = useState<ColumnPinningState>(DEFAULT_INITIAL_STATE.columnPinning);
-    const [serverData, setServerData] = useState<T[]>([]);
+    const [serverData, setServerData] = useState<T[]>(null);
     const [serverTotal, setServerTotal] = useState(0);
     const [exportController, setExportController] = useState<AbortController | null>(null);
 
@@ -234,8 +232,8 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     }, [initialStateConfig]);
 
     const { debouncedFetch, isLoading: fetchLoading } = useDebouncedFetch(onFetchData);
-    const tableData = useMemo(() => onFetchData ? serverData : data, [onFetchData, serverData, data]);
-    const tableTotalRow = useMemo(() => onFetchData ? serverTotal : totalRow, [onFetchData, serverTotal, totalRow]);
+    const tableData = useMemo(() => serverData ? serverData : data, [onFetchData, serverData, data]);
+    const tableTotalRow = useMemo(() => serverData ? serverTotal : totalRow, [onFetchData, serverTotal, totalRow]);
     const tableLoading = useMemo(() => onFetchData ? (loading || fetchLoading) : loading, [onFetchData, loading, fetchLoading]);
     const enhancedColumns = useMemo(
         () => {
@@ -743,26 +741,16 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     // -------------------------------
     useDataTableApi({
         table,
-        data: tableData,
         idKey,
-        globalFilter,
-        columnFilter,
-        sorting,
-        pagination,
-        columnOrder,
-        columnPinning,
         enhancedColumns,
         enablePagination,
         enableColumnPinning,
-        initialPageIndex: pagination.pageIndex,
-        initialPageSize: pagination.pageSize,
-        pageSize: pagination.pageSize,
+        initialStateConfig,
         selectMode,
         onSelectionChange: handleSelectionStateChange,
         handleColumnFilterStateChange,
         onDataStateChange,
         onFetchData: fetchData,
-        onDataChange,
         exportFilename,
         onExportProgress,
         onExportComplete,
@@ -771,6 +759,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         exportController,
         setExportController,
         isExporting,
+        onDataChange: setServerData,
         dataMode,
     }, internalApiRef);
 

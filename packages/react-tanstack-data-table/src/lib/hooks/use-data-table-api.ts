@@ -20,20 +20,11 @@ import { SelectionState } from '../features';
 
 interface UseDataTableApiProps<T> {
     table: Table<T>;
-    data: T[];
     idKey: keyof T;
-    globalFilter: string;
-    columnFilter: ColumnFilterState;
-    sorting: SortingState;
-    pagination: { pageIndex: number; pageSize: number };
-    columnOrder: ColumnOrderState;
-    columnPinning: ColumnPinningState;
     enhancedColumns: any[];
     enablePagination: boolean;
     enableColumnPinning: boolean;
-    initialPageIndex: number;
-    initialPageSize?: number;
-    pageSize: number;
+    initialStateConfig: Partial<TableState>;
 
     // Selection props
     selectMode?: 'page' | 'all';
@@ -66,20 +57,11 @@ export function useDataTableApi<T extends Record<string, any>>(
 ) {
     const {
         table,
-        data,
         idKey,
-        globalFilter,
-        columnFilter,
-        sorting,
-        pagination,
-        columnOrder,
-        columnPinning,
         enhancedColumns,
         enablePagination,
         enableColumnPinning,
-        initialPageIndex,
-        initialPageSize,
-        pageSize,
+        initialStateConfig,
         // Selection props
         selectMode = 'page',
         onSelectionChange,
@@ -237,6 +219,7 @@ export function useDataTableApi<T extends Record<string, any>>(
                     operator,
                     value,
                 };
+                const columnFilter = table.getState().columnFilter;
 
                 const currentFilters = columnFilter.filters || [];
                 const newFilters = [...currentFilters, newFilter];
@@ -248,6 +231,7 @@ export function useDataTableApi<T extends Record<string, any>>(
                 });
             },
             removeColumnFilter: (filterId: string) => {
+                const columnFilter = table.getState().columnFilter;
                 const currentFilters = columnFilter.filters || [];
                 const newFilters = currentFilters.filter((f: any) => f.id !== filterId);
                 handleColumnFilterStateChange({
@@ -343,96 +327,76 @@ export function useDataTableApi<T extends Record<string, any>>(
         data: {
             refresh: () => {
                 // Call external data state change handler to trigger refresh
-                const currentFilters = {
-                    globalFilter,
-                    columnFilter: columnFilter,
-                    sorting,
-                    pagination,
-                };
+                const pagination = table.getState().pagination;
                 if (onDataStateChange) {
-                    const currentState: Partial<TableState> = {
-                        ...currentFilters,
-                        columnOrder,
-                        columnPinning,
-                    };
-                    onDataStateChange(currentState);
+                    onDataStateChange({ pagination: { pageIndex: 0, pageSize: pagination.pageSize } });
                 }
                 if (onFetchData) {
-                    onFetchData(currentFilters)
+                    
+                    onFetchData({ pagination: { pageIndex: 0, pageSize: pagination.pageSize } })
                 }
             },
             reload: () => {
-                // Same as refresh for now
-                const currentFilters = {
-                    globalFilter,
-                    columnFilter: columnFilter,
-                    sorting,
-                    pagination,
-                };
+                const pagination = table.getState().pagination;       
                 if (onDataStateChange) {
-                    const currentState: TableFilters = {
-                        ...currentFilters,
-                        columnOrder,
-                        columnPinning,
-                    };
-                    onDataStateChange({ ...currentState });
+                    onDataStateChange({ pagination: { pageIndex: 0, pageSize: pagination.pageSize } });
                 }
                 if (onFetchData) {
-                    onFetchData({ ...currentFilters });
+                    onFetchData({ pagination: { pageIndex: 0, pageSize: pagination.pageSize } });
                 }
             },
             // Data CRUD operations
             getAllData: () => {
-                return [...data];
+                return table.getRowModel().rows?.map(row => row.original) || [];
             },
             getRowData: (rowId: string) => {
-                return data.find(row => String(row[idKey]) === rowId);
+                return table.getRowModel().rows?.find(row => String(row.original[idKey]) === rowId)?.original;
             },
             getRowByIndex: (index: number) => {
-                return data[index];
+                return table.getRowModel().rows?.[index]?.original;
             },
             updateRow: (rowId: string, updates: Partial<T>) => {
-                const newData = data.map(row => String(row[idKey]) === rowId
+                const newData = table.getRowModel().rows?.map(row => String(row.original[idKey]) === rowId
                     ? {
-                        ...row,
+                        ...row.original,
                         ...updates,
                     }
-                    : row);
-                onDataChange?.(newData);
+                    : row.original);
+                onDataChange?.(newData || []);
             },
             updateRowByIndex: (index: number, updates: Partial<T>) => {
-                const newData = [...data];
-                if (newData[index]) {
+                const newData = table.getRowModel().rows?.map(row => row.original);
+                if (newData?.[index]) {
                     newData[index] = {
-                        ...newData[index],
+                        ...newData[index]!,
                         ...updates,
                     };
-                    onDataChange?.(newData);
+                    onDataChange(newData);
                 }
             },
             insertRow: (newRow: T, index?: number) => {
-                const newData = [...data];
+                const newData = table.getRowModel().rows?.map(row => row.original) || [];
                 if (index !== undefined) {
                     newData.splice(index, 0, newRow);
                 } else {
                     newData.push(newRow);
                 }
-                onDataChange?.(newData);
+                onDataChange(newData || []);
             },
             deleteRow: (rowId: string) => {
-                const newData = data.filter(row => String(row[idKey]) !== rowId);
-                onDataChange?.(newData);
+                const newData = (table.getRowModel().rows || [])?.filter(row => String(row.original[idKey]) !== rowId);
+                onDataChange?.(newData?.map(row => row.original) || []);
             },
             deleteRowByIndex: (index: number) => {
-                const newData = [...data];
+                const newData = (table.getRowModel().rows || [])?.map(row => row.original);
                 newData.splice(index, 1);
-                onDataChange?.(newData);
+                onDataChange(newData);
             },
             deleteSelectedRows: () => {
                 const selectedRowIds = Object.keys(table.getState().rowSelection)
                     .filter(key => table.getState().rowSelection[key]);
-                const newData = data.filter(row => !selectedRowIds.includes(String(row[idKey])));
-                onDataChange?.(newData);
+                const newData = (table.getRowModel().rows || [])?.filter(row => !selectedRowIds.includes(String(row.original[idKey])));
+                onDataChange(newData?.map(row => row.original) || []);
                 // Clear selection after deletion
                 table.resetRowSelection();
             },
@@ -443,18 +407,18 @@ export function useDataTableApi<T extends Record<string, any>>(
             // Bulk operations
             updateMultipleRows: (updates: Array<{ rowId: string; data: Partial<T> }>) => {
                 const updateMap = new Map(updates.map(u => [u.rowId, u.data]));
-                const newData = data.map(row => {
-                    const rowId = String(row[idKey]);
+                const newData = (table.getRowModel().rows || [])?.map(row => {
+                    const rowId = String(row.original[idKey]);
                     const updateData = updateMap.get(rowId);
                     return updateData ? {
-                        ...row,
+                        ...row.original,
                         ...updateData,
-                    } : row;
+                    } : row.original;
                 });
-                onDataChange?.(newData);
+                onDataChange(newData || []);
             },
             insertMultipleRows: (newRows: T[], startIndex?: number) => {
-                const newData = [...data];
+                const newData = (table.getRowModel().rows || [])?.map(row => row.original);
                 if (startIndex !== undefined) {
                     newData.splice(startIndex, 0, ...newRows);
                 } else {
@@ -464,22 +428,22 @@ export function useDataTableApi<T extends Record<string, any>>(
             },
             deleteMultipleRows: (rowIds: string[]) => {
                 const idsToDelete = new Set(rowIds);
-                const newData = data.filter(row => !idsToDelete.has(String(row[idKey])));
-                onDataChange?.(newData);
+                const newData = (table.getRowModel().rows || [])?.filter(row => !idsToDelete.has(String(row.original[idKey])))?.map(row => row.original);
+                onDataChange(newData);
             },
 
             // Field-specific updates
             updateField: (rowId: string, fieldName: keyof T, value: any) => {
-                const newData = data.map(row => String(row[idKey]) === rowId
+                const newData = (table.getRowModel().rows || [])?.map(row => String(row.original[idKey]) === rowId
                     ? {
-                        ...row,
+                        ...row.original,
                         [fieldName]: value,
                     }
-                    : row);
+                    : row.original);
                 onDataChange?.(newData);
             },
             updateFieldByIndex: (index: number, fieldName: keyof T, value: any) => {
-                const newData = [...data];
+                const newData = (table.getRowModel().rows || [])?.map(row => row.original);
                 if (newData[index]) {
                     newData[index] = {
                         ...newData[index],
@@ -491,13 +455,13 @@ export function useDataTableApi<T extends Record<string, any>>(
 
             // Data queries
             findRows: (predicate: (row: T) => boolean) => {
-                return data.filter(predicate);
+                return (table.getRowModel().rows || [])?.filter(row => predicate(row.original))?.map(row => row.original);
             },
             findRowIndex: (predicate: (row: T) => boolean) => {
-                return data.findIndex(predicate);
+                return (table.getRowModel().rows || [])?.findIndex(row => predicate(row.original));
             },
             getDataCount: () => {
-                return data.length;
+                return (table.getRowModel().rows || [])?.length || 0;
             },
             getFilteredDataCount: () => {
                 return table.getFilteredRowModel().rows.length;
@@ -523,23 +487,14 @@ export function useDataTableApi<T extends Record<string, any>>(
                 table.resetRowSelection();
                 table.resetColumnPinning();
 
-                handleColumnFilterStateChange({
-                    filters: [],
-                    logic: 'AND',
-                    pendingFilters: [],
-                    pendingLogic: 'AND',
-                });
+                handleColumnFilterStateChange(initialStateConfig.columnFilter || { filters: [], logic: 'AND', pendingFilters: [], pendingLogic: 'AND' });
 
                 if (enablePagination) {
-                    table.setPageIndex(initialPageIndex);
-                    table.setPageSize(initialPageSize || pageSize);
+                    table.setPagination(initialStateConfig.pagination || { pageIndex: 0, pageSize: 10 });
                 }
 
                 if (enableColumnPinning) {
-                    table.setColumnPinning({
-                        left: [],
-                        right: [],
-                    });
+                    table.setColumnPinning(initialStateConfig.columnPinning || { left: [], right: [] });
                 }
             },
             saveLayout: () => {
@@ -551,7 +506,7 @@ export function useDataTableApi<T extends Record<string, any>>(
                     sorting: table.getState().sorting,
                     pagination: table.getState().pagination,
                     globalFilter: table.getState().globalFilter,
-                    columnFilter: columnFilter,
+                    columnFilter: table.getState().columnFilter,
                 };
             },
             restoreLayout: (layout: Partial<TableState>) => {
@@ -588,7 +543,7 @@ export function useDataTableApi<T extends Record<string, any>>(
                 return table.getState();
             },
             getCurrentFilters: () => {
-                return columnFilter;
+                return table.getState().columnFilter;
             },
             getCurrentSorting: () => {
                 return table.getState().sorting;
@@ -615,12 +570,10 @@ export function useDataTableApi<T extends Record<string, any>>(
                     if (dataMode === 'server' && onServerExport) {
                         // Server export with selection data
                         const currentFilters = {
-                            globalFilter,
-                            columnFilter,
-                            sorting,
-                            pagination,
-                            columnOrder,
-                            columnPinning,
+                            globalFilter : table.getState().globalFilter,
+                            columnFilter: table.getState().columnFilter,
+                            sorting: table.getState().sorting,
+                            pagination: table.getState().pagination,
                         };
                         await exportServerData(table, {
                             format: 'csv',
@@ -662,12 +615,10 @@ export function useDataTableApi<T extends Record<string, any>>(
                     if (dataMode === 'server' && onServerExport) {
                         // Server export with selection data
                         const currentFilters = {
-                            globalFilter,
-                            columnFilter,
-                            sorting,
-                            pagination,
-                            columnOrder,
-                            columnPinning,
+                            globalFilter: table.getState().globalFilter,
+                            columnFilter: table.getState().columnFilter,
+                            sorting: table.getState().sorting,
+                            pagination: table.getState().pagination,
                         };
 
                         await exportServerData(table, {
@@ -720,12 +671,10 @@ export function useDataTableApi<T extends Record<string, any>>(
                     setExportController?.(controller);
 
                     const currentFilters = {
-                        globalFilter,
-                        columnFilter,
-                        sorting,
-                        pagination,
-                        columnOrder,
-                        columnPinning,
+                        globalFilter: table.getState().globalFilter,
+                        columnFilter: table.getState().columnFilter,
+                        sorting: table.getState().sorting,
+                        pagination: table.getState().pagination,
                     };
                     await exportServerData(table, {
                         format,
@@ -757,22 +706,12 @@ export function useDataTableApi<T extends Record<string, any>>(
         table,
         enhancedColumns,
         handleColumnFilterStateChange,
-        columnFilter,
-        data,
         idKey,
         onDataStateChange,
         onFetchData,
-        globalFilter,
-        sorting,
-        pagination,
-        columnOrder,
-        columnPinning,
         onDataChange,
         enableColumnPinning,
         enablePagination,
-        initialPageIndex,
-        initialPageSize,
-        pageSize,
         // Export dependencies
         exportFilename,
         onExportProgress,
