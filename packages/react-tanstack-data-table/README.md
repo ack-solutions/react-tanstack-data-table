@@ -134,7 +134,6 @@ function MyDataTable() {
 | `enableMultiRowSelection` | `boolean` | `true` | Allow multiple row selection |
 | `selectMode` | `'page' \| 'all'` | `'page'` | Selection scope (page or all data) |
 | `isRowSelectable` | `(params: {row: T, id: string}) => boolean` | - | Control if specific row is selectable |
-| `onRowSelectionChange` | `(selectedRows: T[], selection?: SelectionState) => void` | - | Selection change callback |
 | `onSelectionChange` | `(selection: SelectionState) => void` | - | Selection state change callback |
 | `enableBulkActions` | `boolean` | `false` | Enable bulk actions toolbar |
 | `bulkActions` | `(selectionState: SelectionState) => ReactNode` | - | Custom bulk actions component |
@@ -208,13 +207,17 @@ This allows for efficient handling of large datasets where you might select "all
 | `onServerExport` | `(filters?: Partial<TableState>, selection?: SelectionState) => Promise<{data: any[], total: number}>` | - | Server-side export handler |
 | `onExportCancel` | `() => void` | - | Export cancellation callback |
 
-### Expandable Rows
+### Expandable Rows (Enhanced Slot System)
+
+Expandable rows are now fully integrated with the enhanced slot system, providing better customization and type safety.
 
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
 | `enableExpanding` | `boolean` | `false` | Enable row expansion |
 | `getRowCanExpand` | `(row) => boolean` | - | Determine if row can expand |
 | `renderSubComponent` | `(row) => ReactNode` | - | Render expanded row content |
+
+The expanding column is automatically added and can be customized through `slotProps.expandColumn` (see Special Column Configuration section above).
 
 ### Styling & Layout
 
@@ -246,13 +249,239 @@ This allows for efficient handling of large datasets where you might select "all
 | `skeletonRows` | `number` | `5` | Number of skeleton rows for loading state |
 | `footerFilter` | `ReactNode` | - | Additional filter components in footer |
 
-### Special Column Configuration
+### Special Column Configuration (Enhanced Slot System)
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `selectionColumn` | `{width?, pinLeft?, customColumn?, id?}` | - | Selection column configuration |
-| `actionColumn` | `{pinRight?, customColumn?, id?}` | - | Action column configuration |
-| `expandingColumn` | `{width?, pinLeft?, customColumn?, id?}` | - | Expanding column configuration |
+Special columns (selection and expanding) are now handled through the enhanced slot system, providing better customization and type safety.
+
+#### Selection Column Configuration
+
+The selection column is automatically added when `enableRowSelection` is true and can be customized through `slotProps.selectionColumn`:
+
+```tsx
+<DataTable
+  data={data}
+  columns={columns}
+  enableRowSelection
+  enableMultiRowSelection
+  slotProps={{
+    selectionColumn: {
+      width: 80,
+      pinLeft: true,
+      id: 'custom-selection',
+      // Custom column configuration
+      header: ({ table }) => (
+        <Checkbox
+          checked={table.getIsAllRowsSelected()}
+          indeterminate={table.getIsSomeRowsSelected()}
+          onChange={() => table.toggleAllRowsSelected()}
+          sx={{ color: 'primary.main' }}
+        />
+      ),
+      cell: ({ row, table }) => (
+        <Checkbox
+          checked={table.getIsRowSelected(row.id)}
+          onChange={() => table.toggleRowSelected(row.id)}
+          sx={{ color: 'secondary.main' }}
+        />
+      ),
+    },
+  }}
+/>
+```
+
+#### Expanding Column Configuration
+
+The expanding column is automatically added when `enableExpanding` is true and can be customized through `slotProps.expandColumn`:
+
+```tsx
+<DataTable
+  data={data}
+  columns={columns}
+  enableExpanding
+  getRowCanExpand={(row) => row.original.details != null}
+  renderSubComponent={(row) => (
+    <Box p={2}>
+      <Typography variant="h6">Details</Typography>
+      <pre>{JSON.stringify(row.original.details, null, 2)}</pre>
+    </Box>
+  )}
+  slotProps={{
+    expandColumn: {
+      width: 60,
+      pinLeft: true,
+      id: 'custom-expand',
+      // Custom column configuration
+      header: 'Expand',
+      cell: ({ row }) => (
+        <IconButton
+          onClick={row.getToggleExpandedHandler()}
+          size="small"
+          sx={{ color: 'primary.main' }}
+        >
+          {row.getIsExpanded() ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+        </IconButton>
+      ),
+    },
+  }}
+/>
+```
+
+#### Advanced Special Column Customization
+
+You can completely replace the special column components using the slots system:
+
+```tsx
+import { createSelectionColumn, createExpandingColumn } from '@ackplus/react-tanstack-data-table';
+
+function CustomTable() {
+  // Create custom selection column
+  const customSelectionColumn = createSelectionColumn({
+    width: 100,
+    pinLeft: true,
+    header: ({ table }) => (
+      <Tooltip title="Select All">
+        <Checkbox
+          checked={table.getIsAllRowsSelected()}
+          indeterminate={table.getIsSomeRowsSelected()}
+          onChange={() => table.toggleAllRowsSelected()}
+          sx={{ 
+            color: 'primary.main',
+            '&.Mui-checked': { color: 'primary.main' }
+          }}
+        />
+      </Tooltip>
+    ),
+    cell: ({ row, table }) => (
+      <Tooltip title="Select Row">
+        <Checkbox
+          checked={table.getIsRowSelected(row.id)}
+          onChange={() => table.toggleRowSelected(row.id)}
+          sx={{ 
+            color: 'secondary.main',
+            '&.Mui-checked': { color: 'secondary.main' }
+          }}
+        />
+      </Tooltip>
+    ),
+  });
+
+  // Create custom expanding column
+  const customExpandingColumn = createExpandingColumn({
+    width: 80,
+    pinLeft: true,
+    header: 'Details',
+    cell: ({ row }) => (
+      <Tooltip title={row.getIsExpanded() ? "Collapse" : "Expand"}>
+        <IconButton
+          onClick={row.getToggleExpandedHandler()}
+          size="small"
+          sx={{ 
+            color: 'primary.main',
+            transition: 'transform 0.2s',
+            transform: row.getIsExpanded() ? 'rotate(180deg)' : 'rotate(0deg)',
+          }}
+        >
+          <KeyboardArrowDownIcon />
+        </IconButton>
+      </Tooltip>
+    ),
+  });
+
+  return (
+    <DataTable
+      data={data}
+      columns={[customSelectionColumn, customExpandingColumn, ...columns]}
+      enableRowSelection
+      enableExpanding
+      // ... other props
+    />
+  );
+}
+```
+
+#### Special Column Configuration Options
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `width` | `number` | `60` | Column width in pixels |
+| `pinLeft` | `boolean` | `false` | Pin column to the left |
+| `id` | `string` | Auto-generated | Custom column ID |
+| `header` | `ReactNode \| (props) => ReactNode` | Default header | Custom header component |
+| `cell` | `(props) => ReactNode` | Default cell | Custom cell component |
+| `sx` | `SxProps` | `{}` | Custom styling |
+| `className` | `string` | - | Custom CSS class |
+| `style` | `CSSProperties` | - | Custom inline styles |
+
+#### Utility Functions for Special Columns
+
+The library provides utility functions to create custom special columns:
+
+> **Note**: Special columns are now handled through the enhanced slot system instead of table props. This provides better type safety, more customization options, and consistent behavior with the rest of the component system.
+
+```tsx
+import { createSelectionColumn, createExpandingColumn } from '@ackplus/react-tanstack-data-table';
+
+// Create a custom selection column
+const customSelectionColumn = createSelectionColumn({
+  width: 100,
+  pinLeft: true,
+  multiSelect: true, // Enable multi-select
+  header: ({ table }) => (
+    <Tooltip title="Select All Rows">
+      <Checkbox
+        checked={table.getIsAllRowsSelected()}
+        indeterminate={table.getIsSomeRowsSelected()}
+        onChange={() => table.toggleAllRowsSelected()}
+        sx={{ color: 'primary.main' }}
+      />
+    </Tooltip>
+  ),
+  cell: ({ row, table }) => (
+    <Tooltip title="Select Row">
+      <Checkbox
+        checked={table.getIsRowSelected(row.id)}
+        onChange={() => table.toggleRowSelected(row.id)}
+        sx={{ color: 'secondary.main' }}
+      />
+    </Tooltip>
+  ),
+});
+
+// Create a custom expanding column
+const customExpandingColumn = createExpandingColumn({
+  width: 80,
+  pinLeft: true,
+  header: 'Details',
+  cell: ({ row }) => (
+    <Tooltip title={row.getIsExpanded() ? "Collapse Details" : "Expand Details"}>
+      <IconButton
+        onClick={row.getToggleExpandedHandler()}
+        size="small"
+        sx={{ 
+          color: 'primary.main',
+          transition: 'all 0.2s ease',
+          transform: row.getIsExpanded() ? 'rotate(180deg)' : 'rotate(0deg)',
+          '&:hover': {
+            backgroundColor: 'primary.light',
+            color: 'primary.contrastText',
+          },
+        }}
+      >
+        <KeyboardArrowDownIcon />
+      </IconButton>
+    </Tooltip>
+  ),
+});
+
+// Use in your table
+<DataTable
+  columns={[customSelectionColumn, customExpandingColumn, ...columns]}
+  data={data}
+  enableRowSelection
+  enableExpanding
+  // ... other props
+/>
+```
 
 ## 🔥 Advanced Examples
 
@@ -297,9 +526,11 @@ function ServerSideTable() {
 }
 ```
 
-### Row Selection with Bulk Actions
+### Row Selection with Bulk Actions and Enhanced Slot System
 
 ```tsx
+import { CheckCircleIcon, RadioButtonUncheckedIcon } from '@mui/icons-material';
+
 function SelectableTable() {
   const [selectedUsers, setSelectedUsers] = useState([]);
 
@@ -341,7 +572,34 @@ function SelectableTable() {
       enableMultiRowSelection
       enableBulkActions
       bulkActions={bulkActions}
-      onRowSelectionChange={setSelectedUsers}
+      onSelectionChange={setSelectedUsers}
+      slotProps={{
+        selectionColumn: {
+          width: 80,
+          pinLeft: true,
+          header: ({ table }) => (
+            <Checkbox
+              checked={table.getIsAllRowsSelected()}
+              indeterminate={table.getIsSomeRowsSelected()}
+              onChange={() => table.toggleAllRowsSelected()}
+              sx={{ 
+                color: 'primary.main',
+                '&.Mui-checked': { color: 'primary.main' }
+              }}
+            />
+          ),
+          cell: ({ row, table }) => (
+            <Checkbox
+              checked={table.getIsRowSelected(row.id)}
+              onChange={() => table.toggleRowSelected(row.id)}
+              sx={{ 
+                color: 'secondary.main',
+                '&.Mui-checked': { color: 'secondary.main' }
+              }}
+            />
+          ),
+        },
+      }}
     />
   );
 }
@@ -388,9 +646,11 @@ function FilterableTable() {
 }
 ```
 
-### Expandable Rows
+### Expandable Rows with Enhanced Slot System
 
 ```tsx
+import { ExpandMoreIcon, ExpandLessIcon } from '@mui/icons-material';
+
 function ExpandableTable() {
   const renderSubComponent = (row) => (
     <Box p={2}>
@@ -415,6 +675,26 @@ function ExpandableTable() {
       enableExpanding
       getRowCanExpand={(row) => row.original.details != null}
       renderSubComponent={renderSubComponent}
+      slotProps={{
+        expandColumn: {
+          width: 60,
+          pinLeft: true,
+          header: 'Details',
+          cell: ({ row }) => (
+            <IconButton
+              onClick={row.getToggleExpandedHandler()}
+              size="small"
+              sx={{ 
+                color: 'primary.main',
+                transition: 'transform 0.2s',
+                transform: row.getIsExpanded() ? 'rotate(180deg)' : 'rotate(0deg)',
+              }}
+            >
+              {row.getIsExpanded() ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+            </IconButton>
+          ),
+        },
+      }}
     />
   );
 }

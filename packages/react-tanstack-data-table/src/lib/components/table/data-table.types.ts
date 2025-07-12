@@ -59,7 +59,6 @@ export interface DataTableProps<T> {
     // Row selection control (like MUI DataGrid)
     isRowSelectable?: (params: { row: T; id: string }) => boolean;
     
-    onRowSelectionChange?: (selectedRows: T[], selection?: SelectionState) => void;
     onSelectionChange?: (selection: SelectionState) => void;
 
     // Bulk action props
@@ -129,30 +128,6 @@ export interface DataTableProps<T> {
     onPaginationChange?: (pagination: PaginationState) => void;
     onGlobalFilterChange?: (globalFilter: string) => void;
     onColumnFilterChange?: (columnFilter: ColumnFilterState) => void;
-
-    // Simple special columns configuration
-    selectionColumn?: {
-        width?: number;
-        pinLeft?: boolean;
-        customColumn?: DataTableColumn<T>;
-        id?: string; // Simple ID override
-    };
-
-    // Action column customization
-    actionColumn?: {
-        pinRight?: boolean;
-        customColumn?: DataTableColumn<T>;
-        id?: string; // Simple ID override
-    };
-
-    // Expanding column customization
-    expandingColumn?: {
-        width?: number;
-        pinLeft?: boolean;
-        customColumn?: DataTableColumn<T>;
-        id?: string; // Simple ID override
-    };
-
     // Slots for component customization (similar to MUI DataGrid)
     slots?: Partial<DataTableSlots<T>>;
     slotProps?: PartialSlotProps<T>;
