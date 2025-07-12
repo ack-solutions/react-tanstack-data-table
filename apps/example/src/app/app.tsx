@@ -5,6 +5,7 @@ import { Container } from '@mui/material';
 // Import from our published package - start with just the main component
 import {
   ServerSideTest,
+  SimpleLocalExample,
   type ColumnDef
 } from '@ackplus/react-tanstack-data-table';
 
@@ -50,6 +51,7 @@ export function App() {
       <CssBaseline />
       <Container maxWidth="xl" sx={{ py: 4 }}>
         <ServerSideTest />
+        <SimpleLocalExample />
       </Container>
     </ThemeProvider>
   );

@@ -62,7 +62,6 @@ export function TableExportControl({
 
     const handleExport = async (format: 'csv' | 'excel') => {
         try {
-            console.log('handleExport', dataMode, onServerExport);
             if (dataMode === 'server' && onServerExport) {
                 // Server mode export - fetch data with current filters and selection
                 const currentState = table.getState();

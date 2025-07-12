@@ -1,7 +1,7 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { DataTable } from '../components/table/data-table';
 import { DataTableApi, DataTableColumn } from '../types';
-import { SelectionState } from '../features/custom-selection.feature';
+import { SelectionState } from '../features';
 
 interface User {
     id: string;

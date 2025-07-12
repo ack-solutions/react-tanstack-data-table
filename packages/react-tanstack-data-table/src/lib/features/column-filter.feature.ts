@@ -117,7 +117,6 @@ export const ColumnFilterFeature: TableFeature<any> = {
         // === PENDING FILTER METHODS (Draft state) ===
         table.addPendingColumnFilter = (columnId: string, operator: string, value: any) => {
             if (!table.options.enableAdvanceColumnFilter) return;
-            console.log('addPendingColumnFilter', columnId, operator, value);
             table.setColumnFilterState((old) => {
                 const newFilter: ColumnFilterRule = {
                     id: `filter_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,

@@ -24,7 +24,7 @@ import {
     Paper
 } from '@mui/material';
 import { DataTable } from '../components/table/data-table';
-import { DataTableApi, DataTableColumn } from '../types';
+import { DataTableApi, DataTableColumn, DEFAULT_SELECTION_COLUMN_NAME } from '../types';
 import { TableFilters } from '../types';
 import { SelectionState } from '../features';
 
@@ -77,7 +77,6 @@ export function ServerSideFetchingExample() {
     // Simulate server API call with realistic delays and filtering
     const handleFetchData = useCallback(async (filters: Partial<TableFilters>) => {
         console.log('🔄 Fetching data with filters:', filters);
-        console.log('🔄 Tab:', { tab }, 'Current tab:');
         setLoading(true);
         setError(null);
         setLastFetchParams(filters);
@@ -156,13 +155,6 @@ export function ServerSideFetchingExample() {
                 const end = start + pageSize;
                 pageData = filteredData.slice(start, end);
             }
-
-            console.log('✅ Data fetched successfully:', {
-                total,
-                pageSize: pageData.length,
-                filters: filters.pagination
-            });
-
             return {
                 data: pageData,
                 total: total,
@@ -174,7 +166,7 @@ export function ServerSideFetchingExample() {
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [tab]);
 
     // Handle selection changes
     const handleSelectionChange = useCallback((selection: SelectionState) => {
@@ -493,7 +485,9 @@ export function ServerSideFetchingExample() {
                 enableMultiRowSelection={true}
                 selectMode="page" // Page-based selection
                 onSelectionChange={handleSelectionChange}
-
+                enableColumnPinning
+                enableColumnResizing
+                enableColumnDragging
                 // Bulk Actions
                 enableBulkActions={true}
                 bulkActions={(selectionState) => (
@@ -535,6 +529,10 @@ export function ServerSideFetchingExample() {
                     pagination: {
                         pageIndex: 0,
                         pageSize: 10,
+                    },
+                    columnPinning: {
+                        left: [DEFAULT_SELECTION_COLUMN_NAME],
+                        right: [],
                     },
                 }}
 

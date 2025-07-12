@@ -93,12 +93,7 @@ export function DataTableToolbar({
                         alignItems="center"
                         sx={{ flex: 1 }}
                     >
-
-
                         {/* Table Actions and Filters */}
-
-                        {/* Search */}
-                        {enableGlobalFilter ? <TableSearchControlSlot {...slotProps.searchInput} /> : null}
 
                         {enableTableSizeControl ? <TableSizeControlSlot {...slotProps.tableSizeControl} /> : null}
 
@@ -111,6 +106,9 @@ export function DataTableToolbar({
                         {enableReset ? <ColumnResetControlSlot {...slotProps.resetButton} /> : null}
 
                         {enableExport ? <TableExportControlSlot {...slotProps.exportButton} /> : null}
+
+                        {/* Search */}
+                        {enableGlobalFilter ? <TableSearchControlSlot {...slotProps.searchInput} /> : null}
 
                     </Stack>
 

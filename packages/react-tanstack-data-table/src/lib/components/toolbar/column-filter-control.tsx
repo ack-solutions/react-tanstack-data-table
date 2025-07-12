@@ -56,7 +56,6 @@ export function ColumnFilterControl() {
         // If no column specified, use empty (user will select)
         // If column specified, get its appropriate default operator
         let defaultOperator = operator || '';
-        console.log('addFilter', columnId, operator, filterableColumns);
 
         if (columnId && !operator) {
             const column = filterableColumns?.find(col => col.id === columnId);
@@ -171,14 +170,11 @@ export function ColumnFilterControl() {
 
     // Auto-add default filter when opening if no filters exist AND no applied filters
     useEffect(() => {
-        console.log('useEffect', filters.length, filterableColumns, {activeFiltersCount});
         if (filters.length === 0 && filterableColumns && filterableColumns?.length > 0 && activeFiltersCount === 0) {
             const firstColumn = filterableColumns[0];
             const columnType = getColumnType(firstColumn as any);
             const operators = FILTER_OPERATORS[columnType as keyof typeof FILTER_OPERATORS] || FILTER_OPERATORS.text;
             const defaultOperator = operators[0]?.value || 'contains';
-
-            console.log('useEffect', firstColumn, columnType, operators, defaultOperator);
             // Add default filter with first column and its first operator
             addFilter(firstColumn?.id, defaultOperator);
         }

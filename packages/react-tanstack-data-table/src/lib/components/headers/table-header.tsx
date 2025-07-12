@@ -51,6 +51,7 @@ export function TableHeader<T>({
         const pinnedRightPosition = isPinned === 'right' ? header.column.getAfter('right') : undefined;
         const alignment = getColumnAlignment(header.column.columnDef);
         const enableSorting = header.column.getCanSort();
+
         return (
             <HeaderCellSlot
                 key={header.id}
@@ -77,6 +78,7 @@ export function TableHeader<T>({
                     onColumnReorder={onColumnReorder}
                     slots={slots}
                     slotProps={slotProps}
+                    alignment={alignment}
                 />
 
                 {/* Column resizer */}

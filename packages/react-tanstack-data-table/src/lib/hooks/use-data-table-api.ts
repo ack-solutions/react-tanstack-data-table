@@ -1,5 +1,5 @@
 import { ColumnOrderState, ColumnPinningState, SortingState, Table } from '@tanstack/react-table';
-import { Ref, useImperativeHandle } from 'react';
+import { Ref, useCallback, useImperativeHandle } from 'react';
 
 import { ColumnFilterState,  TableFilters,  TableState } from '../types';
 import { DataTableApi } from '../types/data-table-api';
@@ -82,6 +82,23 @@ export function useDataTableApi<T extends Record<string, any>>(
     } = props;
 
     // Note: Custom selection is now handled by TanStack Table CustomSelectionFeature
+
+    const getTableFilters = useCallback(( withAllState: boolean = false)=> {
+        const state = table.getState();
+        return {
+            sorting: state.sorting,
+            globalFilter: state.globalFilter,
+            columnFilter: state.columnFilter,
+            pagination: state.pagination,
+            ...(withAllState ? {
+                columnOrder: state.columnOrder,
+                columnPinning: state.columnPinning,
+                columnVisibility: state.columnVisibility,
+                columnSizing: state.columnSizing,
+            } : {}),
+           
+        } as Partial<TableFilters>;
+    }, [table]);
 
     useImperativeHandle(ref, () => ({
         table: {
@@ -326,24 +343,22 @@ export function useDataTableApi<T extends Record<string, any>>(
         // Data Management
         data: {
             refresh: () => {
-                // Call external data state change handler to trigger refresh
-                const pagination = table.getState().pagination;
-                if (onDataStateChange) {
-                    onDataStateChange({ pagination: { pageIndex: 0, pageSize: pagination.pageSize } });
-                }
-                if (onFetchData) {
-                    
-                    onFetchData({ pagination: { pageIndex: 0, pageSize: pagination.pageSize } })
-                }
+                const filters = getTableFilters();
+                filters.pagination = {
+                    pageIndex: 0,
+                    pageSize: filters.pagination?.pageSize || initialStateConfig.pagination?.pageSize || 10,
+                };
+                const allState = getTableFilters(true);
+
+                onDataStateChange?.(allState);
+                onFetchData?.(filters);
             },
             reload: () => {
-                const pagination = table.getState().pagination;       
-                if (onDataStateChange) {
-                    onDataStateChange({ pagination: { pageIndex: 0, pageSize: pagination.pageSize } });
-                }
-                if (onFetchData) {
-                    onFetchData({ pagination: { pageIndex: 0, pageSize: pagination.pageSize } });
-                }
+                const filters = getTableFilters();
+                const allState = getTableFilters(true);
+
+                onDataStateChange?.(allState);
+                onFetchData?.(filters);
             },
             // Data CRUD operations
             getAllData: () => {

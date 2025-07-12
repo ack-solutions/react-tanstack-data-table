@@ -22,7 +22,6 @@ export const DataTablePagination = memo(({
 }: DataTablePaginationProps) => {
     const { table } = useDataTableContext();
 
-    // console.log('DataTablePagination', pagination);
     return (
         <Box
             sx={{

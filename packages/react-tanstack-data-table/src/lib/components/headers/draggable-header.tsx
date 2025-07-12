@@ -1,7 +1,7 @@
 import { ArrowUpwardOutlined, ArrowDownwardOutlined } from '@mui/icons-material';
 import { Box } from '@mui/material';
 import { Header, flexRender } from '@tanstack/react-table';
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useMemo } from 'react';
 
 import { getSlotComponent } from '../../utils/slot-helpers';
 
@@ -13,6 +13,7 @@ interface DraggableHeaderProps<T> {
     onColumnReorder?: (draggedColumnId: string, targetColumnId: string) => void;
     slots?: Record<string, any>;
     slotProps?: Record<string, any>;
+    alignment?: 'left' | 'center' | 'right';
 }
 
 export function DraggableHeader<T>({
@@ -22,6 +23,7 @@ export function DraggableHeader<T>({
     onColumnReorder,
     slots,
     slotProps,
+    alignment,
 }: DraggableHeaderProps<T>) {
     const [isDragging, setIsDragging] = useState(false);
     const [dragOver, setDragOver] = useState(false);
@@ -32,10 +34,14 @@ export function DraggableHeader<T>({
     const SortIconAscSlot = getSlotComponent(slots, 'sortIconAsc', ArrowUpwardOutlined);
     const SortIconDescSlot = getSlotComponent(slots, 'sortIconDesc', ArrowDownwardOutlined);
 
-    // Auto-scroll configuration
+    // Auto-scroll configuratio
     const AUTO_SCROLL_THRESHOLD = 50; // Distance from edge to trigger scroll
     const AUTO_SCROLL_SPEED = 10; // Pixels per scroll interval
     const AUTO_SCROLL_INTERVAL = 16; // ~60fps
+
+    const justifyContent = useMemo(() => {
+        return alignment === 'left' ? 'flex-start' : alignment === 'right' ? 'flex-end' : 'center';
+    }, [alignment]);
 
     const findScrollableContainer = useCallback((element?: HTMLElement): HTMLElement | null => {
         // Start from the provided element or try to find the current table
@@ -250,13 +256,13 @@ export function DraggableHeader<T>({
     if (!draggable && !enableSorting) {
         return flexRender(header.column.columnDef.header, header.getContext());
     }
-
     return (
         <Box
             ref={headerElementRef}
             sx={{
                 display: 'flex',
                 alignItems: 'center',
+                justifyContent: justifyContent,
                 gap: 1,
                 cursor: getCursor(),
                 userSelect: 'none',
@@ -280,10 +286,9 @@ export function DraggableHeader<T>({
             onClick={enableSorting ? handleSort : undefined}
         >
             <Box
+                component="span"
                 sx={{
-                    flex: 1,
-                    display: 'flex',
-                    alignItems: 'center',
+                    display: 'inline-flex',
                     gap: 1,
                 }}
             >
