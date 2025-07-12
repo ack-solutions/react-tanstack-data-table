@@ -132,7 +132,10 @@ function MyDataTable() {
 |------|------|---------|-------------|
 | `enableRowSelection` | `boolean \| ((row) => boolean)` | `false` | Enable row selection |
 | `enableMultiRowSelection` | `boolean` | `true` | Allow multiple row selection |
-| `onRowSelectionChange` | `(selectedRows: T[]) => void` | - | Selection change callback |
+| `selectMode` | `'page' \| 'all'` | `'page'` | Selection scope (page or all data) |
+| `isRowSelectable` | `(params: {row: T, id: string}) => boolean` | - | Control if specific row is selectable |
+| `onRowSelectionChange` | `(selectedRows: T[], selection?: SelectionState) => void` | - | Selection change callback |
+| `onSelectionChange` | `(selection: SelectionState) => void` | - | Selection state change callback |
 | `enableBulkActions` | `boolean` | `false` | Enable bulk actions toolbar |
 | `bulkActions` | `(selectionState: SelectionState) => ReactNode` | - | Custom bulk actions component |
 
@@ -158,6 +161,7 @@ This allows for efficient handling of large datasets where you might select "all
 |------|------|---------|-------------|
 | `enablePagination` | `boolean` | `true` | Enable pagination |
 | `paginationMode` | `'client' \| 'server'` | `'client'` | Pagination mode |
+| `onPaginationChange` | `(pagination: PaginationState) => void` | - | Pagination change callback |
 | `initialState.pagination` | `{pageIndex: number, pageSize: number}` | `{pageIndex: 0, pageSize: 50}` | Initial pagination state |
 
 ### Filtering & Search
@@ -167,7 +171,9 @@ This allows for efficient handling of large datasets where you might select "all
 | `enableGlobalFilter` | `boolean` | `true` | Enable global search |
 | `enableColumnFilter` | `boolean` | `false` | Enable individual column filters |
 | `filterMode` | `'client' \| 'server'` | `'client'` | Filtering mode |
-| `onColumnFiltersChange` | `(filters) => void` | - | Column filters change callback |
+| `onColumnFiltersChange` | `(filterState: ColumnFilterState) => void` | - | Column filters change callback |
+| `onGlobalFilterChange` | `(globalFilter: string) => void` | - | Global filter change callback |
+| `onColumnFilterChange` | `(columnFilter: ColumnFilterState) => void` | - | Column filter change callback |
 | `extraFilter` | `ReactNode` | - | Additional filter components |
 
 ### Sorting
@@ -184,10 +190,11 @@ This allows for efficient handling of large datasets where you might select "all
 |------|------|---------|-------------|
 | `enableColumnVisibility` | `boolean` | `true` | Show/hide columns control |
 | `enableColumnResizing` | `boolean` | `false` | Allow column resizing |
+| `columnResizeMode` | `ColumnResizeMode` | `'onChange'` | Column resize mode |
 | `enableColumnPinning` | `boolean` | `false` | Allow column pinning |
-| `draggable` | `boolean` | `false` | Enable column reordering |
+| `enableColumnDragging` | `boolean` | `false` | Enable column reordering |
 | `onColumnDragEnd` | `(order: string[]) => void` | - | Column reorder callback |
-| `onColumnPinningChange` | `(pinning) => void` | - | Column pinning callback |
+| `onColumnPinningChange` | `(pinning: ColumnPinningState) => void` | - | Column pinning callback |
 
 ### Export Features
 
@@ -195,10 +202,11 @@ This allows for efficient handling of large datasets where you might select "all
 |------|------|---------|-------------|
 | `enableExport` | `boolean` | `true` | Enable data export |
 | `exportFilename` | `string` | `'export'` | Default export filename |
-| `onExportProgress` | `(progress) => void` | - | Export progress callback |
-| `onExportComplete` | `(result) => void` | - | Export completion callback |
-| `onExportError` | `(error) => void` | - | Export error callback |
-| `onServerExport` | `(filters) => Promise<{data, total}>` | - | Server-side export handler |
+| `onExportProgress` | `(progress: {processedRows?, totalRows?, percentage?}) => void` | - | Export progress callback |
+| `onExportComplete` | `(result: {success: boolean, filename: string, totalRows: number}) => void` | - | Export completion callback |
+| `onExportError` | `(error: {message: string, code: string}) => void` | - | Export error callback |
+| `onServerExport` | `(filters?: Partial<TableState>, selection?: SelectionState) => Promise<{data: any[], total: number}>` | - | Server-side export handler |
+| `onExportCancel` | `() => void` | - | Export cancellation callback |
 
 ### Expandable Rows
 
@@ -218,6 +226,8 @@ This allows for efficient handling of large datasets where you might select "all
 | `fitToScreen` | `boolean` | `true` | Fit table to container width |
 | `enableStickyHeaderOrFooter` | `boolean` | `false` | Sticky header/footer |
 | `maxHeight` | `string \| number` | `'400px'` | Max table height |
+| `tableContainerProps` | `object` | `{}` | Props for table container |
+| `tableProps` | `object` | `{}` | Props for table element |
 
 ### Virtualization
 
@@ -232,8 +242,17 @@ This allows for efficient handling of large datasets where you might select "all
 |------|------|---------|-------------|
 | `slots` | `Partial<DataTableSlots<T>>` | `{}` | Custom component slots |
 | `slotProps` | `PartialSlotProps<T>` | `{}` | Props for slot components |
-| `tableContainerProps` | `object` | `{}` | Props for table container |
-| `tableProps` | `object` | `{}` | Props for table element |
+| `initialState` | `Partial<TableState>` | `{}` | Initial table state |
+| `skeletonRows` | `number` | `5` | Number of skeleton rows for loading state |
+| `footerFilter` | `ReactNode` | - | Additional filter components in footer |
+
+### Special Column Configuration
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `selectionColumn` | `{width?, pinLeft?, customColumn?, id?}` | - | Selection column configuration |
+| `actionColumn` | `{pinRight?, customColumn?, id?}` | - | Action column configuration |
+| `expandingColumn` | `{width?, pinLeft?, customColumn?, id?}` | - | Expanding column configuration |
 
 ## 🔥 Advanced Examples
 
@@ -487,6 +506,137 @@ interface DataTableColumn<T> extends ColumnDef<T> {
 }
 ```
 
+### DataTable API
+
+The DataTable exposes a comprehensive API through refs for programmatic control:
+
+```tsx
+import { useRef } from 'react';
+import { DataTable, DataTableApi } from '@ackplus/react-tanstack-data-table';
+
+function MyComponent() {
+  const tableRef = useRef<DataTableApi<User>>(null);
+
+  const handleGetData = () => {
+    const allData = tableRef.current?.data.getAllData();
+  };
+
+  return (
+    <DataTable
+      ref={tableRef}
+      columns={columns}
+      data={data}
+    />
+  );
+}
+```
+
+#### Available API Methods
+
+**Column Management:**
+- `columnVisibility.showColumn(columnId)` - Show specific column
+- `columnVisibility.hideColumn(columnId)` - Hide specific column
+- `columnVisibility.toggleColumn(columnId)` - Toggle column visibility
+- `columnVisibility.showAllColumns()` - Show all columns
+- `columnVisibility.hideAllColumns()` - Hide all columns
+- `columnVisibility.resetColumnVisibility()` - Reset to default visibility
+
+**Column Ordering:**
+- `columnOrdering.setColumnOrder(order)` - Set column order
+- `columnOrdering.moveColumn(columnId, toIndex)` - Move column to position
+- `columnOrdering.resetColumnOrder()` - Reset to default order
+
+**Column Pinning:**
+- `columnPinning.pinColumnLeft(columnId)` - Pin column to left
+- `columnPinning.pinColumnRight(columnId)` - Pin column to right
+- `columnPinning.unpinColumn(columnId)` - Unpin column
+- `columnPinning.setPinning(pinning)` - Set pinning state
+- `columnPinning.resetColumnPinning()` - Reset pinning
+
+**Column Resizing:**
+- `columnResizing.resizeColumn(columnId, width)` - Resize column
+- `columnResizing.autoSizeColumn(columnId)` - Auto-size column
+- `columnResizing.autoSizeAllColumns()` - Auto-size all columns
+- `columnResizing.resetColumnSizing()` - Reset column sizing
+
+**Filtering:**
+- `filtering.setGlobalFilter(filter)` - Set global filter
+- `filtering.clearGlobalFilter()` - Clear global filter
+- `filtering.setColumnFilters(filters)` - Set column filters
+- `filtering.addColumnFilter(columnId, operator, value)` - Add column filter
+- `filtering.removeColumnFilter(filterId)` - Remove column filter
+- `filtering.clearAllFilters()` - Clear all filters
+- `filtering.resetFilters()` - Reset all filters
+
+**Sorting:**
+- `sorting.setSorting(sortingState)` - Set sorting state
+- `sorting.sortColumn(columnId, direction)` - Sort specific column
+- `sorting.clearSorting()` - Clear all sorting
+- `sorting.resetSorting()` - Reset sorting
+
+**Pagination:**
+- `pagination.goToPage(pageIndex)` - Go to specific page
+- `pagination.nextPage()` - Go to next page
+- `pagination.previousPage()` - Go to previous page
+- `pagination.setPageSize(pageSize)` - Set page size
+- `pagination.goToFirstPage()` - Go to first page
+- `pagination.goToLastPage()` - Go to last page
+
+**Selection:**
+- `selection.selectRow(rowId)` - Select specific row
+- `selection.deselectRow(rowId)` - Deselect specific row
+- `selection.toggleRowSelection(rowId)` - Toggle row selection
+- `selection.selectAll()` - Select all rows
+- `selection.deselectAll()` - Deselect all rows
+- `selection.toggleSelectAll()` - Toggle select all
+- `selection.getSelectionState()` - Get current selection state
+- `selection.getSelectedRows()` - Get selected rows
+- `selection.getSelectedCount()` - Get selected count
+- `selection.isRowSelected(rowId)` - Check if row is selected
+
+**Data Management:**
+- `data.refresh()` - Refresh data
+- `data.reload()` - Reload data
+- `data.getAllData()` - Get all data
+- `data.getRowData(rowId)` - Get specific row data
+- `data.getRowByIndex(index)` - Get row by index
+- `data.updateRow(rowId, updates)` - Update specific row
+- `data.updateRowByIndex(index, updates)` - Update row by index
+- `data.insertRow(newRow, index?)` - Insert new row
+- `data.deleteRow(rowId)` - Delete specific row
+- `data.deleteRowByIndex(index)` - Delete row by index
+- `data.deleteSelectedRows()` - Delete selected rows
+- `data.replaceAllData(newData)` - Replace all data
+- `data.updateMultipleRows(updates)` - Update multiple rows
+- `data.insertMultipleRows(newRows, startIndex?)` - Insert multiple rows
+- `data.deleteMultipleRows(rowIds)` - Delete multiple rows
+- `data.updateField(rowId, fieldName, value)` - Update specific field
+- `data.updateFieldByIndex(index, fieldName, value)` - Update field by index
+- `data.findRows(predicate)` - Find rows by predicate
+- `data.findRowIndex(predicate)` - Find row index by predicate
+- `data.getDataCount()` - Get data count
+- `data.getFilteredDataCount()` - Get filtered data count
+
+**Layout Management:**
+- `layout.resetLayout()` - Reset layout
+- `layout.resetAll()` - Reset everything
+- `layout.saveLayout()` - Save current layout
+- `layout.restoreLayout(layout)` - Restore saved layout
+
+**Export:**
+- `export.exportCSV(options?)` - Export to CSV
+- `export.exportExcel(options?)` - Export to Excel
+- `export.exportServerData(options)` - Server-side export
+- `export.isExporting()` - Check if exporting
+- `export.cancelExport()` - Cancel export
+
+**Table State:**
+- `state.getTableState()` - Get current table state
+- `state.getCurrentFilters()` - Get current filters
+- `state.getCurrentSorting()` - Get current sorting
+- `state.getCurrentPagination()` - Get current pagination
+- `state.getCurrentSelection()` - Get current selection
+
 ### useDataTableApi Hook
 
 Access the table's imperative API:
@@ -512,46 +662,446 @@ function MyComponent() {
 }
 ```
 
-## 🎨 Customization
+## 🎨 Enhanced Customization with Slots System
 
-### Slots System
+The enhanced slot system provides powerful customization capabilities for DataTable components without limitations. This system allows you to override any component with full prop control and proper TypeScript support.
 
-Customize any part of the table using the slots system:
+### Key Features
+
+- **Full Component Customization**: Replace any component without limitations
+- **Intelligent Prop Merging**: Special handling for `sx`, `style`, and `className` props
+- **Enhanced Type Safety**: Better TypeScript inference and proper component prop typing
+- **Performance Optimized**: Efficient prop merging and component creation
+- **Easy Migration**: Works with existing code while providing enhanced capabilities
+
+### Basic Slot Customization
 
 ```tsx
-const customSlots = {
-  toolbar: MyCustomToolbar,
-  pagination: MyCustomPagination,
-  loadingRow: MyCustomLoadingRow,
-  emptyRow: MyCustomEmptyRow,
-};
+import { DataTable } from '@ackplus/react-tanstack-data-table';
+import { Star as StarIcon } from '@mui/icons-material';
 
-<DataTable
-  columns={columns}
-  data={data}
-  slots={customSlots}
-  slotProps={{
-    toolbar: { customProp: 'value' },
-    pagination: { showFirstLastButtons: true },
-  }}
-/>
+// Custom icon component
+const CustomSearchIcon = (props) => (
+    <StarIcon {...props} sx={{ color: 'warning.main', ...props.sx }} />
+);
+
+function MyTable() {
+    return (
+        <DataTable
+            data={data}
+            columns={columns}
+            slots={{
+                searchIcon: CustomSearchIcon,
+            }}
+            slotProps={{
+                searchIcon: {
+                    fontSize: 'large',
+                    sx: {
+                        animation: 'pulse 2s infinite',
+                        '@keyframes pulse': {
+                            '0%': { transform: 'scale(1)' },
+                            '50%': { transform: 'scale(1.1)' },
+                            '100%': { transform: 'scale(1)' },
+                        },
+                    },
+                },
+            }}
+        />
+    );
+}
+```
+
+### Advanced Component Replacement
+
+```tsx
+import { styled, alpha } from '@mui/material/styles';
+
+const CustomToolbar = styled(Box)(({ theme }) => ({
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: theme.spacing(2),
+    backgroundColor: alpha(theme.palette.primary.main, 0.05),
+    borderRadius: theme.shape.borderRadius,
+}));
+
+const CustomSearchInput = styled('input')(({ theme }) => ({
+    padding: theme.spacing(1, 2),
+    border: `1px solid ${theme.palette.divider}`,
+    borderRadius: theme.shape.borderRadius,
+    fontSize: theme.typography.body2.fontSize,
+    '&:focus': {
+        outline: 'none',
+        borderColor: theme.palette.primary.main,
+        boxShadow: `0 0 0 2px ${alpha(theme.palette.primary.main, 0.2)}`,
+    },
+}));
+
+function AdvancedTable() {
+    return (
+        <DataTable
+            data={data}
+            columns={columns}
+            slots={{
+                toolbar: CustomToolbar,
+                searchInput: ({ value, onChange, placeholder, ...props }) => (
+                    <CustomSearchInput
+                        type="text"
+                        value={value}
+                        onChange={(e) => onChange(e.target.value)}
+                        placeholder={placeholder}
+                        {...props}
+                    />
+                ),
+            }}
+            slotProps={{
+                toolbar: {
+                    sx: {
+                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                        color: 'white',
+                    },
+                },
+                searchInput: {
+                    placeholder: 'Search anything...',
+                    style: {
+                        minWidth: '300px',
+                    },
+                },
+            }}
+        />
+    );
+}
+```
+
+### Complete Customization Example
+
+```tsx
+function FullyCustomizedTable() {
+    const theme = useTheme();
+
+    return (
+        <DataTable
+            data={data}
+            columns={columns}
+            slots={{
+                // Custom toolbar with complete styling freedom
+                toolbar: CustomToolbar,
+                
+                // Custom search input with full control
+                searchInput: ({ value, onChange, placeholder, ...props }) => (
+                    <CustomSearchInput
+                        type="text"
+                        value={value}
+                        onChange={(e) => onChange(e.target.value)}
+                        placeholder={placeholder || 'Search anything...'}
+                        {...props}
+                    />
+                ),
+                
+                // Custom column visibility control
+                columnVisibilityControl: (props) => {
+                    const { table, color, ...buttonProps } = props;
+                    return (
+                        <CustomButton
+                            variant="outlined"
+                            startIcon={<VisibilityIcon />}
+                            {...buttonProps}
+                        >
+                            Columns
+                        </CustomButton>
+                    );
+                },
+                
+                // Custom export button
+                exportButton: (props) => {
+                    const { table, color, ...buttonProps } = props;
+                    return (
+                        <CustomButton
+                            variant="contained"
+                            startIcon={<ExportIcon />}
+                            sx={{ 
+                                background: 'linear-gradient(45deg, #FE6B8B 30%, #FF8E53 90%)',
+                                color: 'white',
+                                ...buttonProps.sx
+                            }}
+                            {...buttonProps}
+                        >
+                            Export Data
+                        </CustomButton>
+                    );
+                },
+                
+                // Custom table with enhanced styling
+                table: ({ children, ...props }) => (
+                    <Paper
+                        elevation={3}
+                        sx={{ 
+                            borderRadius: 2,
+                            overflow: 'hidden',
+                            border: `2px solid ${theme.palette.primary.main}`,
+                        }}
+                    >
+                        <table {...props} style={{ width: '100%' }}>
+                            {children}
+                        </table>
+                    </Paper>
+                ),
+                
+                // Custom row with hover effects
+                row: ({ children, row, ...props }) => (
+                    <tr 
+                        {...props}
+                        style={{
+                            backgroundColor: row.index % 2 === 0 ? alpha(theme.palette.primary.main, 0.03) : 'transparent',
+                            transition: 'background-color 0.2s ease',
+                            cursor: 'pointer',
+                            ...props.style,
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = alpha(theme.palette.primary.main, 0.1);
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = row.index % 2 === 0 ? alpha(theme.palette.primary.main, 0.03) : 'transparent';
+                        }}
+                    >
+                        {children}
+                    </tr>
+                ),
+            }}
+            
+            slotProps={{
+                // Customize toolbar props
+                toolbar: {
+                    title: 'Custom Users Table',
+                    subtitle: 'Manage your users with enhanced controls',
+                    sx: {
+                        background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.1)} 0%, ${alpha(theme.palette.secondary.main, 0.1)} 100%)`,
+                        border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+                    },
+                },
+                
+                // Customize search input
+                searchInput: {
+                    placeholder: 'Search users by name, email, or role...',
+                    style: {
+                        minWidth: '300px',
+                        fontSize: '14px',
+                    },
+                },
+                
+                // Customize column visibility control
+                columnVisibilityControl: {
+                    title: 'Manage Columns',
+                    menuSx: {
+                        minWidth: 250,
+                        maxHeight: 400,
+                    },
+                    titleSx: {
+                        color: theme.palette.primary.main,
+                        fontWeight: 'bold',
+                    },
+                    checkboxProps: {
+                        color: 'primary',
+                    },
+                },
+                
+                // Customize table container
+                tableContainer: {
+                    sx: {
+                        maxHeight: '600px',
+                        '&::-webkit-scrollbar': {
+                            width: '8px',
+                        },
+                        '&::-webkit-scrollbar-track': {
+                            backgroundColor: alpha(theme.palette.grey[300], 0.5),
+                            borderRadius: '4px',
+                        },
+                        '&::-webkit-scrollbar-thumb': {
+                            backgroundColor: theme.palette.primary.main,
+                            borderRadius: '4px',
+                            '&:hover': {
+                                backgroundColor: theme.palette.primary.dark,
+                            },
+                        },
+                    },
+                },
+                
+                // Customize pagination
+                pagination: {
+                    rowsPerPageOptions: [10, 25, 50, 100, 300, 500, 1000],
+                    sx: {
+                        '& .MuiTablePagination-toolbar': {
+                            backgroundColor: alpha(theme.palette.primary.main, 0.05),
+                            borderTop: `1px solid ${theme.palette.divider}`,
+                        },
+                        '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': {
+                            color: theme.palette.primary.main,
+                            fontWeight: 'medium',
+                        },
+                    },
+                },
+            }}
+        />
+    );
+}
 ```
 
 ### Available Slots
 
-- `root` - Root container
-- `toolbar` - Main toolbar
-- `bulkActionsToolbar` - Bulk actions toolbar
-- `tableContainer` - Table container
+#### Container Slots
+- `root` - Main container
+- `tableContainer` - Table container wrapper
 - `table` - Table element
+
+#### Header Slots
+- `toolbar` - Main toolbar
 - `header` - Table header
+- `headerRow` - Header row
+- `headerCell` - Header cell
+
+#### Body Slots
 - `body` - Table body
 - `row` - Table row
 - `cell` - Table cell
-- `footer` - Table footer
-- `pagination` - Pagination component
+
+#### Control Slots
+- `searchInput` - Search input component
+- `columnVisibilityControl` - Column visibility control
+- `columnCustomFilterControl` - Column filter control
+- `columnPinningControl` - Column pinning control
+- `exportButton` - Export button
+- `resetButton` - Reset button
+- `tableSizeControl` - Table size control
+- `bulkActionsToolbar` - Bulk actions toolbar
+
+#### Icon Slots
+- `searchIcon` - Search icon
+- `filterIcon` - Filter icon
+- `exportIcon` - Export icon
+- `columnIcon` - Column visibility icon
+- `resetIcon` - Reset icon
+- `pinIcon` - Pin column icon
+- `unpinIcon` - Unpin column icon
+- `csvIcon` - CSV export icon
+- `excelIcon` - Excel export icon
+- `viewComfortableIcon` - Comfortable view icon
+- `viewCompactIcon` - Compact view icon
+
+#### Special Slots
 - `loadingRow` - Loading state row
 - `emptyRow` - Empty state row
+- `footer` - Table footer
+- `pagination` - Pagination component
+
+### Best Practices
+
+#### 1. Component Composition
+```tsx
+// Good: Compose components properly
+const CustomControl = ({ children, ...props }) => (
+    <Box sx={{ display: 'flex', gap: 1 }} {...props}>
+        {children}
+    </Box>
+);
+
+// Usage
+slots={{
+    toolbar: ({ children, ...props }) => (
+        <CustomControl {...props}>
+            {children}
+        </CustomControl>
+    ),
+}}
+```
+
+#### 2. Prop Forwarding
+```tsx
+// Good: Always forward props
+const CustomIcon = (props) => (
+    <StarIcon {...props} sx={{ color: 'primary.main', ...props.sx }} />
+);
+
+// Bad: Not forwarding props
+const CustomIcon = () => <StarIcon color="primary" />;
+```
+
+#### 3. TypeScript Support
+```tsx
+// Good: Use proper typing
+interface CustomButtonProps {
+    onClick?: () => void;
+    children: React.ReactNode;
+    [key: string]: any; // Allow additional props
+}
+
+const CustomButton: React.FC<CustomButtonProps> = ({ children, ...props }) => (
+    <Button {...props}>{children}</Button>
+);
+```
+
+#### 4. Performance Considerations
+```tsx
+// Good: Memoize expensive components
+const CustomToolbar = React.memo(({ children, ...props }) => (
+    <Box {...props}>{children}</Box>
+));
+
+// Good: Use callbacks for event handlers
+const handleClick = useCallback(() => {
+    // Handle click
+}, []);
+```
+
+### Migration from Basic Slots
+
+```tsx
+// Before
+<DataTable
+    slots={{
+        searchIcon: MyIcon,
+    }}
+    slotProps={{
+        searchIcon: { color: 'primary' },
+    }}
+/>
+
+// After (Enhanced)
+<DataTable
+    slots={{
+        searchIcon: MyIcon,
+    }}
+    slotProps={{
+        searchIcon: {
+            color: 'primary',
+            sx: { fontSize: 20 }, // Now supports sx prop merging
+        },
+    }}
+/>
+```
+
+### Troubleshooting
+
+#### Common Issues
+
+1. **Props not merging correctly**
+   - Ensure you're using the enhanced slot system
+   - Check prop priority order (user > slot > default)
+
+2. **TypeScript errors**
+   - Use `[key: string]: any` for flexible prop interfaces
+   - Ensure proper prop forwarding with spread operator
+   - Filter out incompatible props like `table` and `color` for Button components
+
+3. **Styling conflicts**
+   - Check sx prop merging order
+   - Use proper CSS specificity
+
+4. **Performance issues**
+   - Memoize expensive components
+   - Use callbacks for event handlers
+   - Avoid inline function definitions
+
+The enhanced slot system provides unprecedented flexibility for customizing DataTable components. With proper prop merging, full TypeScript support, and intelligent component composition, you can create highly customized tables without limitations.
 
 ## 🔧 Migration Guide
 
