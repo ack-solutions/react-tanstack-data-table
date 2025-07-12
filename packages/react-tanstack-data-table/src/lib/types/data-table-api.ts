@@ -1,4 +1,4 @@
-import { ColumnPinningState, SortingState, ColumnOrderState, TableState, Row } from '@tanstack/react-table';
+import { ColumnPinningState, SortingState, ColumnOrderState, TableState, Row, Table } from '@tanstack/react-table';
 
 import { ColumnFilterState } from './table.types';
 import { SelectionState } from '../features';
@@ -13,6 +13,10 @@ export interface DataTableApi<T = any> {
         hideAllColumns: () => void;
         resetColumnVisibility: () => void;
     };
+
+    table :{
+        getTable: () => Table<T>;
+    }
 
     // Column Ordering
     columnOrdering: {

@@ -184,12 +184,22 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     const isServerSorting = sortingMode === 'server' || isServerMode;
 
     // -------------------------------
+    // Memoized values (grouped together)
+    // -------------------------------
+    const initialStateConfig = useMemo(() => {
+        return {
+            ...DEFAULT_INITIAL_STATE,
+            ...initialState,
+        };
+    }, [initialState]);
+
+    // -------------------------------
     // State hooks (grouped together)
     // -------------------------------
     // const [fetchLoading, setFetchLoading] = useState(false);
-    const [sorting, setSorting] = useState<SortingState>(DEFAULT_INITIAL_STATE.sorting);
-    const [pagination, setPagination] = useState(DEFAULT_INITIAL_STATE.pagination);
-    const [globalFilter, setGlobalFilter] = useState(DEFAULT_INITIAL_STATE.globalFilter);
+    const [sorting, setSorting] = useState<SortingState>(initialStateConfig.sorting);
+    const [pagination, setPagination] = useState(initialStateConfig.pagination);
+    const [globalFilter, setGlobalFilter] = useState(initialStateConfig.globalFilter);
     const [selectionState, setSelectionState] = useState<SelectionState>(
         initialState?.selectionState || { ids: [], type: 'include' as const }
     );
@@ -199,10 +209,10 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         pendingFilters: [],
         pendingLogic: 'AND'
     });
-    const [expanded, setExpanded] = useState(DEFAULT_INITIAL_STATE.expanded);
+    const [expanded, setExpanded] = useState(initialStateConfig.expanded);
     const [tableSize, setTableSize] = useState<DataTableSize>(initialTableSize);
-    const [columnOrder, setColumnOrder] = useState<ColumnOrderState>(DEFAULT_INITIAL_STATE.columnOrder);
-    const [columnPinning, setColumnPinning] = useState<ColumnPinningState>(DEFAULT_INITIAL_STATE.columnPinning);
+    const [columnOrder, setColumnOrder] = useState<ColumnOrderState>(initialStateConfig.columnOrder);
+    const [columnPinning, setColumnPinning] = useState<ColumnPinningState>(initialStateConfig.columnPinning);
     const [serverData, setServerData] = useState<T[] | null>(null);
     const [serverTotal, setServerTotal] = useState(0);
     const [exportController, setExportController] = useState<AbortController | null>(null);
@@ -212,16 +222,6 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     // -------------------------------
     const tableContainerRef = useRef<HTMLDivElement>(null);
     const internalApiRef = useRef<DataTableApi<T>>(null);
-
-    // -------------------------------
-    // Memoized values (grouped together)
-    // -------------------------------
-    const initialStateConfig = useMemo(() => {
-        return {
-            ...DEFAULT_INITIAL_STATE,
-            ...initialState,
-        };
-    }, [initialState]);
 
     const { debouncedFetch, isLoading: fetchLoading } = useDebouncedFetch(onFetchData);
     const tableData = useMemo(() => serverData ? serverData : data, [onFetchData, serverData, data]);
