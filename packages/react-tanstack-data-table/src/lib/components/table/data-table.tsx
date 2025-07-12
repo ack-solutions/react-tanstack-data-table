@@ -169,6 +169,8 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
 
     // Column filters props
     onColumnFiltersChange,
+    onPaginationChange,
+    onGlobalFilterChange,
 
     // Slots
     slots = {},
@@ -332,11 +334,6 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     const handleColumnFilterStateChange = useCallback((filterState: ColumnFilterState) => {
         if (filterState && typeof filterState === 'object') {
             setColumnFilter(filterState);
-            setTimeout(() => {
-                if (onColumnFiltersChange) {
-                    onColumnFiltersChange(filterState);
-                }
-            }, 0);
         }
     }, [onColumnFiltersChange]);
 
@@ -369,17 +366,18 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
             : updaterOrValue;
         newSorting = newSorting.filter((sort: any) => sort.id);
         setSorting(newSorting);
-        if (onSortingChange) {
-            onSortingChange(newSorting);
-        }
+        onSortingChange?.(newSorting);
         if (isServerMode || isServerSorting) {
-            tableStateChange({ sorting: newSorting });
+            const pagination = resetPageToFirst();
+            tableStateChange({ sorting: newSorting, pagination });
             fetchData({
                 sorting: newSorting,
+                pagination,
             });
         } else if (onDataStateChange) {
+            const pagination = resetPageToFirst();
             setTimeout(() => {
-                tableStateChange({ sorting: newSorting });
+                tableStateChange({ sorting: newSorting, pagination });
             }, 0);
         }
     }, [
@@ -425,6 +423,8 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                 tableStateChange({ pagination: newPagination });
             }, 0);
         }
+        setPagination(newPagination);
+        onPaginationChange?.(newPagination);
     }, [pagination, isServerMode, isServerPagination, onDataStateChange, fetchData, tableStateChange]);
 
     const handleGlobalFilterChange = useCallback((updaterOrValue: any) => {
@@ -433,15 +433,18 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
             : updaterOrValue;
         setGlobalFilter(newFilter);
         if (isServerMode || isServerFiltering) {
+            const pagination = resetPageToFirst();
             setTimeout(() => {
-                tableStateChange({ globalFilter: newFilter });
-                fetchData({ globalFilter: newFilter });
+                tableStateChange({ globalFilter: newFilter, pagination });
+                fetchData({ globalFilter: newFilter, pagination });
             }, 0);
         } else if (onDataStateChange) {
+            const pagination = resetPageToFirst();
             setTimeout(() => {
-                tableStateChange({ globalFilter: newFilter });
+                tableStateChange({ globalFilter: newFilter, pagination });
             }, 0);
         }
+        onGlobalFilterChange?.(newFilter);
     }, [globalFilter, isServerMode, isServerFiltering, onDataStateChange, fetchData, tableStateChange]);
 
     const onColumnFilterChangeHandler = useCallback((updater: any) => {
@@ -459,6 +462,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     }, [columnFilter, handleColumnFilterStateChange]);
 
     const onColumnFilterApplyHandler = useCallback((appliedState: any) => {
+        const pagination = resetPageToFirst();
         if (isServerFiltering) {
             const serverFilterState = {
                 filters: appliedState.filters,
@@ -468,11 +472,18 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
             };
             tableStateChange({
                 columnFilter: serverFilterState,
+                pagination,
             });
             fetchData({
                 columnFilter: serverFilterState,
+                pagination,
             });
-        }
+        } 
+        setTimeout(() => {
+            if (onColumnFiltersChange) {
+                onColumnFiltersChange(appliedState);
+            }
+        }, 0);
     }, [isServerFiltering, fetchData, tableStateChange]);
 
     // -------------------------------
@@ -504,7 +515,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         onColumnFilterChange: onColumnFilterChangeHandler, // Handle column filters change
         onColumnFilterApply: onColumnFilterApplyHandler, // Handle when filters are actually applied
 
-      
+
         ...(enableSorting ? { onSortingChange: handleSortingChange } : {}),
         ...(enablePagination ? { onPaginationChange: handlePaginationChange } : {}),
         ...(enableRowSelection ? { onRowSelectionChange: handleSelectionStateChange } : {}),
@@ -552,6 +563,13 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         overscan: 10,
         enabled: enableVirtualization && !enablePagination && rows.length > 0,
     });
+
+    const resetPageToFirst = () => {
+        const newPagination = { pageIndex: 0, pageSize: pagination.pageSize };
+        setPagination(newPagination);
+        onPaginationChange?.(newPagination);
+        return newPagination;
+    };
 
     // -------------------------------
     // Callbacks (after table creation)

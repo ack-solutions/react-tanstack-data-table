@@ -1,7 +1,7 @@
 /**
  * Type definitions for DataTable components
  */
-import { Row, SortingState, ColumnResizeMode, ColumnPinningState, RowData } from '@tanstack/react-table';
+import { Row, SortingState, ColumnResizeMode, ColumnPinningState, RowData, PaginationState } from '@tanstack/react-table';
 import { ReactNode } from 'react';
 
 import type { ColumnFilterState, TableFilters, TableState } from '../../types';
@@ -126,9 +126,9 @@ export interface DataTableProps<T> {
 
     // Column filters props
     onColumnFiltersChange?: (filterState: ColumnFilterState) => void;
-
-    // Data CRUD callbacks
-    onDataChange?: (data: T[]) => void;
+    onPaginationChange?: (pagination: PaginationState) => void;
+    onGlobalFilterChange?: (globalFilter: string) => void;
+    onColumnFilterChange?: (columnFilter: ColumnFilterState) => void;
 
     // Simple special columns configuration
     selectionColumn?: {
