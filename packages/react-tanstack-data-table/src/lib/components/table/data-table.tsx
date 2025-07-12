@@ -58,7 +58,7 @@ const DEFAULT_INITIAL_STATE = {
         pageIndex: 0,
         pageSize: 10,
     },
-    rowSelection: {},
+    selectionState: { ids: [], type: 'include' } as SelectionState,
     globalFilter: '',
     expanded: {},
     columnOrder: [],
@@ -66,12 +66,12 @@ const DEFAULT_INITIAL_STATE = {
         left: [],
         right: [],
     },
-    customColumnFilter: {
+    columnFilter: {
         filters: [],
-        logic: 'AND' as const,
+        logic: 'AND',
         pendingFilters: [],
-        pendingLogic: 'AND' as const,
-    },
+        pendingLogic: 'AND',
+    } as ColumnFilterState,
 };
 
 /**
@@ -197,22 +197,15 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     // State hooks (grouped together)
     // -------------------------------
     // const [fetchLoading, setFetchLoading] = useState(false);
-    const [sorting, setSorting] = useState<SortingState>(initialStateConfig.sorting);
-    const [pagination, setPagination] = useState(initialStateConfig.pagination);
-    const [globalFilter, setGlobalFilter] = useState(initialStateConfig.globalFilter);
-    const [selectionState, setSelectionState] = useState<SelectionState>(
-        initialState?.selectionState || { ids: [], type: 'include' as const }
-    );
-    const [columnFilter, setColumnFilter] = useState<ColumnFilterState>({
-        filters: [],
-        logic: 'AND',
-        pendingFilters: [],
-        pendingLogic: 'AND'
-    });
-    const [expanded, setExpanded] = useState(initialStateConfig.expanded);
-    const [tableSize, setTableSize] = useState<DataTableSize>(initialTableSize);
-    const [columnOrder, setColumnOrder] = useState<ColumnOrderState>(initialStateConfig.columnOrder);
-    const [columnPinning, setColumnPinning] = useState<ColumnPinningState>(initialStateConfig.columnPinning);
+    const [sorting, setSorting] = useState<SortingState>(initialState?.sorting || DEFAULT_INITIAL_STATE.sorting);
+    const [pagination, setPagination] = useState(initialState?.pagination || DEFAULT_INITIAL_STATE.pagination);
+    const [globalFilter, setGlobalFilter] = useState(initialState?.globalFilter || DEFAULT_INITIAL_STATE.globalFilter);
+    const [selectionState, setSelectionState] = useState<SelectionState>(initialState?.selectionState || DEFAULT_INITIAL_STATE.selectionState);
+    const [columnFilter, setColumnFilter] = useState<ColumnFilterState>(initialState?.columnFilter || DEFAULT_INITIAL_STATE.columnFilter);
+    const [expanded, setExpanded] = useState({});
+    const [tableSize, setTableSize] = useState<DataTableSize>();
+    const [columnOrder, setColumnOrder] = useState<ColumnOrderState>(initialState?.columnOrder || DEFAULT_INITIAL_STATE.columnOrder);
+    const [columnPinning, setColumnPinning] = useState<ColumnPinningState>(initialState?.columnPinning || DEFAULT_INITIAL_STATE.columnPinning);
     const [serverData, setServerData] = useState<T[] | null>(null);
     const [serverTotal, setServerTotal] = useState(0);
     const [exportController, setExportController] = useState<AbortController | null>(null);
@@ -478,7 +471,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                 columnFilter: serverFilterState,
                 pagination,
             });
-        } 
+        }
         setTimeout(() => {
             if (onColumnFiltersChange) {
                 onColumnFiltersChange(appliedState);
@@ -493,7 +486,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         _features: [ColumnFilterFeature, SelectionFeature],
         data: tableData,
         columns: enhancedColumns,
-        initialState: { ...initialStateConfig },
+        initialState: { ...DEFAULT_INITIAL_STATE },
         state: {
             ...(enableSorting ? { sorting } : {}),
             ...(enablePagination ? { pagination } : {}),
@@ -626,7 +619,10 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         enhancedColumns,
         enablePagination,
         enableColumnPinning,
-        initialStateConfig,
+        initialStateConfig: {
+            ...DEFAULT_INITIAL_STATE,
+            ...initialState,
+        },
         selectMode,
         onSelectionChange: handleSelectionStateChange,
         handleColumnFilterStateChange,
@@ -1294,10 +1290,10 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     const renderTableRows = useCallback(() => {
         if (tableLoading) {
             const { component: LoadingRowComponent, props: loadingRowProps } = getSlotComponentWithProps(
-                slots, 
-                slotProps || {}, 
-                'loadingRow', 
-                LoadingRows, 
+                slots,
+                slotProps || {},
+                'loadingRow',
+                LoadingRows,
                 {}
             );
             return (
@@ -1312,10 +1308,10 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         }
         if (rows.length === 0) {
             const { component: EmptyRowComponent, props: emptyRowProps } = getSlotComponentWithProps(
-                slots, 
-                slotProps || {}, 
-                'emptyRow', 
-                EmptyDataRow, 
+                slots,
+                slotProps || {},
+                'emptyRow',
+                EmptyDataRow,
                 {}
             );
             return (
@@ -1425,59 +1421,59 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     // Slot components
     // -------------------------------
     const { component: RootComponent, props: rootSlotProps } = getSlotComponentWithProps(
-        slots, 
-        slotProps || {}, 
-        'root', 
-        Box, 
+        slots,
+        slotProps || {},
+        'root',
+        Box,
         {}
     );
     const { component: ToolbarComponent, props: toolbarSlotProps } = getSlotComponentWithProps(
-        slots, 
-        slotProps || {}, 
-        'toolbar', 
-        DataTableToolbar, 
+        slots,
+        slotProps || {},
+        'toolbar',
+        DataTableToolbar,
         {}
     );
     const { component: BulkActionsComponent, props: bulkActionsSlotProps } = getSlotComponentWithProps(
-        slots, 
-        slotProps || {}, 
-        'bulkActionsToolbar', 
-        BulkActionsToolbar, 
+        slots,
+        slotProps || {},
+        'bulkActionsToolbar',
+        BulkActionsToolbar,
         {}
     );
     const { component: TableContainerComponent, props: tableContainerSlotProps } = getSlotComponentWithProps(
-        slots, 
-        slotProps || {}, 
-        'tableContainer', 
-        TableContainer, 
+        slots,
+        slotProps || {},
+        'tableContainer',
+        TableContainer,
         {}
     );
     const { component: TableComponent, props: tableComponentSlotProps } = getSlotComponentWithProps(
-        slots, 
-        slotProps || {}, 
-        'table', 
-        Table, 
+        slots,
+        slotProps || {},
+        'table',
+        Table,
         {}
     );
     const { component: BodyComponent, props: bodySlotProps } = getSlotComponentWithProps(
-        slots, 
-        slotProps || {}, 
-        'body', 
-        TableBody, 
+        slots,
+        slotProps || {},
+        'body',
+        TableBody,
         {}
     );
     const { component: FooterComponent, props: footerSlotProps } = getSlotComponentWithProps(
-        slots, 
-        slotProps || {}, 
-        'footer', 
-        Box, 
+        slots,
+        slotProps || {},
+        'footer',
+        Box,
         {}
     );
     const { component: PaginationComponent, props: paginationSlotProps } = getSlotComponentWithProps(
-        slots, 
-        slotProps || {}, 
-        'pagination', 
-        DataTablePagination, 
+        slots,
+        slotProps || {},
+        'pagination',
+        DataTablePagination,
         {}
     );
 
