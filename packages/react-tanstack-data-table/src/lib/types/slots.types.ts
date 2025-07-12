@@ -1,133 +1,66 @@
 /**
- * Slots and SlotProps Type System for DataTable
+ * Enhanced Slots and SlotProps Type System for DataTable
  *
  * This file defines all available slots and their corresponding prop types,
  * following the MUI DataGrid pattern for maximum flexibility and extensibility.
+ * 
+ * Key improvements:
+ * - Full component props inheritance without limitations
+ * - Better type safety with generic support
+ * - Flexible prop merging and overriding
+ * - Support for custom styling and behavior
  */
-import { TableProps, TableContainerProps, BoxProps } from '@mui/material';
+import { TableProps, TableContainerProps, BoxProps, ToolbarProps, TableRowProps, TableCellProps, TableHeadProps, TableBodyProps } from '@mui/material';
 import { Table, Row, Column } from '@tanstack/react-table';
-import { ComponentType, ReactNode } from 'react';
+import { ComponentType, ReactNode, HTMLAttributes, ComponentProps } from 'react';
 
 import { DataTableColumn, TableFilters, ExportProgress, ExportResult, ExportError, ServerExportColumn } from './index';
 import { DataTableSize } from '../utils/table-helpers';
 import { DataTablePaginationProps } from "../components/pagination";
-
-
+import { DataTableToolbarProps } from '../components/toolbar/data-table-toolbar';
 
 /**
- * Available slots for customization
+ * Enhanced slot component type that supports full component customization
  */
-export interface DataTableSlots<T = any> {
-    // Container and wrapper slots
-    root?: ComponentType<DataTableSlotProps<T>['root']>;
-    tableContainer?: ComponentType<DataTableSlotProps<T>['tableContainer']>;
-    table?: ComponentType<DataTableSlotProps<T>['table']>;
-
-    // Header slots
-    toolbar?: ComponentType<DataTableSlotProps<T>['toolbar']>;
-    header?: ComponentType<DataTableSlotProps<T>['header']>;
-    headerRow?: ComponentType<DataTableSlotProps<T>['headerRow']>;
-    headerCell?: ComponentType<DataTableSlotProps<T>['headerCell']>;
-    sortIconAsc?: ComponentType<DataTableSlotProps<T>['sortIconAsc']>;
-    sortIconDesc?: ComponentType<DataTableSlotProps<T>['sortIconDesc']>;
-
-    // Body slots
-    body?: ComponentType<DataTableSlotProps<T>['body']>;
-    row?: ComponentType<DataTableSlotProps<T>['row']>;
-    cell?: ComponentType<DataTableSlotProps<T>['cell']>;
-
-    // Special row slots
-    loadingRow?: ComponentType<DataTableSlotProps<T>['loadingRow']>;
-    emptyRow?: ComponentType<DataTableSlotProps<T>['emptyRow']>;
-    expandedRow?: ComponentType<DataTableSlotProps<T>['expandedRow']>;
-
-    // Footer slots
-    footer?: ComponentType<DataTableSlotProps<T>['footer']>;
-    pagination?: ComponentType<DataTableSlotProps<T>['pagination']>;
-
-    // Toolbar component slots
-    searchInput?: ComponentType<DataTableSlotProps<T>['searchInput']>;
-    columnVisibilityControl?: ComponentType<DataTableSlotProps<T>['columnVisibilityControl']>;
-    columnCustomFilterControl?: ComponentType<DataTableSlotProps<T>['columnCustomFilterControl']>;
-    columnPinningControl?: ComponentType<DataTableSlotProps<T>['columnPinningControl']>;
-    exportButton?: ComponentType<DataTableSlotProps<T>['exportButton']>;
-    resetButton?: ComponentType<DataTableSlotProps<T>['resetButton']>;
-    tableSizeControl?: ComponentType<DataTableSlotProps<T>['tableSizeControl']>;
-
-    // Bulk action slots
-    bulkActionsToolbar?: ComponentType<DataTableSlotProps<T>['bulkActionsToolbar']>;
-
-    // Icon slots
-    searchIcon?: ComponentType<DataTableSlotProps<T>['searchIcon']>;
-    clearIcon?: ComponentType<DataTableSlotProps<T>['clearIcon']>;
-    exportIcon?: ComponentType<DataTableSlotProps<T>['exportIcon']>;
-    columnIcon?: ComponentType<DataTableSlotProps<T>['columnIcon']>;
-    resetIcon?: ComponentType<DataTableSlotProps<T>['resetIcon']>;
-    moreIcon?: ComponentType<DataTableSlotProps<T>['moreIcon']>;
-    filterIcon?: ComponentType<DataTableSlotProps<T>['filterIcon']>;
-    pinIcon?: ComponentType<DataTableSlotProps<T>['pinIcon']>;
-    unpinIcon?: ComponentType<DataTableSlotProps<T>['unpinIcon']>;
-    leftIcon?: ComponentType<DataTableSlotProps<T>['leftIcon']>;
-    rightIcon?: ComponentType<DataTableSlotProps<T>['rightIcon']>;
-    csvIcon?: ComponentType<DataTableSlotProps<T>['csvIcon']>;
-    excelIcon?: ComponentType<DataTableSlotProps<T>['excelIcon']>;
-    selectAllIcon?: ComponentType<DataTableSlotProps<T>['selectAllIcon']>;
-    deselectIcon?: ComponentType<DataTableSlotProps<T>['deselectIcon']>;
-    tableSizeIcon?: ComponentType<DataTableSlotProps<T>['tableSizeIcon']>;
-    tableSizeSmallIcon?: ComponentType<DataTableSlotProps<T>['tableSizeSmallIcon']>;
-    tableSizeMediumIcon?: ComponentType<DataTableSlotProps<T>['tableSizeMediumIcon']>;
-
-
-    // Selection slots
-    checkboxSelection?: ComponentType<DataTableSlotProps<T>['checkboxSelection']>;
-
-    // Expansion slots
-    expandIcon?: ComponentType<DataTableSlotProps<T>['expandIcon']>;
-    collapseIcon?: ComponentType<DataTableSlotProps<T>['collapseIcon']>;
-
-    // Loading and empty state slots
-    loadingSkeleton?: ComponentType<DataTableSlotProps<T>['loadingSkeleton']>;
-    noDataOverlay?: ComponentType<DataTableSlotProps<T>['noDataOverlay']>;
-
-    // Progress and dialog slots
-    exportProgressDialog?: ComponentType<DataTableSlotProps<T>['exportProgressDialog']>;
-}
+export type SlotComponent<TProps = any> = ComponentType<TProps>;
 
 /**
  * Base slot props interface that includes common props for all slots
  */
 export interface BaseSlotProps<T = any> {
     table: Table<T>;
-    data: T[];
-    columns: DataTableColumn<T>[];
 }
 
 /**
- * Props for each slot component
+ * Enhanced slot props that merge base props with component-specific props
  */
-export interface DataTableSlotProps<T = any> {
-    // Container and wrapper slot props
-    root: BaseSlotProps<T> & BoxProps & {
-        children: ReactNode;
-    };
+export type EnhancedSlotProps<TBase, TComponent = {}> = TBase & TComponent & {
+    // Allow any additional props for maximum flexibility
+    [key: string]: any;
+};
 
-    tableContainer: BaseSlotProps<T> & TableContainerProps & {
+/**
+ * Available slots for customization with enhanced typing
+ */
+export interface DataTableSlots<T = any> {
+    // Container and wrapper slots
+    root?: SlotComponent<EnhancedSlotProps<BaseSlotProps<T>, BoxProps & { children: ReactNode }>>;
+    tableContainer?: SlotComponent<EnhancedSlotProps<BaseSlotProps<T>, TableContainerProps & { 
         children: ReactNode;
         enableStickyHeader?: boolean;
         maxHeight?: string | number;
         enableVirtualization?: boolean;
-    };
-
-    table: BaseSlotProps<T> & TableProps & {
+    }>>;
+    table?: SlotComponent<EnhancedSlotProps<BaseSlotProps<T>, TableProps & { 
         children: ReactNode;
         tableSize?: DataTableSize;
         enableStickyHeader?: boolean;
         fitToScreen?: boolean;
         tableStyle?: React.CSSProperties;
-    };
+    }>>;
 
-    // Header slot props
-    toolbar: BaseSlotProps<T> & {
+    // Header slots
+    toolbar?: SlotComponent<EnhancedSlotProps<BaseSlotProps<T>, ToolbarProps & DataTableToolbarProps & {
         title?: string;
         subtitle?: string;
         enableGlobalFilter?: boolean;
@@ -149,22 +82,22 @@ export interface DataTableSlotProps<T = any> {
         onExportComplete?: (result: ExportResult) => void;
         onExportError?: (error: ExportError) => void;
         onExportCancel?: () => void;
-    };
+    }>>;
 
-    header: BaseSlotProps<T> & {
+    header?: SlotComponent<EnhancedSlotProps<BaseSlotProps<T>, TableHeadProps & {
         enableSorting?: boolean;
         draggable?: boolean;
         enableColumnResizing?: boolean;
         enableStickyHeader?: boolean;
         fitToScreen?: boolean;
         onColumnReorder?: (draggedColumnId: string, targetColumnId: string) => void;
-    };
+    }>>;
 
-    headerRow: BaseSlotProps<T> & {
+    headerRow?: SlotComponent<EnhancedSlotProps<BaseSlotProps<T>, TableRowProps & {
         headerGroups: any[];
-    };
+    }>>;
 
-    headerCell: BaseSlotProps<T> & {
+    headerCell?: SlotComponent<EnhancedSlotProps<BaseSlotProps<T>, TableCellProps & {
         header: any;
         column: Column<T>;
         enableSorting?: boolean;
@@ -174,22 +107,23 @@ export interface DataTableSlotProps<T = any> {
         isPinned?: boolean | 'left' | 'right';
         pinnedPosition?: number;
         pinnedRightPosition?: number;
-    };
+    }>>;
 
-    sortIconAsc: Record<string, any>;
-    sortIconDesc: Record<string, any>;
+    // Icon slots with full component props
+    sortIconAsc?: SlotComponent<ComponentProps<'svg'> & { [key: string]: any }>;
+    sortIconDesc?: SlotComponent<ComponentProps<'svg'> & { [key: string]: any }>;
 
-    // Body slot props
-    body: BaseSlotProps<T> & {
+    // Body slots
+    body?: SlotComponent<EnhancedSlotProps<BaseSlotProps<T>, TableBodyProps & {
         children: ReactNode;
         rows: Row<T>[];
         loading?: boolean;
         emptyMessage?: string;
         enableVirtualization?: boolean;
         enablePagination?: boolean;
-    };
+    }>>;
 
-    row: BaseSlotProps<T> & {
+    row?: SlotComponent<EnhancedSlotProps<BaseSlotProps<T>, TableRowProps & {
         row: Row<T>;
         index: number;
         enableHover?: boolean;
@@ -197,9 +131,9 @@ export interface DataTableSlotProps<T = any> {
         isOdd?: boolean;
         renderSubComponent?: (row: Row<T>) => ReactNode;
         disableStickyHeader?: boolean;
-    };
+    }>>;
 
-    cell: BaseSlotProps<T> & {
+    cell?: SlotComponent<EnhancedSlotProps<BaseSlotProps<T>, TableCellProps & {
         row: Row<T>;
         cell: any;
         column: Column<T>;
@@ -208,53 +142,49 @@ export interface DataTableSlotProps<T = any> {
         pinnedPosition?: number;
         pinnedRightPosition?: number;
         alignment?: 'left' | 'center' | 'right';
-    };
+    }>>;
 
-    // Special row slot props
-    loadingRow: BaseSlotProps<T> & {
+    // Special row slots
+    loadingRow?: SlotComponent<EnhancedSlotProps<BaseSlotProps<T>, TableRowProps & {
         rowCount: number;
         colSpan: number;
-    };
+    }>>;
 
-    emptyRow: BaseSlotProps<T> & {
+    emptyRow?: SlotComponent<EnhancedSlotProps<BaseSlotProps<T>, TableRowProps & {
         colSpan: number;
         message: string;
-    };
+    }>>;
 
-    expandedRow: BaseSlotProps<T> & {
+    expandedRow?: SlotComponent<EnhancedSlotProps<BaseSlotProps<T>, TableRowProps & {
         row: Row<T>;
         colSpan: number;
         children: ReactNode;
-    };
+    }>>;
 
-    // Footer slot props
-    footer: BaseSlotProps<T> & {
+    // Footer slots
+    footer?: SlotComponent<EnhancedSlotProps<BaseSlotProps<T>, BoxProps & {
         children: ReactNode;
         enableStickyFooter?: boolean;
-    };
+    }>>;
 
-    pagination: BaseSlotProps<T> & DataTablePaginationProps;
+    pagination?: SlotComponent<EnhancedSlotProps<BaseSlotProps<T>, DataTablePaginationProps>>;
 
-    // Toolbar component slot props
-    searchInput: BaseSlotProps<T> & {
+    // Toolbar component slots with full component inheritance
+    searchInput?: SlotComponent<EnhancedSlotProps<BaseSlotProps<T>, ComponentProps<'input'> & {
         value: string;
         onChange: (value: string) => void;
         placeholder?: string;
         autoFocus?: boolean;
-    };
+    }>>;
 
-    columnsPanel: BaseSlotProps<T> & {
-        getTogglableColumns: (columns: DataTableColumn<T>[]) => DataTableColumn<T>[];
-        getPinnableColumns: (columns: DataTableColumn<T>[]) => DataTableColumn<T>[];
-    }
-    columnVisibilityControl: BaseSlotProps<T>;
-    columnCustomFilterControl: BaseSlotProps<T>;
-    columnPinningControl: BaseSlotProps<T>;
-    resetButton: BaseSlotProps<T>;
-    tableSizeControl: BaseSlotProps<T>;
+    columnVisibilityControl?: SlotComponent<EnhancedSlotProps<BaseSlotProps<T>, HTMLAttributes<HTMLDivElement>>>;
+    columnCustomFilterControl?: SlotComponent<EnhancedSlotProps<BaseSlotProps<T>, HTMLAttributes<HTMLDivElement>>>;
+    columnPinningControl?: SlotComponent<EnhancedSlotProps<BaseSlotProps<T>, HTMLAttributes<HTMLDivElement>>>;
+    resetButton?: SlotComponent<EnhancedSlotProps<BaseSlotProps<T>, ComponentProps<'button'>>>;
+    tableSizeControl?: SlotComponent<EnhancedSlotProps<BaseSlotProps<T>, HTMLAttributes<HTMLDivElement>>>;
 
-    // Bulk action slot props
-    bulkActionsToolbar: BaseSlotProps<T> & {
+    // Bulk action slots
+    bulkActionsToolbar?: SlotComponent<EnhancedSlotProps<BaseSlotProps<T>, ToolbarProps & {
         selectionState: any;
         selectedRowCount: number;
         bulkActions?: (selectionState: any) => ReactNode;
@@ -262,9 +192,9 @@ export interface DataTableSlotProps<T = any> {
         enableSelectAll?: boolean;
         onSelectAll?: () => void;
         onDeselectAll?: () => void;
-    };
+    }>>;
 
-    exportButton: BaseSlotProps<T> & {
+    exportButton?: SlotComponent<EnhancedSlotProps<BaseSlotProps<T>, ComponentProps<'button'> & {
         filename?: string;
         dataMode?: 'client' | 'server';
         serverExport?: {
@@ -278,60 +208,95 @@ export interface DataTableSlotProps<T = any> {
         onExportComplete?: (result: ExportResult) => void;
         onExportError?: (error: ExportError) => void;
         onExportCancel?: () => void;
-    };
+    }>>;
 
+    // Icon slots with full SVG component props
+    searchIcon?: SlotComponent<ComponentProps<'svg'> & { [key: string]: any }>;
+    clearIcon?: SlotComponent<ComponentProps<'svg'> & { [key: string]: any }>;
+    exportIcon?: SlotComponent<ComponentProps<'svg'> & { [key: string]: any }>;
+    columnIcon?: SlotComponent<ComponentProps<'svg'> & { [key: string]: any }>;
+    resetIcon?: SlotComponent<ComponentProps<'svg'> & { [key: string]: any }>;
+    moreIcon?: SlotComponent<ComponentProps<'svg'> & { [key: string]: any }>;
+    filterIcon?: SlotComponent<ComponentProps<'svg'> & { [key: string]: any }>;
+    pinIcon?: SlotComponent<ComponentProps<'svg'> & { [key: string]: any }>;
+    unpinIcon?: SlotComponent<ComponentProps<'svg'> & { [key: string]: any }>;
+    leftIcon?: SlotComponent<ComponentProps<'svg'> & { [key: string]: any }>;
+    rightIcon?: SlotComponent<ComponentProps<'svg'> & { [key: string]: any }>;
+    csvIcon?: SlotComponent<ComponentProps<'svg'> & { [key: string]: any }>;
+    excelIcon?: SlotComponent<ComponentProps<'svg'> & { [key: string]: any }>;
+    selectAllIcon?: SlotComponent<ComponentProps<'svg'> & { [key: string]: any }>;
+    deselectIcon?: SlotComponent<ComponentProps<'svg'> & { [key: string]: any }>;
+    tableSizeIcon?: SlotComponent<ComponentProps<'svg'> & { [key: string]: any }>;
+    tableSizeSmallIcon?: SlotComponent<ComponentProps<'svg'> & { [key: string]: any }>;
+    tableSizeMediumIcon?: SlotComponent<ComponentProps<'svg'> & { [key: string]: any }>;
 
-    // Icon slot props - simple components that just need basic styling
-    searchIcon: Record<string, any>;
-    clearIcon: Record<string, any>;
-    exportIcon: Record<string, any>;
-    columnIcon: Record<string, any>;
-    resetIcon: Record<string, any>;
-    moreIcon: Record<string, any>;
-    filterIcon: Record<string, any>;
-    pinIcon: Record<string, any>;
-    unpinIcon: Record<string, any>;
-    leftIcon: Record<string, any>;
-    rightIcon: Record<string, any>;
-    expandIcon: Record<string, any>;
-    collapseIcon: Record<string, any>;
-    csvIcon: Record<string, any>;
-    excelIcon: Record<string, any>;
-    selectAllIcon: Record<string, any>;
-    deselectIcon: Record<string, any>;
-    tableSizeIcon: Record<string, any>;
-    tableSizeSmallIcon: Record<string, any>;
-    tableSizeMediumIcon: Record<string, any>;
-
-    // Selection slot props
-    checkboxSelection: BaseSlotProps<T> & {
+    // Selection slots
+    checkboxSelection?: SlotComponent<EnhancedSlotProps<BaseSlotProps<T>, ComponentProps<'input'> & {
         row?: Row<T>;
         checked: boolean;
         indeterminate?: boolean;
         onChange: (checked: boolean) => void;
         disabled?: boolean;
-    };
+    }>>;
 
-    selectionColumn: DataTableColumn<T>;
-    expandColumn: DataTableColumn<T>;
+    // Expansion slots
+    expandIcon?: SlotComponent<ComponentProps<'svg'> & { [key: string]: any }>;
+    collapseIcon?: SlotComponent<ComponentProps<'svg'> & { [key: string]: any }>;
 
-    // Loading and empty state slot props
-    loadingSkeleton: BaseSlotProps<T> & {
+    // Loading and empty state slots
+    loadingSkeleton?: SlotComponent<EnhancedSlotProps<BaseSlotProps<T>, HTMLAttributes<HTMLDivElement> & {
         rows: number;
         columns: number;
-    };
+    }>>;
 
-    noDataOverlay: BaseSlotProps<T> & {
+    noDataOverlay?: SlotComponent<EnhancedSlotProps<BaseSlotProps<T>, HTMLAttributes<HTMLDivElement> & {
         message: string;
-    };
+    }>>;
 
-    // Progress and dialog slot props
-    exportProgressDialog: BaseSlotProps<T> & {
-        open: boolean;
-        progress: ExportProgress;
-        onCancel: () => void;
-    };
+
+
+    // Special column slots
+    selectionColumn?: DataTableColumn<T>;
+    expandColumn?: DataTableColumn<T>;
 }
+
+/**
+ * Enhanced slot props type that allows full customization
+ */
+export type DataTableSlotProps<T = any> = {
+    [K in keyof DataTableSlots<T>]?: Record<string, any>;
+};
+
+/**
+ * Columns panel props for slot customization
+ */
+export interface ColumnsPanelSlotProps<T = any> {
+    getTogglableColumns?: (columns: DataTableColumn<T>[]) => DataTableColumn<T>[];
+    getPinnableColumns?: (columns: DataTableColumn<T>[]) => DataTableColumn<T>[];
+}
+
+/**
+ * Utility type to make all slot props optional for easier usage
+ */
+export type PartialSlotProps<T = any> = {
+    [K in keyof DataTableSlotProps<T>]?: Partial<DataTableSlotProps<T>[K]>;
+} & {
+    // Special props for columns panel
+    columnsPanel?: ColumnsPanelSlotProps<T>;
+};
+
+/**
+ * Utility type for slot component props with proper generic support
+ */
+export type SlotComponentProps<
+    TSlot extends keyof DataTableSlots<T>,
+    T = any
+> = DataTableSlots<T>[TSlot] extends SlotComponent<infer TProps> ? TProps : never;
+
+/**
+ * Helper type to extract component props from a slot
+ */
+export type ExtractSlotProps<TSlot> = TSlot extends SlotComponent<infer TProps> ? TProps : never;
 
 /**
  * Default slot components - can be overridden by users
@@ -341,16 +306,27 @@ export interface DefaultSlots<T = any> extends DataTableSlots<T> {
 }
 
 /**
- * Utility type to make all slot props optional for easier usage
+ * Enhanced slot configuration with better prop merging
  */
-export type PartialSlotProps<T = any> = {
-    [K in keyof DataTableSlotProps<T>]?: Partial<DataTableSlotProps<T>[K]>;
-};
+export interface SlotConfiguration<T = any> {
+    slots?: Partial<DataTableSlots<T>>;
+    slotProps?: PartialSlotProps<T>;
+}
 
 /**
- * Utility type for slot component props with proper generic support
+ * Slot override configuration for advanced customization
  */
-export type SlotComponentProps<
-    TSlot extends keyof DataTableSlots<T>,
-    T = any
-> = DataTableSlotProps<T>[TSlot];
+export interface SlotOverrideConfig<T = any> {
+    // Override specific slot behavior
+    overrideSlot?: <K extends keyof DataTableSlots<T>>(
+        slotName: K,
+        component: DataTableSlots<T>[K],
+        props?: Partial<SlotComponentProps<K, T>>
+    ) => void;
+    
+    // Merge props with existing slot props
+    mergeSlotProps?: <K extends keyof DataTableSlots<T>>(
+        slotName: K,
+        props: Partial<SlotComponentProps<K, T>>
+    ) => Partial<SlotComponentProps<K, T>>;
+}

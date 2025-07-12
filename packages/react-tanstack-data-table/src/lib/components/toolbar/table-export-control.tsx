@@ -7,14 +7,16 @@ import {
     ListItemText,
     Typography,
     Box,
+    IconButtonProps,
+    SxProps,
 } from '@mui/material';
 
 import { MenuDropdown } from '../droupdown/menu-dropdown';
 import { useDataTableContext } from '../../contexts/data-table-context';
 import { ExcelIcon, CsvIcon } from '../../icons';
-import {  TableFilters } from '../../types';
+import { TableFilters } from '../../types';
 import { exportClientData, exportServerData } from '../../utils/export-utils';
-import { getSlotComponent } from '../../utils/slot-helpers';
+import { getSlotComponent, mergeSlotProps, extractSlotProps } from '../../utils/slot-helpers';
 import { SelectionState } from '../../features';
 
 interface TableExportControlProps {
@@ -24,15 +26,28 @@ interface TableExportControlProps {
     onExportProgress?: (progress: { processedRows?: number; totalRows?: number; percentage?: number }) => void;
     onExportComplete?: (result: { success: boolean; filename: string; totalRows: number }) => void;
     onExportError?: (error: { message: string; code: string }) => void;
+    // Enhanced customization props
+    iconButtonProps?: IconButtonProps;
+    tooltipProps?: any;
+    menuSx?: SxProps;
+    menuItemProps?: any;
+    [key: string]: any;
 }
 
-export function TableExportControl({
-    exportFilename: propsExportFilename,
-    onServerExport: propsOnServerExport,
-    onExportProgress: propsOnExportProgress,
-    onExportComplete: propsOnExportComplete,
-    onExportError: propsOnExportError,
-}: TableExportControlProps = {}) {
+export function TableExportControl(props: TableExportControlProps = {}) {
+    const {
+        exportFilename: propsExportFilename,
+        onServerExport: propsOnServerExport,
+        onExportProgress: propsOnExportProgress,
+        onExportComplete: propsOnExportComplete,
+        onExportError: propsOnExportError,
+        iconButtonProps,
+        tooltipProps,
+        menuSx,
+        menuItemProps,
+        ...otherProps
+    } = props;
+
     const {
         table,
         apiRef,
@@ -56,89 +71,62 @@ export function TableExportControl({
     const onExportComplete = propsOnExportComplete || contextOnExportComplete;
     const onExportError = propsOnExportError || contextOnExportError;
 
+    // Extract slot-specific props with enhanced merging
+    const exportIconSlotProps = extractSlotProps(slotProps, 'exportIcon');
+    const csvIconSlotProps = extractSlotProps(slotProps, 'csvIcon');
+    const excelIconSlotProps = extractSlotProps(slotProps, 'excelIcon');
+
     const ExportIconSlot = getSlotComponent(slots, 'exportIcon', CloudDownloadOutlined);
     const CsvIconSlot = getSlotComponent(slots, 'csvIcon', CsvIcon);
     const ExcelIconSlot = getSlotComponent(slots, 'excelIcon', ExcelIcon);
 
     const handleExport = async (format: 'csv' | 'excel') => {
-        try {
-            if (dataMode === 'server' && onServerExport) {
-                // Server mode export - fetch data with current filters and selection
-                const currentState = table.getState();
-                const currentFilters = {
-                    globalFilter: currentState.globalFilter,
-                    sorting: currentState.sorting,
-                    columnFilters: currentState.columnFilters,
-                };
+        if (!apiRef?.current) return;
 
-                // Get selection data from apiRef if available
-                const selectionData = apiRef?.current?.selection?.getSelectionState();
-                await exportServerData(table, {
-                    format,
+        try {
+            if (format === 'csv') {
+                await apiRef.current.export.exportCSV({
                     filename: exportFilename,
-                    fetchData: (filters, selection) => onServerExport(filters || currentFilters, selection),
-                    currentFilters,
-                    selection: selectionData,
-                    onProgress: onExportProgress,
-                    onComplete: onExportComplete,
-                    onError: onExportError,
                 });
             } else {
-                // Client mode export - export selected rows if any, otherwise all filtered rows
-                await exportClientData(table, {
-                    format,
+                await apiRef.current.export.exportExcel({
                     filename: exportFilename,
-                    onProgress: onExportProgress,
-                    onComplete: onExportComplete,
-                    onError: onExportError,
                 });
             }
         } catch (error) {
             console.error('Export failed:', error);
-            onExportError?.({
-                message: error instanceof Error ? error.message : 'Export failed',
-                code: 'PROCESSING_ERROR',
-            });
         }
     };
 
-    // Get selection count using our custom selection feature
-    const selectedRowCount = table.getSelectedCount ? table.getSelectedCount() : 0;
-    const hasSelection = table.getIsSomeRowsSelected ? table.getIsSomeRowsSelected() : false;
+    // Merge all props for maximum flexibility
+    const mergedIconButtonProps = mergeSlotProps(
+        {
+            size: 'small',
+            disabled: isExporting,
+            sx: { flexShrink: 0 },
+        },
+        exportIconSlotProps,
+        iconButtonProps || {}
+    );
 
-    const visibleColumns = table.getVisibleLeafColumns().filter(col => col.getIsVisible());
-    const exportableColumns = visibleColumns.filter(col => {
-        const columnDef = col.columnDef as any;
-        return columnDef.hideInExport !== true;
-    });
-    const hiddenFromExportColumns = visibleColumns.filter(col => {
-        const columnDef = col.columnDef as any;
-        return columnDef.hideInExport === true;
-    });
-
-    const summary = {
-        filteredRows: table.getFilteredRowModel().rows.length,
-        totalColumns: exportableColumns.length,
-        hiddenColumns: hiddenFromExportColumns.length,
-        selectedRows: selectedRowCount,
-        hasSelection: hasSelection,
-    };
+    const mergedMenuItemProps = mergeSlotProps(
+        {
+            sx: { minWidth: 150 },
+        },
+        menuItemProps || {}
+    );
 
     return (
         <MenuDropdown
             anchor={(
-                <Tooltip title="Export data">
+                <Tooltip 
+                    title={isExporting ? 'Export in progress...' : 'Export data'}
+                    {...tooltipProps}
+                >
                     <IconButton
-                        size="small"
-                        disabled={isExporting}
-                        sx={{
-                            flexShrink: 0,
-                            color: isExporting ? 'warning.main' : 'text.secondary',
-                        }}
+                        {...mergedIconButtonProps}
                     >
-                        <ExportIconSlot
-                            {...slotProps?.exportIcon}
-                        />
+                        <ExportIconSlot {...exportIconSlotProps} />
                     </IconButton>
                 </Tooltip>
             )}
@@ -146,110 +134,61 @@ export function TableExportControl({
             {({ handleClose }: { handleClose: () => void }) => (
                 <Box
                     sx={{
-                        p: 1,
-                        minWidth: 280,
+                        minWidth: 200,
+                        ...menuSx,
                     }}
                 >
-                    {/* Export Summary */}
-                    <Box
-                        sx={{
-                            mb: 2,
-                            p: 1,
-                            bgcolor: 'grey.50',
-                            borderRadius: 1,
-                        }}
+                    <Typography
+                        variant="subtitle2"
+                        sx={{ p: 2, pb: 1 }}
                     >
-                        <Typography
-                            variant="subtitle2"
-                            gutterBottom
-                        >
-                            Export Summary
-                        </Typography>
-                        <Typography
-                            variant="body2"
-                            color="text.secondary"
-                        >
-                            {summary.hasSelection
-                                ? `${summary.selectedRows} selected • ${summary.totalColumns} exportable columns`
-                                : `${summary.filteredRows} filtered • ${summary.totalColumns} exportable columns`
-                            }
-                            {summary.hiddenColumns > 0 && (
-                                <span style={{ color: 'orange' }}>
-                                    {' '}• {summary.hiddenColumns} hidden from export
-                                </span>
-                            )}
-                        </Typography>
-                        {summary.hasSelection ? (
+                        Export Format
+                    </Typography>
+                    
+                    <MenuItem
+                        onClick={() => {
+                            handleExport('csv');
+                            handleClose();
+                        }}
+                        disabled={isExporting}
+                        {...mergedMenuItemProps}
+                    >
+                        <ListItemIcon>
+                            <CsvIconSlot {...csvIconSlotProps} />
+                        </ListItemIcon>
+                        <ListItemText
+                            primary="CSV"
+                            secondary="Comma-separated values"
+                        />
+                    </MenuItem>
+
+                    <MenuItem
+                        onClick={() => {
+                            handleExport('excel');
+                            handleClose();
+                        }}
+                        disabled={isExporting}
+                        {...mergedMenuItemProps}
+                    >
+                        <ListItemIcon>
+                            <ExcelIconSlot {...excelIconSlotProps} />
+                        </ListItemIcon>
+                        <ListItemText
+                            primary="Excel"
+                            secondary="Microsoft Excel format"
+                        />
+                    </MenuItem>
+
+                    {isExporting && (
+                        <Box sx={{ p: 2, pt: 1 }}>
                             <Typography
                                 variant="caption"
-                                color="primary.main"
-                                sx={{ fontWeight: 'medium' }}
+                                color="text.secondary"
+                                sx={{ display: 'block', textAlign: 'center' }}
                             >
-                                Will export selected rows only
+                                Export in progress...
                             </Typography>
-                        ) : null}
-                    </Box>
-
-                    {/* Export Options */}
-                    {isExporting ? (
-                        <MenuItem
-                            onClick={() => {
-                                onCancelExport?.();
-                                handleClose();
-                            }}
-                        >
-                            <ListItemIcon>
-                                <ExportIconSlot
-                                    fontSize="small"
-                                    color="warning"
-                                    {...slotProps?.exportIcon}
-                                />
-                            </ListItemIcon>
-                            <ListItemText
-                                primary="Cancel Export"
-                                secondary="Stop current export"
-                            />
-                        </MenuItem>
-                    ) : (
-                        <>
-                            <MenuItem
-                                onClick={async () => {
-                                    await handleExport('csv');
-                                    handleClose();
-                                }}
-                                disabled={isExporting}
-                            >
-                                <ListItemIcon>
-                                    <CsvIconSlot
-                                        fontSize="small"
-                                        {...slotProps?.csvIcon}
-                                    />
-                                </ListItemIcon>
-                                <ListItemText
-                                    primary="Export as CSV"
-                                    secondary=".csv format"
-                                />
-                            </MenuItem>
-
-                            <MenuItem
-                                onClick={async () => {
-                                    await handleExport('excel');
-                                    handleClose();
-                                }}
-                                disabled={isExporting}
-                            >
-                                <ListItemIcon>
-                                    <ExcelIconSlot
-                                        fontSize="small"
-                                        {...slotProps?.excelIcon}
-                                    />
-                                </ListItemIcon>
-                                <ListItemText
-                                    primary="Export as Excel"
-                                    secondary=".xlsx format"
-                                />
-                            </MenuItem>
-                        </>
+                        </Box>
                     )}
                 </Box>
             )}

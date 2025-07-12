@@ -12,6 +12,8 @@ import {
     IconButton,
     Divider,
     Badge,
+    IconButtonProps,
+    SxProps,
 } from '@mui/material';
 import { useMemo, useCallback, useEffect } from 'react';
 
@@ -22,14 +24,31 @@ import {
     DeleteIcon,
 } from '../../icons';
 import { getColumnType, isColumnFilterable } from '../../utils/column-helpers';
-import { getSlotComponent } from '../../utils/slot-helpers';
+import { getSlotComponent, mergeSlotProps, extractSlotProps } from '../../utils/slot-helpers';
 import { FILTER_OPERATORS } from '../filters';
 import { FilterValueInput } from '../filters/filter-value-input';
 import { ColumnFilterRule } from '../../features';
 
+export interface ColumnFilterControlProps {
+    // Allow full customization of any prop
+    title?: string;
+    titleSx?: SxProps;
+    menuSx?: SxProps;
+    iconButtonProps?: IconButtonProps;
+    badgeProps?: any;
+    clearButtonProps?: any;
+    applyButtonProps?: any;
+    addButtonProps?: any;
+    logicSelectProps?: any;
+    [key: string]: any;
+}
 
-export function ColumnFilterControl() {
+export function ColumnFilterControl(props: ColumnFilterControlProps = {}) {
     const { table, slots, slotProps } = useDataTableContext();
+    
+    // Extract slot-specific props with enhanced merging
+    const iconSlotProps = extractSlotProps(slotProps, 'filterIcon');
+    
     const FilterIconSlot = getSlotComponent(slots, 'filterIcon', FilterList);
 
     // Use the custom feature state from the table - now using pending filters for UI
@@ -91,8 +110,6 @@ export function ColumnFilterControl() {
             }
         }, 0);
     }, [table]);
-
-
 
     // Handle filter logic change (AND/OR)
     const handleLogicChange = useCallback((newLogic: 'AND' | 'OR') => {
@@ -180,240 +197,176 @@ export function ColumnFilterControl() {
         }
     }, [filters.length, filterableColumns, addFilter, activeFiltersCount]);
 
+    // Merge all props for maximum flexibility
+    const mergedProps = mergeSlotProps(
+        {
+            // Default props
+            size: 'small',
+            sx: { flexShrink: 0 },
+        },
+        slotProps?.columnFilterControl || {},
+        props
+    );
+
     return (
         <MenuDropdown
             anchor={(
                 <Badge
-                    variant="dot"
+                    badgeContent={activeFiltersCount > 0 ? activeFiltersCount : 0}
                     color="primary"
                     invisible={activeFiltersCount === 0}
+                    {...mergedProps.badgeProps}
                 >
                     <IconButton
-                        size="small"
-                        color={activeFiltersCount > 0 ? 'primary' : 'default'}
-                        sx={{
-                            flexShrink: 0,
-                        }}
+                        {...mergedProps}
                     >
-                        <FilterIconSlot {...slotProps?.filterIcon} />
+                        <FilterIconSlot
+                            {...iconSlotProps}
+                        />
                     </IconButton>
                 </Badge>
             )}
         >
-            {({ handleClose }: any) => (
+            {({ handleClose }: { handleClose: () => void }) => (
                 <Box
                     sx={{
                         p: 2,
-                        minWidth: 500,
-                        maxWidth: 650,
+                        minWidth: 400,
+                        maxWidth: 600,
+                        ...mergedProps.menuSx,
                     }}
                 >
-                    <Stack
-                        direction="row"
-                        justifyContent="space-between"
-                        alignItems="center"
-                        sx={{ mb: 2 }}
+                    <Typography
+                        variant="subtitle2"
+                        sx={{
+                            mb: 1,
+                            ...mergedProps.titleSx,
+                        }}
                     >
-                        <Stack
-                            direction="row"
-                            alignItems="center"
-                            spacing={1}
-                        >
-                            <Typography
-                                variant="subtitle1"
-                                sx={{ fontWeight: 'bold' }}
-                            >
-                                Column Filters
-                            </Typography>
-                            {activeFiltersCount > 0 && (
-                                <Chip
-                                    size="small"
-                                    label={`${activeFiltersCount} active`}
-                                    color="primary"
-                                    variant="outlined"
-                                />
-                            )}
-                        </Stack>
-                        <Stack
-                            direction="row"
-                            spacing={1}
-                        >
-                            <Button
-                                size="small"
-                                variant="outlined"
-                                startIcon={<AddIcon />}
-                                onClick={handleAddFilter}
-                            >
-                                Add Filter
-                            </Button>
-                        </Stack>
-                    </Stack>
+                        {mergedProps.title || 'Column Filters'}
+                    </Typography>
+                    <Divider sx={{ mb: 2 }} />
 
-                    {/* Logic Selection for Multiple Filters */}
+                    {/* Filter Logic Selection */}
                     {filters.length > 1 && (
                         <Box sx={{ mb: 2 }}>
-                            <Typography
-                                variant="body2"
-                                color="text.secondary"
-                                sx={{ mb: 1 }}
-                            >
-                                Filter Logic:
-                            </Typography>
-                            <Stack
-                                direction="row"
-                                spacing={1}
-                            >
-                                <Button
-                                    size="small"
-                                    variant={filterLogic === 'AND' ? 'contained' : 'outlined'}
-                                    onClick={() => handleLogicChange('AND')}
+                            <FormControl size="small" sx={{ minWidth: 120 }}>
+                                <InputLabel>Logic</InputLabel>
+                                <Select
+                                    value={filterLogic}
+                                    label="Logic"
+                                    onChange={(e) => handleLogicChange(e.target.value as 'AND' | 'OR')}
+                                    {...mergedProps.logicSelectProps}
                                 >
-                                    AND (All conditions)
-                                </Button>
-                                <Button
-                                    size="small"
-                                    variant={filterLogic === 'OR' ? 'contained' : 'outlined'}
-                                    onClick={() => handleLogicChange('OR')}
-                                >
-                                    OR (Any condition)
-                                </Button>
-                            </Stack>
+                                    <MenuItem value="AND">AND</MenuItem>
+                                    <MenuItem value="OR">OR</MenuItem>
+                                </Select>
+                            </FormControl>
                         </Box>
                     )}
 
-                    <Divider sx={{ mb: 2 }} />
+                    {/* Filter Rules */}
+                    <Stack spacing={2} sx={{ mb: 2 }}>
+                        {filters.map((filter, index) => {
+                            const selectedColumn = filterableColumns?.find(col => col.id === filter.columnId);
+                            const operators = filter.columnId ? getOperatorsForColumn(filter.columnId) : [];
+                            const needsValue = !['isEmpty', 'isNotEmpty'].includes(filter.operator);
 
-                    {filters.length === 0 ? (
-                        <Typography
-                            variant="body2"
-                            color="text.secondary"
-                            sx={{
-                                textAlign: 'center',
-                                py: 2,
-                            }}
-                        >
-                            No filters applied. Click "Add Filter" to start.
-                        </Typography>
-                    ) : (
-                        <Stack spacing={2}>
-                            {filters.map((filter) => (
-                                <Box key={filter.id}>
-                                    <Stack
-                                        direction="row"
-                                        spacing={1}
-                                        alignItems="center"
-                                    >
-                                        <FormControl
-                                            size="small"
-                                            sx={{ minWidth: 140 }}
+                            return (
+                                <Stack key={filter.id} direction="row" spacing={1} alignItems="center">
+                                    {/* Column Selection */}
+                                    <FormControl size="small" sx={{ minWidth: 120 }}>
+                                        <InputLabel>Column</InputLabel>
+                                        <Select
+                                            value={filter.columnId || ''}
+                                            label="Column"
+                                            onChange={(e) => handleColumnChange(filter.id, e.target.value, filter)}
                                         >
-                                            <InputLabel>Column</InputLabel>
-                                            <Select
-                                                value={filter.columnId}
-                                                label="Column"
-                                                onChange={(e) => handleColumnChange(filter.id, e.target.value, filter)}
-                                            >
-                                                {filterableColumns.map(column => (
-                                                    <MenuItem
-                                                        key={column.id}
-                                                        value={column.id}
-                                                    >
-                                                        {typeof column.columnDef.header === 'string' ? column.columnDef.header : column.id}
-                                                    </MenuItem>
-                                                ))}
-                                            </Select>
-                                        </FormControl>
+                                            {filterableColumns?.map(column => (
+                                                <MenuItem key={column.id} value={column.id}>
+                                                    {typeof column.columnDef.header === 'string'
+                                                        ? column.columnDef.header
+                                                        : column.id}
+                                                </MenuItem>
+                                            ))}
+                                        </Select>
+                                    </FormControl>
 
-                                        <FormControl
-                                            size="small"
-                                            sx={{ minWidth: 160 }}
+                                    {/* Operator Selection */}
+                                    <FormControl size="small" sx={{ minWidth: 120 }}>
+                                        <InputLabel>Operator</InputLabel>
+                                        <Select
+                                            value={filter.operator || ''}
+                                            label="Operator"
+                                            onChange={(e) => handleOperatorChange(filter.id, e.target.value, filter)}
                                             disabled={!filter.columnId}
                                         >
-                                            <InputLabel>Operator</InputLabel>
-                                            <Select
-                                                value={filter.operator}
-                                                label="Operator"
-                                                onChange={(e) => handleOperatorChange(filter.id, e.target.value, filter)}
-                                            >
-                                                {getOperatorsForColumn(filter.columnId).map(op => (
-                                                    <MenuItem
-                                                        key={op.value}
-                                                        value={op.value}
-                                                    >
-                                                        {op.label}
-                                                    </MenuItem>
-                                                ))}
-                                            </Select>
-                                        </FormControl>
+                                            {operators.map(op => (
+                                                <MenuItem key={op.value} value={op.value}>
+                                                    {op.label}
+                                                </MenuItem>
+                                            ))}
+                                        </Select>
+                                    </FormControl>
 
-                                        {!['isEmpty', 'isNotEmpty'].includes(filter.operator) ? (
-                                            <FilterValueInput
-                                                filter={filter}
-                                                column={filterableColumns.find(col => col.id === filter.columnId) as any}
-                                                onValueChange={(value) => handleFilterValueChange(filter.id, value)}
-                                            />
-                                        ) : (
-                                            <Box sx={{ flex: 1 }} /> /* Spacer when no value input needed */
-                                        )}
+                                    {/* Value Input */}
+                                    {needsValue && selectedColumn && (
+                                        <FilterValueInput
+                                            filter={filter}
+                                            column={selectedColumn}
+                                            onValueChange={(value) => handleFilterValueChange(filter.id, value)}
+                                        />
+                                    )}
 
-                                        <IconButton
-                                            size="small"
-                                            onClick={() => handleRemoveFilter(filter.id)}
-                                            color="error"
-                                        >
-                                            <DeleteIcon />
-                                        </IconButton>
-                                    </Stack>
-                                </Box>
-                            ))}
-                        </Stack>
-                    )}
+                                                                         {/* Remove Filter Button */}
+                                     <IconButton
+                                         size="small"
+                                         onClick={() => handleRemoveFilter(filter.id)}
+                                         color="error"
+                                         {...mergedProps.deleteButtonProps}
+                                     >
+                                         <DeleteIcon fontSize="small" />
+                                     </IconButton>
+                                </Stack>
+                            );
+                        })}
+                    </Stack>
 
-                    <Divider sx={{ my: 2 }} />
+                                         {/* Add Filter Button */}
+                     <Button
+                         variant="outlined"
+                         size="small"
+                         startIcon={<AddIcon />}
+                         onClick={handleAddFilter}
+                         disabled={!filterableColumns || filterableColumns.length === 0}
+                         sx={{ mb: 2 }}
+                         {...mergedProps.addButtonProps}
+                     >
+                         Add Filter
+                     </Button>
 
-                    <Stack
-                        direction="row"
-                        justifyContent="space-between"
-                        alignItems="center"
-                        spacing={1}
-                    >
-                        {/* Reset button - show when there are any filters (pending or applied) */}
-                        {(hasAppliedFilters || filters.length > 0) && (
-                            <Button
-                                size="small"
-                                variant="text"
-                                color="warning"
-                                onClick={() => clearAllFilters(handleClose)}
-                                startIcon={<DeleteIcon />}
-                            >
-                                Reset
-                            </Button>
-                        )}
-
-                        {/* Spacer when no reset button */}
-                        {!(hasAppliedFilters || filters.length > 0) && <Box />}
-
-                        {/* Close and Apply buttons */}
-                        <Stack
-                            direction="row"
-                            spacing={1}
-                        >
+                    {/* Action Buttons */}
+                    <Stack direction="row" spacing={1} justifyContent="flex-end">
+                        {hasAppliedFilters && (
                             <Button
                                 variant="outlined"
-                                onClick={handleClose}
+                                size="small"
+                                onClick={() => clearAllFilters(handleClose)}
+                                color="error"
+                                {...mergedProps.clearButtonProps}
                             >
-                                Close
+                                Clear All
                             </Button>
-                            <Button
-                                variant="contained"
-                                onClick={() => handleApplyFilters(handleClose)}
-                                disabled={!hasPendingChanges}
-                            >
-                                {pendingFiltersCount === 0 && hasAppliedFilters ? 'Clear All Filters' :
-                                    `Apply ${pendingFiltersCount} Filter${pendingFiltersCount !== 1 ? 's' : ''}${pendingFiltersCount > 1 ? ` (${filterLogic})` : ''}`
-                                }
-                            </Button>
-                        </Stack>
+                        )}
+                        <Button
+                            variant="contained"
+                            size="small"
+                            onClick={() => handleApplyFilters(handleClose)}
+                            disabled={!hasPendingChanges}
+                            {...mergedProps.applyButtonProps}
+                        >
+                            Apply
+                        </Button>
                     </Stack>
                 </Box>
             )}

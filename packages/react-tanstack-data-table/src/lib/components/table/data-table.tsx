@@ -36,7 +36,7 @@ import { DataTableProvider } from '../../contexts/data-table-context';
 import { useDataTableApi } from '../../hooks/use-data-table-api';
 import { DataTableSize, exportClientData, exportServerData, generateRowId } from '../../utils';
 import { useDebouncedFetch } from '../../utils/debounced-fetch.utils';
-import { getSlotComponent } from '../../utils/slot-helpers';
+import { getSlotComponentWithProps, mergeSlotProps } from '../../utils/slot-helpers';
 import { TableHeader } from '../headers';
 import { DataTablePagination } from '../pagination';
 import { DataTableRow, LoadingRows, EmptyDataRow } from '../rows';
@@ -232,13 +232,13 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
             let columnsMap = [...columns];
             if (enableExpanding) {
                 const expandingColumnMap = createExpandingColumn<T>({
-                    ...(slotProps?.expandColumn || {}),
+                    ...(slotProps?.expandColumn && typeof slotProps.expandColumn === 'object' ? slotProps.expandColumn : {}),
                 });
                 columnsMap = [expandingColumnMap, ...columnsMap];
             }
             if (enableRowSelection) {
                 const selectionColumnMap = createSelectionColumn<T>({
-                    ...(slotProps?.selectionColumn || {}),
+                    ...(slotProps?.selectionColumn && typeof slotProps.selectionColumn === 'object' ? slotProps.selectionColumn : {}),
                     multiSelect: enableMultiRowSelection,
                 });
                 columnsMap = [selectionColumnMap, ...columnsMap];
@@ -1291,28 +1291,40 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     // -------------------------------
     // Render table rows with slot support (callback)
     // -------------------------------
-    const LoadingRowSlot = getSlotComponent(slots, 'loadingRow', LoadingRows);
-    const EmptyRowSlot = getSlotComponent(slots, 'emptyRow', EmptyDataRow);
     const renderTableRows = useCallback(() => {
         if (tableLoading) {
+            const { component: LoadingRowComponent, props: loadingRowProps } = getSlotComponentWithProps(
+                slots, 
+                slotProps || {}, 
+                'loadingRow', 
+                LoadingRows, 
+                {}
+            );
             return (
-                <LoadingRowSlot
+                <LoadingRowComponent
                     rowCount={enablePagination ? Math.min(pagination.pageSize, skeletonRows) : skeletonRows}
                     colSpan={table.getAllColumns().length}
                     slots={slots}
                     slotProps={slotProps}
-                    {...slotProps?.loadingRow}
+                    {...loadingRowProps}
                 />
             );
         }
         if (rows.length === 0) {
+            const { component: EmptyRowComponent, props: emptyRowProps } = getSlotComponentWithProps(
+                slots, 
+                slotProps || {}, 
+                'emptyRow', 
+                EmptyDataRow, 
+                {}
+            );
             return (
-                <EmptyRowSlot
+                <EmptyRowComponent
                     colSpan={table.getAllColumns().length}
                     message={emptyMessage}
                     slots={slots}
                     slotProps={slotProps}
-                    {...slotProps?.emptyRow}
+                    {...emptyRowProps}
                 />
             );
         }
@@ -1344,7 +1356,8 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                                 isOdd={virtualRow.index % 2 === 1}
                                 renderSubComponent={renderSubComponent}
                                 disableStickyHeader={enableStickyHeaderOrFooter}
-                                {...slotProps?.row}
+                                slots={slots}
+                                slotProps={slotProps}
                             />
                         );
                     })}
@@ -1382,12 +1395,10 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         rows,
         enableVirtualization,
         enablePagination,
-        LoadingRowSlot,
         pagination.pageSize,
         skeletonRows,
         table,
         slotProps,
-        EmptyRowSlot,
         emptyMessage,
         rowVirtualizer,
         enableHover,
@@ -1413,14 +1424,62 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     // -------------------------------
     // Slot components
     // -------------------------------
-    const RootSlot = getSlotComponent(slots, 'root', Box);
-    const ToolbarSlot = getSlotComponent(slots, 'toolbar', DataTableToolbar);
-    const BulkActionsSlot = getSlotComponent(slots, 'bulkActionsToolbar', BulkActionsToolbar);
-    const TableContainerSlot = getSlotComponent(slots, 'tableContainer', TableContainer);
-    const TableSlot = getSlotComponent(slots, 'table', Table);
-    const BodySlot = getSlotComponent(slots, 'body', TableBody);
-    const FooterSlot = getSlotComponent(slots, 'footer', Box);
-    const PaginationSlot = getSlotComponent(slots, 'pagination', DataTablePagination);
+    const { component: RootComponent, props: rootSlotProps } = getSlotComponentWithProps(
+        slots, 
+        slotProps || {}, 
+        'root', 
+        Box, 
+        {}
+    );
+    const { component: ToolbarComponent, props: toolbarSlotProps } = getSlotComponentWithProps(
+        slots, 
+        slotProps || {}, 
+        'toolbar', 
+        DataTableToolbar, 
+        {}
+    );
+    const { component: BulkActionsComponent, props: bulkActionsSlotProps } = getSlotComponentWithProps(
+        slots, 
+        slotProps || {}, 
+        'bulkActionsToolbar', 
+        BulkActionsToolbar, 
+        {}
+    );
+    const { component: TableContainerComponent, props: tableContainerSlotProps } = getSlotComponentWithProps(
+        slots, 
+        slotProps || {}, 
+        'tableContainer', 
+        TableContainer, 
+        {}
+    );
+    const { component: TableComponent, props: tableComponentSlotProps } = getSlotComponentWithProps(
+        slots, 
+        slotProps || {}, 
+        'table', 
+        Table, 
+        {}
+    );
+    const { component: BodyComponent, props: bodySlotProps } = getSlotComponentWithProps(
+        slots, 
+        slotProps || {}, 
+        'body', 
+        TableBody, 
+        {}
+    );
+    const { component: FooterComponent, props: footerSlotProps } = getSlotComponentWithProps(
+        slots, 
+        slotProps || {}, 
+        'footer', 
+        Box, 
+        {}
+    );
+    const { component: PaginationComponent, props: paginationSlotProps } = getSlotComponentWithProps(
+        slots, 
+        slotProps || {}, 
+        'pagination', 
+        DataTablePagination, 
+        {}
+    );
 
     // -------------------------------
     // Render
@@ -1447,12 +1506,12 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
             onExportError={onExportError}
             onServerExport={onServerExport}
         >
-            <RootSlot
-                {...slotProps?.root}
+            <RootComponent
+                {...rootSlotProps}
             >
                 {/* Toolbar */}
                 {(enableGlobalFilter || extraFilter) ? (
-                    <ToolbarSlot
+                    <ToolbarComponent
                         extraFilter={extraFilter}
                         enableGlobalFilter={enableGlobalFilter}
                         enableColumnVisibility={enableColumnVisibility}
@@ -1461,26 +1520,27 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                         enableReset={enableReset}
                         enableTableSizeControl={enableTableSizeControl}
                         enableColumnPinning={enableColumnPinning}
-                        {...slotProps?.toolbar}
+                        {...toolbarSlotProps}
                     />
                 ) : null}
 
                 {/* Bulk Actions Toolbar - shown when rows are selected */}
                 {enableBulkActions && enableRowSelection && isSomeRowsSelected ? (
-                    <BulkActionsSlot
+                    <BulkActionsComponent
                         selectionState={selectionState}
                         selectedRowCount={selectedRowCount}
                         bulkActions={bulkActions}
                         sx={{
                             position: 'relative',
                             zIndex: 2,
+                            ...bulkActionsSlotProps.sx,
                         }}
-                        {...slotProps?.bulkActionsToolbar}
+                        {...bulkActionsSlotProps}
                     />
                 ) : null}
 
                 {/* Table Container */}
-                <TableContainerSlot
+                <TableContainerComponent
                     component={Paper}
                     ref={tableContainerRef}
                     sx={{
@@ -1494,12 +1554,11 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                             maxHeight: maxHeight,
                             overflowY: 'auto',
                         }),
-                        ...tableContainerProps?.sx,
+                        ...tableContainerSlotProps?.sx,
                     }}
-                    {...tableContainerProps}
-                    {...slotProps?.tableContainer}
+                    {...tableContainerSlotProps}
                 >
-                    <TableSlot
+                    <TableComponent
                         size={tableSize}
                         stickyHeader={enableStickyHeaderOrFooter}
                         style={{
@@ -1507,8 +1566,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                             tableLayout: fitToScreen ? 'fixed' : 'auto',
                             ...tableProps?.style,
                         }}
-                        {...tableProps}
-                        {...slotProps?.table}
+                        {...mergeSlotProps(tableProps || {}, tableComponentSlotProps)}
                     >
                         {/* Table Headers */}
                         <TableHeader
@@ -1522,17 +1580,17 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                         />
 
                         {/* Table Body */}
-                        <BodySlot
-                            {...slotProps?.body}
+                        <BodyComponent
+                            {...bodySlotProps}
                         >
                             {renderTableRows()}
-                        </BodySlot>
-                    </TableSlot>
-                </TableContainerSlot>
+                        </BodyComponent>
+                    </TableComponent>
+                </TableContainerComponent>
 
                 {/* Pagination */}
                 {enablePagination ? (
-                    <FooterSlot
+                    <FooterComponent
                         sx={{
                             ...(enableStickyHeaderOrFooter && {
                                 position: 'sticky',
@@ -1542,18 +1600,19 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                                 borderColor: 'divider',
                                 zIndex: 1,
                             }),
+                            ...footerSlotProps.sx,
                         }}
-                        {...slotProps?.footer}
+                        {...footerSlotProps}
                     >
-                        <PaginationSlot
+                        <PaginationComponent
                             footerFilter={footerFilter}
-                            {...slotProps?.pagination}
                             pagination={pagination}
                             totalRow={tableTotalRow}
+                            {...paginationSlotProps}
                         />
-                    </FooterSlot>
+                    </FooterComponent>
                 ) : null}
-            </RootSlot>
+            </RootComponent>
         </DataTableProvider>
     );
 });

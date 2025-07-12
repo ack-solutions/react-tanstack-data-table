@@ -1,24 +1,36 @@
 import { Clear, Search } from '@mui/icons-material';
-import { Box, Tooltip } from '@mui/material';
-import { IconButton } from '@mui/material';
-import { Collapse } from '@mui/material';
-import { OutlinedInput } from '@mui/material';
-import { InputAdornment } from '@mui/material';
+import { Box, Tooltip, IconButton, Collapse, OutlinedInput, InputAdornment, IconButtonProps, OutlinedInputProps, SxProps } from '@mui/material';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { useDataTableContext } from '../../contexts/data-table-context';
-import { getSlotComponent } from '../../utils/slot-helpers';
+import { getSlotComponent, mergeSlotProps, extractSlotProps } from '../../utils/slot-helpers';
 
+export interface TableSearchControlProps {
+    // Allow full customization of any prop
+    placeholder?: string;
+    autoFocus?: boolean;
+    searchIconProps?: IconButtonProps;
+    clearIconProps?: IconButtonProps;
+    inputProps?: OutlinedInputProps;
+    containerSx?: SxProps;
+    tooltipProps?: any;
+    [key: string]: any;
+}
 
-export function TableSearchControl() {
+export function TableSearchControl(props: TableSearchControlProps = {}) {
     const { table, slots, slotProps } = useDataTableContext();
     const [searchVisible, setSearchVisible] = useState(false);
     const searchInputRef = useRef<HTMLInputElement>(null);
     const globalFilter = table.getState().globalFilter || '';
     const hasSearch = globalFilter.length > 0;
 
+    // Extract slot-specific props with enhanced merging
+    const searchIconSlotProps = extractSlotProps(slotProps, 'searchIcon');
+    const clearIconSlotProps = extractSlotProps(slotProps, 'clearIcon');
+    
     const SearchIconSlot = getSlotComponent(slots, 'searchIcon', Search);
     const ClearIconSlot = getSlotComponent(slots, 'clearIcon', Clear);
+    
     const handleChange = useCallback(
         (e: any) => {
             table.setGlobalFilter(e.target.value);
@@ -62,64 +74,77 @@ export function TableSearchControl() {
         return undefined;
     }, [searchVisible]);
 
+    // Merge all props for maximum flexibility
+    const mergedSearchIconProps = mergeSlotProps(
+        {
+            size: 'small',
+            onClick: handleSearchToggle,
+            color: hasSearch ? 'primary' : 'default',
+            sx: { flexShrink: 0 },
+        },
+        searchIconSlotProps,
+        props.searchIconProps || {}
+    );
+
+    const mergedClearIconProps = mergeSlotProps(
+        {
+            size: 'small',
+            onClick: handleSearchClear,
+        },
+        clearIconSlotProps,
+        props.clearIconProps || {}
+    );
+
+    const mergedInputProps = mergeSlotProps(
+        {
+            inputRef: searchInputRef,
+            size: 'small',
+            placeholder: props.placeholder || 'Search...',
+            value: globalFilter,
+            onChange: handleChange,
+            onBlur: handleSearchBlur,
+            autoFocus: props.autoFocus,
+            sx: { minWidth: 200 },
+        },
+        props.inputProps || {}
+    );
+
     return (
         <Box
             sx={{
                 display: 'flex',
                 alignItems: 'center',
+                ...props.containerSx,
             }}
         >
             {!(searchVisible || hasSearch) && (
-                <Tooltip title="Search">
+                <Tooltip 
+                    title="Search"
+                    {...props.tooltipProps}
+                >
                     <IconButton
-                        size="small"
-                        onClick={handleSearchToggle}
-                        color={hasSearch ? 'primary' : 'default'}
-                        sx={{
-                            flexShrink: 0,
-                        }}
+                        {...mergedSearchIconProps}
                     >
-                        <SearchIconSlot {...slotProps?.searchIcon} />
+                        <SearchIconSlot {...searchIconSlotProps} />
                     </IconButton>
                 </Tooltip>
             )}
+
             <Collapse
                 in={searchVisible || hasSearch}
                 orientation="horizontal"
+                timeout={200}
             >
                 <OutlinedInput
-                    inputRef={searchInputRef}
-                    placeholder="Search..."
-                    value={globalFilter}
-                    onChange={handleChange}
-                    size="small"
-                    onBlur={handleSearchBlur}
-                    sx={{ minWidth: 200 }}
+                    {...mergedInputProps}
                     endAdornment={
                         hasSearch ? (
                             <InputAdornment position="end">
-                                <Tooltip title="Clear search">
-                                    <IconButton
-                                        size="small"
-                                        onClick={handleSearchClear}
-                                        edge="end"
-                                    >
-                                        <ClearIconSlot
-                                            size="small"
-                                            {...slotProps?.clearIcon}
-                                        />
-                                    </IconButton>
-                                </Tooltip>
-                            </InputAdornment>
-                        ) : null
-                    }
-                    startAdornment={
-                        searchVisible || hasSearch ? (
-                            <InputAdornment position="start">
-                                <SearchIconSlot
-                                    size="small"
-                                    {...slotProps?.searchIcon}
-                                />
+                                <IconButton
+                                    {...mergedClearIconProps}
+                                >
+                                    <ClearIconSlot {...clearIconSlotProps} />
+                                </IconButton>
                             </InputAdornment>
                         ) : null
                     }

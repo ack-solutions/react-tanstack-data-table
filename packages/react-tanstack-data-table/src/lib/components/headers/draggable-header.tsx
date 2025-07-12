@@ -1,40 +1,52 @@
 import { ArrowUpwardOutlined, ArrowDownwardOutlined } from '@mui/icons-material';
-import { Box } from '@mui/material';
+import { Box, SxProps } from '@mui/material';
 import { Header, flexRender } from '@tanstack/react-table';
 import React, { useState, useRef, useCallback, useMemo } from 'react';
 
-import { getSlotComponent } from '../../utils/slot-helpers';
-
+import { getSlotComponent, mergeSlotProps, extractSlotProps } from '../../utils/slot-helpers';
 
 interface DraggableHeaderProps<T> {
     header: Header<T, unknown>;
     enableSorting?: boolean;
     draggable?: boolean;
     onColumnReorder?: (draggedColumnId: string, targetColumnId: string) => void;
+    // Enhanced customization props
+    containerSx?: SxProps;
+    sortIconProps?: any;
+    alignment?: 'left' | 'center' | 'right';
     slots?: Record<string, any>;
     slotProps?: Record<string, any>;
-    alignment?: 'left' | 'center' | 'right';
+    [key: string]: any;
 }
 
-export function DraggableHeader<T>({
-    header,
-    enableSorting = true,
-    draggable = false,
-    onColumnReorder,
-    slots,
-    slotProps,
-    alignment,
-}: DraggableHeaderProps<T>) {
+export function DraggableHeader<T>(props: DraggableHeaderProps<T>) {
+    const {
+        header,
+        enableSorting = true,
+        draggable = false,
+        onColumnReorder,
+        containerSx,
+        sortIconProps,
+        alignment,
+        slots,
+        slotProps,
+        ...otherProps
+    } = props;
+
     const [isDragging, setIsDragging] = useState(false);
     const [dragOver, setDragOver] = useState(false);
     const autoScrollIntervalRef = useRef<NodeJS.Timeout | null>(null);
     const dragStartPositionRef = useRef<{ x: number; y: number } | null>(null);
     const headerElementRef = useRef<HTMLDivElement>(null);
 
+    // Extract slot-specific props with enhanced merging
+    const sortIconAscSlotProps = extractSlotProps(slotProps, 'sortIconAsc');
+    const sortIconDescSlotProps = extractSlotProps(slotProps, 'sortIconDesc');
+    
     const SortIconAscSlot = getSlotComponent(slots, 'sortIconAsc', ArrowUpwardOutlined);
     const SortIconDescSlot = getSlotComponent(slots, 'sortIconDesc', ArrowDownwardOutlined);
 
-    // Auto-scroll configuratio
+    // Auto-scroll configuration
     const AUTO_SCROLL_THRESHOLD = 50; // Distance from edge to trigger scroll
     const AUTO_SCROLL_SPEED = 10; // Pixels per scroll interval
     const AUTO_SCROLL_INTERVAL = 16; // ~60fps
@@ -123,74 +135,63 @@ export function DraggableHeader<T>({
 
     const checkAutoScroll = useCallback((clientX: number) => {
         const container = findScrollableContainer();
-        if (!container) {
-            return;
-        }
+        if (!container) return;
 
-        const rect = container.getBoundingClientRect();
-        const distanceFromLeft = clientX - rect.left;
-        const distanceFromRight = rect.right - clientX;
+        const containerRect = container.getBoundingClientRect();
+        const leftEdge = containerRect.left + AUTO_SCROLL_THRESHOLD;
+        const rightEdge = containerRect.right - AUTO_SCROLL_THRESHOLD;
 
-        // Stop any existing auto-scroll
-        stopAutoScroll();
-
-        // Check if we should start auto-scrolling
-        if (distanceFromLeft < AUTO_SCROLL_THRESHOLD && container.scrollLeft > 0) {
-            // Near left edge and can scroll left
+        if (clientX < leftEdge) {
             startAutoScroll('left');
-        } else if (distanceFromRight < AUTO_SCROLL_THRESHOLD &&
-            container.scrollLeft < container.scrollWidth - container.clientWidth) {
-            // Near right edge and can scroll right
+        } else if (clientX > rightEdge) {
             startAutoScroll('right');
+        } else {
+            stopAutoScroll();
         }
-    }, [
-        findScrollableContainer,
-        startAutoScroll,
-        stopAutoScroll,
-    ]);
+    }, [findScrollableContainer, startAutoScroll, stopAutoScroll]);
 
     const handleDragStart = (e: React.DragEvent) => {
         if (!draggable) return;
 
-        setIsDragging(true);
-        dragStartPositionRef.current = {
-            x: e.clientX,
-            y: e.clientY,
-        };
         e.dataTransfer.setData('text/plain', header.id);
         e.dataTransfer.effectAllowed = 'move';
+        setIsDragging(true);
+        dragStartPositionRef.current = { x: e.clientX, y: e.clientY };
     };
 
-    const handleDrag = useCallback((e: React.DragEvent) => {
-        if (!isDragging || !draggable) return;
-
-        // Only check for auto-scroll if we have valid coordinates
-        if (e.clientX > 0 && e.clientY > 0) {
-            checkAutoScroll(e.clientX);
-        }
-    }, [
-        isDragging,
-        draggable,
-        checkAutoScroll,
-    ]);
+    const handleDrag = (e: React.DragEvent) => {
+        if (!draggable || !dragStartPositionRef.current) return;
+        checkAutoScroll(e.clientX);
+    };
 
     const getSortIcon = () => {
         if (!enableSorting) return null;
         const sortDirection = header.column.getIsSorted();
 
+        const mergedSortIconProps = mergeSlotProps(
+            {
+                fontSize: 'small',
+            },
+            sortIconProps || {}
+        );
+
         // Only show icons when column is actually sorted
         if (sortDirection === 'asc') {
             return (
                 <SortIconAscSlot
-                    fontSize="small"
-                    {...slotProps?.sortIconAsc}
+                    {...mergeSlotProps(
+                        mergedSortIconProps,
+                        sortIconAscSlotProps
+                    )}
                 />
             );
         } if (sortDirection === 'desc') {
             return (
                 <SortIconDescSlot
-                    fontSize="small"
-                    {...slotProps?.sortIconDesc}
+                    {...mergeSlotProps(
+                        mergedSortIconProps,
+                        sortIconDescSlotProps
+                    )}
                 />
             );
         }
@@ -253,13 +254,11 @@ export function DraggableHeader<T>({
         return 'default';
     };
 
-    if (!draggable && !enableSorting) {
-        return flexRender(header.column.columnDef.header, header.getContext());
-    }
-    return (
-        <Box
-            ref={headerElementRef}
-            sx={{
+    // Merge all props for maximum flexibility
+    const mergedContainerProps = mergeSlotProps(
+        {
+            ref: headerElementRef,
+            sx: {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: justifyContent,
@@ -275,15 +274,27 @@ export function DraggableHeader<T>({
                 '&:active': {
                     cursor: draggable ? 'grabbing' : 'pointer',
                 },
-            }}
-            draggable={draggable}
-            onDragStart={handleDragStart}
-            onDrag={handleDrag}
-            onDragEnd={handleDragEnd}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-            onClick={enableSorting ? handleSort : undefined}
+                ...containerSx,
+            },
+            draggable: draggable,
+            onDragStart: handleDragStart,
+            onDrag: handleDrag,
+            onDragEnd: handleDragEnd,
+            onDragOver: handleDragOver,
+            onDragLeave: handleDragLeave,
+            onDrop: handleDrop,
+            onClick: enableSorting ? handleSort : undefined,
+        },
+        otherProps
+    );
+
+    if (!draggable && !enableSorting) {
+        return flexRender(header.column.columnDef.header, header.getContext());
+    }
+
+    return (
+        <Box
+            {...mergedContainerProps}
         >
             <Box
                 component="span"

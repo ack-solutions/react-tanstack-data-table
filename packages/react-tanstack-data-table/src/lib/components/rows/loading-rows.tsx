@@ -1,37 +1,63 @@
-import { TableCell, TableRow } from '@mui/material';
-import { Skeleton } from '@mui/material';
+import { TableCell, TableRow, Skeleton, TableRowProps, TableCellProps, SxProps } from '@mui/material';
 
 import { useDataTableContext } from '../../contexts/data-table-context';
 import { getPinnedColumnStyle } from '../../utils';
-import { getSlotComponent } from '../../utils/slot-helpers';
+import { getSlotComponent, mergeSlotProps, extractSlotProps } from '../../utils/slot-helpers';
 
-
-export function LoadingRows({
-    rowCount = 5,
-    slots,
-    slotProps,
-}: {
+export interface LoadingRowsProps {
     rowCount?: number;
+    // Enhanced customization props
+    rowProps?: TableRowProps;
+    cellProps?: TableCellProps;
+    skeletonProps?: any;
+    containerSx?: SxProps;
     slots?: Record<string, any>;
     slotProps?: Record<string, any>;
-}) {
+    [key: string]: any;
+}
+
+export function LoadingRows(props: LoadingRowsProps) {
+    const {
+        rowCount = 5,
+        rowProps,
+        cellProps,
+        skeletonProps,
+        containerSx,
+        slots,
+        slotProps,
+        ...otherProps
+    } = props;
+
     const { table } = useDataTableContext();
     const visibleColumns = table.getVisibleLeafColumns();
+    
+    // Extract slot-specific props with enhanced merging
+    const cellSlotProps = extractSlotProps(slotProps, 'cell');
+    const rowSlotProps = extractSlotProps(slotProps, 'row');
+    
     const CellSlot = getSlotComponent(slots, 'cell', TableCell);
     const TableRowSlot = getSlotComponent(slots, 'row', TableRow);
+
+    // Merge all props for maximum flexibility
+    const mergedRowProps = mergeSlotProps(
+        {
+            sx: containerSx,
+        },
+        rowSlotProps,
+        rowProps || {}
+    );
 
     return (
         <>
             {Array.from({ length: rowCount }, (_, rowIndex) => (
                 <TableRowSlot
                     key={`skeleton-row-${rowIndex}`}
-                    {...slotProps?.row}
+                    {...mergedRowProps}
                 >
                     {visibleColumns.map((column: any, colIndex: number) => {
                         const isPinned = column.getIsPinned();
                         const pinnedPosition = isPinned ? column.getStart('left') : undefined;
                         const pinnedRightPosition = isPinned === 'right' ? column.getAfter('right') : undefined;
-
 
                         // Determine skeleton type based on column meta or content
                         const columnMeta = column.columnDef?.meta;
@@ -40,68 +66,90 @@ export function LoadingRows({
                         const isNumberColumn = columnMeta?.type === 'number';
                         const isSelectionColumn = column.id === 'select';
 
+                        const mergedCellProps = mergeSlotProps(
+                            {
+                                sx: {
+                                    ...getPinnedColumnStyle({
+                                        width: column.getSize() || 'auto',
+                                        isPinned,
+                                        pinnedPosition,
+                                        pinnedRightPosition,
+                                        zIndex: isPinned ? 9 : 1,
+                                        isLastLeftPinnedColumn: isPinned === 'left' && column.getIsLastColumn('left'),
+                                        isFirstRightPinnedColumn: isPinned === 'right' && column.getIsFirstColumn('right'),
+                                    }),
+                                },
+                            },
+                            cellSlotProps,
+                            cellProps || {}
+                        );
+
+                        const getSkeletonContent = () => {
+                            if (isSelectionColumn) {
+                                return (
+                                    <Skeleton
+                                        variant="rectangular"
+                                        width={20}
+                                        height={20}
+                                        animation="wave"
+                                        {...skeletonProps}
+                                    />
+                                );
+                            }
+
+                            if (isBooleanColumn) {
+                                return (
+                                    <Skeleton
+                                        variant="circular"
+                                        width={16}
+                                        height={16}
+                                        animation="wave"
+                                        {...skeletonProps}
+                                    />
+                                );
+                            }
+
+                            if (isDateColumn) {
+                                return (
+                                    <Skeleton
+                                        variant="text"
+                                        width="80%"
+                                        height={20}
+                                        animation="wave"
+                                        {...skeletonProps}
+                                    />
+                                );
+                            }
+
+                            if (isNumberColumn) {
+                                return (
+                                    <Skeleton
+                                        variant="text"
+                                        width="60%"
+                                        height={20}
+                                        animation="wave"
+                                        {...skeletonProps}
+                                    />
+                                );
+                            }
+
+                            return (
+                                <Skeleton
+                                    variant="text"
+                                    width={`${Math.random() * 40 + 60}%`}
+                                    height={20}
+                                    animation="wave"
+                                    {...skeletonProps}
+                                />
+                            );
+                        };
+
                         return (
                             <CellSlot
                                 key={`skeleton-${column.id || colIndex}-${rowIndex}`}
-                                sx={getPinnedColumnStyle({
-                                    width: column.getSize() || 'auto',
-                                    isPinned,
-                                    pinnedPosition,
-                                    pinnedRightPosition,
-                                    zIndex: isPinned ? 9 : 1,
-                                    isLastLeftPinnedColumn: isPinned === 'left' && column.getIsLastColumn('left'),
-                                    isFirstRightPinnedColumn: isPinned === 'right' && column.getIsFirstColumn('right'),
-                                })}
-                                {...slotProps?.cell}
+                                {...mergedCellProps}
                             >
-                                {(() => {
-                                    if (isSelectionColumn) {
-                                        return (
-                                            <Skeleton
-                                                variant="rectangular"
-                                                width={20}
-                                                height={20}
-                                            />
-                                        );
-                                    }
-                                    if (isBooleanColumn) {
-                                        return (
-                                            <Skeleton
-                                                variant="circular"
-                                                width={20}
-                                                height={20}
-                                            />
-                                        );
-                                    }
-                                    if (isDateColumn) {
-                                        return (
-                                            <Skeleton
-                                                variant="text"
-                                                width="80%"
-                                                height={20}
-                                                animation="wave"
-                                            />
-                                        );
-                                    }
-                                    if (isNumberColumn) {
-                                        return (
-                                            <Skeleton
-                                                variant="text"
-                                                width="60%"
-                                                height={20}
-                                                animation="wave"
-                                            />
-                                        );
-                                    }
-                                    return (
-                                        <Skeleton
-                                            variant="text"
-                                            width={`${Math.random() * 40 + 60}%`}
-                                            height={20}
-                                            animation="wave"
-                                        />
-                                    );
-                                })()}
+                                {getSkeletonContent()}
                             </CellSlot>
                         );
                     })}

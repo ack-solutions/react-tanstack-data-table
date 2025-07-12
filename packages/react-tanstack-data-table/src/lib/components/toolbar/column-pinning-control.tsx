@@ -8,6 +8,8 @@ import {
     List,
     ListItem,
     ListItemText,
+    IconButtonProps,
+    SxProps,
 } from '@mui/material';
 import { ColumnPinningState, Column } from '@tanstack/react-table';
 import { useCallback, useMemo } from 'react';
@@ -17,12 +19,30 @@ import { useDataTableContext } from '../../contexts/data-table-context';
 import {
     UnpinIcon,
 } from '../../icons';
-import { getSlotComponent } from '../../utils/slot-helpers';
+import { getSlotComponent, mergeSlotProps, extractSlotProps } from '../../utils/slot-helpers';
 
+export interface ColumnPinningControlProps {
+    // Allow full customization of any prop
+    title?: string;
+    titleSx?: SxProps;
+    menuSx?: SxProps;
+    iconButtonProps?: IconButtonProps;
+    tooltipProps?: any;
+    badgeProps?: any;
+    clearButtonProps?: any;
+    [key: string]: any;
+}
 
-export function ColumnPinningControl() {
+export function ColumnPinningControl(props: ColumnPinningControlProps = {}) {
     // Use context if no props provided (MUI DataGrid style)
     const { table, slots, slotProps } = useDataTableContext();
+    
+    // Extract slot-specific props with enhanced merging
+    const pinIconSlotProps = extractSlotProps(slotProps, 'pinIcon');
+    const unpinIconSlotProps = extractSlotProps(slotProps, 'unpinIcon');
+    const leftIconSlotProps = extractSlotProps(slotProps, 'leftIcon');
+    const rightIconSlotProps = extractSlotProps(slotProps, 'rightIcon');
+    
     const PinIconSlot = getSlotComponent(slots, 'pinIcon', PushPinOutlined);
     const UnpinIconSlot = getSlotComponent(slots, 'unpinIcon', UnpinIcon);
     const LeftIconSlot = getSlotComponent(slots, 'leftIcon', ArrowLeftOutlined);
@@ -77,17 +97,27 @@ export function ColumnPinningControl() {
     const userPinnedRight = (columnPinning.right?.filter((id) => allColumns.some((column: any) => column.id === id)) || []);
     const totalPinned = userPinnedLeft.length + userPinnedRight.length;
 
+    // Merge all props for maximum flexibility
+    const mergedIconButtonProps = mergeSlotProps(
+        {
+            size: 'small',
+            sx: { flexShrink: 0 },
+        },
+        pinIconSlotProps,
+        props.iconButtonProps || {}
+    );
+
     return (
         <MenuDropdown
             anchor={(
-                <Tooltip title="Pin columns">
+                <Tooltip 
+                    title="Pin columns"
+                    {...props.tooltipProps}
+                >
                     <IconButton
-                        size="small"
-                        sx={{
-                            flexShrink: 0,
-                        }}
+                        {...mergedIconButtonProps}
                     >
-                        <PinIconSlot {...slotProps?.pinIcon} />
+                        <PinIconSlot {...pinIconSlotProps} />
                         {totalPinned > 0 && (
                             <Box
                                 sx={{
@@ -103,7 +133,9 @@ export function ColumnPinningControl() {
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
+                                    ...props.badgeProps?.sx,
                                 }}
+                                {...props.badgeProps}
                             >
                                 {totalPinned}
                             </Box>
@@ -115,33 +147,39 @@ export function ColumnPinningControl() {
             {({ handleClose }: { handleClose: () => void }) => (
                 <Box
                     sx={{
+                        p: 2,
                         minWidth: 300,
-                        maxHeight: 400,
-                        overflow: 'auto',
+                        maxWidth: 400,
+                        ...props.menuSx,
                     }}
                 >
-                    <Box
+                    <Typography
+                        variant="subtitle2"
                         sx={{
-                            p: 2,
-                            pb: 1,
+                            mb: 1,
+                            ...props.titleSx,
                         }}
                     >
-                        <Typography
-                            variant="subtitle2"
-                            sx={{ mb: 1 }}
-                        >
-                            Pin Columns
-                        </Typography>
-                        <Typography
-                            variant="caption"
-                            color="text.secondary"
-                        >
-                            Pin columns to keep them visible while scrolling
-                        </Typography>
-                    </Box>
-                    <Divider />
+                        {props.title || 'Pin Columns'}
+                    </Typography>
+                    <Divider sx={{ mb: 2 }} />
 
-                    {/* Column List */}
+                    {totalPinned > 0 && (
+                        <Box sx={{ mb: 2 }}>
+                            <IconButton
+                                size="small"
+                                onClick={handleUnpinAll}
+                                color="warning"
+                                {...props.clearButtonProps}
+                            >
+                                <UnpinIconSlot {...unpinIconSlotProps} />
+                            </IconButton>
+                            <Typography variant="caption" sx={{ ml: 1 }}>
+                                Unpin all columns
+                            </Typography>
+                        </Box>
+                    )}
+
                     <List
                         dense
                         sx={{ py: 0 }}
@@ -170,7 +208,7 @@ export function ColumnPinningControl() {
                                                 >
                                                     <LeftIconSlot
                                                         fontSize="small"
-                                                        {...slotProps?.leftIcon}
+                                                        {...leftIconSlotProps}
                                                     />
                                                 </IconButton>
                                             </Tooltip>
@@ -184,7 +222,7 @@ export function ColumnPinningControl() {
                                                 >
                                                     <RightIconSlot
                                                         fontSize="small"
-                                                        {...slotProps?.rightIcon}
+                                                        {...rightIconSlotProps}
                                                     />
                                                 </IconButton>
                                             </Tooltip>
@@ -198,7 +236,7 @@ export function ColumnPinningControl() {
                                                     >
                                                         <UnpinIconSlot
                                                             fontSize="small"
-                                                            {...slotProps?.unpinIcon}
+                                                            {...unpinIconSlotProps}
                                                         />
                                                     </IconButton>
                                                 </Tooltip>
@@ -209,82 +247,25 @@ export function ColumnPinningControl() {
                                     <ListItemText
                                         primary={displayName}
                                         secondary={
-                                            pinStatus !== 'none' ? (
-                                                <Box
-                                                    sx={{
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        gap: 0.5,
-                                                        mt: 0.5,
-                                                    }}
-                                                >
-                                                    {pinStatus === 'left' ? (
-                                                        <LeftIconSlot
-                                                            fontSize="small"
-                                                            {...slotProps?.leftIcon}
-                                                        />
-                                                    ) : (
-                                                        <RightIconSlot
-                                                            fontSize="small"
-                                                            {...slotProps?.rightIcon}
-                                                        />
-                                                    )}
-                                                    <Typography
-                                                        variant="caption"
-                                                        color={pinStatus === 'left' ? 'primary' : 'secondary'}
-                                                    >
-                                                        Pinned
-                                                        {' '}
-                                                        {pinStatus}
-                                                    </Typography>
-                                                </Box>
-                                            ) : null
+                                            pinStatus === 'left' ? 'Pinned left' :
+                                            pinStatus === 'right' ? 'Pinned right' :
+                                            'Not pinned'
                                         }
+                                        slotProps={{
+                                            primary: {
+                                                variant: 'body2',
+                                                fontWeight: pinStatus !== 'none' ? 600 : 400,
+                                            },
+                                            secondary: {
+                                                variant: 'caption',
+                                                color: pinStatus !== 'none' ? 'primary.main' : 'text.secondary',
+                                            },
+                                        }}
                                     />
                                 </ListItem>
                             );
                         })}
                     </List>
-
-                    {/* Quick Actions */}
-                    <Divider />
-                    <Box
-                        sx={{
-                            p: 2,
-                            pt: 1,
-                        }}
-                    >
-                        <Box
-                            sx={{
-                                display: 'flex',
-                                gap: 1,
-                                justifyContent: 'space-between',
-                            }}
-                        >
-                            <Typography
-                                variant="caption"
-                                color="text.secondary"
-                            >
-                                Quick actions:
-                            </Typography>
-                            <Box
-                                sx={{
-                                    display: 'flex',
-                                    gap: 1,
-                                }}
-                            >
-                                <Tooltip title="Unpin all user columns">
-                                    <IconButton
-                                        size="small"
-                                        onClick={handleUnpinAll}
-                                        disabled={totalPinned === 0}
-                                    >
-                                        <UnpinIcon fontSize="small" />
-                                    </IconButton>
-                                </Tooltip>
-                            </Box>
-                        </Box>
-                    </Box>
                 </Box>
             )}
         </MenuDropdown>

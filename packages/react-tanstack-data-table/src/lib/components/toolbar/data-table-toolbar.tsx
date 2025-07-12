@@ -3,6 +3,8 @@ import {
     Toolbar,
     Typography,
     Box,
+    ToolbarProps,
+    SxProps,
 } from '@mui/material';
 import { ReactNode } from 'react';
 
@@ -14,10 +16,9 @@ import { TableExportControl } from './table-export-control';
 import { TableSearchControl } from './table-search-control';
 import { TableSizeControl } from './table-size-control';
 import { useDataTableContext } from '../../contexts/data-table-context';
-import { getSlotComponent } from '../../utils/slot-helpers';
+import { getSlotComponent, mergeSlotProps, extractSlotProps } from '../../utils/slot-helpers';
 
-
-export interface DataTableToolbarProps {
+export interface DataTableToolbarProps extends ToolbarProps {
     extraFilter?: ReactNode;
     enableGlobalFilter?: boolean;
     title?: string;
@@ -28,22 +29,48 @@ export interface DataTableToolbarProps {
     enableColumnFilter?: boolean;
     enableTableSizeControl?: boolean;
     enableColumnPinning?: boolean;
-    // Export event callbacks - allow users to handle export UI externally
+    // Enhanced styling props
+    titleSx?: SxProps;
+    subtitleSx?: SxProps;
+    containerSx?: SxProps;
+    leftSectionSx?: SxProps;
+    rightSectionSx?: SxProps;
+    // Allow full customization of any prop
+    [key: string]: any;
 }
 
-export function DataTableToolbar({
-    extraFilter = null,
-    enableGlobalFilter = true,
-    title,
-    subtitle,
-    enableColumnVisibility = true,
-    enableExport = true,
-    enableReset = true,
-    enableColumnFilter = true,
-    enableTableSizeControl = true,
-    enableColumnPinning = true,
-}: DataTableToolbarProps) {
+export function DataTableToolbar(props: DataTableToolbarProps = {}) {
+    const {
+        extraFilter = null,
+        enableGlobalFilter = true,
+        title,
+        subtitle,
+        enableColumnVisibility = true,
+        enableExport = true,
+        enableReset = true,
+        enableColumnFilter = true,
+        enableTableSizeControl = true,
+        enableColumnPinning = true,
+        titleSx,
+        subtitleSx,
+        containerSx,
+        leftSectionSx,
+        rightSectionSx,
+        ...otherProps
+    } = props;
+
     const { table, slots, slotProps = {} } = useDataTableContext();
+    
+    // Extract slot-specific props with enhanced merging
+    const toolbarSlotProps = extractSlotProps(slotProps, 'toolbar');
+    const searchInputSlotProps = extractSlotProps(slotProps, 'searchInput');
+    const tableSizeControlSlotProps = extractSlotProps(slotProps, 'tableSizeControl');
+    const columnCustomFilterControlSlotProps = extractSlotProps(slotProps, 'columnCustomFilterControl');
+    const columnPinningControlSlotProps = extractSlotProps(slotProps, 'columnPinningControl');
+    const columnVisibilityControlSlotProps = extractSlotProps(slotProps, 'columnVisibilityControl');
+    const resetButtonSlotProps = extractSlotProps(slotProps, 'resetButton');
+    const exportButtonSlotProps = extractSlotProps(slotProps, 'exportButton');
+    
     const ToolbarSlot = getSlotComponent(slots, 'toolbar', Toolbar);
     const TableSearchControlSlot = getSlotComponent(slots, 'searchInput', TableSearchControl);
     const TableSizeControlSlot = getSlotComponent(slots, 'tableSizeControl', TableSizeControl);
@@ -53,18 +80,33 @@ export function DataTableToolbar({
     const ColumnResetControlSlot = getSlotComponent(slots, 'resetButton', ColumnResetControl);
     const TableExportControlSlot = getSlotComponent(slots, 'exportButton', TableExportControl);
 
+    // Merge all props for maximum flexibility
+    const mergedToolbarProps = mergeSlotProps(
+        {
+            // Default toolbar props
+            table,
+        },
+        toolbarSlotProps,
+        otherProps
+    );
+
     return (
         <ToolbarSlot
-            table={table}
-            {...slotProps.toolbar}
+            {...mergedToolbarProps}
         >
-            <Box sx={{ width: '100%' }}>
+            <Box 
+                sx={{ 
+                    width: '100%',
+                    ...containerSx,
+                }}
+            >
                 {(title || subtitle) ? (
                     <Box sx={{ mb: 2 }}>
                         {title ? (
                             <Typography
                                 variant="h6"
                                 component="div"
+                                sx={titleSx}
                             >
                                 {title}
                             </Typography>
@@ -73,6 +115,7 @@ export function DataTableToolbar({
                             <Typography
                                 variant="body2"
                                 color="text.secondary"
+                                sx={subtitleSx}
                             >
                                 {subtitle}
                             </Typography>
@@ -91,25 +134,82 @@ export function DataTableToolbar({
                         direction="row"
                         spacing={0.5}
                         alignItems="center"
-                        sx={{ flex: 1 }}
+                        sx={{ 
+                            flex: 1,
+                            ...leftSectionSx,
+                        }}
                     >
                         {/* Table Actions and Filters */}
+                        {enableTableSizeControl ? (
+                            <TableSizeControlSlot 
+                                {...mergeSlotProps(
+                                    {},
+                                    tableSizeControlSlotProps,
+                                    props.tableSizeControlProps || {}
+                                )}
+                            />
+                        ) : null}
 
-                        {enableTableSizeControl ? <TableSizeControlSlot {...slotProps.tableSizeControl} /> : null}
+                        {enableColumnFilter ? (
+                            <ColumnCustomFilterControlSlot 
+                                {...mergeSlotProps(
+                                    {},
+                                    columnCustomFilterControlSlotProps,
+                                    props.columnFilterProps || {}
+                                )}
+                            />
+                        ) : null}
 
-                        {enableColumnFilter ? <ColumnCustomFilterControlSlot {...slotProps.columnCustomFilterControl} /> : null}
+                        {enableColumnPinning ? (
+                            <ColumnPinningControlSlot 
+                                {...mergeSlotProps(
+                                    {},
+                                    columnPinningControlSlotProps,
+                                    props.columnPinningProps || {}
+                                )}
+                            />
+                        ) : null}
 
-                        {enableColumnPinning ? <ColumnPinningControlSlot {...slotProps.columnPinningControl} /> : null}
+                        {enableColumnVisibility ? (
+                            <ColumnVisibilityControlSlot 
+                                {...mergeSlotProps(
+                                    {},
+                                    columnVisibilityControlSlotProps,
+                                    props.columnVisibilityProps || {}
+                                )}
+                            />
+                        ) : null}
 
-                        {enableColumnVisibility ? <ColumnVisibilityControlSlot {...slotProps.columnVisibilityControl} /> : null}
+                        {enableReset ? (
+                            <ColumnResetControlSlot 
+                                {...mergeSlotProps(
+                                    {},
+                                    resetButtonSlotProps,
+                                    props.resetButtonProps || {}
+                                )}
+                            />
+                        ) : null}
 
-                        {enableReset ? <ColumnResetControlSlot {...slotProps.resetButton} /> : null}
-
-                        {enableExport ? <TableExportControlSlot {...slotProps.exportButton} /> : null}
+                        {enableExport ? (
+                            <TableExportControlSlot 
+                                {...mergeSlotProps(
+                                    {},
+                                    exportButtonSlotProps,
+                                    props.exportButtonProps || {}
+                                )}
+                            />
+                        ) : null}
 
                         {/* Search */}
-                        {enableGlobalFilter ? <TableSearchControlSlot {...slotProps.searchInput} /> : null}
-
+                        {enableGlobalFilter ? (
+                            <TableSearchControlSlot 
+                                {...mergeSlotProps(
+                                    {},
+                                    searchInputSlotProps,
+                                    props.searchInputProps || {}
+                                )}
+                            />
+                        ) : null}
                     </Stack>
 
                     {/* Right Section - Extra Filter and More Menu */}
@@ -117,6 +217,7 @@ export function DataTableToolbar({
                         direction="row"
                         spacing={1}
                         alignItems="center"
+                        sx={rightSectionSx}
                     >
                         {/* Extra Filter */}
                         {extraFilter as any}
