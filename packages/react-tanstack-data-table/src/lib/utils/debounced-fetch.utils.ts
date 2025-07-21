@@ -9,14 +9,12 @@ export function useDebouncedFetch<T extends Record<string, any>>(
 ) {
     const [isLoading, setIsLoading] = useState(false);
     const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const lastFetchParams = useRef<string>('');
 
     const debouncedFetch = useCallback(async (filters: TableFiltersForFetch) => {
         if (!onFetchData) return null;
 
         // Create a unique key for the current fetch parameters
-        const currentParams = JSON.stringify(filters);
-
+        // const currentParams = JSON.stringify(filters);
         // Clear existing timer
         if (debounceTimer.current) {
             clearTimeout(debounceTimer.current);
@@ -24,15 +22,7 @@ export function useDebouncedFetch<T extends Record<string, any>>(
 
         return new Promise<{ data: T[]; total: number } | null>((resolve) => {
             debounceTimer.current = setTimeout(async () => {
-                // Don't fetch if parameters haven't changed
-                if (lastFetchParams.current === currentParams) {
-                    resolve(null);
-                    return;
-                }
-
-                lastFetchParams.current = currentParams;
                 setIsLoading(true);
-
                 try {
                     const result = await onFetchData(filters);
                     resolve(result);

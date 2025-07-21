@@ -37,8 +37,7 @@ export const DataTablePagination = memo((props: DataTablePaginationProps) => {
     const { table } = useDataTableContext();
 
     // Extract slot-specific props with enhanced merging
-    const paginationSlotProps = extractSlotProps(slotProps, 'pagination');
-    const PaginationSlot = getSlotComponent(slots, 'pagination', TablePagination);
+    // const paginationSlotProps = extractSlotProps(slotProps, 'pagination');
 
     // Merge all props for maximum flexibility
     const mergedContainerProps = mergeSlotProps(
@@ -54,7 +53,9 @@ export const DataTablePagination = memo((props: DataTablePaginationProps) => {
         }
     );
 
-    const mergedPaginationProps = mergeSlotProps(
+  
+
+    const mergedPaginationProps:any = mergeSlotProps(
         {
             component: 'div',
             count: totalRow,
@@ -76,7 +77,6 @@ export const DataTablePagination = memo((props: DataTablePaginationProps) => {
             labelDisplayedRows: ({ from, to, count }: { from: number; to: number; count: number }) => 
                 `${from}–${to} of ${count !== -1 ? count : `more than ${to}`}`,
         },
-        paginationSlotProps,
         { ...paginationProps, ...otherProps }
     );
 
@@ -90,7 +90,7 @@ export const DataTablePagination = memo((props: DataTablePaginationProps) => {
                 </Box>
             )}
 
-            <PaginationSlot
+            <TablePagination
                 {...mergedPaginationProps}
             />
         </Box>

@@ -891,7 +891,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                     pageSize: filters.pagination?.pageSize || initialStateConfig.pagination?.pageSize || 10,
                 };
                 const allState = table.getState();
-
+                setPagination(pagination);
                 onDataStateChange?.(allState);
                 fetchData?.({ pagination });
             },

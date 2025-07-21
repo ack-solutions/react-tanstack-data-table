@@ -18,8 +18,8 @@ export function App() {
       <CssBaseline />
       <Container maxWidth="xl" sx={{ py: 4 }}>
         <ServerSideTest />
-        <SimpleLocalExample />
-        <SimpleEnhancedSlotsExample />
+        {/* <SimpleLocalExample />
+        <SimpleEnhancedSlotsExample /> */}
       </Container>
     </ThemeProvider>
   );

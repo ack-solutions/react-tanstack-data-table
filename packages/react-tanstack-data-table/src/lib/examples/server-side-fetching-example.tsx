@@ -76,7 +76,7 @@ export function ServerSideFetchingExample() {
 
     // Simulate server API call with realistic delays and filtering
     const handleFetchData = useCallback(async (filters: Partial<TableFilters>) => {
-        console.log('🔄 Fetching data with filters:', filters);
+        console.log('🔄 handleFetchData', { filters });
         setLoading(true);
         setError(null);
         setLastFetchParams(filters);
@@ -170,13 +170,12 @@ export function ServerSideFetchingExample() {
 
     // Handle selection changes
     const handleSelectionChange = useCallback((selection: SelectionState) => {
-        console.log('🔄 Selection changed:', selection);
         setSelectionInfo(selection);
     }, []);
 
     useEffect(() => {
-        console.log('🔄 Tab changed:', tab);
-        if (tab && tab !== 'all') {
+        if (tab) {
+            console.log('🔄 Refreshing data');
             apiRef.current?.data.refresh();
         }
     }, [tab]);
@@ -528,7 +527,7 @@ export function ServerSideFetchingExample() {
                 initialState={{
                     pagination: {
                         pageIndex: 0,
-                        pageSize: 10,
+                        pageSize: 50,
                     },
                     columnPinning: {
                         left: [DEFAULT_SELECTION_COLUMN_NAME],
@@ -563,6 +562,12 @@ export function ServerSideFetchingExample() {
                 // Empty state
                 emptyMessage="No employees found matching your criteria"
                 skeletonRows={10}
+
+                slotProps={{
+                    pagination: {
+                        rowsPerPageOptions: [5, 10, 20, 50, 100, 200],
+                    },
+                }}
             />
         </Box>
     );
