@@ -2,6 +2,12 @@
 
 A powerful, feature-rich, and highly customizable React data table component built with Material-UI (MUI) and TanStack Table. Perfect for building modern data-intensive applications with advanced table functionality.
 
+## 🚀 Live Demo
+
+**[View Live Demo](https://ajaykhandla.github.io/react-tanstack-data-table/)**
+
+Experience all the features in action with our interactive demo showcasing advanced table functionality, filtering, sorting, pagination, and more.
+
 ## ✨ Features
 
 - 🚀 **High Performance**: Built on TanStack Table for excellent performance with large datasets

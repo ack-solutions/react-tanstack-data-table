@@ -1,6 +1,12 @@
-# NestJS Packages
+# React TanStack Data Table
 
-This repository contains a collection of NestJS packages developed by Ack Solutions. These packages provide additional functionality and utilities for NestJS applications.
+A powerful, feature-rich, and highly customizable React data table component built with Material-UI (MUI) and TanStack Table. Perfect for building modern data-intensive applications with advanced table functionality.
+
+## 🚀 Live Demo
+
+**[View Live Demo](https://ajaykhandla.github.io/react-tanstack-data-table/)**
+
+Experience all the features in action with our interactive demo showcasing advanced table functionality, filtering, sorting, pagination, and more.
 
 ## Legal Disclaimer
 
@@ -13,25 +19,113 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 4. The authors make no representations or warranties about the software's fitness for any particular purpose
 5. Users are responsible for any modifications they make to the software
 
-## Packages
+## ✨ Features
 
-### 2. [@ackplus/react-tanstack-data-table](./packages/react-tanstack-data-table/README.md)
-A companion package for @ackplus/react-tanstack-data-table that handles
+- 🚀 **High Performance**: Built on TanStack Table for excellent performance with large datasets
+- 🎨 **Material Design**: Beautiful UI components using MUI with consistent design system
+- 📱 **Responsive**: Mobile-friendly responsive design with adaptive layouts
+- 🔍 **Advanced Filtering**: Global search, column filters, and filter components
+- 📊 **Multi-Column Sorting**: Powerful sorting with multiple columns support
+- 📄 **Flexible Pagination**: Client-side and server-side pagination options
+- 🎯 **Column Management**: Show/hide, resize, reorder, and pin columns
+- 📤 **Data Export**: Export to CSV/Excel with progress tracking and customization
+- 🖱️ **Row Selection**: Single and multi-row selection with bulk actions
+- ⚡ **Virtualization**: Handle large datasets efficiently with row virtualization
+- 🔄 **Server Integration**: Built-in support for server-side operations
+- 🎛️ **Highly Customizable**: Extensive customization through slots and props
+- 📝 **TypeScript**: Full TypeScript support with comprehensive type definitions
+- 🔌 **Extensible**: Plugin architecture with custom components and hooks
 
-## Installation
-
-You can install these packages using npm or yarn:
+## 📦 Installation
 
 ```bash
-# Install specific package
-npm install  @ackplus/react-tanstack-data-table
+npm install @ackplus/react-tanstack-data-table
+```
 
-
-# Or using yarn
+```bash
 yarn add @ackplus/react-tanstack-data-table
 ```
 
-## Contributing
+```bash
+pnpm add @ackplus/react-tanstack-data-table
+```
+
+## 🔧 Peer Dependencies
+
+Make sure you have the following peer dependencies installed:
+
+```bash
+npm install @emotion/react @emotion/styled @mui/icons-material @mui/material @tanstack/react-table @tanstack/react-virtual react react-dom
+```
+
+## 🚀 Quick Start
+
+```tsx
+import React from 'react';
+import { DataTable } from '@ackplus/react-tanstack-data-table';
+import { createColumnHelper } from '@tanstack/react-table';
+
+interface User {
+  id: number;
+  name: string;
+  email: string;
+  status: 'active' | 'inactive';
+  role: string;
+}
+
+const columnHelper = createColumnHelper<User>();
+
+const columns = [
+  columnHelper.accessor('name', {
+    header: 'Name',
+    size: 150,
+  }),
+  columnHelper.accessor('email', {
+    header: 'Email',
+    size: 200,
+  }),
+  columnHelper.accessor('status', {
+    header: 'Status',
+    cell: ({ getValue }) => (
+      <Chip 
+        label={getValue()} 
+        color={getValue() === 'active' ? 'success' : 'default'} 
+      />
+    ),
+  }),
+  columnHelper.accessor('role', {
+    header: 'Role',
+    size: 120,
+  }),
+];
+
+const data: User[] = [
+  { id: 1, name: 'John Doe', email: 'john@example.com', status: 'active', role: 'Admin' },
+  { id: 2, name: 'Jane Smith', email: 'jane@example.com', status: 'inactive', role: 'User' },
+  // ... more data
+];
+
+function MyDataTable() {
+  return (
+    <DataTable
+      columns={columns}
+      data={data}
+      enableSorting
+      enableGlobalFilter
+      enablePagination
+      enableRowSelection
+      enableColumnVisibility
+      enableExport
+    />
+  );
+}
+```
+
+## 📚 Documentation
+
+For detailed documentation, examples, and API reference, visit the [package documentation](./packages/react-tanstack-data-table/README.md).
+
+## 🤝 Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
