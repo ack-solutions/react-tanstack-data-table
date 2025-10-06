@@ -4,7 +4,7 @@ A powerful, feature-rich, and highly customizable React data table component bui
 
 ## 🚀 Live Demo
 
-**[View Live Demo](https://ajaykhandla.github.io/react-tanstack-data-table/)**
+**[View Live Demo](https://ack-solutions.github.io/react-tanstack-data-table/)**
 
 Experience all the features in action with our interactive demo showcasing advanced table functionality, filtering, sorting, pagination, and more.
 
