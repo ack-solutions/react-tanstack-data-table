@@ -20,7 +20,7 @@ module.exports = {
       compiler: 'babel',
       main: './src/main.tsx',
       index: './src/index.html',
-      baseHref: '/',
+      baseHref: process.env['PUBLIC_URL'] || '/',
       assets: ['./src/favicon.ico', './src/assets'],
       styles: [],
       outputHashing: process.env['NODE_ENV'] === 'production' ? 'all' : 'none',

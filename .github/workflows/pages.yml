@@ -25,6 +25,8 @@ jobs:
           cache: yarn
       - run: yarn install --frozen-lockfile
       - run: yarn nx build example
+        env:
+          PUBLIC_URL: /react-tanstack-data-table/
       - uses: actions/upload-pages-artifact@v3
         with:
           path: apps/dist/example
