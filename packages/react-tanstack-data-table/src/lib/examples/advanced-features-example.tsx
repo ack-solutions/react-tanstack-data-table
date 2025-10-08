@@ -28,7 +28,7 @@ import {
     TrendingDown as TrendingDownIcon,
 } from '@mui/icons-material';
 import { DataTable } from '../components';
-import { DataTableColumn } from '../types';
+import { DataTableColumn, DEFAULT_SELECTION_COLUMN_NAME } from '../types';
 
 // Complex data interface with nested objects
 interface Employee {
@@ -593,6 +593,10 @@ export function AdvancedFeaturesExample() {
                     pagination: {
                         pageIndex: 0,
                         pageSize: 10,
+                    },
+                    columnPinning: {
+                        left: [DEFAULT_SELECTION_COLUMN_NAME],
+                        right: ['actions'],
                     },
                     columnOrder: ['name', 'department.name', 'salary', 'performance.rating', 'skills'],
                 }}

@@ -1428,6 +1428,7 @@ MIT © [ACK Solutions](https://github.com/ack-solutions)
 
 ## 🆘 Support
 
+- 🚀 [Live Demo](https://ack-solutions.github.io/react-tanstack-data-table/) - Interactive examples and playground
 - 📖 [Documentation](https://github.com/ack-solutions/react-tanstack-data-table)
 - 🐛 [Issue Tracker](https://github.com/ack-solutions/react-tanstack-data-table/issues)
 - 💬 [Discussions](https://github.com/ack-solutions/react-tanstack-data-table/discussions)

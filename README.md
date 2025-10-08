@@ -123,7 +123,9 @@ function MyDataTable() {
 
 ## 📚 Documentation
 
-For detailed documentation, examples, and API reference, visit the [package documentation](./packages/react-tanstack-data-table/README.md).
+- **Live Demo**: [View Interactive Demo](https://ack-solutions.github.io/react-tanstack-data-table/)
+- **Package Documentation**: [Detailed API Reference](./packages/react-tanstack-data-table/README.md)
+- **GitHub Repository**: [Source Code & Issues](https://github.com/ack-solutions/react-tanstack-data-table)
 
 ## 🤝 Contributing
 

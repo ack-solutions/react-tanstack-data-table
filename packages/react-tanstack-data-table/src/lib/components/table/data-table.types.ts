@@ -1,7 +1,7 @@
 /**
  * Type definitions for DataTable components
  */
-import { Row, SortingState, ColumnResizeMode, ColumnPinningState, RowData, PaginationState } from '@tanstack/react-table';
+import { Row, SortingState, ColumnResizeMode, ColumnPinningState, RowData, PaginationState, AccessorKeyColumnDef, ColumnDef } from '@tanstack/react-table';
 import { ReactNode } from 'react';
 
 import type { ColumnFilterState, TableFilters, TableState } from '../../types';
@@ -25,7 +25,8 @@ declare module '@tanstack/table-core' {
 
 export interface DataTableProps<T> {
     // Core data props
-    columns: DataTableColumn<T>[];
+    // columns: DataTableColumn<T>[] | AccessorKeyColumnDef <T, string>[];
+    columns: ColumnDef<T, any>[];
     data?: T[];
     totalRow?: number;
     idKey?: keyof T;
