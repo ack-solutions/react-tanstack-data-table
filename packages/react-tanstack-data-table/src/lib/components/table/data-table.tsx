@@ -48,6 +48,7 @@ import {
     createExpandingColumn,
     createSelectionColumn,
 } from '../../utils/special-columns.utils';
+import { cloneDeep } from 'lodash';
 
 
 
@@ -310,6 +311,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     // Callback hooks (grouped together)
     // -------------------------------
     const fetchData = useCallback(async (overrides: Partial<TableState> = {}) => {
+        console.info('fetchData', cloneDeep(overrides), cloneDeep(columnFilter), cloneDeep(sorting), cloneDeep(pagination));
         if (!onFetchData) {
             if (fetchLogger.isLevelEnabled('debug')) {
                 fetchLogger.debug('onFetchData not provided, skipping fetch', { overrides });
@@ -1053,11 +1055,14 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         data: {
             refresh: () => {
                 const filters = table.getState();
+                console.info('filters', cloneDeep(filters));
                 const pagination = {
                     pageIndex: 0,
                     pageSize: filters.pagination?.pageSize || initialStateConfig.pagination?.pageSize || 10,
                 };
+                console.info('pagination', cloneDeep(pagination));
                 const allState = table.getState();
+                console.info('allState', cloneDeep(allState));
                 setPagination(pagination);
                 onDataStateChange?.(allState);
                 fetchData?.({ pagination });
