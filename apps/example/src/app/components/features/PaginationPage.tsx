@@ -1,5 +1,5 @@
 import { Box, Typography, Paper, Alert, Divider, Table, TableBody, TableCell, TableHead, TableRow, Stack, Chip, Button } from '@mui/material';
-import { DataTable, DataTableColumn } from '@ackplus/react-tanstack-data-table';
+import { DataTable, DataTableColumn, createLogger } from '@ackplus/react-tanstack-data-table';
 import { useState, useCallback, useRef, useMemo } from 'react';
 
 interface Product {
@@ -28,6 +28,7 @@ export function PaginationPage() {
   const tableRef = useRef<any>(null);
   const [serverPaginationState, setServerPaginationState] = useState<any>(null);
   const [currentPage, setCurrentPage] = useState(0);
+  const logger = useMemo(() => createLogger('Examples.Pagination'), []);
   
   const sampleData = useMemo(() => generateProducts(100), []);
 
@@ -79,7 +80,9 @@ export function PaginationPage() {
 
   // Server-side fetch handler
   const handleFetchData = useCallback(async (filters: any) => {
-    console.log('Fetching with pagination:', filters.pagination);
+    if (logger.isLevelEnabled('debug')) {
+      logger.debug('Fetching with pagination', filters.pagination);
+    }
     setServerPaginationState(filters.pagination);
     setCurrentPage(filters.pagination?.pageIndex || 0);
     
@@ -92,12 +95,22 @@ export function PaginationPage() {
     const endIndex = startIndex + pageSize;
     
     const paginatedData = sampleData.slice(startIndex, endIndex);
-    
-    return { 
+    const result = { 
       data: paginatedData, 
       total: sampleData.length 
     };
-  }, [sampleData]);
+    
+    if (logger.isLevelEnabled('debug')) {
+      logger.debug('Fetch resolved', {
+        pageIndex,
+        pageSize,
+        returnedRows: result.data.length,
+        totalRows: result.total,
+      });
+    }
+
+    return result;
+  }, [sampleData, logger]);
 
   return (
     <Box sx={{ p: 3 }}>
@@ -117,6 +130,9 @@ export function PaginationPage() {
         <Typography variant="body2">
           Pagination is enabled by default. The table automatically divides data into pages 
           with configurable page sizes and navigation controls.
+        </Typography>
+        <Typography variant="body2" sx={{ mt: 1 }}>
+          Toggle <strong>Debug logs</strong> in the header to inspect pagination requests and server responses in the console.
         </Typography>
       </Alert>
 

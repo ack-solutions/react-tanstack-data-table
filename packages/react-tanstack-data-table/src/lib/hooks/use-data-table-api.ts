@@ -1,10 +1,11 @@
 import { ColumnOrderState, ColumnPinningState, SortingState, Table } from '@tanstack/react-table';
-import { Ref, useCallback, useImperativeHandle } from 'react';
+import { Ref, useCallback, useImperativeHandle, useMemo } from 'react';
 
 import { ColumnFilterState,  TableFilters,  TableState } from '../types';
 import { DataTableApi } from '../types/data-table-api';
 import { exportClientData, exportServerData } from '../utils/export-utils';
 import { SelectionState } from '../features';
+import { createLogger, DataTableLoggingOptions } from '../utils/logger';
 // import { 
 //     toggleSelectAll as helperToggleSelectAll,
 //     selectAll as helperSelectAll,
@@ -49,6 +50,7 @@ interface UseDataTableApiProps<T> {
     setExportController?: (controller: AbortController | null) => void;
     isExporting?: boolean;
     dataMode?: 'client' | 'server';
+    logging?: boolean | DataTableLoggingOptions;
 }
 
 export function useDataTableApi<T extends Record<string, any>>(
@@ -79,7 +81,13 @@ export function useDataTableApi<T extends Record<string, any>>(
         setExportController,
         isExporting,
         dataMode = 'client',
+        logging,
     } = props;
+
+    const logger = useMemo(() => createLogger('DataTableApi', logging), [logging]);
+    const fetchLogger = useMemo(() => logger.child('fetch'), [logger]);
+    const paginationLogger = useMemo(() => logger.child('pagination'), [logger]);
+    const stateLogger = useMemo(() => logger.child('state'), [logger]);
 
     // Note: Custom selection is now handled by TanStack Table CustomSelectionFeature
 
@@ -141,6 +149,9 @@ export function useDataTableApi<T extends Record<string, any>>(
                 newOrder.splice(toIndex, 0, columnId);
 
                 table.setColumnOrder(newOrder);
+                if (stateLogger.isLevelEnabled('debug')) {
+                    stateLogger.debug('Column order updated', `${columnId} from ${currentIndex} to ${toIndex}`);
+                }
             },
             resetColumnOrder: () => {
                 const initialOrder = enhancedColumns.map((col, index) => {
@@ -152,6 +163,9 @@ export function useDataTableApi<T extends Record<string, any>>(
                     return `column_${index}`;
                 });
                 table.setColumnOrder(initialOrder);
+                if (stateLogger.isLevelEnabled('debug')) {
+                    stateLogger.debug('Column order reset', initialOrder);
+                }
             },
         },
 
@@ -167,6 +181,9 @@ export function useDataTableApi<T extends Record<string, any>>(
                 newPinning.left = [...(newPinning.left || []).filter(id => id !== columnId), columnId];
 
                 table.setColumnPinning(newPinning);
+                if (stateLogger.isLevelEnabled('debug')) {
+                    stateLogger.debug('Column pinned left', `${columnId}`);
+                }
             },
             pinColumnRight: (columnId: string) => {
                 const currentPinning = table.getState().columnPinning;
@@ -178,6 +195,9 @@ export function useDataTableApi<T extends Record<string, any>>(
                 newPinning.right = [...(newPinning.right || []).filter(id => id !== columnId), columnId];
 
                 table.setColumnPinning(newPinning);
+                if (stateLogger.isLevelEnabled('debug')) {
+                    stateLogger.debug('Column pinned right', `${columnId}`);
+                }
             },
             unpinColumn: (columnId: string) => {
                 const currentPinning = table.getState().columnPinning;
@@ -185,7 +205,6 @@ export function useDataTableApi<T extends Record<string, any>>(
                     left: (currentPinning.left || []).filter(id => id !== columnId),
                     right: (currentPinning.right || []).filter(id => id !== columnId),
                 };
-
                 table.setColumnPinning(newPinning);
             },
             setPinning: (pinning: ColumnPinningState) => {
@@ -222,12 +241,21 @@ export function useDataTableApi<T extends Record<string, any>>(
         filtering: {
             setGlobalFilter: (filter: string) => {
                 table.setGlobalFilter(filter);
+                if (stateLogger.isLevelEnabled('debug')) {
+                    stateLogger.debug('Global filter set', `${filter}`);
+                }
             },
             clearGlobalFilter: () => {
                 table.setGlobalFilter('');
+                if (stateLogger.isLevelEnabled('debug')) {
+                    stateLogger.debug('Global filter cleared');
+                }
             },
             setColumnFilters: (filters: ColumnFilterState) => {
                 handleColumnFilterStateChange(filters);
+                if (stateLogger.isLevelEnabled('debug')) {
+                    stateLogger.debug('Column filters set', `${filters}`);
+                }
             },
             addColumnFilter: (columnId: string, operator: string, value: any) => {
                 const newFilter = {
@@ -246,6 +274,9 @@ export function useDataTableApi<T extends Record<string, any>>(
                     pendingFilters: columnFilter.pendingFilters || [],
                     pendingLogic: columnFilter.pendingLogic || 'AND',
                 });
+                if (stateLogger.isLevelEnabled('debug')) {
+                    stateLogger.debug(`Column filter added ${columnId} ${operator} ${value}`, newFilters);
+                }
             },
             removeColumnFilter: (filterId: string) => {
                 const columnFilter = table.getState().columnFilter;
@@ -257,6 +288,9 @@ export function useDataTableApi<T extends Record<string, any>>(
                     pendingFilters: columnFilter.pendingFilters || [],
                     pendingLogic: columnFilter.pendingLogic || 'AND',
                 });
+                if (stateLogger.isLevelEnabled('debug')) {
+                    stateLogger.debug(`Column filter removed ${filterId}`, newFilters);
+                }
             },
             clearAllFilters: () => {
                 table.setGlobalFilter('');
@@ -266,6 +300,9 @@ export function useDataTableApi<T extends Record<string, any>>(
                     pendingFilters: [],
                     pendingLogic: 'AND',
                 });
+                if (stateLogger.isLevelEnabled('debug')) {
+                    stateLogger.debug('Filters reset');
+                }
             },
             resetFilters: () => {
                 table.resetGlobalFilter();
@@ -282,6 +319,9 @@ export function useDataTableApi<T extends Record<string, any>>(
         sorting: {
             setSorting: (sortingState: SortingState) => {
                 table.setSorting(sortingState);
+                if (stateLogger.isLevelEnabled('debug')) {
+                    stateLogger.debug('Sorting set', `${sortingState}`);
+                }
             },
             sortColumn: (columnId: string, direction: 'asc' | 'desc' | false) => {
                 const column = table.getColumn(columnId);
@@ -305,23 +345,41 @@ export function useDataTableApi<T extends Record<string, any>>(
         pagination: {
             goToPage: (pageIndex: number) => {
                 table.setPageIndex(pageIndex);
+                if (paginationLogger.isLevelEnabled('debug')) {
+                    paginationLogger.debug('Page index set', `${pageIndex}`);
+                }
             },
             nextPage: () => {
                 table.nextPage();
+                if (paginationLogger.isLevelEnabled('debug')) {
+                    paginationLogger.debug('Next page');
+                }
             },
             previousPage: () => {
                 table.previousPage();
+                if (paginationLogger.isLevelEnabled('debug')) {
+                    paginationLogger.debug('Previous page');
+                }
             },
             setPageSize: (pageSize: number) => {
                 table.setPageSize(pageSize);
+                if (paginationLogger.isLevelEnabled('debug')) {
+                    paginationLogger.debug('Page size set', `${pageSize}`);
+                }
             },
             goToFirstPage: () => {
                 table.setPageIndex(0);
+                if (paginationLogger.isLevelEnabled('debug')) {
+                    paginationLogger.debug('Page index set to 0');
+                }
             },
             goToLastPage: () => {
                 const pageCount = table.getPageCount();
                 if (pageCount > 0) {
                     table.setPageIndex(pageCount - 1);
+                }
+                if (paginationLogger.isLevelEnabled('debug')) {
+                    paginationLogger.debug('Page index set to last page', `${pageCount - 1}`);
                 }
             },
         },
@@ -352,6 +410,9 @@ export function useDataTableApi<T extends Record<string, any>>(
 
                 onDataStateChange?.(allState);
                 onFetchData?.(filters);
+                if (fetchLogger.isLevelEnabled('debug')) {
+                    fetchLogger.debug('Data refreshed', filters);
+                }
             },
             reload: () => {
                 const filters = getTableFilters();
@@ -359,6 +420,9 @@ export function useDataTableApi<T extends Record<string, any>>(
 
                 onDataStateChange?.(allState);
                 onFetchData?.(filters);
+                if (fetchLogger.isLevelEnabled('debug')) {
+                    fetchLogger.debug('Data reloaded', filters);
+                }
             },
             // Data CRUD operations
             getAllData: () => {
@@ -378,6 +442,9 @@ export function useDataTableApi<T extends Record<string, any>>(
                     }
                     : row.original);
                 onDataChange?.(newData || []);
+                if (fetchLogger.isLevelEnabled('debug')) {
+                    fetchLogger.debug('Row updated', `${rowId}`, updates);
+                }
             },
             updateRowByIndex: (index: number, updates: Partial<T>) => {
                 const newData = table.getRowModel().rows?.map(row => row.original);
@@ -397,10 +464,16 @@ export function useDataTableApi<T extends Record<string, any>>(
                     newData.push(newRow);
                 }
                 onDataChange(newData || []);
+                if (stateLogger.isLevelEnabled('debug')) {
+                    stateLogger.debug('Row inserted', `${newRow}`, index);
+                }
             },
             deleteRow: (rowId: string) => {
                 const newData = (table.getRowModel().rows || [])?.filter(row => String(row.original[idKey]) !== rowId);
                 onDataChange?.(newData?.map(row => row.original) || []);
+                if (stateLogger.isLevelEnabled('debug')) {
+                    stateLogger.debug('Row deleted', `${rowId}`);
+                }
             },
             deleteRowByIndex: (index: number) => {
                 const newData = (table.getRowModel().rows || [])?.map(row => row.original);
@@ -414,6 +487,9 @@ export function useDataTableApi<T extends Record<string, any>>(
                 onDataChange(newData?.map(row => row.original) || []);
                 // Clear selection after deletion
                 table.resetRowSelection();
+                if (stateLogger.isLevelEnabled('debug')) {
+                    stateLogger.debug('Selected rows deleted', selectedRowIds);
+                }
             },
             replaceAllData: (newData: T[]) => {
                 onDataChange?.(newData);
@@ -431,6 +507,9 @@ export function useDataTableApi<T extends Record<string, any>>(
                     } : row.original;
                 });
                 onDataChange(newData || []);
+                if (stateLogger.isLevelEnabled('debug')) {
+                    stateLogger.debug('Multiple rows updated', updates);
+                }
             },
             insertMultipleRows: (newRows: T[], startIndex?: number) => {
                 const newData = (table.getRowModel().rows || [])?.map(row => row.original);
@@ -440,11 +519,17 @@ export function useDataTableApi<T extends Record<string, any>>(
                     newData.push(...newRows);
                 }
                 onDataChange?.(newData);
+                if (stateLogger.isLevelEnabled('debug')) {
+                    stateLogger.debug('Multiple rows inserted', newRows);
+                }
             },
             deleteMultipleRows: (rowIds: string[]) => {
                 const idsToDelete = new Set(rowIds);
                 const newData = (table.getRowModel().rows || [])?.filter(row => !idsToDelete.has(String(row.original[idKey])))?.map(row => row.original);
                 onDataChange(newData);
+                if (stateLogger.isLevelEnabled('debug')) {
+                    stateLogger.debug('Multiple rows deleted', rowIds);
+                }
             },
 
             // Field-specific updates
@@ -590,6 +675,9 @@ export function useDataTableApi<T extends Record<string, any>>(
                             sorting: table.getState().sorting,
                             pagination: table.getState().pagination,
                         };
+                        if (stateLogger.isLevelEnabled('debug')) {
+                            stateLogger.debug('Server export CSV', { currentFilters });
+                        }
                         await exportServerData(table, {
                             format: 'csv',
                             filename,

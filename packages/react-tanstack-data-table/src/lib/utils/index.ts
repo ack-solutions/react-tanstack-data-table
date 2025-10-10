@@ -22,3 +22,6 @@ export * from './debounced-fetch.utils';
 
 // Slot helper utilities
 export * from './slot-helpers';
+
+// Logging utilities
+export * from './logger';

@@ -9,6 +9,7 @@ import { DataTableColumn } from '../../types';
 import { DataTableSlots, PartialSlotProps } from '../../types/slots.types';
 import { DataTableSize } from '../../utils/table-helpers';
 import { SelectionState } from '../../features';
+import { DataTableLoggingOptions } from '../../utils/logger';
 
 // Selection mode type
 export type SelectMode = 'page' | 'all';
@@ -132,6 +133,9 @@ export interface DataTableProps<T> {
     // Slots for component customization (similar to MUI DataGrid)
     slots?: Partial<DataTableSlots<T>>;
     slotProps?: PartialSlotProps<T>;
+
+    // Logging configuration
+    logging?: boolean | DataTableLoggingOptions;
 }
 
 // All interfaces moved to centralized types folder:

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useEffect } from 'react';
+import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import {
     Box,
     Typography,
@@ -18,7 +18,7 @@ import {
     TextField,
     Grid,
 } from '@mui/material';
-import { DataTable, DEFAULT_EXPANDING_COLUMN_NAME, DEFAULT_SELECTION_COLUMN_NAME } from '@ackplus/react-tanstack-data-table';
+import { DataTable, DEFAULT_EXPANDING_COLUMN_NAME, DEFAULT_SELECTION_COLUMN_NAME, createLogger, DataTableLoggingOptions } from '@ackplus/react-tanstack-data-table';
 import { DataTableApi, DataTableColumn } from '@ackplus/react-tanstack-data-table';
 import { TableFilters } from '@ackplus/react-tanstack-data-table';
 import { SelectionState } from '@ackplus/react-tanstack-data-table';
@@ -71,9 +71,22 @@ export function ImprovedServerSideExample() {
     // API ref for programmatic control
     const apiRef = useRef<DataTableApi<Employee>>(null);
 
+    const logger = useMemo(() => createLogger('Examples.ImprovedServerSide'), []);
+    const fetchLogger = useMemo(() => logger.child('fetch'), [logger]);
+    const paginationLogger = useMemo(() => logger.child('pagination'), [logger]);
+    const selectionLogger = useMemo(() => logger.child('selection'), [logger]);
+    const tableLoggingConfig = useMemo(() => ({
+        enabled: true,
+        level: 'debug',
+        prefix: 'ImprovedServerSide',
+        includeTimestamp: true,
+    }), []);
+
     // Simulate server API call with proper filtering
     const handleFetchData = useCallback(async (filters: Partial<TableFilters>) => {
-        console.log('🔄 handleFetchData', { filters, statusFilter, departmentFilter, searchTerm });
+        if (fetchLogger.isLevelEnabled('debug')) {
+            fetchLogger.debug('Request received', { filters, statusFilter, departmentFilter, searchTerm });
+        }
         setLoading(true);
         setError(null);
         setLastFetchParams(filters);
@@ -89,9 +102,6 @@ export function ImprovedServerSideExample() {
             if (statusFilter !== 'all') {
                 filteredData = filteredData.filter(employee => employee.status === statusFilter);
             }
-
-            console.log('🔄 statusFilter', statusFilter);
-            console.log('🔄 filteredData', filteredData);
 
             // Apply department filter
             if (departmentFilter !== 'all') {
@@ -157,20 +167,36 @@ export function ImprovedServerSideExample() {
             const endIndex = startIndex + pageSize;
             const paginatedData = filteredData.slice(startIndex, endIndex);
 
-            return {
+            const result = {
                 data: paginatedData,
                 total: filteredData.length,
             };
+
+            if (fetchLogger.isLevelEnabled('debug')) {
+                fetchLogger.debug('Response ready', {
+                    ...filters,
+                    pageIndex,
+                    pageSize,
+                    returnedRows: paginatedData.length,
+                    totalRows: filteredData.length,
+                });
+            }
+
+            return result;
         } catch (err) {
+            fetchLogger.error('Fetch failed', err);
             setError(err instanceof Error ? err.message : 'An error occurred');
             return { data: [], total: 0 };
         } finally {
             setLoading(false);
         }
-    }, [statusFilter, departmentFilter]);
+    }, [statusFilter, departmentFilter, fetchLogger, searchTerm]);
 
     // Handle selection changes
     const handleSelectionChange = useCallback((selection: SelectionState) => {
+        if (selectionLogger.isLevelEnabled('debug')) {
+            selectionLogger.debug('Selection updated', selection);
+        }
         setSelectionInfo(selection);
     }, []);
 
@@ -183,8 +209,7 @@ export function ImprovedServerSideExample() {
 
     // Handle server export
     const handleServerExport = useCallback(async (filters: any, selection: SelectionState) => {
-        console.log('📤 Exporting data with filters:', filters);
-        console.log('📤 Export selection:', selection);
+        logger.info('Exporting data', { filters, selection });
 
         // Simulate export API call
         await new Promise(resolve => setTimeout(resolve, 1000));
@@ -482,6 +507,11 @@ export function ImprovedServerSideExample() {
                 onFetchData={handleFetchData}
                 onSelectionChange={handleSelectionChange}
                 onServerExport={handleServerExport}
+                onPaginationChange={(pagination) => {
+                    if (paginationLogger.isLevelEnabled('debug')) {
+                        paginationLogger.debug('Pagination change', pagination);
+                    }
+                }}
                 enableRowSelection
                 enableMultiRowSelection
                 enableColumnVisibility
@@ -520,8 +550,13 @@ export function ImprovedServerSideExample() {
                     },
                 }}
                 loading={loading}
+                logging={{
+                    enabled: true,
+                    level: 'debug',
+                    logger: { ...console, debug: console.log },
+                }}
+
             />
         </Box>
     );
 }
-

@@ -24,6 +24,7 @@ Experience all the features in action with our interactive demo showcasing advan
 - 🎛️ **Highly Customizable**: Extensive customization through slots and props
 - 📝 **TypeScript**: Full TypeScript support with comprehensive type definitions
 - 🔌 **Extensible**: Plugin architecture with custom components and hooks
+- 🛠️ **Debug Logging**: Configurable console instrumentation with global or per-table controls
 
 ## 📦 Installation
 
@@ -1364,6 +1365,34 @@ const handleClick = useCallback(() => {
     }}
 />
 ```
+
+### Logging & Debugging
+
+Use the built-in logger to trace pagination, server calls, and state transitions without sprinkling `console.log` statements throughout your app.
+
+```tsx
+import { DataTable, configureDataTableLogging } from '@ackplus/react-tanstack-data-table';
+
+configureDataTableLogging({
+    enabled: true,
+    level: 'debug',
+    includeTimestamp: true,
+});
+
+<DataTable
+    columns={columns}
+    data={rows}
+    logging={{
+        enabled: true,
+        level: 'info',
+        prefix: 'OrdersTable',
+    }}
+/>
+```
+
+- Call `configureDataTableLogging` once (for example in your app bootstrap) to set global defaults.
+- Use the `logging` prop to override settings per table or disable instrumentation for specific instances.
+- When `logging` is omitted, instances inherit the global configuration.
 
 ### Troubleshooting
 

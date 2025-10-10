@@ -1675,6 +1675,81 @@ const MyCustomSearch = () => {
         </AccordionDetails>
       </Accordion>
 
+      <Divider sx={{ my: 3 }} />
+
+      <Typography variant="h5" gutterBottom sx={{ fontWeight: 600, mb: 2 }}>
+        Diagnostics & Logging
+      </Typography>
+
+      <Accordion sx={{ mt: 2 }}>
+        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+          <Typography variant="h6" sx={{ fontWeight: 600 }}>
+            Debugging Utilities
+          </Typography>
+        </AccordionSummary>
+        <AccordionDetails>
+          <Table size="small">
+            <TableHead>
+              <TableRow>
+                <TableCell sx={{ fontWeight: 700, width: '25%' }}>Prop</TableCell>
+                <TableCell sx={{ fontWeight: 700, width: '25%' }}>Type</TableCell>
+                <TableCell sx={{ fontWeight: 700, width: '15%' }}>Default</TableCell>
+                <TableCell sx={{ fontWeight: 700, width: '35%' }}>Description</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              <TableRow>
+                <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>logging</TableCell>
+                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>
+                  {'boolean | DataTableLoggingOptions'}
+                </TableCell>
+                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13 }}>
+                  inherit global
+                </TableCell>
+                <TableCell>
+                  Enable DataTable debug output. Pass <code>true</code> to mirror global logging config or provide a custom configuration object.
+                </TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+
+          <Box sx={{ mt: 3, p: 2, backgroundColor: 'grey.50', borderRadius: 1 }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+              ⚙️ Usage
+            </Typography>
+            <Box
+              component="pre"
+              sx={{
+                backgroundColor: '#fff',
+                color: '#333',
+                borderRadius: 1,
+                p: 2,
+                fontFamily: 'Menlo, Consolas, Monaco, "Courier New", monospace',
+                fontSize: 13,
+                overflowX: 'auto',
+              }}
+            >
+{`configureDataTableLogging({
+  enabled: true,
+  level: 'debug',
+  includeTimestamp: true,
+});
+
+<DataTable
+  columns={columns}
+  data={rows}
+  logging={{
+    enabled: true,
+    level: 'info',
+    prefix: 'OrdersTable',
+  }}
+/>
+`}
+            </Box>
+          </Box>
+        </AccordionDetails>
+      </Accordion>
+
       <Paper elevation={1} sx={{ p: 3, mt: 4 }}>
         <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
           📚 More Documentation

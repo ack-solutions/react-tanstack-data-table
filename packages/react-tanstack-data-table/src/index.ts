@@ -47,6 +47,7 @@ export type { BulkActionsToolbarProps } from './lib/components/toolbar';
 export * from './lib/utils/styling-helpers';
 export * from './lib/utils/column-helpers';
 export * from './lib/utils/table-helpers';
+export * from './lib/utils/logger';
 
 // Custom hooks
 export * from './lib/hooks';

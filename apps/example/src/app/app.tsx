@@ -1,12 +1,8 @@
 import { useState, useEffect } from 'react';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import {
-  Container,
   Typography,
   Box,
-  Stack,
-  Chip,
   AppBar,
   Toolbar,
   Drawer,
@@ -16,7 +12,10 @@ import {
   ListItemText,
   Divider,
   IconButton,
+  FormControlLabel,
+  Switch,
   useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import HomeIcon from '@mui/icons-material/Home';
@@ -44,6 +43,8 @@ import { VirtualizationPage } from './components/features/VirtualizationPage';
 import { PinningPage } from './components/features/PinningPage';
 import { ExpansionPage } from './components/features/ExpansionPage';
 import { DataTablePropsPage } from './components/features/DataTablePropsPage';
+import { ThemeProvider } from '../theme/theme-provider';
+import { configureDataTableLogging } from '@ackplus/react-tanstack-data-table';
 
 const drawerWidth = 280;
 
@@ -66,31 +67,37 @@ const navigationItems = [
   { id: 'api', label: 'API Methods', icon: ApiIcon, section: 'API Reference' },
 ];
 
-const theme = createTheme({
-  palette: {
-    mode: 'light',
-    primary: {
-      main: '#1976d2',
-    },
-    secondary: {
-      main: '#dc004e',
-    },
-  },
-  components: {
-    MuiDrawer: {
-      styleOverrides: {
-        paper: {
-          backgroundColor: '#f8f9fa',
-          borderRight: '1px solid #e0e0e0',
-        },
-      },
-    },
-  },
-});
 
 export function App() {
+  const theme = useTheme();
   const [mobileOpen, setMobileOpen] = useState(false);
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const [loggingEnabled, setLoggingEnabled] = useState(() => {
+    if (typeof window === 'undefined') {
+      return false;
+    }
+    try {
+      return window.localStorage.getItem('datatable-logging') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  useEffect(() => {
+    configureDataTableLogging({
+      enabled: loggingEnabled,
+      level: loggingEnabled ? 'debug' : 'warn',
+      includeTimestamp: loggingEnabled,
+    });
+
+    if (typeof window !== 'undefined') {
+      try {
+        window.localStorage.setItem('datatable-logging', loggingEnabled ? 'true' : 'false');
+      } catch {
+        // Ignore storage errors (e.g. private browsing)
+      }
+    }
+  }, [loggingEnabled]);
 
   // Get initial section from URL query params
   const getInitialSection = () => {
@@ -187,7 +194,7 @@ export function App() {
   }, {} as Record<string, typeof navigationItems>);
 
   return (
-    <ThemeProvider theme={theme}>
+    <ThemeProvider>
       <CssBaseline />
       <Box sx={{ display: 'flex', flexDirection: 'column', height: 1, width: 1 }}>
         <AppBar
@@ -211,6 +218,25 @@ export function App() {
             <Typography variant="h6" noWrap component="div">
               React TanStack Data Table
             </Typography>
+            <Box sx={{ flexGrow: 1 }} />
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={loggingEnabled}
+                  onChange={(_, value) => setLoggingEnabled(value)}
+                  color="default"
+                />
+              }
+              label="Debug logs"
+              sx={{
+                ml: 2,
+                color: 'inherit',
+                '& .MuiFormControlLabel-label': {
+                  fontSize: 14,
+                  color: 'inherit',
+                },
+              }}
+            />
           </Toolbar>
         </AppBar>
 
