@@ -200,8 +200,13 @@ export function ImprovedServerSideExample() {
         setSelectionInfo(selection);
     }, []);
 
-    // Refresh data when filters change
+    // Refresh data when filters change (skip on initial mount)
+    const isInitialMount = useRef(true);
     useEffect(() => {
+        if (isInitialMount.current) {
+            isInitialMount.current = false;
+            return; // Skip on first mount
+        }
         if (apiRef.current) {
             apiRef.current.data.refresh();
         }

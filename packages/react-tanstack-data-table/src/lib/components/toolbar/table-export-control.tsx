@@ -1,4 +1,5 @@
 import { CloudDownloadOutlined } from '@mui/icons-material';
+import React from 'react';
 import {
     IconButton,
     Tooltip,
@@ -15,7 +16,6 @@ import { MenuDropdown } from '../droupdown/menu-dropdown';
 import { useDataTableContext } from '../../contexts/data-table-context';
 import { ExcelIcon, CsvIcon } from '../../icons';
 import { TableFilters } from '../../types';
-import { exportClientData, exportServerData } from '../../utils/export-utils';
 import { getSlotComponent, mergeSlotProps, extractSlotProps } from '../../utils/slot-helpers';
 import { SelectionState } from '../../features';
 
@@ -49,27 +49,16 @@ export function TableExportControl(props: TableExportControlProps = {}) {
     } = props;
 
     const {
-        table,
         apiRef,
         slots,
         slotProps,
-        dataMode,
         isExporting,
-        onCancelExport,
         // Export callbacks from context (DataTable props)
         exportFilename: contextExportFilename,
-        onServerExport: contextOnServerExport,
-        onExportProgress: contextOnExportProgress,
-        onExportComplete: contextOnExportComplete,
-        onExportError: contextOnExportError,
     } = useDataTableContext();
 
     // Use props if provided, otherwise fall back to context values
     const exportFilename = propsExportFilename || contextExportFilename || 'export';
-    const onServerExport = propsOnServerExport || contextOnServerExport;
-    const onExportProgress = propsOnExportProgress || contextOnExportProgress;
-    const onExportComplete = propsOnExportComplete || contextOnExportComplete;
-    const onExportError = propsOnExportError || contextOnExportError;
 
     // Extract slot-specific props with enhanced merging
     const exportIconSlotProps = extractSlotProps(slotProps, 'exportIcon');

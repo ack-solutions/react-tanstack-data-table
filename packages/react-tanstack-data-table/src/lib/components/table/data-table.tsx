@@ -183,9 +183,9 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
 }: DataTableProps<T>, ref: React.Ref<DataTableApi<T>>) {
     // Convert mode-based props to boolean flags for internal use
     const isServerMode = dataMode === 'server';
-   const isServerPagination = paginationMode === 'server' || isServerMode;
-   const isServerFiltering = filterMode === 'server' || isServerMode;
-   const isServerSorting = sortingMode === 'server' || isServerMode;
+    const isServerPagination = paginationMode === 'server' || isServerMode;
+    const isServerFiltering = filterMode === 'server' || isServerMode;
+    const isServerSorting = sortingMode === 'server' || isServerMode;
 
     const logger = useMemo(() => createLogger('DataTable', logging), [logging]);
     const fetchLogger = useMemo(() => logger.child('fetch'), [logger]);
@@ -437,9 +437,9 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
 
         if (isServerMode || isServerSorting) {
             const pagination = resetPageToFirst();
-             if (stateLogger.isLevelEnabled('debug')) {
-                 stateLogger.debug('Sorting change triggered server fetch', { pagination, sorting: newSorting });
-             }
+            if (stateLogger.isLevelEnabled('debug')) {
+                stateLogger.debug('Sorting change triggered server fetch', { pagination, sorting: newSorting });
+            }
             tableStateChange({ sorting: newSorting, pagination });
             fetchData({
                 sorting: newSorting,
@@ -728,10 +728,18 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     // -------------------------------
     useEffect(() => {
         if (initialLoadData && onFetchData) {
+            if (fetchLogger.isLevelEnabled('info')) {
+                fetchLogger.info('Initial data load triggered', { initialLoadData });
+            }
             fetchData();
+        } else if (fetchLogger.isLevelEnabled('debug')) {
+            fetchLogger.debug('Skipping initial data load', {
+                initialLoadData,
+                hasOnFetchData: !!onFetchData
+            });
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [initialLoadData]);
+    }, []);
 
     useEffect(() => {
         if (enableColumnDragging && columnOrder.length === 0) {
@@ -779,9 +787,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     //     logging,
     // }, internalApiRef);
 
-    useImperativeHandle(ref, () => internalApiRef.current!, []);
-
-    useImperativeHandle(ref, () => ({
+    const dataTableApi = useMemo(() => ({
         table: {
             getTable: () => table,
         },
@@ -963,7 +969,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                     pendingLogic: 'AND',
                 });
                 if (stateLogger.isLevelEnabled('debug')) {
-                    stateLogger.debug('Resetting filters' );
+                    stateLogger.debug('Resetting filters');
                 }
             },
         },
@@ -1311,7 +1317,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
 
         // Simplified Export
         export: {
-            exportCSV: async (options = {}) => {
+            exportCSV: async (options: any = {}) => {
                 const { filename = exportFilename, } = options;
 
                 try {
@@ -1362,7 +1368,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                     setExportController?.(null);
                 }
             },
-            exportExcel: async (options = {}) => {
+            exportExcel: async (options: any = {}) => {
                 const { filename = exportFilename } = options;
 
                 try {
@@ -1504,6 +1510,10 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         onSelectionChange,
         // Note: custom selection removed from dependency array
     ]);
+
+    internalApiRef.current = dataTableApi;
+
+    useImperativeHandle(ref, () => dataTableApi, [dataTableApi]);
 
 
 
