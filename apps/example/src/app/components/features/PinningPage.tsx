@@ -1,6 +1,7 @@
 import { Box, Typography, Paper, Alert, Divider, Table, TableBody, TableCell, TableHead, TableRow, Stack, Chip } from '@mui/material';
 import { DataTable, DataTableColumn, DEFAULT_SELECTION_COLUMN_NAME, DEFAULT_EXPANDING_COLUMN_NAME } from '@ackplus/react-tanstack-data-table';
 import { useRef } from 'react';
+import { FeatureLayout } from './common';
 
 interface Employee {
   id: number;
@@ -86,16 +87,10 @@ export function PinningPage() {
   ];
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h3" gutterBottom sx={{ fontWeight: 700, mb: 2 }}>
-        Column Pinning
-      </Typography>
-      
-      <Typography variant="body1" color="text.secondary" paragraph>
-        Pin columns to the left or right side of the table to keep them visible while scrolling horizontally.
-        Perfect for keeping key columns like names or actions always in view.
-      </Typography>
-
+    <FeatureLayout
+      title="Column Pinning"
+      description="Pin columns to the left or right side of the table to keep them visible while scrolling horizontally. Perfect for keeping key columns like names or actions always in view."
+    >
       <Alert severity="info" sx={{ mb: 4 }}>
         <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
           Sticky Columns
@@ -273,7 +268,7 @@ export function PinningPage() {
 
         <Box sx={{ mt: 3, p: 2, backgroundColor: 'grey.50', borderRadius: 1 }}>
           <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-            💡 Example: Pin Special Columns
+            Insight: Example: Pin Special Columns
           </Typography>
           <Box
             component="pre"
@@ -597,7 +592,7 @@ tableRef.current?.columnPinning.resetColumnPinning();
         <Stack spacing={2}>
           <Box>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-              ✅ Pin Important Columns
+              Tip: Pin Important Columns
             </Typography>
             <Typography variant="body2" color="text.secondary">
               Pin essential columns like ID, name, or primary identifiers to the left. Pin action columns to the right.
@@ -605,7 +600,7 @@ tableRef.current?.columnPinning.resetColumnPinning();
           </Box>
           <Box>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-              ✅ Use Special Column Constants
+              Tip: Use Special Column Constants
             </Typography>
             <Typography variant="body2" color="text.secondary">
               Always use <code>DEFAULT_SELECTION_COLUMN_NAME</code> and <code>DEFAULT_EXPANDING_COLUMN_NAME</code> 
@@ -614,7 +609,7 @@ tableRef.current?.columnPinning.resetColumnPinning();
           </Box>
           <Box>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-              ✅ Limit Pinned Columns
+              Tip: Limit Pinned Columns
             </Typography>
             <Typography variant="body2" color="text.secondary">
               Don't pin too many columns as it reduces scrollable space. Typically 2-3 columns on each side is optimal.
@@ -622,7 +617,7 @@ tableRef.current?.columnPinning.resetColumnPinning();
           </Box>
           <Box>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-              ✅ Combine with Column Visibility
+              Tip: Combine with Column Visibility
             </Typography>
             <Typography variant="body2" color="text.secondary">
               Let users hide unpinned columns to focus on pinned content using <code>enableColumnVisibility</code>.
@@ -630,7 +625,7 @@ tableRef.current?.columnPinning.resetColumnPinning();
           </Box>
           <Box>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-              💡 Common Pattern
+              Insight: Common Pattern
             </Typography>
             <Typography variant="body2" color="text.secondary">
               Pin selection/expanding columns and primary identifier to left. Pin action buttons to right. 
@@ -639,6 +634,6 @@ tableRef.current?.columnPinning.resetColumnPinning();
           </Box>
         </Stack>
       </Paper>
-    </Box>
+    </FeatureLayout>
   );
 }

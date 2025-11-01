@@ -1,6 +1,7 @@
 import { Box, Typography, Paper, Alert, Divider, Table, TableBody, TableCell, TableHead, TableRow, Stack, Button, Chip, LinearProgress } from '@mui/material';
 import { DataTable, DataTableColumn } from '@ackplus/react-tanstack-data-table';
 import { useState, useCallback, useRef, useMemo } from 'react';
+import { FeatureLayout } from './common';
 
 interface Product {
   id: number;
@@ -92,7 +93,7 @@ export function ExportPage() {
   }, []);
 
   const handleExportComplete = useCallback((result: any) => {
-    setExportStatus(`✅ Export completed! ${result.totalRows} rows exported to ${result.filename}`);
+    setExportStatus(`Tip: Export completed! ${result.totalRows} rows exported to ${result.filename}`);
     setIsExporting(false);
     setExportProgress(0);
   }, []);
@@ -126,16 +127,10 @@ export function ExportPage() {
   }, [sampleData]);
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h3" gutterBottom sx={{ fontWeight: 700, mb: 2 }}>
-        Data Export
-      </Typography>
-      
-      <Typography variant="body1" color="text.secondary" paragraph>
-        Export table data to CSV or Excel formats with support for client-side and server-side exports, 
-        custom formatting, progress tracking, and selected row exports.
-      </Typography>
-
+    <FeatureLayout
+      title="Data Export"
+      description="Export table data to CSV or Excel formats with support for client-side and server-side exports, custom formatting, progress tracking, and selected row exports."
+    >
       <Alert severity="info" sx={{ mb: 4 }}>
         <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
           Export Features
@@ -396,7 +391,7 @@ function MyComponent() {
         )}
 
         {exportStatus && (
-          <Alert severity={exportStatus.includes('✅') ? 'success' : 'error'} sx={{ mb: 2 }}>
+          <Alert severity={exportStatus.includes('Tip:') ? 'success' : 'error'} sx={{ mb: 2 }}>
             {exportStatus}
           </Alert>
         )}
@@ -755,7 +750,7 @@ const cancelExport = () => {
 
         <Box sx={{ mt: 3, p: 2, backgroundColor: 'grey.50', borderRadius: 1 }}>
           <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-            💡 Example: Export-Friendly Columns
+            Insight: Example: Export-Friendly Columns
           </Typography>
           <Box
             component="pre"
@@ -940,7 +935,7 @@ const cancelExport = () => {
         <Stack spacing={2}>
           <Box>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-              ✅ Use accessorFn for Export Formatting
+              Tip: Use accessorFn for Export Formatting
             </Typography>
             <Typography variant="body2" color="text.secondary">
               Use <code>accessorFn</code> to format data for export (currency, dates, etc.). 
@@ -949,7 +944,7 @@ const cancelExport = () => {
           </Box>
           <Box>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-              ✅ Hide Action Columns
+              Tip: Hide Action Columns
             </Typography>
             <Typography variant="body2" color="text.secondary">
               Set <code>hideInExport: true</code> on columns with buttons, icons, or actions 
@@ -958,7 +953,7 @@ const cancelExport = () => {
           </Box>
           <Box>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-              ✅ Use Descriptive Headers
+              Tip: Use Descriptive Headers
             </Typography>
             <Typography variant="body2" color="text.secondary">
               Use clear, descriptive <code>header</code> text that works well for both display and exports 
@@ -967,7 +962,7 @@ const cancelExport = () => {
           </Box>
           <Box>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-              ✅ Use Server Export for Large Data
+              Tip: Use Server Export for Large Data
             </Typography>
             <Typography variant="body2" color="text.secondary">
               For datasets with 10,000+ rows, use <code>onServerExport</code> to let your 
@@ -976,7 +971,7 @@ const cancelExport = () => {
           </Box>
           <Box>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-              💡 Export Respects Current State
+              Insight: Export Respects Current State
             </Typography>
             <Typography variant="body2" color="text.secondary">
               Exports automatically respect current filters, sorting, column visibility, and selection. 
@@ -985,7 +980,7 @@ const cancelExport = () => {
           </Box>
           <Box>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-              💡 Progress Tracking
+              Insight: Progress Tracking
             </Typography>
             <Typography variant="body2" color="text.secondary">
               Use <code>onExportProgress</code> to show loading indicators for better UX, 
@@ -994,6 +989,6 @@ const cancelExport = () => {
           </Box>
         </Stack>
       </Paper>
-    </Box>
+    </FeatureLayout>
   );
 }

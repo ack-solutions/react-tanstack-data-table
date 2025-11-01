@@ -1,6 +1,7 @@
 import { Box, Typography, Paper, Alert, Divider, Table, TableBody, TableCell, TableHead, TableRow, Stack } from '@mui/material';
 import { DataTable, DataTableColumn } from '@ackplus/react-tanstack-data-table';
 import { useState, useCallback, useRef } from 'react';
+import { FeatureLayout } from './common';
 
 interface Product {
   id: number;
@@ -97,15 +98,10 @@ export function SortingPage() {
   }, []);
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h3" gutterBottom sx={{ fontWeight: 700, mb: 2 }}>
-        Sorting
-      </Typography>
-      
-      <Typography variant="body1" color="text.secondary" paragraph>
-        Enable multi-column sorting with customizable sort direction and client or server-side processing.
-      </Typography>
-
+    <FeatureLayout
+      title="Sorting"
+      description="Enable multi-column sorting with customizable sort direction and client or server-side processing."
+    >
       <Alert severity="info" sx={{ mb: 4 }}>
         <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
           Multi-Column Sorting
@@ -517,7 +513,7 @@ const currentSorting = tableRef.current?.state.getCurrentSorting();
         <Stack spacing={2}>
           <Box>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-              ✅ Use sortDescFirst for Numbers
+              Tip: Use sortDescFirst for Numbers
             </Typography>
             <Typography variant="body2" color="text.secondary">
               Set <code>sortDescFirst: true</code> on numeric columns (price, rating, count) so clicking 
@@ -526,7 +522,7 @@ const currentSorting = tableRef.current?.state.getCurrentSorting();
           </Box>
           <Box>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-              ✅ Set Default Sorting
+              Tip: Set Default Sorting
             </Typography>
             <Typography variant="body2" color="text.secondary">
               Always provide a sensible default sort order using <code>initialState.sorting</code> to improve UX.
@@ -534,7 +530,7 @@ const currentSorting = tableRef.current?.state.getCurrentSorting();
           </Box>
           <Box>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-              ✅ Use Server-Side for Large Datasets
+              Tip: Use Server-Side for Large Datasets
             </Typography>
             <Typography variant="body2" color="text.secondary">
               For datasets with 10,000+ rows, use <code>sortingMode="server"</code> to offload sorting to your backend.
@@ -542,7 +538,7 @@ const currentSorting = tableRef.current?.state.getCurrentSorting();
           </Box>
           <Box>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-              ✅ Disable Sorting for Action Columns
+              Tip: Disable Sorting for Action Columns
             </Typography>
             <Typography variant="body2" color="text.secondary">
               Set <code>enableSorting: false</code> on action columns or columns with buttons/icons.
@@ -550,7 +546,7 @@ const currentSorting = tableRef.current?.state.getCurrentSorting();
           </Box>
           <Box>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-              💡 Multi-Column Sorting
+              Insight: Multi-Column Sorting
             </Typography>
             <Typography variant="body2" color="text.secondary">
               Users can hold Shift and click multiple column headers to sort by multiple fields. 
@@ -559,6 +555,6 @@ const currentSorting = tableRef.current?.state.getCurrentSorting();
           </Box>
         </Stack>
       </Paper>
-    </Box>
+    </FeatureLayout>
   );
 }

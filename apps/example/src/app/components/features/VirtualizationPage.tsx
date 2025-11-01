@@ -1,6 +1,7 @@
 import { Box, Typography, Paper, Alert, Divider, Stack, Button, ButtonGroup, Chip } from '@mui/material';
 import { DataTable, DataTableColumn } from '@ackplus/react-tanstack-data-table';
 import { useState, useMemo } from 'react';
+import { FeatureLayout } from './common';
 
 interface Employee {
   id: number;
@@ -84,16 +85,10 @@ export function VirtualizationPage() {
   ];
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h3" gutterBottom sx={{ fontWeight: 700, mb: 2 }}>
-        Virtualization
-      </Typography>
-      
-      <Typography variant="body1" color="text.secondary" paragraph>
-        Virtualization improves performance when working with large datasets by only rendering 
-        visible rows in the viewport. This dramatically reduces DOM nodes and improves scrolling performance.
-      </Typography>
-
+    <FeatureLayout
+      title="Virtualization"
+      description="Virtualization improves performance when working with large datasets by only rendering visible rows in the viewport. This dramatically reduces DOM nodes and improves scrolling performance."
+    >
       <Divider sx={{ my: 4 }} />
 
       {/* What is Virtualization */}
@@ -118,7 +113,7 @@ export function VirtualizationPage() {
         <Stack spacing={2}>
           <Box>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1, color: 'success.main' }}>
-              ✅ Use Virtualization When:
+              Tip: Use Virtualization When:
             </Typography>
             <Typography variant="body2" component="ul" sx={{ pl: 2 }}>
               <li>You have 1,000+ rows of data</li>
@@ -249,7 +244,7 @@ export function VirtualizationPage() {
           </Typography>
           {datasetSize >= 1000 && !enableVirtualization && (
             <Typography variant="body2" color="warning.main" sx={{ mt: 1 }}>
-              ⚠️ Large dataset without virtualization may cause performance issues
+              Warning: Large dataset without virtualization may cause performance issues
             </Typography>
           )}
         </Box>
@@ -341,7 +336,7 @@ export function VirtualizationPage() {
         <Stack spacing={2}>
           <Box>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-              ✅ Set Accurate Row Height
+              Tip: Set Accurate Row Height
             </Typography>
             <Typography variant="body2" color="text.secondary">
               Provide an accurate <code>estimateRowHeight</code> value. If your rows have custom heights, 
@@ -350,7 +345,7 @@ export function VirtualizationPage() {
           </Box>
           <Box>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-              ✅ Use Fixed Container Height
+              Tip: Use Fixed Container Height
             </Typography>
             <Typography variant="body2" color="text.secondary">
               Always set a fixed <code>maxHeight</code> on the table container. Virtualization requires 
@@ -359,7 +354,7 @@ export function VirtualizationPage() {
           </Box>
           <Box>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-              ✅ Disable Pagination
+              Tip: Disable Pagination
             </Typography>
             <Typography variant="body2" color="text.secondary">
               Virtualization and pagination are mutually exclusive. Set <code>enablePagination=false</code> 
@@ -368,7 +363,7 @@ export function VirtualizationPage() {
           </Box>
           <Box>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-              ✅ Enable Sticky Headers
+              Tip: Enable Sticky Headers
             </Typography>
             <Typography variant="body2" color="text.secondary">
               Use <code>enableStickyHeaderOrFooter</code> to keep column headers visible while scrolling 
@@ -377,7 +372,7 @@ export function VirtualizationPage() {
           </Box>
           <Box>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-              ⚠️ Avoid Dynamic Row Heights
+              Warning: Avoid Dynamic Row Heights
             </Typography>
             <Typography variant="body2" color="text.secondary">
               Virtualization works best with consistent row heights. Avoid expandable content or 
@@ -386,6 +381,6 @@ export function VirtualizationPage() {
           </Box>
         </Stack>
       </Paper>
-    </Box>
+    </FeatureLayout>
   );
 }

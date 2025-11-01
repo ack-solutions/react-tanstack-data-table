@@ -2,6 +2,7 @@ import { Box, Typography, Paper, Alert, Divider, Table, TableBody, TableCell, Ta
 import { DataTable, DataTableColumn } from '@ackplus/react-tanstack-data-table';
 import { useState, useCallback, useMemo } from 'react';
 import { Add as AddIcon } from '@mui/icons-material';
+import { FeatureLayout } from './common';
 
 interface Task {
   id: number;
@@ -86,16 +87,10 @@ export function ToolbarPage() {
   }, [statusFilter]);
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h3" gutterBottom sx={{ fontWeight: 700, mb: 2 }}>
-        Toolbar Customization
-      </Typography>
-      
-      <Typography variant="body1" color="text.secondary" paragraph>
-        Customize the toolbar with built-in controls, extra filters, custom components, 
-        and complete slot overrides. Control visibility and styling of all toolbar elements.
-      </Typography>
-
+    <FeatureLayout
+      title="Toolbar Customization"
+      description="Customize the toolbar with built-in controls, extra filters, custom components, and complete slot overrides. Control visibility and styling of all toolbar elements."
+    >
       <Alert severity="info" sx={{ mb: 4 }}>
         <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
           Flexible Toolbar
@@ -558,7 +553,7 @@ function MyComponent() {
 
         <Box sx={{ mt: 3, p: 2, backgroundColor: 'grey.50', borderRadius: 1 }}>
           <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-            💡 Example: Customize Search Input
+            Insight: Example: Customize Search Input
           </Typography>
           <Box
             component="pre"
@@ -678,7 +673,7 @@ function MyComponent() {
 
         <Box sx={{ mt: 3, p: 2, backgroundColor: 'grey.50', borderRadius: 1 }}>
           <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-            💡 Example: Replace Toolbar Component
+            Insight: Example: Replace Toolbar Component
           </Typography>
           <Box
             component="pre"
@@ -878,7 +873,7 @@ const CustomSearch = ({ placeholder, ...props }) => {
                 size="small"
                 onClick={() => alert(`Complete ${selection.ids.length} tasks`)}
               >
-                ✅ Mark Complete
+                Tip: Mark Complete
               </Button>
               <Button
                 variant="outlined"
@@ -989,7 +984,7 @@ const CustomSearch = ({ placeholder, ...props }) => {
         <Stack spacing={2}>
           <Box>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-              ✅ Use extraFilter for Custom Actions
+              Tip: Use extraFilter for Custom Actions
             </Typography>
             <Typography variant="body2" color="text.secondary">
               Place custom buttons (Add, Import, etc.) and filters in <code>extraFilter</code> 
@@ -998,7 +993,7 @@ const CustomSearch = ({ placeholder, ...props }) => {
           </Box>
           <Box>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-              ✅ Memoize extraFilter Component
+              Tip: Memoize extraFilter Component
             </Typography>
             <Typography variant="body2" color="text.secondary">
               Wrap <code>extraFilter</code> with <code>useMemo</code> to prevent unnecessary re-renders 
@@ -1007,7 +1002,7 @@ const CustomSearch = ({ placeholder, ...props }) => {
           </Box>
           <Box>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-              ✅ Keep Toolbar Simple
+              Tip: Keep Toolbar Simple
             </Typography>
             <Typography variant="body2" color="text.secondary">
               Don't overcrowd the toolbar. Only show controls that users frequently need. 
@@ -1016,7 +1011,7 @@ const CustomSearch = ({ placeholder, ...props }) => {
           </Box>
           <Box>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-              ✅ Use slotProps Before Slots
+              Tip: Use slotProps Before Slots
             </Typography>
             <Typography variant="body2" color="text.secondary">
               Try customizing with <code>slotProps</code> first. Only use <code>slots</code> 
@@ -1025,7 +1020,7 @@ const CustomSearch = ({ placeholder, ...props }) => {
           </Box>
           <Box>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-              💡 Bulk Actions Pattern
+              Insight: Bulk Actions Pattern
             </Typography>
             <Typography variant="body2" color="text.secondary">
               Always check <code>selectionState.type</code> in bulk actions to correctly handle 
@@ -1034,6 +1029,6 @@ const CustomSearch = ({ placeholder, ...props }) => {
           </Box>
         </Stack>
       </Paper>
-    </Box>
+    </FeatureLayout>
   );
 }

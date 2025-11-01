@@ -1,6 +1,7 @@
 import { Box, Typography, Paper, Alert, Divider, Table, TableBody, TableCell, TableHead, TableRow, Stack, Button, Chip, Grid } from '@mui/material';
 import { DataTable, DataTableColumn, DEFAULT_EXPANDING_COLUMN_NAME } from '@ackplus/react-tanstack-data-table';
 import { useState, useCallback, useRef, useMemo } from 'react';
+import { FeatureLayout } from './common';
 
 interface Order {
   id: number;
@@ -179,16 +180,10 @@ export function ExpansionPage() {
   }, []);
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h3" gutterBottom sx={{ fontWeight: 700, mb: 2 }}>
-        Row Expansion
-      </Typography>
-      
-      <Typography variant="body1" color="text.secondary" paragraph>
-        Expand table rows to show additional details, nested data, or custom content. 
-        Control expansion globally, per-row, or programmatically via API.
-      </Typography>
-
+    <FeatureLayout
+      title="Row Expansion"
+      description="Expand table rows to show additional details, nested data, or custom content. Control expansion globally, per-row, or programmatically via API."
+    >
       <Alert severity="info" sx={{ mb: 4 }}>
         <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
           Expandable Rows
@@ -621,7 +616,7 @@ const expandedRows = table?.getState().expanded;
 
         <Box sx={{ p: 2, backgroundColor: 'grey.50', borderRadius: 1 }}>
           <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-            💡 Common Patterns
+            Insight: Common Patterns
           </Typography>
           <Box
             component="pre"
@@ -801,7 +796,7 @@ const renderSubComponent = useCallback(({ row }) => (
         <Stack spacing={2}>
           <Box>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-              ✅ Always Memoize renderSubComponent
+              Tip: Always Memoize renderSubComponent
             </Typography>
             <Typography variant="body2" color="text.secondary">
               Wrap <code>renderSubComponent</code> with <code>useCallback</code> to prevent 
@@ -810,7 +805,7 @@ const renderSubComponent = useCallback(({ row }) => (
           </Box>
           <Box>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-              ✅ Use getRowCanExpand for Conditional Expansion
+              Tip: Use getRowCanExpand for Conditional Expansion
             </Typography>
             <Typography variant="body2" color="text.secondary">
               Only show expand button for rows that have meaningful content to display. 
@@ -819,7 +814,7 @@ const renderSubComponent = useCallback(({ row }) => (
           </Box>
           <Box>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-              ✅ Keep Expanded Content Simple
+              Tip: Keep Expanded Content Simple
             </Typography>
             <Typography variant="body2" color="text.secondary">
               Avoid heavy components or large nested tables in expanded content. 
@@ -828,7 +823,7 @@ const renderSubComponent = useCallback(({ row }) => (
           </Box>
           <Box>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-              ✅ Pin Expansion Column
+              Tip: Pin Expansion Column
             </Typography>
             <Typography variant="body2" color="text.secondary">
               Pin the expansion column to the left (with selection) so users can always access it 
@@ -837,7 +832,7 @@ const renderSubComponent = useCallback(({ row }) => (
           </Box>
           <Box>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-              💡 Common Use Cases
+              Insight: Common Use Cases
             </Typography>
             <Typography variant="body2" color="text.secondary">
               • Show order items for an order<br />
@@ -849,7 +844,7 @@ const renderSubComponent = useCallback(({ row }) => (
           </Box>
           <Box>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-              💡 Access via Table Instance
+              Insight: Access via Table Instance
             </Typography>
             <Typography variant="body2" color="text.secondary">
               Use <code>tableRef.current?.table.getTable()</code> to access the full TanStack Table 
@@ -858,7 +853,6 @@ const renderSubComponent = useCallback(({ row }) => (
           </Box>
         </Stack>
       </Paper>
-    </Box>
+    </FeatureLayout>
   );
 }
-

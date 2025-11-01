@@ -13,7 +13,7 @@ export interface ColumnResetControlProps {
 }
 
 export function ColumnResetControl(props: ColumnResetControlProps = {}) {
-    const { table, slots, slotProps } = useDataTableContext();
+    const {apiRef, table, slots, slotProps } = useDataTableContext();
     
     // Extract slot-specific props with enhanced merging
     const resetIconSlotProps = extractSlotProps(slotProps, 'resetIcon');
@@ -21,29 +21,30 @@ export function ColumnResetControl(props: ColumnResetControlProps = {}) {
 
     const handleResetLayout = () => {
         const actions = props.resetActions || ['columnOrder', 'columnPinning', 'columnSizing'];
+        if (!apiRef?.current) return;
         
         // Reset based on specified actions
         if (actions.includes('columnOrder')) {
-            table.resetColumnOrder();
+            apiRef?.current?.columnOrdering?.resetColumnOrder();
         }
         if (actions.includes('columnPinning')) {
-            table.resetColumnPinning();
+            apiRef?.current?.columnPinning?.resetColumnPinning();
         }
         if (actions.includes('columnSizing')) {
-            table.resetColumnSizing();
+            apiRef?.current?.columnResizing?.resetColumnSizing();
         }
         if (actions.includes('columnVisibility')) {
-            table.resetColumnVisibility();
+            apiRef?.current?.columnVisibility?.resetColumnVisibility();
         }
         if (actions.includes('filters')) {
-            table.resetColumnFilters();
+            apiRef?.current?.filtering?.resetFilters();
             table.resetGlobalFilter();
         }
         if (actions.includes('sorting')) {
-            table.resetSorting();
+            apiRef?.current?.sorting?.resetSorting();
         }
         if (actions.includes('pagination')) {
-            table.resetPagination();
+            apiRef?.current?.pagination?.resetPagination();
         }
     };
 

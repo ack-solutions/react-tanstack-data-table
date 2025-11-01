@@ -1,6 +1,7 @@
 import { Box, Typography, Paper, Alert, Divider, Table, TableBody, TableCell, TableHead, TableRow, Stack, Chip, TextField } from '@mui/material';
 import { DataTable, DataTableColumn } from '@ackplus/react-tanstack-data-table';
 import { createColumnHelper } from '@tanstack/react-table';
+import { FeatureLayout } from './common';
 
 interface Employee {
   id: number;
@@ -182,16 +183,10 @@ export function ColumnsPage() {
   ];
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h3" gutterBottom sx={{ fontWeight: 700, mb: 2 }}>
-        Columns
-      </Typography>
-      
-      <Typography variant="body1" color="text.secondary" paragraph>
-        The column definitions control how data is displayed in the table. Each column can be customized 
-        with custom renderers, sizing, alignment, and more.
-      </Typography>
-
+    <FeatureLayout
+      title="Columns"
+      description="The column definitions control how data is displayed in the table. Each column can be customized with custom renderers, sizing, alignment, and more."
+    >
       <Divider sx={{ my: 4 }} />
 
       {/* Two Approaches */}
@@ -958,7 +953,7 @@ cell: ({ getValue, column }) => {
         <Stack spacing={2}>
           <Box>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-              ✅ Use Appropriate Column Sizes
+              Tip: Use Appropriate Column Sizes
             </Typography>
             <Typography variant="body2" color="text.secondary">
               Set reasonable <code>size</code> values for your columns based on expected content length. 
@@ -967,7 +962,7 @@ cell: ({ getValue, column }) => {
           </Box>
           <Box>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-              ✅ Keep Cell Renderers Simple
+              Tip: Keep Cell Renderers Simple
             </Typography>
             <Typography variant="body2" color="text.secondary">
               Avoid complex logic in cell renderers to maintain good performance. For expensive calculations, 
@@ -976,7 +971,7 @@ cell: ({ getValue, column }) => {
           </Box>
           <Box>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-              ✅ Use Type-Specific Filters
+              Tip: Use Type-Specific Filters
             </Typography>
             <Typography variant="body2" color="text.secondary">
               Set the <code>type</code> property ('text', 'number', 'date', 'select', 'boolean') to automatically 
@@ -985,7 +980,7 @@ cell: ({ getValue, column }) => {
           </Box>
           <Box>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-              ✅ Provide Options for Select Filters
+              Tip: Provide Options for Select Filters
             </Typography>
             <Typography variant="body2" color="text.secondary">
               When using <code>type: 'select'</code>, always provide the <code>options</code> array with 
@@ -994,7 +989,7 @@ cell: ({ getValue, column }) => {
           </Box>
           <Box>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-              ✅ Use Alignment for Numbers
+              Tip: Use Alignment for Numbers
             </Typography>
             <Typography variant="body2" color="text.secondary">
               Set <code>align: 'right'</code> for numeric columns (salary, quantities) for better readability.
@@ -1002,7 +997,7 @@ cell: ({ getValue, column }) => {
           </Box>
           <Box>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-              ✅ Consider Mobile Display
+              Tip: Consider Mobile Display
             </Typography>
             <Typography variant="body2" color="text.secondary">
               Use <code>enableColumnVisibility</code> and <code>enableHiding</code> to let users hide 
@@ -1011,6 +1006,6 @@ cell: ({ getValue, column }) => {
           </Box>
         </Stack>
       </Paper>
-    </Box>
+    </FeatureLayout>
   );
 }

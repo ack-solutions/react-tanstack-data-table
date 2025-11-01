@@ -10,7 +10,6 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
-  Divider,
   IconButton,
   FormControlLabel,
   Switch,
@@ -193,6 +192,69 @@ export function App() {
     return acc;
   }, {} as Record<string, typeof navigationItems>);
 
+  const NavigationContent = () => (
+    <Box sx={{ overflow: 'auto', py: 2 }}>
+      {Object.entries(groupedNavItems).map(([section, items]) => (
+        <Box key={section} sx={{ mb: 2 }}>
+          <Typography
+            variant="caption"
+            sx={{
+              px: 2,
+              py: 1,
+              display: 'block',
+              fontWeight: 700,
+              textTransform: 'uppercase',
+              color: 'text.secondary',
+              letterSpacing: 1.2,
+            }}
+          >
+            {section}
+          </Typography>
+          <List disablePadding>
+            {items.map((item) => {
+              const Icon = item.icon;
+              const isActive = activeSection === item.id;
+
+              return (
+                <ListItemButton
+                  key={item.id}
+                  selected={isActive}
+                  onClick={() => handleSectionChange(item.id)}
+                  sx={{
+                    px: 2,
+                    borderRadius: 1,
+                    mx: 1,
+                    '&.Mui-selected': {
+                      backgroundColor: 'primary.light',
+                      color: 'primary.contrastText',
+                      '&:hover': {
+                        backgroundColor: 'primary.main',
+                      },
+                    },
+                  }}
+                >
+                  <ListItemIcon sx={{ minWidth: 36 }}>
+                    <Icon
+                      color={isActive ? 'inherit' : 'action'}
+                      fontSize="small"
+                    />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={item.label}
+                    primaryTypographyProps={{
+                      fontSize: '0.875rem',
+                      fontWeight: isActive ? 600 : 400,
+                    }}
+                  />
+                </ListItemButton>
+              );
+            })}
+          </List>
+        </Box>
+      ))}
+    </Box>
+  );
+
   return (
     <ThemeProvider>
       <CssBaseline />
@@ -253,61 +315,7 @@ export function App() {
           }}
         >
           <Toolbar />
-          <Box sx={{ overflow: 'auto', py: 2 }}>
-            {Object.entries(groupedNavItems).map(([section, items]) => (
-              <Box key={section} sx={{ mb: 2 }}>
-                <Typography 
-                  variant="caption" 
-                  sx={{ 
-                    px: 2, 
-                    py: 1, 
-                    display: 'block',
-                    fontWeight: 700,
-                    textTransform: 'uppercase',
-                    color: 'text.secondary',
-                    letterSpacing: 1.2,
-                  }}
-                >
-                  {section}
-                </Typography>
-                <List disablePadding>
-                  {items.map((item) => {
-                    const Icon = item.icon;
-                    return (
-                      <ListItemButton
-                        key={item.id}
-                        selected={activeSection === item.id}
-                        onClick={() => handleSectionChange(item.id)}
-                        sx={{
-                          px: 2,
-                          '&.Mui-selected': {
-                            backgroundColor: 'primary.light',
-                            color: 'primary.contrastText',
-                            borderLeft: '3px solid',
-                            borderColor: 'primary.main',
-                            '&:hover': {
-                              backgroundColor: 'primary.main',
-                            },
-                          },
-                        }}
-                      >
-                        <ListItemIcon sx={{ minWidth: 36 }}>
-                          <Icon color={activeSection === item.id ? 'inherit' : 'action'} fontSize="small" />
-                        </ListItemIcon>
-                        <ListItemText 
-                          primary={item.label}
-                          primaryTypographyProps={{ 
-                            fontSize: '0.875rem',
-                            fontWeight: activeSection === item.id ? 600 : 400,
-                          }} 
-                        />
-                      </ListItemButton>
-                    );
-                  })}
-                </List>
-              </Box>
-            ))}
-          </Box>
+          <NavigationContent />
         </Drawer>
 
         <Drawer
@@ -319,72 +327,32 @@ export function App() {
           open
         >
           <Toolbar />
-          <Box sx={{ overflow: 'auto', py: 2 }}>
-            {Object.entries(groupedNavItems).map(([section, items]) => (
-              <Box key={section} sx={{ mb: 2 }}>
-                <Typography 
-                  variant="caption" 
-                  sx={{ 
-                    px: 2, 
-                    py: 1, 
-                    display: 'block',
-                    fontWeight: 700,
-                    textTransform: 'uppercase',
-                    color: 'text.secondary',
-                    letterSpacing: 1.2,
-                  }}
-                >
-                  {section}
-                </Typography>
-                <List disablePadding>
-                  {items.map((item) => {
-                    const Icon = item.icon;
-                    return (
-                      <ListItemButton
-                        key={item.id}
-                        selected={activeSection === item.id}
-                        onClick={() => handleSectionChange(item.id)}
-                        sx={{
-                          px: 2,
-                          '&.Mui-selected': {
-                            backgroundColor: 'primary.light',
-                            color: 'primary.contrastText',
-                            borderLeft: '3px solid',
-                            borderColor: 'primary.main',
-                            '&:hover': {
-                              backgroundColor: 'primary.main',
-                            },
-                          },
-                        }}
-                      >
-                        <ListItemIcon sx={{ minWidth: 36 }}>
-                          <Icon color={activeSection === item.id ? 'inherit' : 'action'} fontSize="small" />
-                        </ListItemIcon>
-                        <ListItemText 
-                          primary={item.label}
-                          primaryTypographyProps={{ 
-                            fontSize: '0.875rem',
-                            fontWeight: activeSection === item.id ? 600 : 400,
-                          }} 
-                        />
-                      </ListItemButton>
-                    );
-                  })}
-                </List>
-              </Box>
-            ))}
-          </Box>
+          <NavigationContent />
         </Drawer>
 
         <Box
           component="main"
           sx={{
             flexGrow: 1,
-            pl: `${drawerWidth + 24}px`,
-            mt: 10,
+            px: { xs: 2, md: 6 },
+            py: 4,
+            mt: { xs: 8, md: 10 },
+            ml: { md: `${drawerWidth}px` },
+            backgroundColor: 'background.default',
           }}
         >
-          {renderContent()}
+          <Box
+            sx={{
+              maxWidth: 1100,
+              mx: 'auto',
+              width: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 4,
+            }}
+          >
+            {renderContent()}
+          </Box>
         </Box>
       </Box>
     </ThemeProvider>

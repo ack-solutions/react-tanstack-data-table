@@ -996,7 +996,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                 table.resetSorting();
             },
             resetSorting: () => {
-                table.resetSorting();
+                table.setSorting(initialStateConfig.sorting || []);
             },
         },
 
@@ -1039,6 +1039,13 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                     if (paginationLogger.isLevelEnabled('debug')) {
                         paginationLogger.debug(`Going to last page ${pageCount - 1}`);
                     }
+                }
+            },
+            resetPagination: () => {
+                if (initialStateConfig.pagination) {
+                    table.setPagination(initialStateConfig.pagination);
+                }else{
+                    table.resetPagination();
                 }
             },
         },

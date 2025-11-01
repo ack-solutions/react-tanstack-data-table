@@ -2,6 +2,7 @@ import { Box, Typography, Paper, Alert, Divider, Table, TableBody, TableCell, Ta
 import { DataTable, DataTableColumn } from '@ackplus/react-tanstack-data-table';
 import { useState, useCallback, useRef, useMemo } from 'react';
 import type { SelectionState } from '@ackplus/react-tanstack-data-table';
+import { FeatureLayout } from './common';
 
 interface Employee {
   id: number;
@@ -105,16 +106,10 @@ export function SelectionPage() {
   }, [sampleData]);
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h3" gutterBottom sx={{ fontWeight: 700, mb: 2 }}>
-        Row Selection
-      </Typography>
-      
-      <Typography variant="body1" color="text.secondary" paragraph>
-        Enable row selection with checkboxes, control selection modes (page vs all), 
-        handle bulk actions, and work with both client and server-side data.
-      </Typography>
-
+    <FeatureLayout
+      title="Row Selection"
+      description="Enable row selection with checkboxes, control selection modes (page vs all), handle bulk actions, and work with both client and server-side data."
+    >
       <Alert severity="info" sx={{ mb: 4 }}>
         <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
           Two Selection Modes
@@ -192,16 +187,16 @@ export function SelectionPage() {
         </Typography>
         <Stack spacing={1} sx={{ mb: 2 }}>
           <Typography variant="body2">
-            ✅ Simple to understand and use
+            Tip: Simple to understand and use
           </Typography>
           <Typography variant="body2">
-            ✅ Perfect for client-side data
+            Tip: Perfect for client-side data
           </Typography>
           <Typography variant="body2">
-            ✅ Selection clears when changing pages
+            Tip: Selection clears when changing pages
           </Typography>
           <Typography variant="body2">
-            ⚠️ Can't select across multiple pages
+            Warning: Can't select across multiple pages
           </Typography>
         </Stack>
         <Box
@@ -238,16 +233,16 @@ export function SelectionPage() {
         </Typography>
         <Stack spacing={1} sx={{ mb: 2 }}>
           <Typography variant="body2">
-            ✅ Select rows across all pages
+            Tip: Select rows across all pages
           </Typography>
           <Typography variant="body2">
-            ✅ Efficient for large datasets (uses exclude logic)
+            Tip: Efficient for large datasets (uses exclude logic)
           </Typography>
           <Typography variant="body2">
-            ✅ Works with server-side data
+            Tip: Works with server-side data
           </Typography>
           <Typography variant="body2">
-            ⚠️ Requires understanding include/exclude types
+            Warning: Requires understanding include/exclude types
           </Typography>
         </Stack>
         <Box
@@ -329,7 +324,7 @@ export function SelectionPage() {
 
         <Box sx={{ mt: 3, p: 2, backgroundColor: 'grey.50', borderRadius: 1 }}>
           <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-            💡 Examples:
+            Insight: Examples:
           </Typography>
           <Box
             component="pre"
@@ -345,11 +340,11 @@ export function SelectionPage() {
           >
 {`// Include mode: These specific rows are selected
 { ids: ['1', '2', '3'], type: 'include' }
-// ✅ Rows 1, 2, 3 are selected
+// Tip: Rows 1, 2, 3 are selected
 
 // Exclude mode: All rows EXCEPT these are selected
 { ids: ['5', '10'], type: 'exclude' }
-// ✅ All rows are selected EXCEPT 5 and 10
+// Tip: All rows are selected EXCEPT 5 and 10
 
 // Empty include: Nothing selected
 { ids: [], type: 'include' }
@@ -373,7 +368,7 @@ export function SelectionPage() {
         </Typography>
         <Typography variant="body2">
           Use <code>isRowSelectable</code> to control which rows can be selected. 
-          ⚠️ Important: This function MUST be memoized with useCallback!
+          Warning: Important: This function MUST be memoized with useCallback!
         </Typography>
       </Alert>
 
@@ -396,7 +391,7 @@ export function SelectionPage() {
         >
 {`import { useCallback } from 'react';
 
-// ⚠️ MUST be memoized to prevent infinite re-renders
+// Warning: MUST be memoized to prevent infinite re-renders
 const isRowSelectable = useCallback(({ row, id }) => {
   // Disable selection for inactive employees
   return row.status === 'active';
@@ -860,7 +855,7 @@ const handleServerExport = async (filters, selection) => {
         <Stack spacing={2}>
           <Box>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-              ✅ Use Page Mode for Most Cases
+              Tip: Use Page Mode for Most Cases
             </Typography>
             <Typography variant="body2" color="text.secondary">
               <code>selectMode="page"</code> is simpler and sufficient for most use cases. 
@@ -869,7 +864,7 @@ const handleServerExport = async (filters, selection) => {
           </Box>
           <Box>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-              ✅ Always Memoize isRowSelectable
+              Tip: Always Memoize isRowSelectable
             </Typography>
             <Typography variant="body2" color="text.secondary">
               Wrap <code>isRowSelectable</code> with <code>useCallback</code> to prevent infinite re-renders!
@@ -877,7 +872,7 @@ const handleServerExport = async (filters, selection) => {
           </Box>
           <Box>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-              ✅ Provide totalRow for All Mode
+              Tip: Provide totalRow for All Mode
             </Typography>
             <Typography variant="body2" color="text.secondary">
               When using <code>selectMode="all"</code> with server-side data, always provide <code>totalRow</code> 
@@ -886,7 +881,7 @@ const handleServerExport = async (filters, selection) => {
           </Box>
           <Box>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-              ✅ Handle Both Include and Exclude Types
+              Tip: Handle Both Include and Exclude Types
             </Typography>
             <Typography variant="body2" color="text.secondary">
               In bulk actions, always check <code>selection.type</code> to handle both include and exclude logic correctly.
@@ -894,7 +889,7 @@ const handleServerExport = async (filters, selection) => {
           </Box>
           <Box>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-              💡 Selection State Example
+              Insight: Selection State Example
             </Typography>
             <Box
               component="pre"
@@ -929,6 +924,6 @@ bulkActions={(selection) => {
           </Box>
         </Stack>
       </Paper>
-    </Box>
+    </FeatureLayout>
   );
 }
