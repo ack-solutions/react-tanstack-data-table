@@ -268,7 +268,7 @@ export function PinningPage() {
 
         <Box sx={{ mt: 3, p: 2, backgroundColor: 'grey.50', borderRadius: 1 }}>
           <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-            Insight: Example: Pin Special Columns
+            Insight: Pin Special Columns
           </Typography>
           <Box
             component="pre"

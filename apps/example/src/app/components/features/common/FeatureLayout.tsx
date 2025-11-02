@@ -17,18 +17,19 @@ export function FeatureLayout({ title, description, subtitle, children }: Featur
       }}
     >
       <Box>
-        <Typography
-          variant="overline"
-          sx={{
-            display: subtitle ? 'block' : 'none',
-            color: 'text.secondary',
-            letterSpacing: 1.2,
-            fontWeight: 600,
-            mb: 1,
-          }}
-        >
-          {subtitle}
-        </Typography>
+        {subtitle ? (
+          <Typography
+            variant="overline"
+            sx={{
+              color: 'text.secondary',
+              letterSpacing: 1.2,
+              fontWeight: 600,
+              mb: 1,
+            }}
+          >
+            {subtitle}
+          </Typography>
+        ) : null}
         <Typography variant="h3" sx={{ fontWeight: 700 }}>
           {title}
         </Typography>

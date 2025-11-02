@@ -37,8 +37,7 @@ export function ColumnResetControl(props: ColumnResetControlProps = {}) {
             apiRef?.current?.columnVisibility?.resetColumnVisibility();
         }
         if (actions.includes('filters')) {
-            apiRef?.current?.filtering?.resetFilters();
-            table.resetGlobalFilter();
+            apiRef?.current?.filtering?.clearAllFilters();
         }
         if (actions.includes('sorting')) {
             apiRef?.current?.sorting?.resetSorting();

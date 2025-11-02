@@ -961,7 +961,6 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                 });
             },
             resetFilters: () => {
-                table.resetGlobalFilter();
                 handleColumnFilterStateChange({
                     filters: [],
                     logic: 'AND',
@@ -1042,11 +1041,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                 }
             },
             resetPagination: () => {
-                if (initialStateConfig.pagination) {
-                    table.setPagination(initialStateConfig.pagination);
-                }else{
-                    table.resetPagination();
-                }
+                table.setPagination(initialStateConfig.pagination || { pageIndex: 0, pageSize: 10 });
             },
         },
 

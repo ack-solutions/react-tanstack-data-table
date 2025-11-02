@@ -28,10 +28,10 @@ const generateProducts = (count: number): Product[] => {
 
 export function ExportPage() {
   const tableRef = useRef<any>(null);
-  const [exportStatus, setExportStatus] = useState('');
+  const [exportStatus, setExportStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [exportProgress, setExportProgress] = useState(0);
   const [isExporting, setIsExporting] = useState(false);
-  
+
   const sampleData = useMemo(() => generateProducts(100), []);
 
   const columns: DataTableColumn<Product>[] = [
@@ -93,13 +93,13 @@ export function ExportPage() {
   }, []);
 
   const handleExportComplete = useCallback((result: any) => {
-    setExportStatus(`Tip: Export completed! ${result.totalRows} rows exported to ${result.filename}`);
+    setExportStatus({ type: 'success', message: `Export completed! ${result.totalRows} rows exported to ${result.filename}` });
     setIsExporting(false);
     setExportProgress(0);
   }, []);
 
   const handleExportError = useCallback((error: any) => {
-    setExportStatus(`❌ Export failed: ${error.message}`);
+    setExportStatus({ type: 'error', message: `Export failed: ${error.message}` });
     setIsExporting(false);
     setExportProgress(0);
   }, []);
@@ -108,21 +108,21 @@ export function ExportPage() {
   const handleServerExport = useCallback(async (filters: any, selection: any) => {
     console.log('Server export with filters:', filters);
     console.log('Server export with selection:', selection);
-    
+
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1000));
-    
+
     // In real app, send to backend:
     // const response = await fetch('/api/products/export', {
     //   method: 'POST',
     //   body: JSON.stringify({ filters, selection }),
     // });
     // return await response.json();
-    
+
     // For demo, return filtered data
-    return { 
-      data: sampleData, 
-      total: sampleData.length 
+    return {
+      data: sampleData,
+      total: sampleData.length
     };
   }, [sampleData]);
 
@@ -171,7 +171,7 @@ export function ExportPage() {
             mb: 2,
           }}
         >
-{`<DataTable
+          {`<DataTable
   columns={columns}
   data={data}
   enableExport={true}               // Enable export button in toolbar
@@ -228,7 +228,7 @@ export function ExportPage() {
                 overflow: 'auto',
               }}
             >
-{`{
+              {`{
   accessorKey: 'price',
   header: 'Price',
   accessorFn: (row) => \`$\${row.price}\`,  // Exports: "$1299"
@@ -257,7 +257,7 @@ export function ExportPage() {
                 overflow: 'auto',
               }}
             >
-{`{
+              {`{
   accessorKey: 'status',
   header: 'Status',
   // Exports: "active" (raw value from data)
@@ -286,7 +286,7 @@ export function ExportPage() {
                 overflow: 'auto',
               }}
             >
-{`{
+              {`{
   accessorKey: 'salary',
   header: 'Annual Salary (USD)',  // Used for display AND export
   cell: ({ getValue }) => \`$\${getValue()}\`,
@@ -308,7 +308,7 @@ export function ExportPage() {
           Track Export Progress
         </Typography>
         <Typography variant="body2">
-          Use callbacks to track export progress, completion, and errors. 
+          Use callbacks to track export progress, completion, and errors.
           Useful for large datasets or server-side exports.
         </Typography>
       </Alert>
@@ -330,7 +330,7 @@ export function ExportPage() {
             mb: 3,
           }}
         >
-{`import { useState } from 'react';
+          {`import { useState } from 'react';
 
 function MyComponent() {
   const [exportProgress, setExportProgress] = useState(0);
@@ -391,8 +391,8 @@ function MyComponent() {
         )}
 
         {exportStatus && (
-          <Alert severity={exportStatus.includes('Tip:') ? 'success' : 'error'} sx={{ mb: 2 }}>
-            {exportStatus}
+          <Alert severity={exportStatus.type} sx={{ mb: 2 }}>
+            {exportStatus.message}
           </Alert>
         )}
 
@@ -444,7 +444,7 @@ function MyComponent() {
             mb: 3,
           }}
         >
-{`import { useRef } from 'react';
+          {`import { useRef } from 'react';
 import { DataTableApi } from '@ackplus/react-tanstack-data-table';
 
 const tableRef = useRef<DataTableApi<Product>>(null);
@@ -534,7 +534,7 @@ const cancelExport = () => {
           Server-Side Mode
         </Typography>
         <Typography variant="body2">
-          For large datasets, use <code>dataMode="server"</code> and <code>onServerExport</code> 
+          For large datasets, use <code>dataMode="server"</code> and <code>onServerExport</code>
           to delegate export to your backend. This sends filters and selection state to your API.
         </Typography>
       </Alert>
@@ -556,7 +556,7 @@ const cancelExport = () => {
             mb: 3,
           }}
         >
-{`const handleServerExport = async (filters, selection) => {
+          {`const handleServerExport = async (filters, selection) => {
   // Receives current filters and selection state
   // {
   //   globalFilter: 'search term',
@@ -764,7 +764,7 @@ const cancelExport = () => {
               overflowX: 'auto',
             }}
           >
-{`const columns: DataTableColumn<Product>[] = [
+            {`const columns: DataTableColumn<Product>[] = [
   {
     accessorKey: 'price',
     header: 'Unit Price (USD)',           // Used for display AND export
@@ -809,7 +809,7 @@ const cancelExport = () => {
           Automatic Selection Detection
         </Typography>
         <Typography variant="body2">
-          When rows are selected, the export automatically includes only selected rows. 
+          When rows are selected, the export automatically includes only selected rows.
           If no rows are selected, it exports all filtered rows.
         </Typography>
       </Alert>
@@ -831,7 +831,7 @@ const cancelExport = () => {
             mb: 3,
           }}
         >
-{`<DataTable
+          {`<DataTable
   columns={columns}
   data={data}
   enableRowSelection={true}         // Enable selection
@@ -930,7 +930,7 @@ const cancelExport = () => {
       <Typography variant="h5" gutterBottom sx={{ fontWeight: 600, mb: 2 }}>
         Best Practices
       </Typography>
-      
+
       <Paper elevation={1} sx={{ p: 3 }}>
         <Stack spacing={2}>
           <Box>
@@ -938,7 +938,7 @@ const cancelExport = () => {
               Tip: Use accessorFn for Export Formatting
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Use <code>accessorFn</code> to format data for export (currency, dates, etc.). 
+              Use <code>accessorFn</code> to format data for export (currency, dates, etc.).
               Use <code>cell</code> only for visual display components.
             </Typography>
           </Box>
@@ -947,7 +947,7 @@ const cancelExport = () => {
               Tip: Hide Action Columns
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Set <code>hideInExport: true</code> on columns with buttons, icons, or actions 
+              Set <code>hideInExport: true</code> on columns with buttons, icons, or actions
               that don't make sense in exports.
             </Typography>
           </Box>
@@ -956,7 +956,7 @@ const cancelExport = () => {
               Tip: Use Descriptive Headers
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Use clear, descriptive <code>header</code> text that works well for both display and exports 
+              Use clear, descriptive <code>header</code> text that works well for both display and exports
               (e.g., "Annual Salary (USD)" instead of just "Salary").
             </Typography>
           </Box>
@@ -965,7 +965,7 @@ const cancelExport = () => {
               Tip: Use Server Export for Large Data
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              For datasets with 10,000+ rows, use <code>onServerExport</code> to let your 
+              For datasets with 10,000+ rows, use <code>onServerExport</code> to let your
               backend handle the export generation.
             </Typography>
           </Box>
@@ -974,7 +974,7 @@ const cancelExport = () => {
               Insight: Export Respects Current State
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Exports automatically respect current filters, sorting, column visibility, and selection. 
+              Exports automatically respect current filters, sorting, column visibility, and selection.
               This gives users exactly what they see (or have selected).
             </Typography>
           </Box>
@@ -983,7 +983,7 @@ const cancelExport = () => {
               Insight: Progress Tracking
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Use <code>onExportProgress</code> to show loading indicators for better UX, 
+              Use <code>onExportProgress</code> to show loading indicators for better UX,
               especially with large exports.
             </Typography>
           </Box>

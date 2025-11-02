@@ -1,15 +1,29 @@
 import { ReactNode, useMemo } from 'react';
-import { Box, BoxProps, Typography, IconButton, Paper, Stack, Tooltip } from '@mui/material';
+import { Box, BoxProps, Typography, IconButton, Paper, Stack, Tooltip, SxProps, Theme } from '@mui/material';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import { useState } from 'react';
+import CheckIcon from '@mui/icons-material/Check';
 
 interface CodeBlockProps extends Omit<BoxProps, 'children'> {
   code: string;
   caption?: ReactNode;
   language?: 'ts' | 'tsx' | 'js' | 'jsx' | 'json' | 'bash' | 'sh' | 'css' | 'html' | string;
   showLineNumbers?: boolean;
+
 }
 
 export function CodeBlock({ code, caption, language, showLineNumbers = false, sx, ...boxProps }: CodeBlockProps) {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy code:', err);
+    }
+  };
+
   const preparedCode = useMemo(() => {
     if (!showLineNumbers) return code;
     const lines = code.replace(/\n$/, '').split('\n');
@@ -47,18 +61,19 @@ export function CodeBlock({ code, caption, language, showLineNumbers = false, sx
           <Typography variant="caption" color="text.secondary">
             {language ? `${language}` : 'code'}
           </Typography>
-          <Tooltip title="Copy code">
+          <Tooltip title={copied ? "Copied!" : "Copy code"}>
             <IconButton
               size="small"
               aria-label="Copy code"
-              onClick={() => navigator.clipboard.writeText(code)}
+              onClick={handleCopy}
             >
-              <ContentCopyIcon fontSize="inherit" />
+              {copied ? <CheckIcon fontSize="inherit" /> : <ContentCopyIcon fontSize="inherit" />}
             </IconButton>
           </Tooltip>
         </Box>
         <Box
           component="pre"
+          {...boxProps}
           sx={{
             m: 0,
             px: 2,
@@ -73,6 +88,7 @@ export function CodeBlock({ code, caption, language, showLineNumbers = false, sx
             whiteSpace: 'pre',
           }}
           {...boxProps}
+
         >
           {preparedCode}
         </Box>
