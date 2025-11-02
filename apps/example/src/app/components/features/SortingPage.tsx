@@ -1,7 +1,8 @@
-import { Box, Typography, Paper, Alert, Divider, Table, TableBody, TableCell, TableHead, TableRow, Stack } from '@mui/material';
+import { Box, Typography, Paper, Alert, Divider, Stack } from '@mui/material';
 import { DataTable, DataTableColumn } from '@ackplus/react-tanstack-data-table';
 import { useState, useCallback, useRef } from 'react';
-import { FeatureLayout } from './common';
+import { FeatureLayout, FeatureSection, CodeBlock, FeatureMetadataTable } from './common';
+import { getSortingColumnGroup, getSortingTableGroup } from './data/sorting-metadata';
 
 interface Product {
   id: number;
@@ -25,6 +26,8 @@ const sampleProducts: Product[] = [
 export function SortingPage() {
   const [serverSortState, setServerSortState] = useState<any>(null);
   const tableRef = useRef<any>(null);
+  const sortingColumnGroup = getSortingColumnGroup('sorting-column-props');
+  const sortingTableGroup = getSortingTableGroup('sorting-table-props');
 
   // Columns with sorting enabled
   const sortableColumns: DataTableColumn<Product>[] = [
@@ -53,7 +56,7 @@ export function SortingPage() {
       size: 100,
       enableSorting: true,
       sortDescFirst: true,          // Sort descending first
-      cell: ({ getValue }) => `⭐ ${getValue<number>().toFixed(1)}`,
+      cell: ({ getValue }) => `${getValue<number>().toFixed(1)}`,
     },
     {
       accessorKey: 'sales',
@@ -114,32 +117,21 @@ export function SortingPage() {
 
       <Divider sx={{ my: 4 }} />
 
-      {/* Enable Sorting */}
-      <Typography variant="h5" gutterBottom sx={{ fontWeight: 600, mb: 2 }}>
-        Enable Sorting
-      </Typography>
-
-      <Paper elevation={1} sx={{ p: 3, mb: 4 }}>
-        <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
-          Basic Setup
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          Enable sorting on the table and individual columns:
-        </Typography>
-        <Box
-          component="pre"
-          sx={{
-            backgroundColor: '#f5f5f5',
-            color: '#333',
-            borderRadius: 1,
-            p: 2,
-            fontFamily: 'Menlo, Consolas, Monaco, "Courier New", monospace',
-            fontSize: 14,
-            overflowX: 'auto',
-            mb: 2,
-          }}
-        >
-{`const columns: DataTableColumn<Product>[] = [
+      <FeatureSection
+        title="Enable Sorting"
+        description="Turn on sorting globally and per column. Users can click headers or hold Shift for multi-column sorting."
+        spacing={3}
+      >
+        <Paper elevation={1} sx={{ p: 3 }}>
+          <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
+            Basic Setup
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Enable sorting on the table and individual columns:
+          </Typography>
+          <CodeBlock
+            language="tsx"
+            code={`const columns: DataTableColumn<Product>[] = [
   {
     accessorKey: 'name',
     header: 'Product Name',
@@ -162,46 +154,36 @@ export function SortingPage() {
     console.log('Sort changed:', sorting);
   }}
 />`}
-        </Box>
-      </Paper>
+          />
+        </Paper>
+      </FeatureSection>
 
       <Divider sx={{ my: 4 }} />
 
-      {/* Default Sorting */}
-      <Typography variant="h5" gutterBottom sx={{ fontWeight: 600, mb: 2 }}>
-        Default Sorting (Initial State)
-      </Typography>
+      <FeatureSection
+        title="Default Sorting (Initial State)"
+        description="Seed sensible sort defaults so the table loads in a usable order."
+        spacing={3}
+      >
+        <Alert severity="success" sx={{ width: '100%' }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+            Set Initial Sort Order
+          </Typography>
+          <Typography variant="body2">
+            Use <code>initialState.sorting</code> to define default sort order when the table loads.
+          </Typography>
+        </Alert>
 
-      <Alert severity="success" sx={{ mb: 3 }}>
-        <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-          Set Initial Sort Order
-        </Typography>
-        <Typography variant="body2">
-          Use <code>initialState.sorting</code> to set the default sort order when the table loads.
-        </Typography>
-      </Alert>
-
-      <Paper elevation={1} sx={{ p: 3, mb: 4 }}>
-        <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
-          Example: Default Sorting
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          Set initial sorting on one or multiple columns:
-        </Typography>
-        <Box
-          component="pre"
-          sx={{
-            backgroundColor: '#f5f5f5',
-            color: '#333',
-            borderRadius: 1,
-            p: 2,
-            fontFamily: 'Menlo, Consolas, Monaco, "Courier New", monospace',
-            fontSize: 14,
-            overflowX: 'auto',
-            mb: 3,
-          }}
-        >
-{`<DataTable
+        <Paper elevation={1} sx={{ p: 3 }}>
+          <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
+            Example: Default Sorting
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Set initial sorting on one or multiple columns:
+          </Typography>
+          <CodeBlock
+            language="tsx"
+            code={`<DataTable
   columns={columns}
   data={data}
   enableSorting={true}
@@ -212,115 +194,62 @@ export function SortingPage() {
     ],
   }}
 />`}
-        </Box>
+          />
 
-        <DataTable
-          columns={sortableColumns}
-          data={sampleProducts}
-          enableSorting={true}
-          sortingMode="client"
-          initialState={{
-            sorting: [
-              { id: 'rating', desc: true },
-            ],
-          }}
-        />
-      </Paper>
-
-      <Divider sx={{ my: 4 }} />
-
-      {/* Column Properties */}
-      <Typography variant="h5" gutterBottom sx={{ fontWeight: 600, mb: 2 }}>
-        Column Sorting Properties
-      </Typography>
-
-      <Paper elevation={1} sx={{ p: 3, mb: 4 }}>
-        <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
-          Sorting Column Props
-        </Typography>
-        <Table size="small">
-          <TableHead>
-            <TableRow>
-              <TableCell sx={{ fontWeight: 700 }}>Property</TableCell>
-              <TableCell sx={{ fontWeight: 700 }}>Type</TableCell>
-              <TableCell sx={{ fontWeight: 700 }}>Default</TableCell>
-              <TableCell sx={{ fontWeight: 700 }}>Description</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            <TableRow>
-              <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>enableSorting</TableCell>
-              <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>
-                boolean
-              </TableCell>
-              <TableCell sx={{ fontFamily: 'monospace', fontSize: 13 }}>
-                true
-              </TableCell>
-              <TableCell>Enable sorting for this specific column</TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>sortDescFirst</TableCell>
-              <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>
-                boolean
-              </TableCell>
-              <TableCell sx={{ fontFamily: 'monospace', fontSize: 13 }}>
-                false
-              </TableCell>
-              <TableCell>
-                Sort descending first when clicking column header (useful for numbers/ratings)
-              </TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>sortingFn</TableCell>
-              <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>
-                Function | string
-              </TableCell>
-              <TableCell sx={{ fontFamily: 'monospace', fontSize: 13 }}>
-                auto
-              </TableCell>
-              <TableCell>
-                Custom sorting function (e.g., 'alphanumeric', 'datetime', or custom function)
-              </TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
-      </Paper>
+          <DataTable
+            columns={sortableColumns}
+            data={sampleProducts}
+            enableSorting={true}
+            sortingMode="client"
+            initialState={{
+              sorting: [
+                { id: 'rating', desc: true },
+              ],
+            }}
+          />
+        </Paper>
+      </FeatureSection>
 
       <Divider sx={{ my: 4 }} />
 
-      {/* Server-Side Sorting */}
-      <Typography variant="h5" gutterBottom sx={{ fontWeight: 600, mb: 2 }}>
-        Server-Side Sorting
-      </Typography>
+      <FeatureSection
+        title="Column Sorting Properties"
+        description="Fine-tune sorting behavior on specific columns."
+        spacing={3}
+      >
+        <Paper elevation={1} sx={{ p: 3 }}>
+          <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
+            Sorting Column Props
+          </Typography>
+          <Box sx={{ overflowX: 'auto' }}>
+            <FeatureMetadataTable items={sortingColumnGroup?.items ?? []} size="small" includePossibleValues />
+          </Box>
+        </Paper>
+      </FeatureSection>
 
-      <Alert severity="error" sx={{ mb: 3 }}>
-        <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-          Server-Side Mode
-        </Typography>
-        <Typography variant="body2">
-          Set <code>sortingMode="server"</code> or <code>dataMode="server"</code> to delegate 
-          sorting to your backend. The <code>onFetchData</code> callback receives sort state.
-        </Typography>
-      </Alert>
+      <Divider sx={{ my: 4 }} />
 
-      <Paper elevation={1} sx={{ p: 3, mb: 4 }}>
-        <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
-          Example: Server-Side Sorting
-        </Typography>
-        <Box
-          component="pre"
-          sx={{
-            backgroundColor: '#f5f5f5',
-            color: '#333',
-            borderRadius: 1,
-            p: 2,
-            fontFamily: 'Menlo, Consolas, Monaco, "Courier New", monospace',
-            fontSize: 14,
-            overflowX: 'auto',
-            mb: 3,
-          }}
-        >
-{`const handleFetchData = async (filters) => {
+      <FeatureSection
+        title="Server-Side Sorting"
+        description="Delegate sorting to your backend and hydrate the table with the ordered response."
+        spacing={3}
+      >
+        <Alert severity="error" sx={{ width: '100%' }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+            Server-Side Mode
+          </Typography>
+          <Typography variant="body2">
+            Set <code>sortingMode="server"</code> or <code>dataMode="server"</code> to delegate sorting. The <code>onFetchData</code> callback receives the current sort state.
+          </Typography>
+        </Alert>
+
+        <Paper elevation={1} sx={{ p: 3 }}>
+          <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
+            Example: Server-Side Sorting
+          </Typography>
+          <CodeBlock
+            language="tsx"
+            code={`const handleFetchData = async (filters) => {
   // Sorting structure received:
   // {
   //   sorting: [
@@ -348,63 +277,47 @@ export function SortingPage() {
     sorting: [{ id: 'price', desc: true }],  // Default sort
   }}
 />`}
-        </Box>
+          />
 
-        {serverSortState && (
-          <Box sx={{ p: 2, backgroundColor: 'grey.50', borderRadius: 1, mb: 2 }}>
-            <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-              Current Server Sort State:
-            </Typography>
-            <Box
-              component="pre"
-              sx={{
-                fontSize: 12,
-                fontFamily: 'monospace',
-                overflow: 'auto',
-              }}
-            >
-              {JSON.stringify(serverSortState, null, 2)}
+          {serverSortState && (
+            <Box sx={{ p: 2, backgroundColor: 'grey.50', borderRadius: 1, mb: 2 }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+                Current Server Sort State
+              </Typography>
+              <CodeBlock
+                language="json"
+                code={JSON.stringify(serverSortState || {}, null, 2)}
+              />
             </Box>
-          </Box>
-        )}
+          )}
 
-        <DataTable
-          columns={sortableColumns}
-          dataMode="server"
-          onFetchData={handleFetchData}
-          enableSorting={true}
-          sortingMode="server"
-        />
-      </Paper>
+          <DataTable
+            columns={sortableColumns}
+            dataMode="server"
+            onFetchData={handleFetchData}
+            enableSorting={true}
+            sortingMode="server"
+          />
+        </Paper>
+      </FeatureSection>
 
       <Divider sx={{ my: 4 }} />
 
-      {/* API Reference */}
-      <Typography variant="h5" gutterBottom sx={{ fontWeight: 600, mb: 2 }}>
-        Sorting API Reference
-      </Typography>
-
-      <Paper elevation={1} sx={{ p: 3, mb: 4 }}>
-        <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
-          Programmatic Sorting Control
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          Control sorting programmatically using the table API ref:
-        </Typography>
-        <Box
-          component="pre"
-          sx={{
-            backgroundColor: '#f5f5f5',
-            color: '#333',
-            borderRadius: 1,
-            p: 2,
-            fontFamily: 'Menlo, Consolas, Monaco, "Courier New", monospace',
-            fontSize: 14,
-            overflowX: 'auto',
-            mb: 2,
-          }}
-        >
-{`import { useRef } from 'react';
+      <FeatureSection
+        title="Sorting API Reference"
+        description="Drive sorting from the imperative table API for custom controls."
+        spacing={3}
+      >
+        <Paper elevation={1} sx={{ p: 3 }}>
+          <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
+            Programmatic Sorting Control
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Control sorting programmatically using the table API ref:
+          </Typography>
+          <CodeBlock
+            language="tsx"
+            code={`import { useRef } from 'react';
 import { DataTableApi } from '@ackplus/react-tanstack-data-table';
 
 const tableRef = useRef<DataTableApi<Product>>(null);
@@ -433,74 +346,23 @@ const currentSorting = tableRef.current?.state.getCurrentSorting();
   data={data}
   enableSorting={true}
 />`}
-        </Box>
-      </Paper>
+          />
+        </Paper>
+      </FeatureSection>
 
       <Divider sx={{ my: 4 }} />
 
-      {/* DataTable Props */}
-      <Typography variant="h5" gutterBottom sx={{ fontWeight: 600, mb: 2 }}>
-        DataTable Sorting Props
-      </Typography>
-
-      <Paper elevation={1} sx={{ p: 3, mb: 4 }}>
-        <Table size="small">
-          <TableHead>
-            <TableRow>
-              <TableCell sx={{ fontWeight: 700, width: '25%' }}>Prop</TableCell>
-              <TableCell sx={{ fontWeight: 700, width: '25%' }}>Type</TableCell>
-              <TableCell sx={{ fontWeight: 700, width: '15%' }}>Default</TableCell>
-              <TableCell sx={{ fontWeight: 700, width: '35%' }}>Description</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            <TableRow>
-              <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>enableSorting</TableCell>
-              <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>
-                boolean
-              </TableCell>
-              <TableCell sx={{ fontFamily: 'monospace', fontSize: 13 }}>
-                true
-              </TableCell>
-              <TableCell>Enable sorting functionality globally</TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>sortingMode</TableCell>
-              <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>
-                'client' | 'server'
-              </TableCell>
-              <TableCell sx={{ fontFamily: 'monospace', fontSize: 13 }}>
-                'client'
-              </TableCell>
-              <TableCell>
-                Sorting mode. 'server' delegates sorting to onFetchData callback
-              </TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>onSortingChange</TableCell>
-              <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>
-                {'(sorting: SortingState) => void'}
-              </TableCell>
-              <TableCell sx={{ fontFamily: 'monospace', fontSize: 13 }}>
-                undefined
-              </TableCell>
-              <TableCell>Callback when sorting state changes</TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>initialState.sorting</TableCell>
-              <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>
-                {'SortingState'}
-              </TableCell>
-              <TableCell sx={{ fontFamily: 'monospace', fontSize: 13 }}>
-                []
-              </TableCell>
-              <TableCell>
-                Initial sort order: <code>[{'{ id: "columnId", desc: boolean }'}]</code>
-              </TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
-      </Paper>
+      <FeatureSection
+        title="DataTable Sorting Props"
+        description="Global props that control sorting behaviour across the table."
+        spacing={3}
+      >
+        <Paper elevation={1} sx={{ p: 3 }}>
+          <Box sx={{ overflowX: 'auto' }}>
+            <FeatureMetadataTable items={sortingTableGroup?.items ?? []} size="small" includePossibleValues />
+          </Box>
+        </Paper>
+      </FeatureSection>
 
       <Divider sx={{ my: 4 }} />
 

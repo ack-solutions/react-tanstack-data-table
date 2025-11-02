@@ -43,6 +43,8 @@ export function CodeBlock({ code, caption, language, showLineNumbers = false, sx
         sx={{
           borderRadius: 1,
           overflow: 'hidden',
+          backgroundColor: '#1e1e1e',
+          borderColor: 'rgba(255, 255, 255, 0.1)',
           ...sx,
         }}
       >
@@ -53,12 +55,11 @@ export function CodeBlock({ code, caption, language, showLineNumbers = false, sx
             justifyContent: 'space-between',
             px: 1.5,
             py: 1,
-            borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
-            backgroundColor: (theme) =>
-              theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.02)',
+            borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+            backgroundColor: '#252526',
           }}
         >
-          <Typography variant="caption" color="text.secondary">
+          <Typography variant="caption" sx={{ color: '#858585' }}>
             {language ? `${language}` : 'code'}
           </Typography>
           <Tooltip title={copied ? "Copied!" : "Copy code"}>
@@ -78,17 +79,14 @@ export function CodeBlock({ code, caption, language, showLineNumbers = false, sx
             m: 0,
             px: 2,
             py: 1.5,
-            backgroundColor: (theme) =>
-              theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'grey.50',
-            color: 'text.primary',
+            backgroundColor: '#1e1e1e',
+            color: '#d4d4d4',
             fontFamily: 'Menlo, Consolas, Monaco, "Courier New", monospace',
             fontSize: (theme) => theme.typography.body2.fontSize,
             lineHeight: (theme) => theme.typography.body2.lineHeight,
             overflowX: 'auto',
             whiteSpace: 'pre',
           }}
-          {...boxProps}
-
         >
           {preparedCode}
         </Box>

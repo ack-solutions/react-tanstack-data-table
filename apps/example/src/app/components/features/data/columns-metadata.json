@@ -1,0 +1,193 @@
+{
+  "columnGroups": [
+    {
+      "id": "datatable-column",
+      "title": "DataTable Column Enhancements",
+      "description": "Additional helpers provided by the DataTable wrapper on top of TanStack columns.",
+      "items": [
+        {
+          "name": "type",
+          "type": "'boolean' | 'number' | 'date' | 'select' | 'text'",
+          "defaultValue": "undefined",
+          "description": "Hints the default filter UI and formatting helpers to use for the column.",
+          "possibleValues": ["boolean", "number", "date", "select", "text"]
+        },
+        {
+          "name": "options",
+          "type": "{ label: string; value: string }[]",
+          "defaultValue": "[]",
+          "description": "Select options shown when type='select'. Pairs nicely with custom filters.",
+          "possibleValues": []
+        },
+        {
+          "name": "align",
+          "type": "'left' | 'center' | 'right'",
+          "defaultValue": "undefined",
+          "description": "Controls horizontal alignment for header, body, and footer cells.",
+          "possibleValues": ["left", "center", "right"]
+        },
+        {
+          "name": "filterable",
+          "type": "boolean",
+          "defaultValue": "false",
+          "description": "Enables column-specific filtering UI and passes state to custom components.",
+          "possibleValues": ["true", "false"]
+        },
+        {
+          "name": "hideInExport",
+          "type": "boolean",
+          "defaultValue": "false",
+          "description": "Exclude this column when generating CSV/Excel exports.",
+          "possibleValues": ["true", "false"]
+        },
+        {
+          "name": "filterComponent",
+          "type": "React.ComponentType<any>",
+          "defaultValue": "undefined",
+          "description": "Override the default filter control with a fully custom React component.",
+          "possibleValues": []
+        },
+        {
+          "name": "editComponent",
+          "type": "React.ComponentType<any>",
+          "defaultValue": "undefined",
+          "description": "Provide an inline edit control distinct from the filter UI.",
+          "possibleValues": []
+        }
+      ]
+    },
+    {
+      "id": "tanstack-column",
+      "title": "TanStack Column Properties",
+      "description": "Core TanStack Table column options available through the DataTable wrapper.",
+      "items": [
+        {
+          "name": "accessorKey",
+          "type": "string",
+          "defaultValue": "required",
+          "description": "Field name to read from each row for this column (alternative to accessorFn).",
+          "possibleValues": []
+        },
+        {
+          "name": "accessorFn",
+          "type": "(row) => any",
+          "defaultValue": "undefined",
+          "description": "Derive the cell value from row data when accessorKey is insufficient.",
+          "possibleValues": []
+        },
+        {
+          "name": "header",
+          "type": "string | ReactNode | HeaderFn",
+          "defaultValue": "undefined",
+          "description": "Content shown in the header cell. Accepts strings, React nodes, or render functions.",
+          "possibleValues": []
+        },
+        {
+          "name": "footer",
+          "type": "ReactNode | FooterFn",
+          "defaultValue": "undefined",
+          "description": "Footer renderer for aggregations or helper text.",
+          "possibleValues": []
+        },
+        {
+          "name": "cell",
+          "type": "CellFn",
+          "defaultValue": "undefined",
+          "description": "Render function for each cell, receiving TanStack cell helpers.",
+          "possibleValues": []
+        },
+        {
+          "name": "id",
+          "type": "string",
+          "defaultValue": "undefined",
+          "description": "Optional unique identifier. Auto-generated from accessorKey when omitted.",
+          "possibleValues": []
+        },
+        {
+          "name": "size",
+          "type": "number",
+          "defaultValue": "undefined",
+          "description": "Starting width in pixels used during initial layout.",
+          "possibleValues": []
+        },
+        {
+          "name": "minSize",
+          "type": "number",
+          "defaultValue": "undefined",
+          "description": "Minimum width enforced while resizing.",
+          "possibleValues": []
+        },
+        {
+          "name": "maxSize",
+          "type": "number",
+          "defaultValue": "undefined",
+          "description": "Maximum width allowed while resizing.",
+          "possibleValues": []
+        },
+        {
+          "name": "enableSorting",
+          "type": "boolean",
+          "defaultValue": "true",
+          "description": "Allow the column to participate in sorting interactions.",
+          "possibleValues": ["true", "false"]
+        },
+        {
+          "name": "enableResizing",
+          "type": "boolean",
+          "defaultValue": "true",
+          "description": "Allow column width to be adjusted via drag handles.",
+          "possibleValues": ["true", "false"]
+        },
+        {
+          "name": "enablePinning",
+          "type": "boolean",
+          "defaultValue": "true",
+          "description": "Allow pinning this column to the left or right edge.",
+          "possibleValues": ["true", "false"]
+        },
+        {
+          "name": "enableHiding",
+          "type": "boolean",
+          "defaultValue": "true",
+          "description": "Expose this column to the column visibility menu.",
+          "possibleValues": ["true", "false"]
+        },
+        {
+          "name": "enableGlobalFilter",
+          "type": "boolean",
+          "defaultValue": "true",
+          "description": "Include this column when running the global search filter.",
+          "possibleValues": ["true", "false"]
+        },
+        {
+          "name": "enableColumnFilter",
+          "type": "boolean",
+          "defaultValue": "true",
+          "description": "Allow column-specific filtering state for this column.",
+          "possibleValues": ["true", "false"]
+        },
+        {
+          "name": "sortingFn",
+          "type": "SortingFn",
+          "defaultValue": "undefined",
+          "description": "Custom compare function run during column sorting.",
+          "possibleValues": []
+        },
+        {
+          "name": "sortDescFirst",
+          "type": "boolean",
+          "defaultValue": "false",
+          "description": "Start sorting in descending order for the first toggle.",
+          "possibleValues": ["true", "false"]
+        },
+        {
+          "name": "meta",
+          "type": "ColumnMeta<T>",
+          "defaultValue": "undefined",
+          "description": "Arbitrary metadata passed to header/cell/footer renderers.",
+          "possibleValues": []
+        }
+      ]
+    }
+  ]
+}

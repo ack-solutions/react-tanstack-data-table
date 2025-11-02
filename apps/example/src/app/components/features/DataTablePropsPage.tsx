@@ -1,8 +1,15 @@
 import { Box, Typography, Paper, Alert, Divider, Table, TableBody, TableCell, TableHead, TableRow, Stack, Accordion, AccordionSummary, AccordionDetails } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import { FeatureLayout } from './common';
+import { FeatureLayout, CodeBlock, FeatureMetadataTable, FeatureMetadataAccordion } from './common';
+import { dataTableMetadata, findGroup } from './data/data-table-metadata';
 
 export function DataTablePropsPage() {
+  const corePropsGroup = findGroup('propGroups', 'core');
+  const serverPropsGroup = findGroup('propGroups', 'server');
+  const paginationPropsGroup = findGroup('propGroups', 'pagination');
+  const filteringPropsGroup = findGroup('propGroups', 'filtering');
+  const sortingPropsGroup = findGroup('propGroups', 'sorting');
+  const selectionPropsGroup = findGroup('propGroups', 'selection');
   return (
     <FeatureLayout
       title="DataTable Props Reference"
@@ -32,114 +39,26 @@ export function DataTablePropsPage() {
           </Typography>
         </AccordionSummary>
         <AccordionDetails>
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell sx={{ fontWeight: 700, width: '25%' }}>Prop</TableCell>
-                <TableCell sx={{ fontWeight: 700, width: '25%' }}>Type</TableCell>
-                <TableCell sx={{ fontWeight: 700, width: '15%' }}>Default</TableCell>
-                <TableCell sx={{ fontWeight: 700, width: '35%' }}>Description</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              <TableRow>
-                <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>columns</TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>
-                  ColumnDef{'<T>[]'}
-                </TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'error.main' }}>
-                  required
-                </TableCell>
-                <TableCell>
-                  Array of column definitions. Supports both TanStack Table and DataTable custom properties.
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>data</TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>
-                  T[]
-                </TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13 }}>
-                  []
-                </TableCell>
-                <TableCell>
-                  Array of data objects to display. Used in client mode. In server mode, this is managed internally.
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>totalRow</TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>
-                  number
-                </TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13 }}>
-                  0
-                </TableCell>
-                <TableCell>
-                  Total number of rows available (for server-side pagination). Used to calculate total pages.
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>idKey</TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>
-                  keyof T
-                </TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13 }}>
-                  'id'
-                </TableCell>
-                <TableCell>
-                  Key to use as unique identifier for rows. Used for selection, expansion, and data operations.
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>extraFilter</TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>
-                  ReactNode
-                </TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13 }}>
-                  null
-                </TableCell>
-                <TableCell>
-                  Optional custom filter components rendered above the toolbar.
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>footerFilter</TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>
-                  ReactNode
-                </TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13 }}>
-                  null
-                </TableCell>
-                <TableCell>
-                  Optional custom filter components rendered in the footer.
-                </TableCell>
-              </TableRow>
-            </TableBody>
-          </Table>
+          <Box sx={{ overflowX: 'auto' }}>
+            <FeatureMetadataTable
+              items={corePropsGroup?.items ?? []}
+              includePossibleValues
+            />
+          </Box>
 
           <Box sx={{ mt: 3, p: 2, backgroundColor: 'grey.50', borderRadius: 1 }}>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
               Insight: Example
             </Typography>
-            <Box
-              component="pre"
-              sx={{
-                backgroundColor: '#fff',
-                color: '#333',
-                borderRadius: 1,
-                p: 2,
-                fontFamily: 'Menlo, Consolas, Monaco, "Courier New", monospace',
-                fontSize: 13,
-                overflowX: 'auto',
-              }}
-            >
-{`<DataTable
+            <CodeBlock
+              language="tsx"
+              code={`<DataTable
   columns={columns}
   data={employees}
   idKey="employeeId"     // Use employeeId as unique key
   totalRow={1000}        // Total rows on server
 />`}
-            </Box>
+            />
           </Box>
         </AccordionDetails>
       </Accordion>
@@ -158,96 +77,20 @@ export function DataTablePropsPage() {
           </Typography>
         </AccordionSummary>
         <AccordionDetails>
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell sx={{ fontWeight: 700, width: '25%' }}>Prop</TableCell>
-                <TableCell sx={{ fontWeight: 700, width: '25%' }}>Type</TableCell>
-                <TableCell sx={{ fontWeight: 700, width: '15%' }}>Default</TableCell>
-                <TableCell sx={{ fontWeight: 700, width: '35%' }}>Description</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              <TableRow>
-                <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>dataMode</TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>
-                  'client' | 'server'
-                </TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13 }}>
-                  'client'
-                </TableCell>
-                <TableCell>
-                  Controls data management mode. 'server' enables server-side pagination, filtering, and sorting.
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>onFetchData</TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>
-                  {'(filters) => Promise<{data, total}>'}
-                </TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13 }}>
-                  undefined
-                </TableCell>
-                <TableCell>
-                  Callback to fetch data from server. Receives current table state (filters, pagination, sorting).
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>initialLoadData</TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>
-                  boolean
-                </TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13 }}>
-                  true
-                </TableCell>
-                <TableCell>
-                  Whether to fetch data on component mount. Set to false to manually control initial fetch.
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>onDataStateChange</TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>
-                  {'(state) => void'}
-                </TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13 }}>
-                  undefined
-                </TableCell>
-                <TableCell>
-                  Callback fired when any table state changes (filters, pagination, sorting, selection).
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>initialState</TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>
-                  Partial{'<TableState>'}
-                </TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13 }}>
-                  {'{}'} 
-                </TableCell>
-                <TableCell>
-                  Initial table state (pagination, sorting, filters, column visibility, etc.).
-                </TableCell>
-              </TableRow>
-            </TableBody>
-          </Table>
+          <Box sx={{ overflowX: 'auto' }}>
+            <FeatureMetadataTable
+              items={serverPropsGroup?.items ?? []}
+              includePossibleValues
+            />
+          </Box>
 
           <Box sx={{ mt: 3, p: 2, backgroundColor: 'grey.50', borderRadius: 1 }}>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
               Insight: Example: Server-Side Data
             </Typography>
-            <Box
-              component="pre"
-              sx={{
-                backgroundColor: '#fff',
-                color: '#333',
-                borderRadius: 1,
-                p: 2,
-                fontFamily: 'Menlo, Consolas, Monaco, "Courier New", monospace',
-                fontSize: 13,
-                overflowX: 'auto',
-              }}
-            >
-{`const handleFetchData = async (filters) => {
+            <CodeBlock
+              language="tsx"
+              code={`const handleFetchData = async (filters) => {
   const response = await fetch('/api/employees', {
     method: 'POST',
     body: JSON.stringify(filters),
@@ -269,7 +112,7 @@ export function DataTablePropsPage() {
     sorting: [{ id: 'name', desc: false }],
   }}
 />`}
-            </Box>
+            />
           </Box>
         </AccordionDetails>
       </Accordion>
@@ -289,72 +132,20 @@ export function DataTablePropsPage() {
           </Typography>
         </AccordionSummary>
         <AccordionDetails>
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell sx={{ fontWeight: 700, width: '25%' }}>Prop</TableCell>
-                <TableCell sx={{ fontWeight: 700, width: '25%' }}>Type</TableCell>
-                <TableCell sx={{ fontWeight: 700, width: '15%' }}>Default</TableCell>
-                <TableCell sx={{ fontWeight: 700, width: '35%' }}>Description</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              <TableRow>
-                <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>enablePagination</TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>
-                  boolean
-                </TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13 }}>
-                  true
-                </TableCell>
-                <TableCell>
-                  Enable pagination controls. Set to false when using virtualization.
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>paginationMode</TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>
-                  'client' | 'server'
-                </TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13 }}>
-                  'client'
-                </TableCell>
-                <TableCell>
-                  Pagination mode. 'server' delegates pagination to onFetchData callback.
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>onPaginationChange</TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>
-                  {'(pagination) => void'}
-                </TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13 }}>
-                  undefined
-                </TableCell>
-                <TableCell>
-                  Callback when pagination state changes.
-                </TableCell>
-              </TableRow>
-            </TableBody>
-          </Table>
+          <Box sx={{ overflowX: 'auto' }}>
+            <FeatureMetadataTable
+              items={paginationPropsGroup?.items ?? []}
+              includePossibleValues
+            />
+          </Box>
 
           <Box sx={{ mt: 3, p: 2, backgroundColor: 'grey.50', borderRadius: 1 }}>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
               Insight: Example
             </Typography>
-            <Box
-              component="pre"
-              sx={{
-                backgroundColor: '#fff',
-                color: '#333',
-                borderRadius: 1,
-                p: 2,
-                fontFamily: 'Menlo, Consolas, Monaco, "Courier New", monospace',
-                fontSize: 13,
-                overflowX: 'auto',
-              }}
-            >
-{`<DataTable
+            <CodeBlock
+              language="tsx"
+              code={`<DataTable
   columns={columns}
   data={data}
   enablePagination={true}
@@ -369,7 +160,7 @@ export function DataTablePropsPage() {
     },
   }}
 />`}
-            </Box>
+            />
           </Box>
         </AccordionDetails>
       </Accordion>
@@ -382,96 +173,20 @@ export function DataTablePropsPage() {
           </Typography>
         </AccordionSummary>
         <AccordionDetails>
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell sx={{ fontWeight: 700, width: '25%' }}>Prop</TableCell>
-                <TableCell sx={{ fontWeight: 700, width: '25%' }}>Type</TableCell>
-                <TableCell sx={{ fontWeight: 700, width: '15%' }}>Default</TableCell>
-                <TableCell sx={{ fontWeight: 700, width: '35%' }}>Description</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              <TableRow>
-                <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>enableGlobalFilter</TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>
-                  boolean
-                </TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13 }}>
-                  true
-                </TableCell>
-                <TableCell>
-                  Enable global search input in toolbar.
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>enableColumnFilter</TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>
-                  boolean
-                </TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13 }}>
-                  false
-                </TableCell>
-                <TableCell>
-                  Enable column-specific filters. Columns must have filterable: true.
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>filterMode</TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>
-                  'client' | 'server'
-                </TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13 }}>
-                  'client'
-                </TableCell>
-                <TableCell>
-                  Filtering mode. 'server' delegates filtering to onFetchData callback.
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>onGlobalFilterChange</TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>
-                  {'(filter: string) => void'}
-                </TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13 }}>
-                  undefined
-                </TableCell>
-                <TableCell>
-                  Callback when global filter changes.
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>onColumnFiltersChange</TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>
-                  {'(filters) => void'}
-                </TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13 }}>
-                  undefined
-                </TableCell>
-                <TableCell>
-                  Callback when column filters change.
-                </TableCell>
-              </TableRow>
-            </TableBody>
-          </Table>
+          <Box sx={{ overflowX: 'auto' }}>
+            <FeatureMetadataTable
+              items={filteringPropsGroup?.items ?? []}
+              includePossibleValues
+            />
+          </Box>
 
           <Box sx={{ mt: 3, p: 2, backgroundColor: 'grey.50', borderRadius: 1 }}>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
               Insight: Example
             </Typography>
-            <Box
-              component="pre"
-              sx={{
-                backgroundColor: '#fff',
-                color: '#333',
-                borderRadius: 1,
-                p: 2,
-                fontFamily: 'Menlo, Consolas, Monaco, "Courier New", monospace',
-                fontSize: 13,
-                overflowX: 'auto',
-              }}
-            >
-{`<DataTable
+            <CodeBlock
+              language="tsx"
+              code={`<DataTable
   columns={columns}
   data={data}
   enableGlobalFilter={true}       // Enable search
@@ -484,7 +199,7 @@ export function DataTablePropsPage() {
     console.log('Column filters:', filters);
   }}
 />`}
-            </Box>
+            />
           </Box>
         </AccordionDetails>
       </Accordion>
@@ -497,72 +212,20 @@ export function DataTablePropsPage() {
           </Typography>
         </AccordionSummary>
         <AccordionDetails>
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell sx={{ fontWeight: 700, width: '25%' }}>Prop</TableCell>
-                <TableCell sx={{ fontWeight: 700, width: '25%' }}>Type</TableCell>
-                <TableCell sx={{ fontWeight: 700, width: '15%' }}>Default</TableCell>
-                <TableCell sx={{ fontWeight: 700, width: '35%' }}>Description</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              <TableRow>
-                <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>enableSorting</TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>
-                  boolean
-                </TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13 }}>
-                  true
-                </TableCell>
-                <TableCell>
-                  Enable column sorting functionality.
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>sortingMode</TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>
-                  'client' | 'server'
-                </TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13 }}>
-                  'client'
-                </TableCell>
-                <TableCell>
-                  Sorting mode. 'server' delegates sorting to onFetchData callback.
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>onSortingChange</TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>
-                  {'(sorting: SortingState) => void'}
-                </TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13 }}>
-                  undefined
-                </TableCell>
-                <TableCell>
-                  Callback when sorting state changes.
-                </TableCell>
-              </TableRow>
-            </TableBody>
-          </Table>
+          <Box sx={{ overflowX: 'auto' }}>
+            <FeatureMetadataTable
+              items={sortingPropsGroup?.items ?? []}
+              includePossibleValues
+            />
+          </Box>
 
           <Box sx={{ mt: 3, p: 2, backgroundColor: 'grey.50', borderRadius: 1 }}>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
               Insight: Example
             </Typography>
-            <Box
-              component="pre"
-              sx={{
-                backgroundColor: '#fff',
-                color: '#333',
-                borderRadius: 1,
-                p: 2,
-                fontFamily: 'Menlo, Consolas, Monaco, "Courier New", monospace',
-                fontSize: 13,
-                overflowX: 'auto',
-              }}
-            >
-{`<DataTable
+            <CodeBlock
+              language="tsx"
+              code={`<DataTable
   columns={columns}
   data={data}
   enableSorting={true}
@@ -574,7 +237,7 @@ export function DataTablePropsPage() {
     sorting: [{ id: 'name', desc: false }],  // Sort by name ascending
   }}
 />`}
-            </Box>
+            />
           </Box>
         </AccordionDetails>
       </Accordion>
@@ -587,88 +250,12 @@ export function DataTablePropsPage() {
           </Typography>
         </AccordionSummary>
         <AccordionDetails>
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell sx={{ fontWeight: 700, width: '25%' }}>Prop</TableCell>
-                <TableCell sx={{ fontWeight: 700, width: '25%' }}>Type</TableCell>
-                <TableCell sx={{ fontWeight: 700, width: '15%' }}>Default</TableCell>
-                <TableCell sx={{ fontWeight: 700, width: '35%' }}>Description</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              <TableRow>
-                <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>enableRowSelection</TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>
-                  boolean
-                </TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13 }}>
-                  false
-                </TableCell>
-                <TableCell>Enable row selection with checkboxes.</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>enableMultiRowSelection</TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>
-                  boolean
-                </TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13 }}>
-                  true
-                </TableCell>
-                <TableCell>Allow selecting multiple rows (false = single selection).</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>selectMode</TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>
-                  'page' | 'all'
-                </TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13 }}>
-                  'page'
-                </TableCell>
-                <TableCell>Selection scope: 'page' for current page only, 'all' for cross-page selection.</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>isRowSelectable</TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>
-                  {'(params) => boolean'}
-                </TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13 }}>
-                  undefined
-                </TableCell>
-                <TableCell>Function to determine if a row can be selected. MUST be memoized!</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>onSelectionChange</TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>
-                  {'(selection) => void'}
-                </TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13 }}>
-                  undefined
-                </TableCell>
-                <TableCell>Callback when selection changes.</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>enableBulkActions</TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>
-                  boolean
-                </TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13 }}>
-                  false
-                </TableCell>
-                <TableCell>Show bulk actions toolbar when rows are selected.</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>bulkActions</TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>
-                  {'(selection) => ReactNode'}
-                </TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13 }}>
-                  undefined
-                </TableCell>
-                <TableCell>Render function for bulk action buttons.</TableCell>
-              </TableRow>
-            </TableBody>
-          </Table>
+          <Box sx={{ overflowX: 'auto' }}>
+            <FeatureMetadataTable
+              items={selectionPropsGroup?.items ?? []}
+              includePossibleValues
+            />
+          </Box>
         </AccordionDetails>
       </Accordion>
 
@@ -779,19 +366,9 @@ export function DataTablePropsPage() {
           <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
             Insight: Complete initialState Example
           </Typography>
-          <Box
-            component="pre"
-            sx={{
-              backgroundColor: '#fff',
-              color: '#333',
-              borderRadius: 1,
-              p: 2,
-              fontFamily: 'Menlo, Consolas, Monaco, "Courier New", monospace',
-              fontSize: 13,
-              overflowX: 'auto',
-            }}
-          >
-{`import { DEFAULT_SELECTION_COLUMN_NAME } from '@ackplus/react-tanstack-data-table';
+          <CodeBlock
+            language="tsx"
+            code={`import { DEFAULT_SELECTION_COLUMN_NAME } from '@ackplus/react-tanstack-data-table';
 
 <DataTable
   columns={columns}
@@ -846,7 +423,7 @@ export function DataTablePropsPage() {
     },
   }}
 />`}
-          </Box>
+          />
         </Box>
       </Paper>
 
@@ -875,175 +452,19 @@ export function DataTablePropsPage() {
           These components can be replaced with custom implementations:
         </Typography>
         
-        <Stack spacing={2}>
-          <Box>
-            <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1, color: 'primary.main' }}>
-              Container Slots
-            </Typography>
-            <Table size="small">
-              <TableBody>
-                <TableRow>
-                  <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600, width: '30%' }}>root</TableCell>
-                  <TableCell>Main container component (Box)</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>tableContainer</TableCell>
-                  <TableCell>Table container (TableContainer)</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>table</TableCell>
-                  <TableCell>Table element (Table)</TableCell>
-                </TableRow>
-              </TableBody>
-            </Table>
-          </Box>
-
-          <Box>
-            <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1, color: 'primary.main' }}>
-              Toolbar Slots
-            </Typography>
-            <Table size="small">
-              <TableBody>
-                <TableRow>
-                  <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600, width: '30%' }}>toolbar</TableCell>
-                  <TableCell>Main toolbar component</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>searchInput</TableCell>
-                  <TableCell>Global search input</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>exportButton</TableCell>
-                  <TableCell>Export button and menu</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>columnVisibilityControl</TableCell>
-                  <TableCell>Column visibility dropdown</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>columnCustomFilterControl</TableCell>
-                  <TableCell>Column filter button/dialog</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>columnPinningControl</TableCell>
-                  <TableCell>Column pinning control</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>tableSizeControl</TableCell>
-                  <TableCell>Table density control</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>resetButton</TableCell>
-                  <TableCell>Reset button</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>bulkActionsToolbar</TableCell>
-                  <TableCell>Bulk actions toolbar (selection)</TableCell>
-                </TableRow>
-              </TableBody>
-            </Table>
-          </Box>
-
-          <Box>
-            <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1, color: 'primary.main' }}>
-              Table Structure Slots
-            </Typography>
-            <Table size="small">
-              <TableBody>
-                <TableRow>
-                  <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600, width: '30%' }}>header</TableCell>
-                  <TableCell>Table header (TableHead)</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>headerRow</TableCell>
-                  <TableCell>Header row component</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>headerCell</TableCell>
-                  <TableCell>Header cell component</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>body</TableCell>
-                  <TableCell>Table body (TableBody)</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>row</TableCell>
-                  <TableCell>Table row component</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>cell</TableCell>
-                  <TableCell>Table cell component</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>loadingRow</TableCell>
-                  <TableCell>Loading skeleton row</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>emptyRow</TableCell>
-                  <TableCell>Empty data row</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>expandedRow</TableCell>
-                  <TableCell>Expanded row content</TableCell>
-                </TableRow>
-              </TableBody>
-            </Table>
-          </Box>
-
-          <Box>
-            <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1, color: 'primary.main' }}>
-              Footer & Pagination Slots
-            </Typography>
-            <Table size="small">
-              <TableBody>
-                <TableRow>
-                  <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600, width: '30%' }}>footer</TableCell>
-                  <TableCell>Footer container</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>pagination</TableCell>
-                  <TableCell>Pagination component</TableCell>
-                </TableRow>
-              </TableBody>
-            </Table>
-          </Box>
-
-          <Box>
-            <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1, color: 'primary.main' }}>
-              Special Column Slots
-            </Typography>
-            <Table size="small">
-              <TableBody>
-                <TableRow>
-                  <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600, width: '30%' }}>selectionColumn</TableCell>
-                  <TableCell>Custom selection checkbox column definition</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>expandColumn</TableCell>
-                  <TableCell>Custom expansion button column definition</TableCell>
-                </TableRow>
-              </TableBody>
-            </Table>
-          </Box>
-        </Stack>
+        <FeatureMetadataAccordion
+          groups={dataTableMetadata.slotGroups}
+          defaultExpandedCount={2}
+          includePossibleValues
+        />
 
         <Box sx={{ mt: 3, p: 2, backgroundColor: 'grey.50', borderRadius: 1 }}>
           <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
             Insight: Example: Replace Components with Slots
           </Typography>
-          <Box
-            component="pre"
-            sx={{
-              backgroundColor: '#fff',
-              color: '#333',
-              borderRadius: 1,
-              p: 2,
-              fontFamily: 'Menlo, Consolas, Monaco, "Courier New", monospace',
-              fontSize: 13,
-              overflowX: 'auto',
-            }}
-          >
-{`import { Box, TextField } from '@mui/material';
+          <CodeBlock
+            language="tsx"
+            code={`import { Box, TextField } from '@mui/material';
 import { useDataTableContext } from '@ackplus/react-tanstack-data-table';
 
 // Custom search component
@@ -1089,7 +510,7 @@ const CustomLoading = ({ colSpan }) => (
     },
   }}
 />`}
-          </Box>
+          />
         </Box>
       </Paper>
 
@@ -1115,20 +536,9 @@ const CustomLoading = ({ colSpan }) => (
           Common SlotProps Usage
         </Typography>
         
-        <Box
-          component="pre"
-          sx={{
-            backgroundColor: '#f5f5f5',
-            color: '#333',
-            borderRadius: 1,
-            p: 2,
-            fontFamily: 'Menlo, Consolas, Monaco, "Courier New", monospace',
-            fontSize: 14,
-            overflowX: 'auto',
-            mb: 3,
-          }}
-        >
-{`<DataTable
+        <CodeBlock
+          language="tsx"
+          code={`<DataTable
   columns={columns}
   data={data}
   slotProps={{
@@ -1219,6 +629,14 @@ const CustomLoading = ({ colSpan }) => (
     },
   }}
 />`}
+        />
+
+        <Box sx={{ mt: 3 }}>
+          <FeatureMetadataAccordion
+            groups={dataTableMetadata.slotPropGroups}
+            defaultExpandedCount={1}
+            includePossibleValues
+          />
         </Box>
       </Paper>
 
@@ -1255,7 +673,7 @@ const CustomLoading = ({ colSpan }) => (
 
           <Box>
             <Typography variant="h6" sx={{ fontWeight: 600, mb: 1, color: 'error.main' }}>
-              ⚙️ Use Slots When:
+              Use Slots When:
             </Typography>
             <Stack spacing={1}>
               <Typography variant="body2">
@@ -1278,19 +696,9 @@ const CustomLoading = ({ colSpan }) => (
           <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
             Insight: Example Comparison
           </Typography>
-          <Box
-            component="pre"
-            sx={{
-              backgroundColor: '#fff',
-              color: '#333',
-              borderRadius: 1,
-              p: 2,
-              fontFamily: 'Menlo, Consolas, Monaco, "Courier New", monospace',
-              fontSize: 13,
-              overflowX: 'auto',
-            }}
-          >
-{`// Tip: SlotProps: Just customize the search placeholder
+          <CodeBlock
+            language="tsx"
+            code={`// Tip: SlotProps: Just customize the search placeholder
 <DataTable
   columns={columns}
   data={data}
@@ -1301,7 +709,7 @@ const CustomLoading = ({ colSpan }) => (
   }}
 />
 
-// ⚙️ Slots: Completely replace search component
+// Slots: Completely replace search component
 const MyCustomSearch = () => {
   const { table } = useDataTableContext();
   return (
@@ -1320,7 +728,7 @@ const MyCustomSearch = () => {
     searchInput: MyCustomSearch,     // Complete replacement
   }}
 />`}
-          </Box>
+          />
         </Box>
       </Paper>
 
@@ -1711,21 +1119,11 @@ const MyCustomSearch = () => {
 
           <Box sx={{ mt: 3, p: 2, backgroundColor: 'grey.50', borderRadius: 1 }}>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-              ⚙️ Usage
+              Usage
             </Typography>
-            <Box
-              component="pre"
-              sx={{
-                backgroundColor: '#fff',
-                color: '#333',
-                borderRadius: 1,
-                p: 2,
-                fontFamily: 'Menlo, Consolas, Monaco, "Courier New", monospace',
-                fontSize: 13,
-                overflowX: 'auto',
-              }}
-            >
-{`configureDataTableLogging({
+            <CodeBlock
+              language="tsx"
+              code={`configureDataTableLogging({
   enabled: true,
   level: 'debug',
   includeTimestamp: true,
@@ -1739,16 +1137,15 @@ const MyCustomSearch = () => {
     level: 'info',
     prefix: 'OrdersTable',
   }}
-/>
-`}
-            </Box>
+/>`}
+            />
           </Box>
         </AccordionDetails>
       </Accordion>
 
       <Paper elevation={1} sx={{ p: 3, mt: 4 }}>
         <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
-          📚 More Documentation
+          More Documentation
         </Typography>
         <Stack spacing={1}>
           <Typography variant="body2">

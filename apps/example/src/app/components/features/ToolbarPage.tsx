@@ -1,8 +1,10 @@
-import { Box, Typography, Paper, Alert, Divider, Table, TableBody, TableCell, TableHead, TableRow, Stack, Button, FormControl, InputLabel, Select, MenuItem, Chip, TextField } from '@mui/material';
+import { Box, Typography, Paper, Alert, Divider, Table, TableBody, TableCell, TableHead, TableRow, Stack, Button, FormControl, InputLabel, Select, MenuItem, Chip, TextField, Accordion, AccordionSummary, AccordionDetails } from '@mui/material';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { DataTable, DataTableColumn } from '@ackplus/react-tanstack-data-table';
 import { useState, useCallback, useMemo } from 'react';
 import { Add as AddIcon } from '@mui/icons-material';
-import { FeatureLayout } from './common';
+import { FeatureLayout, CodeBlock, FeatureMetadataTable, FeatureMetadataAccordion } from './common';
+import { toolbarTableGroups, toolbarSlotPropGroups, getToolbarTableGroup } from './data/toolbar-metadata';
 
 interface Task {
   id: number;
@@ -24,6 +26,7 @@ const sampleTasks: Task[] = [
 export function ToolbarPage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [showToolbar, setShowToolbar] = useState(true);
+  const toolbarTableGroup = getToolbarTableGroup('toolbar-table-props');
 
   const columns: DataTableColumn<Task>[] = [
     {
@@ -191,20 +194,9 @@ export function ToolbarPage() {
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
           Control which toolbar elements are visible:
         </Typography>
-        <Box
-          component="pre"
-          sx={{
-            backgroundColor: '#f5f5f5',
-            color: '#333',
-            borderRadius: 1,
-            p: 2,
-            fontFamily: 'Menlo, Consolas, Monaco, "Courier New", monospace',
-            fontSize: 14,
-            overflowX: 'auto',
-            mb: 3,
-          }}
-        >
-{`<DataTable
+        <CodeBlock
+          language="tsx"
+          code={`<DataTable
   columns={columns}
   data={data}
   
@@ -217,7 +209,7 @@ export function ToolbarPage() {
   enableExport={true}                // Show export button
   enableReset={true}                 // Show reset button
 />`}
-        </Box>
+        />
 
         <DataTable
           columns={columns}
@@ -253,20 +245,9 @@ export function ToolbarPage() {
         <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
           Example: Extra Filter Component
         </Typography>
-        <Box
-          component="pre"
-          sx={{
-            backgroundColor: '#f5f5f5',
-            color: '#333',
-            borderRadius: 1,
-            p: 2,
-            fontFamily: 'Menlo, Consolas, Monaco, "Courier New", monospace',
-            fontSize: 14,
-            overflowX: 'auto',
-            mb: 3,
-          }}
-        >
-{`import { FormControl, InputLabel, Select, MenuItem } from '@mui/material';
+        <CodeBlock
+          language="tsx"
+          code={`import { FormControl, InputLabel, Select, MenuItem } from '@mui/material';
 import { useState, useMemo } from 'react';
 
 function MyComponent() {
@@ -303,7 +284,7 @@ function MyComponent() {
     />
   );
 }`}
-        </Box>
+        />
 
         <DataTable
           columns={columns}
@@ -328,20 +309,9 @@ function MyComponent() {
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
           Combine multiple custom filter components:
         </Typography>
-        <Box
-          component="pre"
-          sx={{
-            backgroundColor: '#f5f5f5',
-            color: '#333',
-            borderRadius: 1,
-            p: 2,
-            fontFamily: 'Menlo, Consolas, Monaco, "Courier New", monospace',
-            fontSize: 14,
-            overflowX: 'auto',
-            mb: 3,
-          }}
-        >
-{`const extraFilter = useMemo(() => (
+        <CodeBlock
+          language="tsx"
+          code={`const extraFilter = useMemo(() => (
   <Stack direction="row" spacing={1}>
     <FormControl size="small" sx={{ minWidth: 120 }}>
       <InputLabel>Status</InputLabel>
@@ -385,7 +355,7 @@ function MyComponent() {
   data={filteredData}
   extraFilter={extraFilter}
 />`}
-        </Box>
+        />
       </Paper>
 
       <Divider sx={{ my: 4 }} />
@@ -395,87 +365,11 @@ function MyComponent() {
         Toolbar Props Reference
       </Typography>
 
-      <Paper elevation={1} sx={{ p: 3, mb: 4 }}>
-        <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
-          DataTable Toolbar Props
-        </Typography>
-        <Table size="small">
-          <TableHead>
-            <TableRow>
-              <TableCell sx={{ fontWeight: 700, width: '25%' }}>Prop</TableCell>
-              <TableCell sx={{ fontWeight: 700, width: '20%' }}>Type</TableCell>
-              <TableCell sx={{ fontWeight: 700, width: '15%' }}>Default</TableCell>
-              <TableCell sx={{ fontWeight: 700, width: '40%' }}>Description</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            <TableRow>
-              <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>enableGlobalFilter</TableCell>
-              <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>
-                boolean
-              </TableCell>
-              <TableCell sx={{ fontFamily: 'monospace', fontSize: 13 }}>true</TableCell>
-              <TableCell>Show global search input in toolbar</TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>enableColumnFilter</TableCell>
-              <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>
-                boolean
-              </TableCell>
-              <TableCell sx={{ fontFamily: 'monospace', fontSize: 13 }}>false</TableCell>
-              <TableCell>Show column filter button</TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>enableColumnVisibility</TableCell>
-              <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>
-                boolean
-              </TableCell>
-              <TableCell sx={{ fontFamily: 'monospace', fontSize: 13 }}>true</TableCell>
-              <TableCell>Show column visibility dropdown</TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>enableColumnPinning</TableCell>
-              <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>
-                boolean
-              </TableCell>
-              <TableCell sx={{ fontFamily: 'monospace', fontSize: 13 }}>false</TableCell>
-              <TableCell>Show column pinning control</TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>enableTableSizeControl</TableCell>
-              <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>
-                boolean
-              </TableCell>
-              <TableCell sx={{ fontFamily: 'monospace', fontSize: 13 }}>true</TableCell>
-              <TableCell>Show table size/density control</TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>enableExport</TableCell>
-              <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>
-                boolean
-              </TableCell>
-              <TableCell sx={{ fontFamily: 'monospace', fontSize: 13 }}>true</TableCell>
-              <TableCell>Show export button (CSV/Excel)</TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>enableReset</TableCell>
-              <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>
-                boolean
-              </TableCell>
-              <TableCell sx={{ fontFamily: 'monospace', fontSize: 13 }}>true</TableCell>
-              <TableCell>Show reset button to clear all settings</TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>extraFilter</TableCell>
-              <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>
-                ReactNode
-              </TableCell>
-              <TableCell sx={{ fontFamily: 'monospace', fontSize: 13 }}>null</TableCell>
-              <TableCell>Custom component(s) to add to toolbar right section</TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
-      </Paper>
+      {toolbarTableGroup && (
+        <Paper elevation={1} sx={{ p: 3, mb: 4 }}>
+          <FeatureMetadataTable items={toolbarTableGroup.items} />
+        </Paper>
+      )}
 
       <Divider sx={{ my: 4 }} />
 
@@ -493,104 +387,96 @@ function MyComponent() {
         </Typography>
       </Alert>
 
+      {/* Complete SlotProps Reference */}
       <Paper elevation={1} sx={{ p: 3, mb: 4 }}>
         <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
-          Available SlotProps
+          Complete SlotProps Reference
         </Typography>
-        <Table size="small">
-          <TableHead>
-            <TableRow>
-              <TableCell sx={{ fontWeight: 700 }}>SlotProp</TableCell>
-              <TableCell sx={{ fontWeight: 700 }}>Type</TableCell>
-              <TableCell sx={{ fontWeight: 700 }}>Description</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            <TableRow>
-              <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>toolbar</TableCell>
-              <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>
-                ToolbarProps
-              </TableCell>
-              <TableCell>Props for the main toolbar container</TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>searchInput</TableCell>
-              <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>
-                object
-              </TableCell>
-              <TableCell>Props for search input (placeholder, autoFocus, etc.)</TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>exportButton</TableCell>
-              <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>
-                object
-              </TableCell>
-              <TableCell>Props for export button</TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>columnVisibilityControl</TableCell>
-              <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>
-                object
-              </TableCell>
-              <TableCell>Props for column visibility dropdown</TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>tableSizeControl</TableCell>
-              <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>
-                object
-              </TableCell>
-              <TableCell>Props for table size control</TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>resetButton</TableCell>
-              <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>
-                object
-              </TableCell>
-              <TableCell>Props for reset button</TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+          Use <code>slotProps</code> to customize any toolbar component. All MUI component props are supported.
+        </Typography>
 
+        <FeatureMetadataAccordion
+          groups={toolbarSlotPropGroups}
+          defaultExpandedCount={1}
+          includePossibleValues={false}
+        />
+
+        {/* Icon SlotProps Summary */}
+        <Box sx={{ mt: 3, p: 2, backgroundColor: 'info.lighter', borderRadius: 1 }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+            Icon SlotProps
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            All icons in toolbar components can be customized via slotProps. Pass SVG component props:
+          </Typography>
+          <CodeBlock
+            language="tsx"
+            code={`slotProps={{
+  // Search icons
+  searchIcon: { sx: { color: 'primary.main', fontSize: 20 } },
+  clearIcon: { sx: { color: 'error.main', fontSize: 18 } },
+  
+  // Export icons
+  exportIcon: { sx: { fontSize: 20 } },
+  csvIcon: { sx: { color: 'success.main' } },
+  excelIcon: { sx: { color: 'success.dark' } },
+  
+  // Column icons
+  columnIcon: { sx: { fontSize: 20 } },
+  filterIcon: { sx: { color: 'primary.main' } },
+  pinIcon: { sx: { fontSize: 18 } },
+  unpinIcon: { sx: { fontSize: 16 } },
+  leftIcon: { sx: { fontSize: 16 } },
+  rightIcon: { sx: { fontSize: 16 } },
+  
+  // Other icons
+  resetIcon: { sx: { color: 'warning.main' } },
+  tableSizeIcon: { sx: { fontSize: 20 } },
+  tableSizeSmallIcon: { sx: { fontSize: 18 } },
+  tableSizeMediumIcon: { sx: { fontSize: 18 } },
+}}`}
+          />
+        </Box>
+
+        {/* Complete Example */}
         <Box sx={{ mt: 3, p: 2, backgroundColor: 'grey.50', borderRadius: 1 }}>
           <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-            Insight: Example: Customize Search Input
+            Complete Example: All SlotProps
           </Typography>
-          <Box
-            component="pre"
-            sx={{
-              backgroundColor: '#fff',
-              color: '#333',
-              borderRadius: 1,
-              p: 2,
-              fontFamily: 'Menlo, Consolas, Monaco, "Courier New", monospace',
-              fontSize: 13,
-              overflowX: 'auto',
-            }}
-          >
-{`<DataTable
+          <CodeBlock
+            language="tsx"
+            code={`<DataTable
   columns={columns}
   data={data}
   enableGlobalFilter={true}
+  enableColumnFilter={true}
+  enableColumnVisibility={true}
+  enableExport={true}
   slotProps={{
-    searchInput: {
-      placeholder: 'Search tasks...',
-      autoFocus: true,
-      inputProps: {
-        sx: { 
-          minWidth: 300,
-          backgroundColor: 'grey.50',
-        },
-      },
-    },
     toolbar: {
-      sx: {
-        backgroundColor: 'primary.light',
-        p: 2,
-      },
+      sx: { backgroundColor: 'grey.50', p: 2 },
+      title: 'Product List',
+    },
+    searchInput: {
+      placeholder: 'Search products...',
+      autoFocus: false,
+      inputProps: { sx: { minWidth: 300 } },
+    },
+    columnVisibilityControl: {
+      title: 'Columns',
+      checkboxProps: { color: 'primary' },
+    },
+    exportButton: {
+      exportFilename: 'products',
+      tooltipProps: { title: 'Export to CSV/Excel' },
+    },
+    resetButton: {
+      tooltipProps: { title: 'Reset layout' },
     },
   }}
 />`}
-          </Box>
+          />
         </Box>
       </Paper>
 
@@ -673,21 +559,11 @@ function MyComponent() {
 
         <Box sx={{ mt: 3, p: 2, backgroundColor: 'grey.50', borderRadius: 1 }}>
           <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-            Insight: Example: Replace Toolbar Component
+            Example: Replace Toolbar Component
           </Typography>
-          <Box
-            component="pre"
-            sx={{
-              backgroundColor: '#fff',
-              color: '#333',
-              borderRadius: 1,
-              p: 2,
-              fontFamily: 'Menlo, Consolas, Monaco, "Courier New", monospace',
-              fontSize: 13,
-              overflowX: 'auto',
-            }}
-          >
-{`import { Box, TextField } from '@mui/material';
+          <CodeBlock
+            language="tsx"
+            code={`import { Box, TextField } from '@mui/material';
 
 // Custom search component
 const CustomSearch = ({ placeholder, ...props }) => {
@@ -718,7 +594,7 @@ const CustomSearch = ({ placeholder, ...props }) => {
     },
   }}
 />`}
-          </Box>
+          />
         </Box>
       </Paper>
 
@@ -736,20 +612,9 @@ const CustomSearch = ({ placeholder, ...props }) => {
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
           Disable all toolbar controls to hide the toolbar:
         </Typography>
-        <Box
-          component="pre"
-          sx={{
-            backgroundColor: '#f5f5f5',
-            color: '#333',
-            borderRadius: 1,
-            p: 2,
-            fontFamily: 'Menlo, Consolas, Monaco, "Courier New", monospace',
-            fontSize: 14,
-            overflowX: 'auto',
-            mb: 3,
-          }}
-        >
-{`<DataTable
+        <CodeBlock
+          language="tsx"
+          code={`<DataTable
   columns={columns}
   data={data}
   
@@ -763,7 +628,7 @@ const CustomSearch = ({ placeholder, ...props }) => {
   
   // Toolbar will not render
 />`}
-        </Box>
+        />
 
         <DataTable
           columns={columns}
@@ -799,20 +664,9 @@ const CustomSearch = ({ placeholder, ...props }) => {
         <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
           Example: Bulk Actions Toolbar
         </Typography>
-        <Box
-          component="pre"
-          sx={{
-            backgroundColor: '#f5f5f5',
-            color: '#333',
-            borderRadius: 1,
-            p: 2,
-            fontFamily: 'Menlo, Consolas, Monaco, "Courier New", monospace',
-            fontSize: 14,
-            overflowX: 'auto',
-            mb: 3,
-          }}
-        >
-{`<DataTable
+        <CodeBlock
+          language="tsx"
+          code={`<DataTable
   columns={columns}
   data={data}
   enableRowSelection={true}
@@ -858,7 +712,7 @@ const CustomSearch = ({ placeholder, ...props }) => {
     },
   }}
 />`}
-        </Box>
+        />
 
         <DataTable
           columns={columns}
@@ -881,7 +735,7 @@ const CustomSearch = ({ placeholder, ...props }) => {
                 color="error"
                 onClick={() => alert(`Delete ${selection.ids.length} tasks`)}
               >
-                🗑️ Delete
+                Delete
               </Button>
             </Box>
           )}
@@ -899,19 +753,9 @@ const CustomSearch = ({ placeholder, ...props }) => {
         <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
           Example: Fully Customized Toolbar
         </Typography>
-        <Box
-          component="pre"
-          sx={{
-            backgroundColor: '#f5f5f5',
-            color: '#333',
-            borderRadius: 1,
-            p: 2,
-            fontFamily: 'Menlo, Consolas, Monaco, "Courier New", monospace',
-            fontSize: 14,
-            overflowX: 'auto',
-          }}
-        >
-{`const extraFilter = (
+        <CodeBlock
+          language="tsx"
+          code={`const extraFilter = (
   <Stack direction="row" spacing={1}>
     <FormControl size="small">
       <InputLabel>Status</InputLabel>
@@ -970,7 +814,7 @@ const CustomSearch = ({ placeholder, ...props }) => {
     },
   }}
 />`}
-        </Box>
+        />
       </Paper>
 
       <Divider sx={{ my: 4 }} />

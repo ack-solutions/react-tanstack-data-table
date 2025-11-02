@@ -1,0 +1,546 @@
+{
+  "tableGroups": [
+    {
+      "id": "toolbar-table-props",
+      "title": "DataTable Toolbar Props",
+      "description": "Props to enable/disable toolbar controls and customize toolbar behavior.",
+      "items": [
+        {
+          "name": "enableGlobalFilter",
+          "type": "boolean",
+          "defaultValue": "true",
+          "description": "Enable global search input in the toolbar.",
+          "possibleValues": ["true", "false"]
+        },
+        {
+          "name": "enableColumnFilter",
+          "type": "boolean",
+          "defaultValue": "false",
+          "description": "Enable advanced column filtering button.",
+          "possibleValues": ["true", "false"]
+        },
+        {
+          "name": "enableColumnVisibility",
+          "type": "boolean",
+          "defaultValue": "true",
+          "description": "Enable column visibility dropdown.",
+          "possibleValues": ["true", "false"]
+        },
+        {
+          "name": "enableColumnPinning",
+          "type": "boolean",
+          "defaultValue": "false",
+          "description": "Enable column pinning control.",
+          "possibleValues": ["true", "false"]
+        },
+        {
+          "name": "enableTableSizeControl",
+          "type": "boolean",
+          "defaultValue": "true",
+          "description": "Enable table size/density control.",
+          "possibleValues": ["true", "false"]
+        },
+        {
+          "name": "enableExport",
+          "type": "boolean",
+          "defaultValue": "true",
+          "description": "Enable export button (CSV/Excel).",
+          "possibleValues": ["true", "false"]
+        },
+        {
+          "name": "enableReset",
+          "type": "boolean",
+          "defaultValue": "true",
+          "description": "Enable reset button to clear all settings.",
+          "possibleValues": ["true", "false"]
+        },
+        {
+          "name": "extraFilter",
+          "type": "ReactNode",
+          "defaultValue": "null",
+          "description": "Custom component(s) to add to toolbar right section.",
+          "possibleValues": ["ReactNode", "null"]
+        }
+      ]
+    }
+  ],
+  "slotPropGroups": [
+    {
+      "id": "toolbar-slot-props",
+      "title": "toolbar - Main Toolbar Container",
+      "description": "Customize the main toolbar container using slotProps.toolbar.",
+      "items": [
+        {
+          "name": "sx",
+          "type": "SxProps<Theme>",
+          "defaultValue": "undefined",
+          "description": "MUI sx prop for styling the toolbar container.",
+          "possibleValues": ["SxProps<Theme>"]
+        },
+        {
+          "name": "title",
+          "type": "string",
+          "defaultValue": "undefined",
+          "description": "Toolbar title text displayed at the top.",
+          "possibleValues": ["string"]
+        },
+        {
+          "name": "subtitle",
+          "type": "string",
+          "defaultValue": "undefined",
+          "description": "Toolbar subtitle text displayed below title.",
+          "possibleValues": ["string"]
+        },
+        {
+          "name": "titleSx",
+          "type": "SxProps<Theme>",
+          "defaultValue": "undefined",
+          "description": "Styling for the title Typography component.",
+          "possibleValues": ["SxProps<Theme>"]
+        },
+        {
+          "name": "subtitleSx",
+          "type": "SxProps<Theme>",
+          "defaultValue": "undefined",
+          "description": "Styling for the subtitle Typography component.",
+          "possibleValues": ["SxProps<Theme>"]
+        },
+        {
+          "name": "containerSx",
+          "type": "SxProps<Theme>",
+          "defaultValue": "undefined",
+          "description": "Styling for the toolbar container Box.",
+          "possibleValues": ["SxProps<Theme>"]
+        },
+        {
+          "name": "leftSectionSx",
+          "type": "SxProps<Theme>",
+          "defaultValue": "undefined",
+          "description": "Styling for the left control section (search, filters, etc.).",
+          "possibleValues": ["SxProps<Theme>"]
+        },
+        {
+          "name": "rightSectionSx",
+          "type": "SxProps<Theme>",
+          "defaultValue": "undefined",
+          "description": "Styling for the right section (extraFilter).",
+          "possibleValues": ["SxProps<Theme>"]
+        }
+      ]
+    },
+    {
+      "id": "search-input-slot-props",
+      "title": "searchInput - Search Control",
+      "description": "Customize the global search input component using slotProps.searchInput.",
+      "items": [
+        {
+          "name": "placeholder",
+          "type": "string",
+          "defaultValue": "'Search...'",
+          "description": "Placeholder text for the search input.",
+          "possibleValues": ["string"]
+        },
+        {
+          "name": "autoFocus",
+          "type": "boolean",
+          "defaultValue": "false",
+          "description": "Auto-focus the input when it becomes visible.",
+          "possibleValues": ["true", "false"]
+        },
+        {
+          "name": "inputProps",
+          "type": "OutlinedInputProps",
+          "defaultValue": "{}",
+          "description": "Props passed to the underlying OutlinedInput component.",
+          "possibleValues": ["OutlinedInputProps"]
+        },
+        {
+          "name": "searchIconProps",
+          "type": "IconButtonProps",
+          "defaultValue": "{}",
+          "description": "Props for the search icon button (trigger).",
+          "possibleValues": ["IconButtonProps"]
+        },
+        {
+          "name": "clearIconProps",
+          "type": "IconButtonProps",
+          "defaultValue": "{}",
+          "description": "Props for the clear icon button.",
+          "possibleValues": ["IconButtonProps"]
+        },
+        {
+          "name": "containerSx",
+          "type": "SxProps<Theme>",
+          "defaultValue": "undefined",
+          "description": "Styling for the container Box.",
+          "possibleValues": ["SxProps<Theme>"]
+        },
+        {
+          "name": "tooltipProps",
+          "type": "TooltipProps",
+          "defaultValue": "{}",
+          "description": "Props for the search icon tooltip.",
+          "possibleValues": ["TooltipProps"]
+        }
+      ]
+    },
+    {
+      "id": "column-visibility-control-slot-props",
+      "title": "columnVisibilityControl - Column Visibility Dropdown",
+      "description": "Customize the column visibility control using slotProps.columnVisibilityControl.",
+      "items": [
+        {
+          "name": "title",
+          "type": "string",
+          "defaultValue": "'Show/Hide Columns'",
+          "description": "Menu dropdown title text.",
+          "possibleValues": ["string"]
+        },
+        {
+          "name": "titleSx",
+          "type": "SxProps<Theme>",
+          "defaultValue": "undefined",
+          "description": "Styling for the title Typography component.",
+          "possibleValues": ["SxProps<Theme>"]
+        },
+        {
+          "name": "menuSx",
+          "type": "SxProps<Theme>",
+          "defaultValue": "undefined",
+          "description": "Styling for the menu container Box.",
+          "possibleValues": ["SxProps<Theme>"]
+        },
+        {
+          "name": "checkboxProps",
+          "type": "CheckboxProps",
+          "defaultValue": "{}",
+          "description": "Props for column visibility checkboxes.",
+          "possibleValues": ["CheckboxProps"]
+        },
+        {
+          "name": "labelProps",
+          "type": "FormControlLabelProps",
+          "defaultValue": "{}",
+          "description": "Props for checkbox labels.",
+          "possibleValues": ["FormControlLabelProps"]
+        }
+      ]
+    },
+    {
+      "id": "column-filter-control-slot-props",
+      "title": "columnCustomFilterControl - Advanced Column Filters",
+      "description": "Customize the column filter control using slotProps.columnCustomFilterControl.",
+      "items": [
+        {
+          "name": "title",
+          "type": "string",
+          "defaultValue": "undefined",
+          "description": "Filter dialog title text.",
+          "possibleValues": ["string"]
+        },
+        {
+          "name": "titleSx",
+          "type": "SxProps<Theme>",
+          "defaultValue": "undefined",
+          "description": "Styling for the title Typography component.",
+          "possibleValues": ["SxProps<Theme>"]
+        },
+        {
+          "name": "menuSx",
+          "type": "SxProps<Theme>",
+          "defaultValue": "undefined",
+          "description": "Styling for the filter menu container.",
+          "possibleValues": ["SxProps<Theme>"]
+        },
+        {
+          "name": "iconButtonProps",
+          "type": "IconButtonProps",
+          "defaultValue": "{}",
+          "description": "Props for the filter icon button.",
+          "possibleValues": ["IconButtonProps"]
+        },
+        {
+          "name": "badgeProps",
+          "type": "BadgeProps",
+          "defaultValue": "{}",
+          "description": "Props for the active filter count badge.",
+          "possibleValues": ["BadgeProps"]
+        },
+        {
+          "name": "addButtonProps",
+          "type": "ButtonProps",
+          "defaultValue": "{}",
+          "description": "Props for the 'Add Filter' button.",
+          "possibleValues": ["ButtonProps"]
+        },
+        {
+          "name": "applyButtonProps",
+          "type": "ButtonProps",
+          "defaultValue": "{}",
+          "description": "Props for the 'Apply' button.",
+          "possibleValues": ["ButtonProps"]
+        },
+        {
+          "name": "clearButtonProps",
+          "type": "ButtonProps",
+          "defaultValue": "{}",
+          "description": "Props for the 'Clear All' button.",
+          "possibleValues": ["ButtonProps"]
+        },
+        {
+          "name": "logicSelectProps",
+          "type": "SelectProps",
+          "defaultValue": "{}",
+          "description": "Props for the AND/OR logic select dropdown.",
+          "possibleValues": ["SelectProps"]
+        },
+        {
+          "name": "deleteButtonProps",
+          "type": "IconButtonProps",
+          "defaultValue": "{}",
+          "description": "Props for filter delete buttons.",
+          "possibleValues": ["IconButtonProps"]
+        }
+      ]
+    },
+    {
+      "id": "column-pinning-control-slot-props",
+      "title": "columnPinningControl - Column Pinning Control",
+      "description": "Customize the column pinning control using slotProps.columnPinningControl.",
+      "items": [
+        {
+          "name": "title",
+          "type": "string",
+          "defaultValue": "undefined",
+          "description": "Menu dropdown title text.",
+          "possibleValues": ["string"]
+        },
+        {
+          "name": "titleSx",
+          "type": "SxProps<Theme>",
+          "defaultValue": "undefined",
+          "description": "Styling for the title Typography component.",
+          "possibleValues": ["SxProps<Theme>"]
+        },
+        {
+          "name": "menuSx",
+          "type": "SxProps<Theme>",
+          "defaultValue": "undefined",
+          "description": "Styling for the menu container Box.",
+          "possibleValues": ["SxProps<Theme>"]
+        },
+        {
+          "name": "iconButtonProps",
+          "type": "IconButtonProps",
+          "defaultValue": "{}",
+          "description": "Props for the pin icon button.",
+          "possibleValues": ["IconButtonProps"]
+        },
+        {
+          "name": "tooltipProps",
+          "type": "TooltipProps",
+          "defaultValue": "{}",
+          "description": "Props for the tooltip.",
+          "possibleValues": ["TooltipProps"]
+        },
+        {
+          "name": "badgeProps",
+          "type": "BoxProps",
+          "defaultValue": "{}",
+          "description": "Props for the pinned count badge.",
+          "possibleValues": ["BoxProps"]
+        },
+        {
+          "name": "clearButtonProps",
+          "type": "IconButtonProps",
+          "defaultValue": "{}",
+          "description": "Props for the 'Unpin All' button.",
+          "possibleValues": ["IconButtonProps"]
+        }
+      ]
+    },
+    {
+      "id": "table-size-control-slot-props",
+      "title": "tableSizeControl - Table Density Control",
+      "description": "Customize the table size control using slotProps.tableSizeControl.",
+      "items": [
+        {
+          "name": "iconButtonProps",
+          "type": "IconButtonProps",
+          "defaultValue": "{}",
+          "description": "Props for the size control icon button.",
+          "possibleValues": ["IconButtonProps"]
+        },
+        {
+          "name": "tooltipProps",
+          "type": "TooltipProps",
+          "defaultValue": "{}",
+          "description": "Props for the tooltip.",
+          "possibleValues": ["TooltipProps"]
+        },
+        {
+          "name": "containerSx",
+          "type": "SxProps<Theme>",
+          "defaultValue": "undefined",
+          "description": "Styling for menu items container.",
+          "possibleValues": ["SxProps<Theme>"]
+        },
+        {
+          "name": "menuProps",
+          "type": "MenuProps",
+          "defaultValue": "{}",
+          "description": "Props for the dropdown menu.",
+          "possibleValues": ["MenuProps"]
+        }
+      ]
+    },
+    {
+      "id": "reset-button-slot-props",
+      "title": "resetButton - Reset Control",
+      "description": "Customize the reset control using slotProps.resetButton.",
+      "items": [
+        {
+          "name": "iconButtonProps",
+          "type": "IconButtonProps",
+          "defaultValue": "{}",
+          "description": "Props for the reset icon button.",
+          "possibleValues": ["IconButtonProps"]
+        },
+        {
+          "name": "tooltipProps",
+          "type": "TooltipProps",
+          "defaultValue": "{}",
+          "description": "Props for the tooltip.",
+          "possibleValues": ["TooltipProps"]
+        },
+        {
+          "name": "resetActions",
+          "type": "Array<string>",
+          "defaultValue": "['columnOrder', 'columnPinning', 'columnSizing']",
+          "description": "Actions to reset. Options: 'columnOrder', 'columnPinning', 'columnSizing', 'columnVisibility', 'filters', 'sorting', 'pagination'.",
+          "possibleValues": ["Array<string>"]
+        }
+      ]
+    },
+    {
+      "id": "export-button-slot-props",
+      "title": "exportButton - Export Control",
+      "description": "Customize the export control using slotProps.exportButton.",
+      "items": [
+        {
+          "name": "exportFilename",
+          "type": "string",
+          "defaultValue": "'export'",
+          "description": "Default filename for exports (without extension).",
+          "possibleValues": ["string"]
+        },
+        {
+          "name": "iconButtonProps",
+          "type": "IconButtonProps",
+          "defaultValue": "{}",
+          "description": "Props for the export icon button.",
+          "possibleValues": ["IconButtonProps"]
+        },
+        {
+          "name": "tooltipProps",
+          "type": "TooltipProps",
+          "defaultValue": "{}",
+          "description": "Props for the tooltip.",
+          "possibleValues": ["TooltipProps"]
+        },
+        {
+          "name": "menuSx",
+          "type": "SxProps<Theme>",
+          "defaultValue": "undefined",
+          "description": "Styling for the export menu container.",
+          "possibleValues": ["SxProps<Theme>"]
+        },
+        {
+          "name": "menuItemProps",
+          "type": "MenuItemProps",
+          "defaultValue": "{}",
+          "description": "Props for menu items (CSV, Excel).",
+          "possibleValues": ["MenuItemProps"]
+        },
+        {
+          "name": "onServerExport",
+          "type": "Function",
+          "defaultValue": "undefined",
+          "description": "Custom server-side export handler. Function signature: (filters?: Partial<TableFilters>, selection?: SelectionState) => Promise<{ data: T[]; total: number }>.",
+          "possibleValues": ["Function"]
+        },
+        {
+          "name": "onExportProgress",
+          "type": "Function",
+          "defaultValue": "undefined",
+          "description": "Progress callback during export. Function signature: (progress: { processedRows?: number; totalRows?: number; percentage?: number }) => void.",
+          "possibleValues": ["Function"]
+        },
+        {
+          "name": "onExportComplete",
+          "type": "Function",
+          "defaultValue": "undefined",
+          "description": "Completion callback. Function signature: (result: { success: boolean; filename: string; totalRows: number }) => void.",
+          "possibleValues": ["Function"]
+        },
+        {
+          "name": "onExportError",
+          "type": "Function",
+          "defaultValue": "undefined",
+          "description": "Error callback. Function signature: (error: { message: string; code: string }) => void.",
+          "possibleValues": ["Function"]
+        }
+      ]
+    },
+    {
+      "id": "bulk-actions-toolbar-slot-props",
+      "title": "bulkActionsToolbar - Bulk Actions Toolbar",
+      "description": "Customize the bulk actions toolbar using slotProps.bulkActionsToolbar.",
+      "items": [
+        {
+          "name": "sx",
+          "type": "SxProps<Theme>",
+          "defaultValue": "undefined",
+          "description": "MUI sx prop for styling the toolbar container.",
+          "possibleValues": ["SxProps<Theme>"]
+        },
+        {
+          "name": "chipProps",
+          "type": "ChipProps",
+          "defaultValue": "{}",
+          "description": "Props for the selection count chip.",
+          "possibleValues": ["ChipProps"]
+        },
+        {
+          "name": "containerSx",
+          "type": "SxProps<Theme>",
+          "defaultValue": "undefined",
+          "description": "Styling for the container (same as sx).",
+          "possibleValues": ["SxProps<Theme>"]
+        },
+        {
+          "name": "leftSectionSx",
+          "type": "SxProps<Theme>",
+          "defaultValue": "undefined",
+          "description": "Styling for the left section (selection info).",
+          "possibleValues": ["SxProps<Theme>"]
+        },
+        {
+          "name": "rightSectionSx",
+          "type": "SxProps<Theme>",
+          "defaultValue": "undefined",
+          "description": "Styling for the right section (action buttons).",
+          "possibleValues": ["SxProps<Theme>"]
+        },
+        {
+          "name": "fadeProps",
+          "type": "FadeProps",
+          "defaultValue": "{}",
+          "description": "Props for the fade animation component.",
+          "possibleValues": ["FadeProps"]
+        }
+      ]
+    }
+  ]
+}
+

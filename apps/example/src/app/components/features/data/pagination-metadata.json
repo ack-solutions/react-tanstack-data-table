@@ -1,0 +1,97 @@
+{
+  "tableGroups": [
+    {
+      "id": "pagination-table-props",
+      "title": "DataTable Pagination Props",
+      "description": "Global pagination controls available on the DataTable component.",
+      "items": [
+        {
+          "name": "enablePagination",
+          "type": "boolean",
+          "defaultValue": "true",
+          "description": "Enable pagination controls. Disable when using virtualization or infinite loading.",
+          "possibleValues": ["true", "false"]
+        },
+        {
+          "name": "paginationMode",
+          "type": "'client' | 'server'",
+          "defaultValue": "'client'",
+          "description": "Switch between client-side or server-side pagination.",
+          "possibleValues": ["client", "server"]
+        },
+        {
+          "name": "totalRow",
+          "type": "number",
+          "defaultValue": "0",
+          "description": "Total rows available (required in server mode to calculate total pages).",
+          "possibleValues": []
+        },
+        {
+          "name": "onPaginationChange",
+          "type": "(pagination: PaginationState) => void",
+          "defaultValue": "undefined",
+          "description": "Callback invoked whenever page index or page size changes.",
+          "possibleValues": []
+        },
+        {
+          "name": "initialState.pagination",
+          "type": "PaginationState",
+          "defaultValue": "{ pageIndex: 0, pageSize: 10 }",
+          "description": "Initial page index and page size when the table mounts.",
+          "possibleValues": []
+        }
+      ]
+    }
+  ],
+  "slotPropGroups": [
+    {
+      "id": "pagination-slot-props",
+      "title": "Pagination SlotProps",
+      "description": "Fine-tune the default pagination component via slotProps.pagination.",
+      "items": [
+        {
+          "name": "rowsPerPageOptions",
+          "type": "number[]",
+          "defaultValue": "[10, 25, 50]",
+          "description": "Available page size options shown in the rows-per-page selector.",
+          "possibleValues": []
+        },
+        {
+          "name": "labelRowsPerPage",
+          "type": "string",
+          "defaultValue": "'Rows per page:'",
+          "description": "Custom label for the rows-per-page selector.",
+          "possibleValues": []
+        },
+        {
+          "name": "labelDisplayedRows",
+          "type": "(info) => string",
+          "defaultValue": "default formatter",
+          "description": "Formatter for the displayed rows summary (e.g. '1–10 of 100').",
+          "possibleValues": []
+        },
+        {
+          "name": "showFirstButton",
+          "type": "boolean",
+          "defaultValue": "false",
+          "description": "Show a button to jump to the first page.",
+          "possibleValues": ["true", "false"]
+        },
+        {
+          "name": "showLastButton",
+          "type": "boolean",
+          "defaultValue": "false",
+          "description": "Show a button to jump to the last page.",
+          "possibleValues": ["true", "false"]
+        },
+        {
+          "name": "sx",
+          "type": "SxProps",
+          "defaultValue": "undefined",
+          "description": "Override styles on the pagination component using MUI's sx prop.",
+          "possibleValues": []
+        }
+      ]
+    }
+  ]
+}

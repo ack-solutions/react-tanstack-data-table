@@ -1,7 +1,7 @@
 import { Box, Typography, Paper, Alert, Divider, Table, TableBody, TableCell, TableHead, TableRow, Stack, Button, Chip, Grid } from '@mui/material';
 import { DataTable, DataTableColumn, DEFAULT_EXPANDING_COLUMN_NAME } from '@ackplus/react-tanstack-data-table';
 import { useState, useCallback, useRef, useMemo } from 'react';
-import { FeatureLayout } from './common';
+import { FeatureLayout, CodeBlock } from './common';
 
 interface Order {
   id: number;
@@ -208,20 +208,9 @@ export function ExpansionPage() {
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
           Enable row expansion and provide content to display:
         </Typography>
-        <Box
-          component="pre"
-          sx={{
-            backgroundColor: '#f5f5f5',
-            color: '#333',
-            borderRadius: 1,
-            p: 2,
-            fontFamily: 'Menlo, Consolas, Monaco, "Courier New", monospace',
-            fontSize: 14,
-            overflowX: 'auto',
-            mb: 3,
-          }}
-        >
-{`import { useCallback } from 'react';
+        <CodeBlock
+          language="tsx"
+          code={`import { useCallback } from 'react';
 
 // Define what to show when row is expanded
 const renderSubComponent = useCallback(({ row }) => (
@@ -243,7 +232,7 @@ const renderSubComponent = useCallback(({ row }) => (
   renderSubComponent={renderSubComponent}  // Content to show
   getRowCanExpand={() => true}        // All rows can expand
 />`}
-        </Box>
+        />
 
         <DataTable
           columns={columns}
@@ -276,20 +265,9 @@ const renderSubComponent = useCallback(({ row }) => (
         <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
           Example: Conditional Expansion
         </Typography>
-        <Box
-          component="pre"
-          sx={{
-            backgroundColor: '#f5f5f5',
-            color: '#333',
-            borderRadius: 1,
-            p: 2,
-            fontFamily: 'Menlo, Consolas, Monaco, "Courier New", monospace',
-            fontSize: 14,
-            overflowX: 'auto',
-            mb: 3,
-          }}
-        >
-{`import { useCallback } from 'react';
+        <CodeBlock
+          language="tsx"
+          code={`import { useCallback } from 'react';
 
 // Only allow expanding certain rows
 const getRowCanExpand = useCallback((row) => {
@@ -308,7 +286,7 @@ const getRowCanExpand = useCallback((row) => {
   renderSubComponent={renderSubComponent}
   getRowCanExpand={getRowCanExpand}    // Conditional expansion
 />`}
-        </Box>
+        />
 
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
           Only 'completed' and 'processing' orders can be expanded:
@@ -344,20 +322,9 @@ const getRowCanExpand = useCallback((row) => {
         <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
           Example: Default Expanded Rows
         </Typography>
-        <Box
-          component="pre"
-          sx={{
-            backgroundColor: '#f5f5f5',
-            color: '#333',
-            borderRadius: 1,
-            p: 2,
-            fontFamily: 'Menlo, Consolas, Monaco, "Courier New", monospace',
-            fontSize: 14,
-            overflowX: 'auto',
-            mb: 3,
-          }}
-        >
-{`// Note: Expansion state is managed internally
+        <CodeBlock
+          language="tsx"
+          code={`// Note: Expansion state is managed internally
 // To expand rows programmatically, use the table API:
 const table = tableRef.current?.table.getTable();
 table?.getRow('1')?.toggleExpanded(true);
@@ -369,7 +336,7 @@ table?.getRow('1')?.toggleExpanded(true);
   renderSubComponent={renderSubComponent}
   getRowCanExpand={() => true}
 />`}
-        </Box>
+        />
 
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
           Use the API to expand rows programmatically (see API Reference section below):
@@ -406,20 +373,9 @@ table?.getRow('1')?.toggleExpanded(true);
         <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
           Example: Pin Expansion Column
         </Typography>
-        <Box
-          component="pre"
-          sx={{
-            backgroundColor: '#f5f5f5',
-            color: '#333',
-            borderRadius: 1,
-            p: 2,
-            fontFamily: 'Menlo, Consolas, Monaco, "Courier New", monospace',
-            fontSize: 14,
-            overflowX: 'auto',
-            mb: 3,
-          }}
-        >
-{`import { 
+        <CodeBlock
+          language="tsx"
+          code={`import { 
   DEFAULT_EXPANDING_COLUMN_NAME,
   DEFAULT_SELECTION_COLUMN_NAME 
 } from '@ackplus/react-tanstack-data-table';
@@ -442,7 +398,7 @@ table?.getRow('1')?.toggleExpanded(true);
     },
   }}
 />`}
-        </Box>
+        />
       </Paper>
 
       <Divider sx={{ my: 4 }} />
@@ -466,20 +422,9 @@ table?.getRow('1')?.toggleExpanded(true);
         <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
           Access Table Instance for Expansion
         </Typography>
-        <Box
-          component="pre"
-          sx={{
-            backgroundColor: '#f5f5f5',
-            color: '#333',
-            borderRadius: 1,
-            p: 2,
-            fontFamily: 'Menlo, Consolas, Monaco, "Courier New", monospace',
-            fontSize: 14,
-            overflowX: 'auto',
-            mb: 3,
-          }}
-        >
-{`import { useRef } from 'react';
+        <CodeBlock
+          language="tsx"
+          code={`import { useRef } from 'react';
 import { DataTableApi } from '@ackplus/react-tanstack-data-table';
 
 const tableRef = useRef<DataTableApi<Order>>(null);
@@ -531,7 +476,7 @@ const expandedRows = table?.getState().expanded;
   enableExpanding={true}
   renderSubComponent={renderSubComponent}
 />`}
-        </Box>
+        />
 
         <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
           <Button
@@ -618,19 +563,9 @@ const expandedRows = table?.getState().expanded;
           <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
             Insight: Common Patterns
           </Typography>
-          <Box
-            component="pre"
-            sx={{
-              backgroundColor: '#fff',
-              color: '#333',
-              borderRadius: 1,
-              p: 2,
-              fontFamily: 'Menlo, Consolas, Monaco, "Courier New", monospace',
-              fontSize: 13,
-              overflowX: 'auto',
-            }}
-          >
-{`// Pattern 1: Show nested data
+          <CodeBlock
+            language="tsx"
+            code={`// Pattern 1: Show nested data
 const renderSubComponent = useCallback(({ row }) => (
   <Box sx={{ p: 2 }}>
     <Typography variant="h6">Order Items</Typography>
@@ -664,7 +599,7 @@ const renderSubComponent = useCallback(({ row }) => (
     />
   </Box>
 ), []);`}
-          </Box>
+          />
         </Box>
       </Paper>
 
@@ -755,19 +690,9 @@ const renderSubComponent = useCallback(({ row }) => (
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
           Use <code>slotProps.expandColumn</code> to customize the expansion column:
         </Typography>
-        <Box
-          component="pre"
-          sx={{
-            backgroundColor: '#f5f5f5',
-            color: '#333',
-            borderRadius: 1,
-            p: 2,
-            fontFamily: 'Menlo, Consolas, Monaco, "Courier New", monospace',
-            fontSize: 14,
-            overflowX: 'auto',
-          }}
-        >
-{`<DataTable
+        <CodeBlock
+          language="tsx"
+          code={`<DataTable
   columns={columns}
   data={data}
   enableExpanding={true}
@@ -782,7 +707,7 @@ const renderSubComponent = useCallback(({ row }) => (
     },
   }}
 />`}
-        </Box>
+        />
       </Paper>
 
       <Divider sx={{ my: 4 }} />

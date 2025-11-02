@@ -1,7 +1,8 @@
-import { Box, Typography, Paper, Alert, Divider, Table, TableBody, TableCell, TableHead, TableRow, Stack, Chip, TextField } from '@mui/material';
+import { Box, Typography, Paper, Alert, Divider, Stack, Chip, TextField } from '@mui/material';
 import { DataTable, DataTableColumn } from '@ackplus/react-tanstack-data-table';
 import { createColumnHelper } from '@tanstack/react-table';
-import { FeatureLayout } from './common';
+import { FeatureLayout, FeatureSection, CodeBlock, FeatureMetadataTable } from './common';
+import { getColumnGroup } from './data/columns-metadata';
 
 interface Employee {
   id: number;
@@ -182,6 +183,9 @@ export function ColumnsPage() {
     },
   ];
 
+  const dataTableColumnsGroup = getColumnGroup('datatable-column');
+  const tanstackColumnsGroup = getColumnGroup('tanstack-column');
+
   return (
     <FeatureLayout
       title="Columns"
@@ -189,47 +193,31 @@ export function ColumnsPage() {
     >
       <Divider sx={{ my: 4 }} />
 
-      {/* Two Approaches */}
-      <Typography variant="h5" gutterBottom sx={{ fontWeight: 600, mb: 2 }}>
-        Two Ways to Define Columns
-      </Typography>
-      
-      <Alert severity="info" sx={{ mb: 3 }}>
-        <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-          Choose Your Approach
-        </Typography>
-        <Typography variant="body2">
-          You can define columns in two ways: using <code>createColumnHelper</code> for better TypeScript 
-          inference, or using a normal array with <code>accessorKey</code> for simpler syntax.
-        </Typography>
-      </Alert>
+      <FeatureSection
+        title="Two Ways to Define Columns"
+        description="Use TanStack's column helper for the strongest type inference or stick with plain objects for a lightweight syntax."
+        spacing={3}
+      >
+        <Alert severity="info" sx={{ width: '100%' }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+            Choose Your Approach
+          </Typography>
+          <Typography variant="body2">
+            Both approaches output the same column objects. Mix and match across your table as needed.
+          </Typography>
+        </Alert>
 
-      {/* Approach 1: Column Helper */}
-      <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, mb: 2 }}>
-        Approach 1: Using Column Helper (Recommended)
-      </Typography>
-
-      <Paper elevation={1} sx={{ p: 3, mb: 4 }}>
-        <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 600 }}>
-          Example: Column Helper
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          Better TypeScript support and type inference for column definitions.
-        </Typography>
-        <Box
-          component="pre"
-          sx={{
-            backgroundColor: '#f5f5f5',
-            color: '#333',
-            borderRadius: 1,
-            p: 2,
-            fontFamily: 'Menlo, Consolas, Monaco, "Courier New", monospace',
-            fontSize: 14,
-            overflowX: 'auto',
-            mb: 3,
-          }}
-        >
-{`import { createColumnHelper } from '@tanstack/react-table';
+        <Stack spacing={3} width="100%">
+          <Paper elevation={1} sx={{ p: 3 }}>
+            <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
+              Approach 1: Using Column Helper (Recommended)
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              Column helper delivers rich generics so editors can infer cell values and catch typos early.
+            </Typography>
+            <CodeBlock
+              language="tsx"
+              code={`import { createColumnHelper } from '@tanstack/react-table';
 
 const columnHelper = createColumnHelper<Employee>();
 
@@ -247,40 +235,24 @@ const columns = [
     size: 150,
   }),
 ];`}
-        </Box>
-        <DataTable
-          columns={basicColumns}
-          data={sampleData}
-          enablePagination={false}
-        />
-      </Paper>
+            />
+            <DataTable
+              columns={basicColumns}
+              data={sampleData}
+              enablePagination={false}
+            />
+          </Paper>
 
-      {/* Approach 2: Normal Array */}
-      <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, mb: 2 }}>
-        Approach 2: Using Normal Array
-      </Typography>
-
-      <Paper elevation={1} sx={{ p: 3, mb: 4 }}>
-        <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 600 }}>
-          Example: Normal Array
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          Simpler syntax using plain objects with <code>accessorKey</code> property.
-        </Typography>
-        <Box
-          component="pre"
-          sx={{
-            backgroundColor: '#f5f5f5',
-            color: '#333',
-            borderRadius: 1,
-            p: 2,
-            fontFamily: 'Menlo, Consolas, Monaco, "Courier New", monospace',
-            fontSize: 14,
-            overflowX: 'auto',
-            mb: 3,
-          }}
-        >
-{`import { DataTableColumn } from '@ackplus/react-tanstack-data-table';
+          <Paper elevation={1} sx={{ p: 3 }}>
+            <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
+              Approach 2: Using Normal Array
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              Plain objects with <code>accessorKey</code> feel familiar and are easier to paste into docs or config files.
+            </Typography>
+            <CodeBlock
+              language="ts"
+              code={`import { DataTableColumn } from '@ackplus/react-tanstack-data-table';
 
 const columns: DataTableColumn<Employee>[] = [
   {
@@ -299,52 +271,42 @@ const columns: DataTableColumn<Employee>[] = [
     size: 150,
   },
 ];`}
-        </Box>
-        <DataTable
-          columns={normalArrayColumns}
-          data={sampleData}
-          enablePagination={false}
-        />
-      </Paper>
+            />
+            <DataTable
+              columns={normalArrayColumns}
+              data={sampleData}
+              enablePagination={false}
+            />
+          </Paper>
+        </Stack>
+      </FeatureSection>
 
       <Divider sx={{ my: 4 }} />
 
-      {/* Custom Cell Rendering */}
-      <Typography variant="h5" gutterBottom sx={{ fontWeight: 600, mb: 2 }}>
-        Custom Cell Rendering
-      </Typography>
-      
-      <Alert severity="success" sx={{ mb: 3 }}>
-        <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-          Customize Cell Display
-        </Typography>
-        <Typography variant="body2">
-          Use the <code>cell</code> property to customize how data is rendered in each cell. 
-          You can return any React component or JSX element.
-        </Typography>
-      </Alert>
+      <FeatureSection
+        title="Custom Cell Rendering"
+        description="Return JSX from the column's cell renderer to present chips, typography, or completely custom layouts."
+        spacing={3}
+      >
+        <Alert severity="success" sx={{ width: '100%' }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+            Customize Cell Display
+          </Typography>
+          <Typography variant="body2">
+            The <code>cell</code> callback receives helpers like <code>getValue</code>, <code>row</code>, and <code>table</code> so you can build dynamic UIs per row.
+          </Typography>
+        </Alert>
 
-      <Paper elevation={1} sx={{ p: 3, mb: 4 }}>
-        <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
-          Example: Custom Cell Rendering (Normal Array)
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          You can use custom cell renderers with both approaches. Here's the normal array approach:
-        </Typography>
-        <Box
-          component="pre"
-          sx={{
-            backgroundColor: '#f5f5f5',
-            color: '#333',
-            borderRadius: 1,
-            p: 2,
-            fontFamily: 'Menlo, Consolas, Monaco, "Courier New", monospace',
-            fontSize: 14,
-            overflowX: 'auto',
-            mb: 3,
-          }}
-        >
-{`const columns: DataTableColumn<Employee>[] = [
+        <Paper elevation={1} sx={{ p: 3 }}>
+          <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
+            Example: Custom Cell Rendering (Normal Array)
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            The same pattern works with column helper or plain objects—the renderer signature is identical.
+          </Typography>
+          <CodeBlock
+            language="tsx"
+            code={`const columns: DataTableColumn<Employee>[] = [
   {
     accessorKey: 'name',
     header: 'Employee Name',
@@ -364,227 +326,66 @@ const columns: DataTableColumn<Employee>[] = [
         label={\`\$\${getValue<number>().toLocaleString()}\`} 
         color="success" 
         size="small" 
-        variant="outlined"
+        variant=\"outlined\"
       />
     ),
   },
 ];`}
-        </Box>
-        <DataTable
-          columns={customColumns}
-          data={sampleData}
-          enablePagination={false}
-        />
-      </Paper>
+          />
+          <DataTable
+            columns={customColumns}
+            data={sampleData}
+            enablePagination={false}
+          />
+        </Paper>
+      </FeatureSection>
 
       <Divider sx={{ my: 4 }} />
 
-      {/* All Column Properties */}
-      <Typography variant="h5" gutterBottom sx={{ fontWeight: 600, mb: 2 }}>
-        All Column Properties
-      </Typography>
-      
-      <Alert severity="info" sx={{ mb: 3 }}>
-        <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-          DataTable + TanStack Table Properties
-        </Typography>
-        <Typography variant="body2">
-          Columns support both custom DataTable properties and all standard TanStack Table column properties.
-        </Typography>
-      </Alert>
+      <FeatureSection
+        title="All Column Properties"
+        description="Columns support both DataTable-specific helpers and the full TanStack Table API. Use them together for rich behaviour."
+        spacing={3}
+      >
+        <Alert severity="info" sx={{ width: '100%' }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+            DataTable + TanStack Table Properties
+          </Typography>
+          <Typography variant="body2">
+            Start with the DataTable conveniences and drop to the TanStack layer whenever you need a lower-level hook.
+          </Typography>
+        </Alert>
 
-      {/* DataTable Custom Properties */}
-      <Paper elevation={1} sx={{ p: 3, mb: 3 }}>
-        <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
-          DataTable Custom Properties
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          These are custom properties specific to the DataTable component for enhanced functionality.
-        </Typography>
-        <Box sx={{ overflowX: 'auto' }}>
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell sx={{ fontWeight: 700 }}>Property</TableCell>
-                <TableCell sx={{ fontWeight: 700 }}>Type</TableCell>
-                <TableCell sx={{ fontWeight: 700 }}>Description</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              <TableRow>
-                <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>type</TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>
-                  'boolean' | 'number' | 'date' | 'select' | 'text'
-                </TableCell>
-                <TableCell>Column data type for automatic filter component selection</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>options</TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>
-                  {'{ label: string; value: string }[]'}
-                </TableCell>
-                <TableCell>Options for select-type filters (used when type='select')</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>align</TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>
-                  'left' | 'center' | 'right'
-                </TableCell>
-                <TableCell>Text alignment for column cells</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>filterable</TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>boolean</TableCell>
-                <TableCell>Enable column-specific filtering UI</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>hideInExport</TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>boolean</TableCell>
-                <TableCell>Exclude this column from CSV/Excel exports</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>filterComponent</TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>
-                  React.ComponentType
-                </TableCell>
-                <TableCell>Custom component for column filter input</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>editComponent</TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>
-                  React.ComponentType
-                </TableCell>
-                <TableCell>Custom component for inline editing (alternative to filterComponent)</TableCell>
-              </TableRow>
-            </TableBody>
-          </Table>
-        </Box>
-      </Paper>
+        <Paper elevation={1} sx={{ p: 3 }}>
+          <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
+            DataTable Custom Properties
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            These helpers unlock built-in filter widgets, export configuration, and alignment controls.
+          </Typography>
+          <Box sx={{ overflowX: 'auto' }}>
+            <FeatureMetadataTable
+              items={dataTableColumnsGroup?.items ?? []}
+              includePossibleValues
+            />
+          </Box>
+        </Paper>
 
-      {/* TanStack Table Core Properties */}
-      <Paper elevation={1} sx={{ p: 3, mb: 4 }}>
-        <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
-          TanStack Table Core Properties
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          All standard TanStack Table column properties are supported. Here are the most commonly used ones.
-        </Typography>
-        <Box sx={{ overflowX: 'auto' }}>
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell sx={{ fontWeight: 700 }}>Property</TableCell>
-                <TableCell sx={{ fontWeight: 700 }}>Type</TableCell>
-                <TableCell sx={{ fontWeight: 700 }}>Description</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              <TableRow>
-                <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>accessorKey</TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>string</TableCell>
-                <TableCell>The key from your data object to display in this column</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>accessorFn</TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>
-                  {'(row) => any'}
-                </TableCell>
-                <TableCell>Function to derive cell value from row data</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>header</TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>
-                  string | ReactNode | Function
-                </TableCell>
-                <TableCell>The header text or component to display</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>footer</TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>
-                  ReactNode | Function
-                </TableCell>
-                <TableCell>Footer content for the column</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>cell</TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>
-                  {'(props) => ReactNode'}
-                </TableCell>
-                <TableCell>Custom cell renderer function</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>id</TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>string</TableCell>
-                <TableCell>Unique identifier for the column</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>size</TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>number</TableCell>
-                <TableCell>Initial width of the column in pixels</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>minSize</TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>number</TableCell>
-                <TableCell>Minimum width when column resizing is enabled</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>maxSize</TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>number</TableCell>
-                <TableCell>Maximum width when column resizing is enabled</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>enableSorting</TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>boolean</TableCell>
-                <TableCell>Enable or disable sorting for this column</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>enableResizing</TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>boolean</TableCell>
-                <TableCell>Enable or disable resizing for this column</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>enablePinning</TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>boolean</TableCell>
-                <TableCell>Enable or disable pinning for this column</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>enableHiding</TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>boolean</TableCell>
-                <TableCell>Enable or disable hiding for this column</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>enableGlobalFilter</TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>boolean</TableCell>
-                <TableCell>Include this column in global search</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>enableColumnFilter</TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>boolean</TableCell>
-                <TableCell>Enable column-specific filtering</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>sortingFn</TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>
-                  Function | string
-                </TableCell>
-                <TableCell>Custom sorting function for this column</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>sortDescFirst</TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>boolean</TableCell>
-                <TableCell>Sort descending first when clicking sort</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>meta</TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>
-                  ColumnMeta
-                </TableCell>
-                <TableCell>Additional metadata for the column</TableCell>
-              </TableRow>
-            </TableBody>
-          </Table>
-        </Box>
-      </Paper>
+        <Paper elevation={1} sx={{ p: 3 }}>
+          <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
+            TanStack Table Core Properties
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            All standard column options remain available when using the DataTable wrapper.
+          </Typography>
+          <Box sx={{ overflowX: 'auto' }}>
+            <FeatureMetadataTable
+              items={tanstackColumnsGroup?.items ?? []}
+              includePossibleValues
+            />
+          </Box>
+        </Paper>
+      </FeatureSection>
 
       <Divider sx={{ my: 4 }} />
 
@@ -605,20 +406,9 @@ const columns: DataTableColumn<Employee>[] = [
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
           Use <code>filterable: true</code>, <code>type: 'select'</code>, and <code>options</code> to create dropdown filters.
         </Typography>
-        <Box
-          component="pre"
-          sx={{
-            backgroundColor: '#f5f5f5',
-            color: '#333',
-            borderRadius: 1,
-            p: 2,
-            fontFamily: 'Menlo, Consolas, Monaco, "Courier New", monospace',
-            fontSize: 14,
-            overflowX: 'auto',
-            mb: 3,
-          }}
-        >
-{`const columns: DataTableColumn<Employee>[] = [
+        <CodeBlock
+          language="tsx"
+          code={`const columns: DataTableColumn<Employee>[] = [
   {
     accessorKey: 'department',
     header: 'Department',
@@ -660,7 +450,7 @@ const columns: DataTableColumn<Employee>[] = [
   data={data}
   enableColumnFilter={true}     // Enable column filter UI
 />`}
-        </Box>
+        />
       </Paper>
 
       {/* Column Alignment */}
@@ -675,20 +465,9 @@ const columns: DataTableColumn<Employee>[] = [
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
           Use the <code>align</code> property to control text alignment in cells.
         </Typography>
-        <Box
-          component="pre"
-          sx={{
-            backgroundColor: '#f5f5f5',
-            color: '#333',
-            borderRadius: 1,
-            p: 2,
-            fontFamily: 'Menlo, Consolas, Monaco, "Courier New", monospace',
-            fontSize: 14,
-            overflowX: 'auto',
-            mb: 3,
-          }}
-        >
-{`const columns: DataTableColumn<Employee>[] = [
+        <CodeBlock
+          language="ts"
+          code={`const columns: DataTableColumn<Employee>[] = [
   {
     accessorKey: 'name',
     header: 'Name',
@@ -709,7 +488,7 @@ const columns: DataTableColumn<Employee>[] = [
     align: 'center',            // Center aligned
   },
 ];`}
-        </Box>
+        />
       </Paper>
 
       {/* Custom Filter Component */}
@@ -724,20 +503,9 @@ const columns: DataTableColumn<Employee>[] = [
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
           Use <code>filterComponent</code> to create completely custom filter inputs.
         </Typography>
-        <Box
-          component="pre"
-          sx={{
-            backgroundColor: '#f5f5f5',
-            color: '#333',
-            borderRadius: 1,
-            p: 2,
-            fontFamily: 'Menlo, Consolas, Monaco, "Courier New", monospace',
-            fontSize: 14,
-            overflowX: 'auto',
-            mb: 3,
-          }}
-        >
-{`// Custom filter component
+        <CodeBlock
+          language="tsx"
+          code={`// Custom filter component
 const SalaryRangeFilter = ({ value, onChange, filter, column }) => {
   return (
     <TextField
@@ -762,7 +530,7 @@ const columns: DataTableColumn<Employee>[] = [
     cell: ({ getValue }) => \`$\${getValue<number>().toLocaleString()}\`,
   },
 ];`}
-        </Box>
+        />
       </Paper>
 
       {/* Column Meta */}
@@ -777,20 +545,9 @@ const columns: DataTableColumn<Employee>[] = [
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
           Store additional metadata in the <code>meta</code> property for custom behaviors.
         </Typography>
-        <Box
-          component="pre"
-          sx={{
-            backgroundColor: '#f5f5f5',
-            color: '#333',
-            borderRadius: 1,
-            p: 2,
-            fontFamily: 'Menlo, Consolas, Monaco, "Courier New", monospace',
-            fontSize: 14,
-            overflowX: 'auto',
-            mb: 3,
-          }}
-        >
-{`const columns: DataTableColumn<Employee>[] = [
+        <CodeBlock
+          language="ts"
+          code={`const columns: DataTableColumn<Employee>[] = [
   {
     accessorKey: 'salary',
     header: 'Salary',
@@ -812,7 +569,7 @@ cell: ({ getValue, column }) => {
   const meta = column.columnDef.meta;
   // Use meta data for custom rendering logic
 }`}
-        </Box>
+        />
       </Paper>
 
       {/* Footer */}
@@ -827,20 +584,9 @@ cell: ({ getValue, column }) => {
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
           Add footer content to display summaries or aggregations.
         </Typography>
-        <Box
-          component="pre"
-          sx={{
-            backgroundColor: '#f5f5f5',
-            color: '#333',
-            borderRadius: 1,
-            p: 2,
-            fontFamily: 'Menlo, Consolas, Monaco, "Courier New", monospace',
-            fontSize: 14,
-            overflowX: 'auto',
-            mb: 3,
-          }}
-        >
-{`const columns: DataTableColumn<Employee>[] = [
+        <CodeBlock
+          language="tsx"
+          code={`const columns: DataTableColumn<Employee>[] = [
   {
     accessorKey: 'salary',
     header: 'Salary',
@@ -857,7 +603,7 @@ cell: ({ getValue, column }) => {
     },
   },
 ];`}
-        </Box>
+        />
       </Paper>
 
       <Divider sx={{ my: 4 }} />
@@ -881,20 +627,9 @@ cell: ({ getValue, column }) => {
         <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
           Example: Column Visibility
         </Typography>
-        <Box
-          component="pre"
-          sx={{
-            backgroundColor: '#f5f5f5',
-            color: '#333',
-            borderRadius: 1,
-            p: 2,
-            fontFamily: 'Menlo, Consolas, Monaco, "Courier New", monospace',
-            fontSize: 14,
-            overflowX: 'auto',
-            mb: 3,
-          }}
-        >
-{`<DataTable
+        <CodeBlock
+          language="tsx"
+          code={`<DataTable
   columns={columns}
   data={data}
   enableColumnVisibility={true}  // Enable column visibility control
@@ -904,7 +639,7 @@ cell: ({ getValue, column }) => {
     },
   }}
 />`}
-        </Box>
+        />
       </Paper>
 
       <Divider sx={{ my: 4 }} />

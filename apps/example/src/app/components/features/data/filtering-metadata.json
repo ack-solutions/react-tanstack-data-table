@@ -1,0 +1,46 @@
+{
+  "operatorGroups": [
+    {
+      "id": "operator-reference",
+      "title": "Filter Operators by Type",
+      "description": "Supported operators for each built-in column filter type.",
+      "items": [
+        {
+          "name": "text",
+          "type": "Operators",
+          "defaultValue": "—",
+          "description": "Contains, Starts with, Ends with, Equals, Not equals, Is empty, Is not empty",
+          "possibleValues": []
+        },
+        {
+          "name": "select",
+          "type": "Operators",
+          "defaultValue": "—",
+          "description": "Equals, Not equals, In (multi-select), Not in, Is empty, Is not empty",
+          "possibleValues": []
+        },
+        {
+          "name": "number",
+          "type": "Operators",
+          "defaultValue": "—",
+          "description": "Equals, Not equals, Greater than, Less than, Greater than or equal, Less than or equal, Is empty, Is not empty",
+          "possibleValues": []
+        },
+        {
+          "name": "boolean",
+          "type": "Operators",
+          "defaultValue": "—",
+          "description": "Is (True / False / Any)",
+          "possibleValues": []
+        },
+        {
+          "name": "date",
+          "type": "Operators",
+          "defaultValue": "—",
+          "description": "Equals, Not equals, After, Before, Is empty, Is not empty",
+          "possibleValues": []
+        }
+      ]
+    }
+  ]
+}

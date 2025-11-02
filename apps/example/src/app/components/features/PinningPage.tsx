@@ -1,7 +1,9 @@
-import { Box, Typography, Paper, Alert, Divider, Table, TableBody, TableCell, TableHead, TableRow, Stack, Chip } from '@mui/material';
+import { Box, Typography, Paper, Alert, Divider, Table, TableBody, TableCell, TableHead, TableRow, Stack, Chip, Accordion, AccordionSummary, AccordionDetails } from '@mui/material';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { DataTable, DataTableColumn, DEFAULT_SELECTION_COLUMN_NAME, DEFAULT_EXPANDING_COLUMN_NAME } from '@ackplus/react-tanstack-data-table';
 import { useRef } from 'react';
-import { FeatureLayout } from './common';
+import { FeatureLayout, CodeBlock, FeatureMetadataTable, FeatureMetadataAccordion } from './common';
+import { pinningTableGroups, pinningSlotPropGroups, getPinningTableGroup, getPinningSlotPropGroup } from './data/pinning-metadata';
 
 interface Employee {
   id: number;
@@ -24,6 +26,9 @@ const sampleEmployees: Employee[] = [
 
 export function PinningPage() {
   const tableRef = useRef<any>(null);
+  const pinningTableGroup = getPinningTableGroup('pinning-table-props');
+  const pinningColumnGroup = getPinningTableGroup('pinning-column-props');
+  const pinningSlotPropGroup = getPinningSlotPropGroup('pinning-slot-props');
 
   // Columns for pinning demo
   const pinnableColumns: DataTableColumn<Employee>[] = [
@@ -115,20 +120,9 @@ export function PinningPage() {
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
           Enable column pinning on the table:
         </Typography>
-        <Box
-          component="pre"
-          sx={{
-            backgroundColor: '#f5f5f5',
-            color: '#333',
-            borderRadius: 1,
-            p: 2,
-            fontFamily: 'Menlo, Consolas, Monaco, "Courier New", monospace',
-            fontSize: 14,
-            overflowX: 'auto',
-            mb: 2,
-          }}
-        >
-{`const columns: DataTableColumn<Employee>[] = [
+        <CodeBlock
+          language="tsx"
+          code={`const columns: DataTableColumn<Employee>[] = [
   {
     accessorKey: 'name',
     header: 'Name',
@@ -145,7 +139,7 @@ export function PinningPage() {
     console.log('Pinning changed:', pinning);
   }}
 />`}
-        </Box>
+        />
       </Paper>
 
       <Divider sx={{ my: 4 }} />
@@ -171,20 +165,9 @@ export function PinningPage() {
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
           Pin columns to left or right side:
         </Typography>
-        <Box
-          component="pre"
-          sx={{
-            backgroundColor: '#f5f5f5',
-            color: '#333',
-            borderRadius: 1,
-            p: 2,
-            fontFamily: 'Menlo, Consolas, Monaco, "Courier New", monospace',
-            fontSize: 14,
-            overflowX: 'auto',
-            mb: 3,
-          }}
-        >
-{`<DataTable
+        <CodeBlock
+          language="tsx"
+          code={`<DataTable
   columns={columns}
   data={data}
   enableColumnPinning={true}
@@ -195,7 +178,7 @@ export function PinningPage() {
     },
   }}
 />`}
-        </Box>
+        />
 
         <DataTable
           columns={pinnableColumns}
@@ -268,21 +251,11 @@ export function PinningPage() {
 
         <Box sx={{ mt: 3, p: 2, backgroundColor: 'grey.50', borderRadius: 1 }}>
           <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-            Insight: Pin Special Columns
+            Example: Pin Special Columns
           </Typography>
-          <Box
-            component="pre"
-            sx={{
-              backgroundColor: '#fff',
-              color: '#333',
-              borderRadius: 1,
-              p: 2,
-              fontFamily: 'Menlo, Consolas, Monaco, "Courier New", monospace',
-              fontSize: 13,
-              overflowX: 'auto',
-            }}
-          >
-{`import { 
+          <CodeBlock
+            language="tsx"
+            code={`import { 
   DEFAULT_SELECTION_COLUMN_NAME, 
   DEFAULT_EXPANDING_COLUMN_NAME 
 } from '@ackplus/react-tanstack-data-table';
@@ -304,7 +277,7 @@ export function PinningPage() {
     },
   }}
 />`}
-          </Box>
+          />
         </Box>
       </Paper>
 
@@ -322,20 +295,9 @@ export function PinningPage() {
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
           Control column pinning programmatically using the table API ref:
         </Typography>
-        <Box
-          component="pre"
-          sx={{
-            backgroundColor: '#f5f5f5',
-            color: '#333',
-            borderRadius: 1,
-            p: 2,
-            fontFamily: 'Menlo, Consolas, Monaco, "Courier New", monospace',
-            fontSize: 14,
-            overflowX: 'auto',
-            mb: 2,
-          }}
-        >
-{`import { useRef } from 'react';
+        <CodeBlock
+          language="tsx"
+          code={`import { useRef } from 'react';
 import { 
   DataTableApi,
   DEFAULT_SELECTION_COLUMN_NAME,
@@ -368,7 +330,7 @@ tableRef.current?.columnPinning.resetColumnPinning();
   data={data}
   enableColumnPinning={true}
 />`}
-        </Box>
+        />
       </Paper>
 
       <Divider sx={{ my: 4 }} />
@@ -378,52 +340,88 @@ tableRef.current?.columnPinning.resetColumnPinning();
         DataTable Pinning Props
       </Typography>
 
-      <Paper elevation={1} sx={{ p: 3, mb: 4 }}>
-        <Table size="small">
-          <TableHead>
-            <TableRow>
-              <TableCell sx={{ fontWeight: 700, width: '25%' }}>Prop</TableCell>
-              <TableCell sx={{ fontWeight: 700, width: '25%' }}>Type</TableCell>
-              <TableCell sx={{ fontWeight: 700, width: '15%' }}>Default</TableCell>
-              <TableCell sx={{ fontWeight: 700, width: '35%' }}>Description</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            <TableRow>
-              <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>enableColumnPinning</TableCell>
-              <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>
-                boolean
-              </TableCell>
-              <TableCell sx={{ fontFamily: 'monospace', fontSize: 13 }}>
-                false
-              </TableCell>
-              <TableCell>Enable column pinning functionality</TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>onColumnPinningChange</TableCell>
-              <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>
-                {'(pinning) => void'}
-              </TableCell>
-              <TableCell sx={{ fontFamily: 'monospace', fontSize: 13 }}>
-                undefined
-              </TableCell>
-              <TableCell>Callback when column pinning state changes</TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>initialState.columnPinning</TableCell>
-              <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>
-                {'{ left: string[], right: string[] }'}
-              </TableCell>
-              <TableCell sx={{ fontFamily: 'monospace', fontSize: 13 }}>
-                {'{ left: [], right: [] }'}
-              </TableCell>
-              <TableCell>
-                Initial pinning configuration with column IDs for left and right pinning
-              </TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
-      </Paper>
+      <Accordion defaultExpanded>
+        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+          <Typography variant="h6" sx={{ fontWeight: 600 }}>
+            DataTable Pinning Props
+          </Typography>
+        </AccordionSummary>
+        <AccordionDetails>
+          <Box sx={{ overflowX: 'auto' }}>
+            <FeatureMetadataTable
+              items={pinningTableGroup?.items ?? []}
+              includePossibleValues
+            />
+          </Box>
+
+          <Box sx={{ mt: 3, p: 2, backgroundColor: 'grey.50', borderRadius: 1 }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+              Example
+            </Typography>
+            <CodeBlock
+              language="tsx"
+              code={`<DataTable
+  columns={columns}
+  data={data}
+  enableColumnPinning={true}
+  onColumnPinningChange={(pinning) => {
+    console.log('Pinning changed:', pinning);
+  }}
+  initialState={{
+    columnPinning: {
+      left: ['id', 'name'],
+      right: ['actions'],
+    },
+  }}
+/>`}
+            />
+          </Box>
+        </AccordionDetails>
+      </Accordion>
+
+      <Divider sx={{ my: 3 }} />
+
+      {/* Column Properties */}
+      <Typography variant="h5" gutterBottom sx={{ fontWeight: 600, mb: 2 }}>
+        Column Pinning Properties
+      </Typography>
+
+      <Accordion>
+        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+          <Typography variant="h6" sx={{ fontWeight: 600 }}>
+            Column-Level Pinning Props
+          </Typography>
+        </AccordionSummary>
+        <AccordionDetails>
+          <Box sx={{ overflowX: 'auto' }}>
+            <FeatureMetadataTable
+              items={pinningColumnGroup?.items ?? []}
+              includePossibleValues
+            />
+          </Box>
+
+          <Box sx={{ mt: 3, p: 2, backgroundColor: 'grey.50', borderRadius: 1 }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+              Example
+            </Typography>
+            <CodeBlock
+              language="tsx"
+              code={`const columns: DataTableColumn<Employee>[] = [
+  {
+    accessorKey: 'name',
+    header: 'Name',
+    enablePinning: true,        // Allow this column to be pinned
+  },
+  {
+    accessorKey: 'metadata',
+    header: 'Metadata',
+    enablePinning: false,      // Prevent pinning for this column
+  },
+];`}
+            />
+          </Box>
+        </AccordionDetails>
+      </Accordion>
 
       <Divider sx={{ my: 4 }} />
 
@@ -488,20 +486,9 @@ tableRef.current?.columnPinning.resetColumnPinning();
         <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
           Example: Pin Special Columns
         </Typography>
-        <Box
-          component="pre"
-          sx={{
-            backgroundColor: '#f5f5f5',
-            color: '#333',
-            borderRadius: 1,
-            p: 2,
-            fontFamily: 'Menlo, Consolas, Monaco, "Courier New", monospace',
-            fontSize: 14,
-            overflowX: 'auto',
-            mb: 3,
-          }}
-        >
-{`import { 
+        <CodeBlock
+          language="tsx"
+          code={`import { 
   DataTable,
   DEFAULT_SELECTION_COLUMN_NAME,    // '_selection'
   DEFAULT_EXPANDING_COLUMN_NAME     // '_expanding'
@@ -526,7 +513,7 @@ tableRef.current?.columnPinning.resetColumnPinning();
     },
   }}
 />`}
-        </Box>
+        />
 
         <DataTable
           columns={pinnableColumns}
@@ -546,39 +533,60 @@ tableRef.current?.columnPinning.resetColumnPinning();
 
       <Divider sx={{ my: 4 }} />
 
-      {/* Column Properties */}
+      {/* SlotProps Customization */}
       <Typography variant="h5" gutterBottom sx={{ fontWeight: 600, mb: 2 }}>
-        Column Pinning Properties
+        Pinning Control Customization
       </Typography>
 
-      <Paper elevation={1} sx={{ p: 3, mb: 4 }}>
-        <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
-          Column-Level Props
+      <Alert severity="info" sx={{ mb: 3 }}>
+        <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+          Customize Pinning Control
         </Typography>
-        <Table size="small">
-          <TableHead>
-            <TableRow>
-              <TableCell sx={{ fontWeight: 700 }}>Property</TableCell>
-              <TableCell sx={{ fontWeight: 700 }}>Type</TableCell>
-              <TableCell sx={{ fontWeight: 700 }}>Default</TableCell>
-              <TableCell sx={{ fontWeight: 700 }}>Description</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            <TableRow>
-              <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>enablePinning</TableCell>
-              <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>
-                boolean
-              </TableCell>
-              <TableCell sx={{ fontFamily: 'monospace', fontSize: 13 }}>
-                true
-              </TableCell>
-              <TableCell>
-                Enable or disable pinning for this specific column
-              </TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
+        <Typography variant="body2">
+          Use <code>slotProps.columnPinningControl</code> to customize the pinning control component 
+          without replacing it entirely.
+        </Typography>
+      </Alert>
+
+      <Paper elevation={1} sx={{ p: 3, mb: 4 }}>
+        <FeatureMetadataAccordion
+          groups={pinningSlotPropGroups}
+          defaultExpandedCount={1}
+          includePossibleValues
+        />
+
+        <Box sx={{ mt: 3, p: 2, backgroundColor: 'grey.50', borderRadius: 1 }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+            Example: Customize Pinning Control
+          </Typography>
+          <CodeBlock
+            language="tsx"
+            code={`<DataTable
+  columns={columns}
+  data={data}
+  enableColumnPinning={true}
+  slotProps={{
+    columnPinningControl: {
+      title: 'Pin Columns',
+      titleSx: { fontWeight: 700 },
+      menuSx: { minWidth: 350 },
+      iconButtonProps: {
+        sx: { color: 'primary.main' },
+      },
+      tooltipProps: {
+        title: 'Pin/unpin columns',
+      },
+      badgeProps: {
+        sx: { backgroundColor: 'primary.main' },
+      },
+      clearButtonProps: {
+        color: 'warning',
+      },
+    },
+  }}
+/>`}
+          />
+        </Box>
       </Paper>
 
       <Divider sx={{ my: 4 }} />
@@ -625,7 +633,7 @@ tableRef.current?.columnPinning.resetColumnPinning();
           </Box>
           <Box>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-              Insight: Common Pattern
+              Common Pattern
             </Typography>
             <Typography variant="body2" color="text.secondary">
               Pin selection/expanding columns and primary identifier to left. Pin action buttons to right. 

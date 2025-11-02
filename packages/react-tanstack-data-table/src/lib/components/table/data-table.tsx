@@ -879,7 +879,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                 table.setColumnPinning(pinning);
             },
             resetColumnPinning: () => {
-                table.setColumnPinning(table.initialState.columnPinning);
+                table.setColumnPinning(initialStateConfig.columnPinning || { left: [], right: [] });
             },
         },
 

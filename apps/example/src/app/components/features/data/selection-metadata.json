@@ -1,0 +1,112 @@
+{
+  "tableGroups": [
+    {
+      "id": "selection-table-props",
+      "title": "DataTable Selection Props",
+      "description": "Row selection controls available on the DataTable component.",
+      "items": [
+        {
+          "name": "enableRowSelection",
+          "type": "boolean | ((row: Row<T>) => boolean)",
+          "defaultValue": "false",
+          "description": "Enable row selection with checkboxes. Can be a boolean or a function that returns boolean per row.",
+          "possibleValues": ["true", "false"]
+        },
+        {
+          "name": "enableMultiRowSelection",
+          "type": "boolean",
+          "defaultValue": "true",
+          "description": "Allow selecting multiple rows. Set to false for single selection mode.",
+          "possibleValues": ["true", "false"]
+        },
+        {
+          "name": "selectMode",
+          "type": "'page' | 'all'",
+          "defaultValue": "'page'",
+          "description": "Selection scope: 'page' limits selection to current page, 'all' allows cross-page selection with include/exclude logic.",
+          "possibleValues": ["page", "all"]
+        },
+        {
+          "name": "isRowSelectable",
+          "type": "(params: { row: T; id: string }) => boolean",
+          "defaultValue": "undefined",
+          "description": "Function to control which rows can be selected. MUST be memoized with useCallback to prevent infinite re-renders.",
+          "possibleValues": []
+        },
+        {
+          "name": "onSelectionChange",
+          "type": "(selection: SelectionState) => void",
+          "defaultValue": "undefined",
+          "description": "Callback invoked when selection state changes. Receives SelectionState object with ids and type.",
+          "possibleValues": []
+        },
+        {
+          "name": "enableBulkActions",
+          "type": "boolean",
+          "defaultValue": "false",
+          "description": "Display bulk actions toolbar when rows are selected.",
+          "possibleValues": ["true", "false"]
+        },
+        {
+          "name": "bulkActions",
+          "type": "(selectionState: SelectionState) => ReactNode",
+          "defaultValue": "undefined",
+          "description": "Render function that returns custom bulk action buttons based on selection state.",
+          "possibleValues": []
+        }
+      ]
+    },
+    {
+      "id": "selection-state",
+      "title": "SelectionState Structure",
+      "description": "The structure of the selection state object passed to callbacks.",
+      "items": [
+        {
+          "name": "ids",
+          "type": "string[]",
+          "defaultValue": "[]",
+          "description": "Array of row IDs. Meaning depends on the 'type' property.",
+          "possibleValues": []
+        },
+        {
+          "name": "type",
+          "type": "'include' | 'exclude'",
+          "defaultValue": "'include'",
+          "description": "Selection type: 'include' means ids are selected rows, 'exclude' means ids are NOT selected (all others selected).",
+          "possibleValues": ["include", "exclude"]
+        }
+      ]
+    }
+  ],
+  "slotPropGroups": [
+    {
+      "id": "selection-slot-props",
+      "title": "Selection SlotProps",
+      "description": "Customize selection-related components via slotProps.",
+      "items": [
+        {
+          "name": "checkboxSelection",
+          "type": "CheckboxProps",
+          "defaultValue": "{}",
+          "description": "Props for the selection checkbox component (used in selection column).",
+          "possibleValues": []
+        },
+        {
+          "name": "bulkActionsToolbar",
+          "type": "BulkActionsToolbarProps",
+          "defaultValue": "{}",
+          "description": "Props for the bulk actions toolbar that appears when rows are selected.",
+          "possibleValues": []
+        },
+        {
+          "name": "selectionColumn",
+          "type": "DataTableColumnProps",
+          "defaultValue": "{}",
+          "description": "Props for the selection column (size, alignment, pinning, etc.).",
+          "possibleValues": []
+        }
+      ]
+    }
+  ]
+}
+

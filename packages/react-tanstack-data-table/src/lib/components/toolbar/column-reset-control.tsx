@@ -21,6 +21,7 @@ export function ColumnResetControl(props: ColumnResetControlProps = {}) {
 
     const handleResetLayout = () => {
         const actions = props.resetActions || ['columnOrder', 'columnPinning', 'columnSizing'];
+        console.log('actions', actions)
         if (!apiRef?.current) return;
         
         // Reset based on specified actions

@@ -1,8 +1,10 @@
-import { Box, Typography, Paper, Alert, Divider, Table, TableBody, TableCell, TableHead, TableRow, Stack, Chip, Button } from '@mui/material';
+import { Box, Typography, Paper, Alert, Divider, Table, TableBody, TableCell, TableHead, TableRow, Stack, Chip, Button, Accordion, AccordionSummary, AccordionDetails } from '@mui/material';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { DataTable, DataTableColumn } from '@ackplus/react-tanstack-data-table';
 import { useState, useCallback, useRef, useMemo } from 'react';
 import type { SelectionState } from '@ackplus/react-tanstack-data-table';
-import { FeatureLayout } from './common';
+import { FeatureLayout, CodeBlock, FeatureMetadataTable, FeatureMetadataAccordion } from './common';
+import { selectionTableGroups, selectionSlotPropGroups, getSelectionTableGroup, getSelectionSlotPropGroup } from './data/selection-metadata';
 
 interface Employee {
   id: number;
@@ -36,6 +38,9 @@ export function SelectionPage() {
     type: 'include',
   });
   const [serverSelectionState, setServerSelectionState] = useState<any>(null);
+  const selectionTableGroup = getSelectionTableGroup('selection-table-props');
+  const selectionStateGroup = getSelectionTableGroup('selection-state');
+  const selectionSlotPropGroup = getSelectionSlotPropGroup('selection-slot-props');
   
   const sampleData = useMemo(() => generateEmployees(50), []);
 
@@ -135,20 +140,9 @@ export function SelectionPage() {
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
           Enable row selection with checkboxes:
         </Typography>
-        <Box
-          component="pre"
-          sx={{
-            backgroundColor: '#f5f5f5',
-            color: '#333',
-            borderRadius: 1,
-            p: 2,
-            fontFamily: 'Menlo, Consolas, Monaco, "Courier New", monospace',
-            fontSize: 14,
-            overflowX: 'auto',
-            mb: 2,
-          }}
-        >
-{`<DataTable
+        <CodeBlock
+          language="tsx"
+          code={`<DataTable
   columns={columns}
   data={data}
   enableRowSelection={true}            // Enable selection
@@ -158,7 +152,7 @@ export function SelectionPage() {
     console.log('Selection changed:', selection);
   }}
 />`}
-        </Box>
+        />
       </Paper>
 
       <Divider sx={{ my: 4 }} />
@@ -199,19 +193,9 @@ export function SelectionPage() {
             Warning: Can't select across multiple pages
           </Typography>
         </Stack>
-        <Box
-          component="pre"
-          sx={{
-            backgroundColor: '#f5f5f5',
-            color: '#333',
-            borderRadius: 1,
-            p: 2,
-            fontFamily: 'Menlo, Consolas, Monaco, "Courier New", monospace',
-            fontSize: 14,
-            overflowX: 'auto',
-          }}
-        >
-{`<DataTable
+        <CodeBlock
+          language="tsx"
+          code={`<DataTable
   columns={columns}
   data={data}
   enableRowSelection={true}
@@ -221,7 +205,7 @@ export function SelectionPage() {
     console.log('Selected IDs:', selection.ids);
   }}
 />`}
-        </Box>
+        />
       </Paper>
 
       <Paper elevation={1} sx={{ p: 3, mb: 4 }}>
@@ -245,19 +229,9 @@ export function SelectionPage() {
             Warning: Requires understanding include/exclude types
           </Typography>
         </Stack>
-        <Box
-          component="pre"
-          sx={{
-            backgroundColor: '#f5f5f5',
-            color: '#333',
-            borderRadius: 1,
-            p: 2,
-            fontFamily: 'Menlo, Consolas, Monaco, "Courier New", monospace',
-            fontSize: 14,
-            overflowX: 'auto',
-          }}
-        >
-{`<DataTable
+        <CodeBlock
+          language="tsx"
+          code={`<DataTable
   columns={columns}
   data={data}
   enableRowSelection={true}
@@ -274,85 +248,7 @@ export function SelectionPage() {
     }
   }}
 />`}
-        </Box>
-      </Paper>
-
-      <Divider sx={{ my: 4 }} />
-
-      {/* Selection State */}
-      <Typography variant="h5" gutterBottom sx={{ fontWeight: 600, mb: 2 }}>
-        Selection State Structure
-      </Typography>
-
-      <Paper elevation={1} sx={{ p: 3, mb: 4 }}>
-        <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
-          Understanding SelectionState
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          The selection state object has two properties:
-        </Typography>
-        <Table size="small">
-          <TableHead>
-            <TableRow>
-              <TableCell sx={{ fontWeight: 700 }}>Property</TableCell>
-              <TableCell sx={{ fontWeight: 700 }}>Type</TableCell>
-              <TableCell sx={{ fontWeight: 700 }}>Description</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            <TableRow>
-              <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>ids</TableCell>
-              <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>
-                string[]
-              </TableCell>
-              <TableCell>
-                Array of row IDs (meaning depends on type)
-              </TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>type</TableCell>
-              <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>
-                'include' | 'exclude'
-              </TableCell>
-              <TableCell>
-                <strong>include:</strong> ids are selected rows<br />
-                <strong>exclude:</strong> ids are NOT selected (all others are selected)
-              </TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
-
-        <Box sx={{ mt: 3, p: 2, backgroundColor: 'grey.50', borderRadius: 1 }}>
-          <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-            Insight: Examples:
-          </Typography>
-          <Box
-            component="pre"
-            sx={{
-              backgroundColor: '#fff',
-              color: '#333',
-              borderRadius: 1,
-              p: 2,
-              fontFamily: 'Menlo, Consolas, Monaco, "Courier New", monospace',
-              fontSize: 13,
-              overflowX: 'auto',
-            }}
-          >
-{`// Include mode: These specific rows are selected
-{ ids: ['1', '2', '3'], type: 'include' }
-// Tip: Rows 1, 2, 3 are selected
-
-// Exclude mode: All rows EXCEPT these are selected
-{ ids: ['5', '10'], type: 'exclude' }
-// Tip: All rows are selected EXCEPT 5 and 10
-
-// Empty include: Nothing selected
-{ ids: [], type: 'include' }
-
-// Empty exclude: Everything selected
-{ ids: [], type: 'exclude' }`}
-          </Box>
-        </Box>
+        />
       </Paper>
 
       <Divider sx={{ my: 4 }} />
@@ -376,20 +272,9 @@ export function SelectionPage() {
         <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
           Example: Disable Selection
         </Typography>
-        <Box
-          component="pre"
-          sx={{
-            backgroundColor: '#f5f5f5',
-            color: '#333',
-            borderRadius: 1,
-            p: 2,
-            fontFamily: 'Menlo, Consolas, Monaco, "Courier New", monospace',
-            fontSize: 14,
-            overflowX: 'auto',
-            mb: 3,
-          }}
-        >
-{`import { useCallback } from 'react';
+        <CodeBlock
+          language="tsx"
+          code={`import { useCallback } from 'react';
 
 // Warning: MUST be memoized to prevent infinite re-renders
 const isRowSelectable = useCallback(({ row, id }) => {
@@ -406,7 +291,7 @@ const isRowSelectable = useCallback(({ row, id }) => {
   enableRowSelection={true}
   isRowSelectable={isRowSelectable}    // Pass memoized function
 />`}
-        </Box>
+        />
 
         <DataTable
           columns={columns}
@@ -438,20 +323,9 @@ const isRowSelectable = useCallback(({ row, id }) => {
         <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
           Example: Bulk Actions
         </Typography>
-        <Box
-          component="pre"
-          sx={{
-            backgroundColor: '#f5f5f5',
-            color: '#333',
-            borderRadius: 1,
-            p: 2,
-            fontFamily: 'Menlo, Consolas, Monaco, "Courier New", monospace',
-            fontSize: 14,
-            overflowX: 'auto',
-            mb: 3,
-          }}
-        >
-{`<DataTable
+        <CodeBlock
+          language="tsx"
+          code={`<DataTable
   columns={columns}
   data={data}
   enableRowSelection={true}
@@ -478,7 +352,7 @@ const isRowSelectable = useCallback(({ row, id }) => {
             }
           }}
         >
-          📤 Export {selectedCount} Items
+          Export {selectedCount} Items
         </Button>
         
         <Button 
@@ -491,13 +365,13 @@ const isRowSelectable = useCallback(({ row, id }) => {
             }
           }}
         >
-          🗑️ Delete Selected
+                Delete Selected
         </Button>
       </Box>
     );
   }}
 />`}
-        </Box>
+        />
 
         <DataTable
           columns={columns}
@@ -522,7 +396,7 @@ const isRowSelectable = useCallback(({ row, id }) => {
                   alert(`Would export ${count} employees`);
                 }}
               >
-                📤 Export Selected
+                Export Selected
               </Button>
               <Button
                 variant="outlined"
@@ -535,7 +409,7 @@ const isRowSelectable = useCallback(({ row, id }) => {
                   alert(`Would delete ${count} employees`);
                 }}
               >
-                🗑️ Delete Selected
+                Delete Selected
               </Button>
             </Box>
           )}
@@ -553,20 +427,9 @@ const isRowSelectable = useCallback(({ row, id }) => {
         <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
           Programmatic Selection Control
         </Typography>
-        <Box
-          component="pre"
-          sx={{
-            backgroundColor: '#f5f5f5',
-            color: '#333',
-            borderRadius: 1,
-            p: 2,
-            fontFamily: 'Menlo, Consolas, Monaco, "Courier New", monospace',
-            fontSize: 14,
-            overflowX: 'auto',
-            mb: 2,
-          }}
-        >
-{`import { useRef } from 'react';
+        <CodeBlock
+          language="tsx"
+          code={`import { useRef } from 'react';
 import { DataTableApi } from '@ackplus/react-tanstack-data-table';
 
 const tableRef = useRef<DataTableApi<Employee>>(null);
@@ -605,7 +468,7 @@ const isSelected = tableRef.current?.selection.isRowSelected('3');
   data={data}
   enableRowSelection={true}
 />`}
-        </Box>
+        />
       </Paper>
 
       <Divider sx={{ my: 4 }} />
@@ -629,20 +492,9 @@ const isSelected = tableRef.current?.selection.isRowSelected('3');
         <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
           Example: Server-Side Selection
         </Typography>
-        <Box
-          component="pre"
-          sx={{
-            backgroundColor: '#f5f5f5',
-            color: '#333',
-            borderRadius: 1,
-            p: 2,
-            fontFamily: 'Menlo, Consolas, Monaco, "Courier New", monospace',
-            fontSize: 14,
-            overflowX: 'auto',
-            mb: 3,
-          }}
-        >
-{`const handleFetchData = async (filters) => {
+        <CodeBlock
+          language="tsx"
+          code={`const handleFetchData = async (filters) => {
   // Selection state is NOT included in regular fetch
   // It's available via the onSelectionChange callback
   const response = await fetch('/api/employees', {
@@ -691,23 +543,17 @@ const handleServerExport = async (filters, selection) => {
     </Button>
   )}
 />`}
-        </Box>
+        />
 
         {serverSelectionState && (
           <Box sx={{ p: 2, backgroundColor: 'grey.50', borderRadius: 1, mb: 2 }}>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
               Current Server State:
             </Typography>
-            <Box
-              component="pre"
-              sx={{
-                fontSize: 12,
-                fontFamily: 'monospace',
-                overflow: 'auto',
-              }}
-            >
-              {JSON.stringify(serverSelectionState, null, 2)}
-            </Box>
+            <CodeBlock
+              language="json"
+              code={JSON.stringify(serverSelectionState, null, 2)}
+            />
           </Box>
         )}
 
@@ -741,7 +587,7 @@ const handleServerExport = async (filters, selection) => {
                   alert(`Server export ${count} rows with selection:\n${JSON.stringify(selection, null, 2)}`);
                 }}
               >
-                📤 Export Selected
+                Export Selected
               </Button>
             </Box>
           )}
@@ -755,93 +601,153 @@ const handleServerExport = async (filters, selection) => {
         Selection Props Reference
       </Typography>
 
+      <Accordion defaultExpanded>
+        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+          <Typography variant="h6" sx={{ fontWeight: 600 }}>
+            DataTable Selection Props
+          </Typography>
+        </AccordionSummary>
+        <AccordionDetails>
+          <Box sx={{ overflowX: 'auto' }}>
+            <FeatureMetadataTable
+              items={selectionTableGroup?.items ?? []}
+              includePossibleValues
+            />
+          </Box>
+
+          <Box sx={{ mt: 3, p: 2, backgroundColor: 'grey.50', borderRadius: 1 }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+              Example
+            </Typography>
+            <CodeBlock
+              language="tsx"
+              code={`<DataTable
+  columns={columns}
+  data={data}
+  enableRowSelection={true}
+  enableMultiRowSelection={true}
+  selectMode="page"
+  isRowSelectable={(params) => params.row.status === 'active'}
+  onSelectionChange={(selection) => {
+    console.log('Selection:', selection);
+  }}
+  enableBulkActions={true}
+  bulkActions={(selection) => (
+    <Button onClick={() => handleBulkDelete(selection)}>
+      Delete Selected
+    </Button>
+  )}
+/>`}
+            />
+          </Box>
+        </AccordionDetails>
+      </Accordion>
+
+      <Divider sx={{ my: 3 }} />
+
+      {/* SelectionState Structure */}
+      <Typography variant="h5" gutterBottom sx={{ fontWeight: 600, mb: 2 }}>
+        SelectionState Structure
+      </Typography>
+
+      <Accordion>
+        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+          <Typography variant="h6" sx={{ fontWeight: 600 }}>
+            SelectionState Object
+          </Typography>
+        </AccordionSummary>
+        <AccordionDetails>
+          <Box sx={{ overflowX: 'auto' }}>
+            <FeatureMetadataTable
+              items={selectionStateGroup?.items ?? []}
+              includePossibleValues
+            />
+          </Box>
+
+          <Box sx={{ mt: 3, p: 2, backgroundColor: 'grey.50', borderRadius: 1 }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+              Example: SelectionState Usage
+            </Typography>
+            <CodeBlock
+              language="ts"
+              code={`// Include mode: These specific rows are selected
+{ ids: ['1', '2', '3'], type: 'include' }
+// Rows 1, 2, 3 are selected
+
+// Exclude mode: All rows EXCEPT these are selected
+{ ids: ['5', '10'], type: 'exclude' }
+// All rows are selected EXCEPT 5 and 10
+
+// Empty include: Nothing selected
+{ ids: [], type: 'include' }
+
+// Empty exclude: Everything selected
+{ ids: [], type: 'exclude' }`}
+            />
+          </Box>
+        </AccordionDetails>
+      </Accordion>
+
+      <Divider sx={{ my: 4 }} />
+
+      {/* SlotProps Customization */}
+      <Typography variant="h5" gutterBottom sx={{ fontWeight: 600, mb: 2 }}>
+        Selection Customization
+      </Typography>
+
+      <Alert severity="info" sx={{ mb: 3 }}>
+        <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+          Customize Selection Components
+        </Typography>
+        <Typography variant="body2">
+          Use <code>slotProps</code> to customize selection-related components without replacing them entirely.
+        </Typography>
+      </Alert>
+
       <Paper elevation={1} sx={{ p: 3, mb: 4 }}>
-        <Table size="small">
-          <TableHead>
-            <TableRow>
-              <TableCell sx={{ fontWeight: 700, width: '25%' }}>Prop</TableCell>
-              <TableCell sx={{ fontWeight: 700, width: '25%' }}>Type</TableCell>
-              <TableCell sx={{ fontWeight: 700, width: '15%' }}>Default</TableCell>
-              <TableCell sx={{ fontWeight: 700, width: '35%' }}>Description</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            <TableRow>
-              <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>enableRowSelection</TableCell>
-              <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>
-                boolean
-              </TableCell>
-              <TableCell sx={{ fontFamily: 'monospace', fontSize: 13 }}>
-                false
-              </TableCell>
-              <TableCell>Enable row selection with checkboxes</TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>enableMultiRowSelection</TableCell>
-              <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>
-                boolean
-              </TableCell>
-              <TableCell sx={{ fontFamily: 'monospace', fontSize: 13 }}>
-                true
-              </TableCell>
-              <TableCell>Allow selecting multiple rows (false = single selection)</TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>selectMode</TableCell>
-              <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>
-                'page' | 'all'
-              </TableCell>
-              <TableCell sx={{ fontFamily: 'monospace', fontSize: 13 }}>
-                'page'
-              </TableCell>
-              <TableCell>
-                Page: selection per page. All: selection across all pages
-              </TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>isRowSelectable</TableCell>
-              <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>
-                {'(params) => boolean'}
-              </TableCell>
-              <TableCell sx={{ fontFamily: 'monospace', fontSize: 13 }}>
-                undefined
-              </TableCell>
-              <TableCell>
-                Function to control which rows can be selected. MUST be memoized!
-              </TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>onSelectionChange</TableCell>
-              <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>
-                {'(selection) => void'}
-              </TableCell>
-              <TableCell sx={{ fontFamily: 'monospace', fontSize: 13 }}>
-                undefined
-              </TableCell>
-              <TableCell>Callback when selection changes</TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>enableBulkActions</TableCell>
-              <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>
-                boolean
-              </TableCell>
-              <TableCell sx={{ fontFamily: 'monospace', fontSize: 13 }}>
-                false
-              </TableCell>
-              <TableCell>Show bulk actions toolbar when rows are selected</TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>bulkActions</TableCell>
-              <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>
-                {'(selection) => ReactNode'}
-              </TableCell>
-              <TableCell sx={{ fontFamily: 'monospace', fontSize: 13 }}>
-                undefined
-              </TableCell>
-              <TableCell>Render function for bulk action buttons</TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
+        <FeatureMetadataAccordion
+          groups={selectionSlotPropGroups}
+          defaultExpandedCount={1}
+          includePossibleValues
+        />
+
+        <Box sx={{ mt: 3, p: 2, backgroundColor: 'grey.50', borderRadius: 1 }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+            Example: Customize Selection Components
+          </Typography>
+          <CodeBlock
+            language="tsx"
+            code={`<DataTable
+  columns={columns}
+  data={data}
+  enableRowSelection={true}
+  enableBulkActions={true}
+  slotProps={{
+    checkboxSelection: {
+      color: 'primary',
+      size: 'small',
+      sx: { p: 0.5 },
+    },
+    bulkActionsToolbar: {
+      sx: {
+        backgroundColor: 'success.lighter',
+        borderRadius: 1,
+        mb: 2,
+      },
+      chipProps: {
+        color: 'success',
+        variant: 'filled',
+      },
+      containerSx: { p: 2 },
+    },
+    selectionColumn: {
+      size: 50,
+      enablePinning: true,
+    },
+  }}
+/>`}
+          />
+        </Box>
       </Paper>
 
       <Divider sx={{ my: 4 }} />
@@ -889,20 +795,11 @@ const handleServerExport = async (filters, selection) => {
           </Box>
           <Box>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-              Insight: Selection State Example
+              Selection State Example
             </Typography>
-            <Box
-              component="pre"
-              sx={{
-                backgroundColor: '#f5f5f5',
-                p: 2,
-                borderRadius: 1,
-                fontSize: 13,
-                fontFamily: 'monospace',
-                mt: 1,
-              }}
-            >
-{`// Handle selection in bulk actions
+            <CodeBlock
+              language="ts"
+              code={`// Handle selection in bulk actions
 bulkActions={(selection) => {
   const getSelectedIds = () => {
     if (selection.type === 'include') {
@@ -920,7 +817,7 @@ bulkActions={(selection) => {
   const selectedIds = getSelectedIds();
   // Use selectedIds for your operations
 }`}
-            </Box>
+            />
           </Box>
         </Stack>
       </Paper>

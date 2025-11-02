@@ -1,7 +1,8 @@
-import { Box, Typography, Paper, Alert, Divider, Table, TableBody, TableCell, TableHead, TableRow, Stack, Chip, Button } from '@mui/material';
+import { Box, Typography, Paper, Alert, Divider, Stack, Chip, Button, Table, TableBody, TableCell, TableHead, TableRow } from '@mui/material';
 import { DataTable, DataTableColumn, createLogger } from '@ackplus/react-tanstack-data-table';
 import { useState, useCallback, useRef, useMemo } from 'react';
-import { FeatureLayout } from './common';
+import { FeatureLayout, FeatureSection, CodeBlock, FeatureMetadataTable } from './common';
+import { getPaginationTableGroup, getPaginationSlotPropGroup } from './data/pagination-metadata';
 
 interface Product {
   id: number;
@@ -30,6 +31,8 @@ export function PaginationPage() {
   const [serverPaginationState, setServerPaginationState] = useState<any>(null);
   const [currentPage, setCurrentPage] = useState(0);
   const logger = useMemo(() => createLogger('Examples.Pagination'), []);
+  const paginationTableGroup = getPaginationTableGroup('pagination-table-props');
+  const paginationSlotGroup = getPaginationSlotPropGroup('pagination-slot-props');
   
   const sampleData = useMemo(() => generateProducts(100), []);
 
@@ -75,7 +78,7 @@ export function PaginationPage() {
       accessorKey: 'rating',
       header: 'Rating',
       size: 100,
-      cell: ({ getValue }) => `⭐ ${getValue<number>().toFixed(1)}`,
+      cell: ({ getValue }) => `${getValue<number>().toFixed(1)}`,
     },
   ];
 
@@ -133,32 +136,21 @@ export function PaginationPage() {
 
       <Divider sx={{ my: 4 }} />
 
-      {/* Enable Pagination */}
-      <Typography variant="h5" gutterBottom sx={{ fontWeight: 600, mb: 2 }}>
-        Enable Pagination
-      </Typography>
-
-      <Paper elevation={1} sx={{ p: 3, mb: 4 }}>
-        <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
-          Basic Setup
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          Pagination is enabled by default. You can customize the initial state:
-        </Typography>
-        <Box
-          component="pre"
-          sx={{
-            backgroundColor: '#f5f5f5',
-            color: '#333',
-            borderRadius: 1,
-            p: 2,
-            fontFamily: 'Menlo, Consolas, Monaco, "Courier New", monospace',
-            fontSize: 14,
-            overflowX: 'auto',
-            mb: 2,
-          }}
-        >
-{`<DataTable
+      <FeatureSection
+        title="Enable Pagination"
+        description="Pagination is enabled by default; customize the initial state or listen for pagination changes."
+        spacing={3}
+      >
+        <Paper elevation={1} sx={{ p: 3 }}>
+          <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
+            Basic Setup
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Pagination is enabled by default. You can customize the initial state:
+          </Typography>
+          <CodeBlock
+            language="tsx"
+            code={`<DataTable
   columns={columns}
   data={data}
   enablePagination={true}       // Enabled by default
@@ -173,46 +165,36 @@ export function PaginationPage() {
     console.log('Page changed:', pagination);
   }}
 />`}
-        </Box>
-      </Paper>
+          />
+        </Paper>
+      </FeatureSection>
 
       <Divider sx={{ my: 4 }} />
 
-      {/* Default Page Size */}
-      <Typography variant="h5" gutterBottom sx={{ fontWeight: 600, mb: 2 }}>
-        Default Page Size & Initial Page
-      </Typography>
+      <FeatureSection
+        title="Default Page Size & Initial Page"
+        description="Define the starting page index and page size so the grid launches in a sensible state."
+        spacing={3}
+      >
+        <Alert severity="success" sx={{ width: '100%' }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+            Set Initial Pagination State
+          </Typography>
+          <Typography variant="body2">
+            Use <code>initialState.pagination</code> to set the default page size and starting page.
+          </Typography>
+        </Alert>
 
-      <Alert severity="success" sx={{ mb: 3 }}>
-        <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-          Set Initial Pagination State
-        </Typography>
-        <Typography variant="body2">
-          Use <code>initialState.pagination</code> to set the default page size and starting page.
-        </Typography>
-      </Alert>
-
-      <Paper elevation={1} sx={{ p: 3, mb: 4 }}>
-        <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
-          Example: Custom Initial State
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          This example has 100 total products with different page sizes to see pagination in action:
-        </Typography>
-        <Box
-          component="pre"
-          sx={{
-            backgroundColor: '#f5f5f5',
-            color: '#333',
-            borderRadius: 1,
-            p: 2,
-            fontFamily: 'Menlo, Consolas, Monaco, "Courier New", monospace',
-            fontSize: 14,
-            overflowX: 'auto',
-            mb: 3,
-          }}
-        >
-{`// With 100 total records
+        <Paper elevation={1} sx={{ p: 3 }}>
+          <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
+            Example: Custom Initial State
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            This example has 100 total products with different page sizes to see pagination in action:
+          </Typography>
+          <CodeBlock
+            language="tsx"
+            code={`// With 100 total records
 const data = [...]; // 100 items
 
 <DataTable
@@ -229,62 +211,52 @@ const data = [...]; // 100 items
 
 // This will show: "1-10 of 100" with 10 total pages
 // Page size dropdown will show: [10, 25, 50, 100]`}
-        </Box>
+          />
 
-        <Box sx={{ mb: 2, p: 2, backgroundColor: 'info.lighter', borderRadius: 1 }}>
-          <Typography variant="body2" sx={{ fontWeight: 600 }}>
-            📊 Current Example: 100 products, 10 per page = 10 total pages
-          </Typography>
-        </Box>
+          <Box sx={{ mb: 2, p: 2, backgroundColor: 'info.lighter', borderRadius: 1 }}>
+            <Typography variant="body2" sx={{ fontWeight: 600 }}>
+              Current Example: 100 products, 10 per page = 10 total pages
+            </Typography>
+          </Box>
 
-        <DataTable
-          columns={columns}
-          data={sampleData}
-          totalRow={sampleData.length}
-          enablePagination={true}
-          initialState={{
-            pagination: {
-              pageIndex: 0,
-              pageSize: 10,
-            },
-          }}
-        />
-      </Paper>
+          <DataTable
+            columns={columns}
+            data={sampleData}
+            enablePagination={true}
+            initialState={{
+              pagination: {
+                pageIndex: 2,
+                pageSize: 20,
+              },
+            }}
+          />
+        </Paper>
+      </FeatureSection>
+
 
       <Divider sx={{ my: 4 }} />
 
-      {/* Custom Page Size Options */}
-      <Typography variant="h5" gutterBottom sx={{ fontWeight: 600, mb: 2 }}>
-        Custom Page Size Options
-      </Typography>
+      <FeatureSection
+        title="Custom Page Size Options"
+        description="Use slotProps.pagination to adjust the rows-per-page selector and labels."
+        spacing={3}
+      >
+        <Alert severity="warning" sx={{ width: '100%' }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+            Customize Rows Per Page Options
+          </Typography>
+          <Typography variant="body2">
+            Use <code>slotProps.pagination</code> to customize the rows per page dropdown options.
+          </Typography>
+        </Alert>
 
-      <Alert severity="warning" sx={{ mb: 3 }}>
-        <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-          Customize Rows Per Page Options
-        </Typography>
-        <Typography variant="body2">
-          Use <code>slotProps.pagination</code> to customize the rows per page dropdown options.
-        </Typography>
-      </Alert>
-
-      <Paper elevation={1} sx={{ p: 3, mb: 4 }}>
-        <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
-          Example: Custom Page Size Options
-        </Typography>
-        <Box
-          component="pre"
-          sx={{
-            backgroundColor: '#f5f5f5',
-            color: '#333',
-            borderRadius: 1,
-            p: 2,
-            fontFamily: 'Menlo, Consolas, Monaco, "Courier New", monospace',
-            fontSize: 14,
-            overflowX: 'auto',
-            mb: 3,
-          }}
-        >
-{`<DataTable
+        <Paper elevation={1} sx={{ p: 3 }}>
+          <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
+            Example: Custom Page Size Options
+          </Typography>
+          <CodeBlock
+            language="tsx"
+            code={`<DataTable
   columns={columns}
   data={data}
   enablePagination={true}
@@ -297,59 +269,48 @@ const data = [...]; // 100 items
     },
   }}
 />`}
-        </Box>
+          />
 
-        <DataTable
-          columns={columns}
-          data={sampleData}
-          enablePagination={true}
-          initialState={{
-            pagination: { pageIndex: 0, pageSize: 25 },
-          }}
-          slotProps={{
-            pagination: {
-              rowsPerPageOptions: [10, 25, 50, 100],
-              labelRowsPerPage: 'Items:',
-            },
-          }}
-        />
-      </Paper>
+          <DataTable
+            columns={columns}
+            data={sampleData}
+            enablePagination={true}
+            initialState={{
+              pagination: { pageIndex: 0, pageSize: 25 },
+            }}
+            slotProps={{
+              pagination: {
+                rowsPerPageOptions: [10, 25, 50, 100],
+                labelRowsPerPage: 'Items:',
+              },
+            }}
+          />
+        </Paper>
+      </FeatureSection>
 
       <Divider sx={{ my: 4 }} />
 
-      {/* Server-Side Pagination */}
-      <Typography variant="h5" gutterBottom sx={{ fontWeight: 600, mb: 2 }}>
-        Server-Side Pagination
-      </Typography>
+      <FeatureSection
+        title="Server-Side Pagination"
+        description="Delegate pagination to your backend, returning the current page plus the total row count."
+        spacing={3}
+      >
+        <Alert severity="error" sx={{ width: '100%' }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+            Server-Side Mode
+          </Typography>
+          <Typography variant="body2">
+            Set <code>paginationMode="server"</code> or <code>dataMode="server"</code> to delegate pagination. Provide <code>totalRow</code> so the table can calculate total pages.
+          </Typography>
+        </Alert>
 
-      <Alert severity="error" sx={{ mb: 3 }}>
-        <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-          Server-Side Mode
-        </Typography>
-        <Typography variant="body2">
-          Set <code>paginationMode="server"</code> or <code>dataMode="server"</code> to delegate 
-          pagination to your backend. Use <code>totalRow</code> to specify total records.
-        </Typography>
-      </Alert>
-
-      <Paper elevation={1} sx={{ p: 3, mb: 4 }}>
-        <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
-          Example: Server-Side Pagination
-        </Typography>
-        <Box
-          component="pre"
-          sx={{
-            backgroundColor: '#f5f5f5',
-            color: '#333',
-            borderRadius: 1,
-            p: 2,
-            fontFamily: 'Menlo, Consolas, Monaco, "Courier New", monospace',
-            fontSize: 14,
-            overflowX: 'auto',
-            mb: 3,
-          }}
-        >
-{`const handleFetchData = async (filters) => {
+        <Paper elevation={1} sx={{ p: 3 }}>
+          <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
+            Example: Server-Side Pagination
+          </Typography>
+          <CodeBlock
+            language="tsx"
+            code={`const handleFetchData = async (filters) => {
   // Pagination structure received:
   // {
   //   pagination: {
@@ -382,41 +343,33 @@ const data = [...]; // 100 items
     pagination: { pageIndex: 0, pageSize: 50 },
   }}
 />`}
-        </Box>
+          />
 
-        {serverPaginationState && (
-          <Box sx={{ p: 2, backgroundColor: 'grey.50', borderRadius: 1, mb: 2 }}>
-            <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-              Current Server Pagination State:
-            </Typography>
-            <Box
-              component="pre"
-              sx={{
-                fontSize: 12,
-                fontFamily: 'monospace',
-                overflow: 'auto',
-              }}
-            >
-              {JSON.stringify(serverPaginationState, null, 2)}
+          {serverPaginationState && (
+            <Box sx={{ p: 2, backgroundColor: 'grey.50', borderRadius: 1, mb: 2 }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+                Current Server Pagination State
+              </Typography>
+              <CodeBlock
+                language="json"
+                code={JSON.stringify(serverPaginationState || {}, null, 2)}
+              />
+              <Typography variant="body2" sx={{ mt: 1 }}>
+                Current Page: {currentPage + 1}
+              </Typography>
             </Box>
-            <Typography variant="body2" sx={{ mt: 1 }}>
-              Current Page: {currentPage + 1}
-            </Typography>
-          </Box>
-        )}
+          )}
 
-        <DataTable
-          columns={columns}
-          dataMode="server"
-          totalRow={sampleData.length}
-          onFetchData={handleFetchData}
-          enablePagination={true}
-          paginationMode="server"
-          initialState={{
-            pagination: { pageIndex: 0, pageSize: 10 },
-          }}
-        />
-      </Paper>
+          <DataTable
+            columns={columns}
+            dataMode="server"
+            onFetchData={handleFetchData}
+            enablePagination={true}
+            paginationMode="server"
+            totalRow={sampleData.length}
+          />
+        </Paper>
+      </FeatureSection>
 
       <Divider sx={{ my: 4 }} />
 
@@ -432,20 +385,9 @@ const data = [...]; // 100 items
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
           Control pagination programmatically using the table API ref:
         </Typography>
-        <Box
-          component="pre"
-          sx={{
-            backgroundColor: '#f5f5f5',
-            color: '#333',
-            borderRadius: 1,
-            p: 2,
-            fontFamily: 'Menlo, Consolas, Monaco, "Courier New", monospace',
-            fontSize: 14,
-            overflowX: 'auto',
-            mb: 3,
-          }}
-        >
-{`import { useRef } from 'react';
+        <CodeBlock
+          language="tsx"
+          code={`import { useRef } from 'react';
 import { DataTableApi } from '@ackplus/react-tanstack-data-table';
 
 const tableRef = useRef<DataTableApi<Product>>(null);
@@ -478,7 +420,7 @@ const paginationState = tableRef.current?.state.getCurrentPagination();
   data={data}
   enablePagination={true}
 />`}
-        </Box>
+        />
 
         <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
           <Button 
@@ -691,21 +633,11 @@ const paginationState = tableRef.current?.state.getCurrentPagination();
 
         <Box sx={{ mt: 3, p: 2, backgroundColor: 'grey.50', borderRadius: 1 }}>
           <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-            Insight: Example: Full Customization
+            Example: Full Customization
           </Typography>
-          <Box
-            component="pre"
-            sx={{
-              backgroundColor: '#fff',
-              color: '#333',
-              borderRadius: 1,
-              p: 2,
-              fontFamily: 'Menlo, Consolas, Monaco, "Courier New", monospace',
-              fontSize: 13,
-              overflowX: 'auto',
-            }}
-          >
-{`<DataTable
+            <CodeBlock
+              language="tsx"
+              code={`<DataTable
   columns={columns}
   data={data}
   enablePagination={true}
@@ -730,7 +662,7 @@ const paginationState = tableRef.current?.state.getCurrentPagination();
     },
   }}
 />`}
-          </Box>
+            />
         </Box>
       </Paper>
 
@@ -760,27 +692,16 @@ const paginationState = tableRef.current?.state.getCurrentPagination();
           </Typography>
         </Stack>
 
-        <Box
-          component="pre"
-          sx={{
-            backgroundColor: '#f5f5f5',
-            color: '#333',
-            borderRadius: 1,
-            p: 2,
-            fontFamily: 'Menlo, Consolas, Monaco, "Courier New", monospace',
-            fontSize: 14,
-            overflowX: 'auto',
-            mt: 2,
-          }}
-        >
-{`<DataTable
+        <CodeBlock
+          language="tsx"
+          code={`<DataTable
   columns={columns}
   data={data}
   enablePagination={false}          // Disable pagination
   enableVirtualization={true}       // Use virtualization instead
   maxHeight="500px"
 />`}
-        </Box>
+        />
       </Paper>
 
       <Divider sx={{ my: 4 }} />

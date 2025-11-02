@@ -1,0 +1,69 @@
+{
+  "columnGroups": [
+    {
+      "id": "sorting-column-props",
+      "title": "Column Sorting Properties",
+      "description": "Tweak sorting behavior on individual columns.",
+      "items": [
+        {
+          "name": "enableSorting",
+          "type": "boolean",
+          "defaultValue": "true",
+          "description": "Enable sorting for this column.",
+          "possibleValues": ["true", "false"]
+        },
+        {
+          "name": "sortDescFirst",
+          "type": "boolean",
+          "defaultValue": "false",
+          "description": "Start in descending order on the first sort toggle (great for numbers).",
+          "possibleValues": ["true", "false"]
+        },
+        {
+          "name": "sortingFn",
+          "type": "SortingFn | string",
+          "defaultValue": "'auto'",
+          "description": "Custom compare function or one of TanStack's built-in identifiers (e.g. 'alphanumeric').",
+          "possibleValues": []
+        }
+      ]
+    }
+  ],
+  "tableGroups": [
+    {
+      "id": "sorting-table-props",
+      "title": "DataTable Sorting Props",
+      "description": "Global props that control sorting at the table level.",
+      "items": [
+        {
+          "name": "enableSorting",
+          "type": "boolean",
+          "defaultValue": "true",
+          "description": "Enable sorting globally for the table.",
+          "possibleValues": ["true", "false"]
+        },
+        {
+          "name": "sortingMode",
+          "type": "'client' | 'server'",
+          "defaultValue": "'client'",
+          "description": "Choose between client-side or server-side sorting.",
+          "possibleValues": ["client", "server"]
+        },
+        {
+          "name": "onSortingChange",
+          "type": "(sorting: SortingState) => void",
+          "defaultValue": "undefined",
+          "description": "Callback when sorting state changes.",
+          "possibleValues": []
+        },
+        {
+          "name": "initialState.sorting",
+          "type": "SortingState",
+          "defaultValue": "[]",
+          "description": "Initial sort order applied on mount (array of { id, desc }).",
+          "possibleValues": []
+        }
+      ]
+    }
+  ]
+}

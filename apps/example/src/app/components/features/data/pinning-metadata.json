@@ -1,0 +1,105 @@
+{
+  "tableGroups": [
+    {
+      "id": "pinning-table-props",
+      "title": "DataTable Pinning Props",
+      "description": "Column pinning controls available on the DataTable component.",
+      "items": [
+        {
+          "name": "enableColumnPinning",
+          "type": "boolean",
+          "defaultValue": "false",
+          "description": "Enable column pinning functionality. When enabled, users can pin columns to left or right.",
+          "possibleValues": ["true", "false"]
+        },
+        {
+          "name": "onColumnPinningChange",
+          "type": "(pinning: ColumnPinningState) => void",
+          "defaultValue": "undefined",
+          "description": "Callback invoked whenever column pinning state changes (columns pinned or unpinned).",
+          "possibleValues": []
+        },
+        {
+          "name": "initialState.columnPinning",
+          "type": "ColumnPinningState",
+          "defaultValue": "{ left: [], right: [] }",
+          "description": "Initial pinning configuration with column IDs for left and right pinning.",
+          "possibleValues": []
+        }
+      ]
+    },
+    {
+      "id": "pinning-column-props",
+      "title": "Column Pinning Properties",
+      "description": "Column-level properties for controlling pinning behavior.",
+      "items": [
+        {
+          "name": "enablePinning",
+          "type": "boolean",
+          "defaultValue": "true",
+          "description": "Enable or disable pinning for this specific column. Set to false to prevent pinning.",
+          "possibleValues": ["true", "false"]
+        }
+      ]
+    }
+  ],
+  "slotPropGroups": [
+    {
+      "id": "pinning-slot-props",
+      "title": "Column Pinning Control SlotProps",
+      "description": "Customize the column pinning control component via slotProps.columnPinningControl.",
+      "items": [
+        {
+          "name": "title",
+          "type": "string",
+          "defaultValue": "'Pin Columns'",
+          "description": "Menu dropdown title for the pinning control.",
+          "possibleValues": []
+        },
+        {
+          "name": "titleSx",
+          "type": "SxProps",
+          "defaultValue": "undefined",
+          "description": "Styling for the menu title.",
+          "possibleValues": []
+        },
+        {
+          "name": "menuSx",
+          "type": "SxProps",
+          "defaultValue": "undefined",
+          "description": "Styling for the pinning menu container.",
+          "possibleValues": []
+        },
+        {
+          "name": "iconButtonProps",
+          "type": "IconButtonProps",
+          "defaultValue": "{}",
+          "description": "Props for the pin icon button.",
+          "possibleValues": []
+        },
+        {
+          "name": "tooltipProps",
+          "type": "TooltipProps",
+          "defaultValue": "{}",
+          "description": "Props for the tooltip shown on hover.",
+          "possibleValues": []
+        },
+        {
+          "name": "badgeProps",
+          "type": "BoxProps",
+          "defaultValue": "{}",
+          "description": "Props for the pinned count badge.",
+          "possibleValues": []
+        },
+        {
+          "name": "clearButtonProps",
+          "type": "IconButtonProps",
+          "defaultValue": "{}",
+          "description": "Props for the 'Unpin All' button.",
+          "possibleValues": []
+        }
+      ]
+    }
+  ]
+}
+

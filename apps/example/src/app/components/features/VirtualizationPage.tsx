@@ -1,7 +1,9 @@
-import { Box, Typography, Paper, Alert, Divider, Stack, Button, ButtonGroup, Chip } from '@mui/material';
+import { Box, Typography, Paper, Alert, Divider, Stack, Button, ButtonGroup, Chip, Accordion, AccordionSummary, AccordionDetails } from '@mui/material';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { DataTable, DataTableColumn } from '@ackplus/react-tanstack-data-table';
 import { useState, useMemo } from 'react';
-import { FeatureLayout } from './common';
+import { FeatureLayout, CodeBlock, FeatureMetadataTable } from './common';
+import { virtualizationTableGroups, getVirtualizationTableGroup } from './data/virtualization-metadata';
 
 interface Employee {
   id: number;
@@ -30,6 +32,7 @@ const generateSampleData = (count: number): Employee[] => {
 export function VirtualizationPage() {
   const [datasetSize, setDatasetSize] = useState(1000);
   const [enableVirtualization, setEnableVirtualization] = useState(true);
+  const virtualizationTableGroup = getVirtualizationTableGroup('virtualization-table-props');
 
   // Generate data based on selected size
   const data = useMemo(() => generateSampleData(datasetSize), [datasetSize]);
@@ -124,7 +127,7 @@ export function VirtualizationPage() {
           </Box>
           <Box>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1, color: 'error.main' }}>
-              ❌ Don't Use Virtualization When:
+              Don't Use Virtualization When:
             </Typography>
             <Typography variant="body2" component="ul" sx={{ pl: 2 }}>
               <li>You have less than 500 rows</li>
@@ -149,20 +152,9 @@ export function VirtualizationPage() {
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
           Simply set <code>enableVirtualization</code> to true and disable pagination.
         </Typography>
-        <Box
-          component="pre"
-          sx={{
-            backgroundColor: '#f5f5f5',
-            color: '#333',
-            borderRadius: 1,
-            p: 2,
-            fontFamily: 'Menlo, Consolas, Monaco, "Courier New", monospace',
-            fontSize: 14,
-            overflowX: 'auto',
-            mb: 2,
-          }}
-        >
-{`<DataTable
+        <CodeBlock
+          language="tsx"
+          code={`<DataTable
   columns={columns}
   data={largeDataset}
   enableVirtualization={true}     // Enable virtualization
@@ -171,7 +163,7 @@ export function VirtualizationPage() {
   maxHeight="500px"               // Set container height
   enableStickyHeaderOrFooter      // Keep header visible
 />`}
-        </Box>
+        />
       </Paper>
 
       <Divider sx={{ my: 4 }} />
@@ -271,59 +263,42 @@ export function VirtualizationPage() {
 
       {/* Configuration Options */}
       <Typography variant="h5" gutterBottom sx={{ fontWeight: 600, mb: 2 }}>
-        Configuration Options
+        Virtualization Props Reference
       </Typography>
-      
-      <Paper elevation={1} sx={{ p: 3, mb: 4 }}>
-        <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
-          Key Props
-        </Typography>
-        <Stack spacing={2}>
-          <Box>
-            <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5 }}>
-              <code>enableVirtualization</code>
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              <strong>Type:</strong> <code>boolean</code><br />
-              <strong>Default:</strong> <code>false</code><br />
-              <strong>Description:</strong> Enable row virtualization for better performance with large datasets.
-            </Typography>
+
+      <Accordion defaultExpanded>
+        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+          <Typography variant="h6" sx={{ fontWeight: 600 }}>
+            DataTable Virtualization Props
+          </Typography>
+        </AccordionSummary>
+        <AccordionDetails>
+          <Box sx={{ overflowX: 'auto' }}>
+            <FeatureMetadataTable
+              items={virtualizationTableGroup?.items ?? []}
+              includePossibleValues
+            />
           </Box>
-          <Divider />
-          <Box>
-            <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5 }}>
-              <code>estimateRowHeight</code>
+
+          <Box sx={{ mt: 3, p: 2, backgroundColor: 'grey.50', borderRadius: 1 }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+              Example
             </Typography>
-            <Typography variant="body2" color="text.secondary">
-              <strong>Type:</strong> <code>number</code><br />
-              <strong>Default:</strong> <code>52</code><br />
-              <strong>Description:</strong> Estimated height of each row in pixels. Used to calculate scroll position and virtual window.
-            </Typography>
+            <CodeBlock
+              language="tsx"
+              code={`<DataTable
+  columns={columns}
+  data={largeDataset}
+  enableVirtualization={true}          // Enable virtualization
+  estimateRowHeight={52}                // Estimated row height in pixels
+  maxHeight="500px"                     // Fixed container height
+  enableStickyHeaderOrFooter={true}     // Keep header visible
+  enablePagination={false}               // Must disable pagination
+/>`}
+            />
           </Box>
-          <Divider />
-          <Box>
-            <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5 }}>
-              <code>maxHeight</code>
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              <strong>Type:</strong> <code>string | number</code><br />
-              <strong>Default:</strong> <code>'400px'</code><br />
-              <strong>Description:</strong> Maximum height of the table container. Required for virtualization to work properly.
-            </Typography>
-          </Box>
-          <Divider />
-          <Box>
-            <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5 }}>
-              <code>enableStickyHeaderOrFooter</code>
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              <strong>Type:</strong> <code>boolean</code><br />
-              <strong>Default:</strong> <code>false</code><br />
-              <strong>Description:</strong> Keep table header fixed while scrolling. Recommended when using virtualization.
-            </Typography>
-          </Box>
-        </Stack>
-      </Paper>
+        </AccordionDetails>
+      </Accordion>
 
       <Divider sx={{ my: 4 }} />
 

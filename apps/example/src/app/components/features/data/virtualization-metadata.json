@@ -1,0 +1,48 @@
+{
+  "tableGroups": [
+    {
+      "id": "virtualization-table-props",
+      "title": "DataTable Virtualization Props",
+      "description": "Props for enabling and configuring row virtualization for large datasets.",
+      "items": [
+        {
+          "name": "enableVirtualization",
+          "type": "boolean",
+          "defaultValue": "false",
+          "description": "Enable row virtualization. Only renders visible rows plus a buffer, dramatically improving performance with large datasets.",
+          "possibleValues": ["true", "false"]
+        },
+        {
+          "name": "estimateRowHeight",
+          "type": "number",
+          "defaultValue": "52",
+          "description": "Estimated height of each row in pixels. Used to calculate scroll position and virtual window. Use average height if rows vary.",
+          "possibleValues": []
+        },
+        {
+          "name": "maxHeight",
+          "type": "string | number",
+          "defaultValue": "'400px'",
+          "description": "Maximum height of the table container. Required for virtualization to work properly. Set a fixed height for best results.",
+          "possibleValues": []
+        },
+        {
+          "name": "enableStickyHeaderOrFooter",
+          "type": "boolean",
+          "defaultValue": "false",
+          "description": "Keep table header fixed while scrolling. Highly recommended when using virtualization to maintain column visibility.",
+          "possibleValues": ["true", "false"]
+        },
+        {
+          "name": "enablePagination",
+          "type": "boolean",
+          "defaultValue": "true",
+          "description": "Must be set to false when using virtualization. Virtualization and pagination are mutually exclusive.",
+          "possibleValues": ["true", "false"]
+        }
+      ]
+    }
+  ],
+  "slotPropGroups": []
+}
+

@@ -1,8 +1,9 @@
-import { Box, Typography, Paper, Alert, Divider, Table, TableBody, TableCell, TableHead, TableRow, Stack, Chip, TextField, Accordion, AccordionSummary, AccordionDetails } from '@mui/material';
+import { Box, Typography, Paper, Alert, Divider, Stack, Chip, TextField, Accordion, AccordionSummary, AccordionDetails } from '@mui/material';
 import { DataTable, DataTableColumn } from '@ackplus/react-tanstack-data-table';
 import { useState, useCallback } from 'react';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import { FeatureLayout } from './common';
+import { FeatureLayout, FeatureSection, CodeBlock, FeatureMetadataTable } from './common';
+import { getOperatorGroup } from './data/filtering-metadata';
 
 interface Product {
   id: number;
@@ -41,6 +42,7 @@ const PriceRangeFilter = ({ value, onChange }: any) => {
 
 export function FilteringPage() {
   const [serverFilters, setServerFilters] = useState<any>(null);
+  const operatorGroup = getOperatorGroup('operator-reference');
 
   // Columns with different filter types
   const filterableColumns: DataTableColumn<Product>[] = [
@@ -92,7 +94,7 @@ export function FilteringPage() {
       size: 100,
       filterable: true,
       type: 'number',
-      cell: ({ getValue }) => `⭐ ${getValue<number>().toFixed(1)}`,
+      cell: ({ getValue }) => `${getValue<number>().toFixed(1)}`,
     },
     {
       accessorKey: 'releaseDate',
@@ -216,20 +218,9 @@ export function FilteringPage() {
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
           The global filter searches across all columns that have <code>enableGlobalFilter: true</code>.
         </Typography>
-        <Box
-          component="pre"
-          sx={{
-            backgroundColor: '#f5f5f5',
-            color: '#333',
-            borderRadius: 1,
-            p: 2,
-            fontFamily: 'Menlo, Consolas, Monaco, "Courier New", monospace',
-            fontSize: 14,
-            overflowX: 'auto',
-            mb: 2,
-          }}
-        >
-{`<DataTable
+        <CodeBlock
+          language="tsx"
+          code={`<DataTable
   columns={columns}
   data={data}
   enableGlobalFilter={true}           // Enable global search
@@ -237,7 +228,7 @@ export function FilteringPage() {
     console.log('Search term:', filter);
   }}
 />`}
-        </Box>
+        />
       </Paper>
 
       <Divider sx={{ my: 4 }} />
@@ -269,20 +260,9 @@ export function FilteringPage() {
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
           Enable column filtering on the table component:
         </Typography>
-        <Box
-          component="pre"
-          sx={{
-            backgroundColor: '#f5f5f5',
-            color: '#333',
-            borderRadius: 1,
-            p: 2,
-            fontFamily: 'Menlo, Consolas, Monaco, "Courier New", monospace',
-            fontSize: 14,
-            overflowX: 'auto',
-            mb: 2,
-          }}
-        >
-{`<DataTable
+        <CodeBlock
+          language="tsx"
+          code={`<DataTable
   columns={columns}
   data={data}
   enableColumnFilter={true}      // Enable column filter UI
@@ -291,7 +271,7 @@ export function FilteringPage() {
     console.log('Column filters changed:', filters);
   }}
 />`}
-        </Box>
+        />
       </Paper>
 
       {/* Filter Types */}
@@ -315,26 +295,15 @@ export function FilteringPage() {
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                 For text columns. Use <code>type: 'text'</code>
               </Typography>
-              <Box
-                component="pre"
-                sx={{
-                  backgroundColor: '#f5f5f5',
-                  color: '#333',
-                  borderRadius: 1,
-                  p: 2,
-                  fontFamily: 'Menlo, Consolas, Monaco, "Courier New", monospace',
-                  fontSize: 13,
-                  overflowX: 'auto',
-                  mb: 2,
-                }}
-              >
-{`{
+              <CodeBlock
+                language="ts"
+                code={`{
   accessorKey: 'name',
   header: 'Name',
   filterable: true,
   type: 'text',              // Text filter type
 }`}
-              </Box>
+              />
               <Typography variant="caption" color="text.secondary">
                 <strong>Operators:</strong> Contains, Starts with, Ends with, Equals, Not equals, Is empty, Is not empty
               </Typography>
@@ -348,20 +317,9 @@ export function FilteringPage() {
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                 For columns with predefined options. Use <code>type: 'select'</code> with <code>options</code>.
               </Typography>
-              <Box
-                component="pre"
-                sx={{
-                  backgroundColor: '#f5f5f5',
-                  color: '#333',
-                  borderRadius: 1,
-                  p: 2,
-                  fontFamily: 'Menlo, Consolas, Monaco, "Courier New", monospace',
-                  fontSize: 13,
-                  overflowX: 'auto',
-                  mb: 2,
-                }}
-              >
-{`{
+              <CodeBlock
+                language="ts"
+                code={`{
   accessorKey: 'category',
   header: 'Category',
   filterable: true,
@@ -372,7 +330,7 @@ export function FilteringPage() {
     { value: 'Stationery', label: 'Stationery' },
   ],
 }`}
-              </Box>
+              />
               <Typography variant="caption" color="text.secondary">
                 <strong>Operators:</strong> Equals, Not equals, In (multi-select), Not in, Is empty, Is not empty
               </Typography>
@@ -386,27 +344,16 @@ export function FilteringPage() {
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                 For numeric columns. Use <code>type: 'number'</code>
               </Typography>
-              <Box
-                component="pre"
-                sx={{
-                  backgroundColor: '#f5f5f5',
-                  color: '#333',
-                  borderRadius: 1,
-                  p: 2,
-                  fontFamily: 'Menlo, Consolas, Monaco, "Courier New", monospace',
-                  fontSize: 13,
-                  overflowX: 'auto',
-                  mb: 2,
-                }}
-              >
-{`{
+              <CodeBlock
+                language="ts"
+                code={`{
   accessorKey: 'price',
   header: 'Price',
   filterable: true,
   type: 'number',            // Number filter type
   cell: ({ getValue }) => \`$\${getValue<number>()}\`,
 }`}
-              </Box>
+              />
               <Typography variant="caption" color="text.secondary">
                 <strong>Operators:</strong> Equals, Not equals, Greater than, Less than, Greater than or equal, Less than or equal, Is empty, Is not empty
               </Typography>
@@ -420,20 +367,9 @@ export function FilteringPage() {
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                 For true/false columns. Use <code>type: 'boolean'</code>
               </Typography>
-              <Box
-                component="pre"
-                sx={{
-                  backgroundColor: '#f5f5f5',
-                  color: '#333',
-                  borderRadius: 1,
-                  p: 2,
-                  fontFamily: 'Menlo, Consolas, Monaco, "Courier New", monospace',
-                  fontSize: 13,
-                  overflowX: 'auto',
-                  mb: 2,
-                }}
-              >
-{`{
+              <CodeBlock
+                language="ts"
+                code={`{
   accessorKey: 'inStock',
   header: 'In Stock',
   filterable: true,
@@ -446,7 +382,7 @@ export function FilteringPage() {
     />
   ),
 }`}
-              </Box>
+              />
               <Typography variant="caption" color="text.secondary">
                 <strong>Operators:</strong> Is (with True/False/Any options)
               </Typography>
@@ -460,26 +396,15 @@ export function FilteringPage() {
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                 For date columns. Use <code>type: 'date'</code>
               </Typography>
-              <Box
-                component="pre"
-                sx={{
-                  backgroundColor: '#f5f5f5',
-                  color: '#333',
-                  borderRadius: 1,
-                  p: 2,
-                  fontFamily: 'Menlo, Consolas, Monaco, "Courier New", monospace',
-                  fontSize: 13,
-                  overflowX: 'auto',
-                  mb: 2,
-                }}
-              >
-{`{
+              <CodeBlock
+                language="ts"
+                code={`{
   accessorKey: 'releaseDate',
   header: 'Release Date',
   filterable: true,
   type: 'date',              // Date filter type
 }`}
-              </Box>
+              />
               <Typography variant="caption" color="text.secondary">
                 <strong>Operators:</strong> Equals, Not equals, After, Before, Is empty, Is not empty
               </Typography>
@@ -500,7 +425,7 @@ export function FilteringPage() {
           Try It Out!
         </Typography>
         <Typography variant="body2">
-          Click the filter icon (🔽) in the toolbar to open the column filter panel. 
+          Click the filter icon in the toolbar to open the column filter panel. 
           Try different filter types, operators, and combinations with AND/OR logic.
         </Typography>
       </Alert>
@@ -524,42 +449,30 @@ export function FilteringPage() {
 
       <Divider sx={{ my: 4 }} />
 
-      {/* Custom Filter Component */}
-      <Typography variant="h5" gutterBottom sx={{ fontWeight: 600, mb: 2 }}>
-        Custom Filter Components
-      </Typography>
+      <FeatureSection
+        title="Custom Filter Components"
+        description="Override the default input by supplying filterComponent or editComponent directly on a column."
+        spacing={3}
+      >
+        <Alert severity="warning" sx={{ width: '100%' }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+            Override Filter Input
+          </Typography>
+          <Typography variant="body2">
+            The DataTable passes value, onChange, filter metadata, and the column definition so you can wire up any controlled component.
+          </Typography>
+        </Alert>
 
-      <Alert severity="warning" sx={{ mb: 3 }}>
-        <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-          Override Filter Input
-        </Typography>
-        <Typography variant="body2">
-          Use <code>filterComponent</code> or <code>editComponent</code> on a column to provide 
-          a completely custom filter input component.
-        </Typography>
-      </Alert>
-
-      <Paper elevation={1} sx={{ p: 3, mb: 4 }}>
-        <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
-          Example: Custom Filter Component
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          Create a custom filter component with your own UI and logic:
-        </Typography>
-        <Box
-          component="pre"
-          sx={{
-            backgroundColor: '#f5f5f5',
-            color: '#333',
-            borderRadius: 1,
-            p: 2,
-            fontFamily: 'Menlo, Consolas, Monaco, "Courier New", monospace',
-            fontSize: 14,
-            overflowX: 'auto',
-            mb: 3,
-          }}
-        >
-{`// Custom filter component
+        <Paper elevation={1} sx={{ p: 3 }}>
+          <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
+            Example: Custom Filter Component
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Build a bespoke price filter with currency formatting and hook it into the column definition.
+          </Typography>
+          <CodeBlock
+            language="tsx"
+            code={`// Custom filter component
 const PriceRangeFilter = ({ value, onChange, filter, column }) => {
   return (
     <TextField
@@ -584,50 +497,39 @@ const columns: DataTableColumn<Product>[] = [
     cell: ({ getValue }) => \`$\${getValue<number>()}\`,
   },
 ];`}
-        </Box>
-        <DataTable
-          columns={customFilterColumns}
-          data={sampleProducts}
-          enableColumnFilter={true}
-          filterMode="client"
-        />
-      </Paper>
+          />
+          <DataTable
+            columns={customFilterColumns}
+            data={sampleProducts}
+            enableColumnFilter={true}
+            filterMode="client"
+          />
+        </Paper>
+      </FeatureSection>
 
       <Divider sx={{ my: 4 }} />
 
-      {/* Server-Side Filtering */}
-      <Typography variant="h5" gutterBottom sx={{ fontWeight: 600, mb: 2 }}>
-        Server-Side Filtering
-      </Typography>
+      <FeatureSection
+        title="Server-Side Filtering"
+        description="Enable server mode to stream filter state to your backend and hydrate the grid with the filtered response."
+        spacing={3}
+      >
+        <Alert severity="error" sx={{ width: '100%' }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+            Server-Side Mode
+          </Typography>
+          <Typography variant="body2">
+            Set <code>filterMode=\"server\"</code> or <code>dataMode=\"server\"</code> to delegate filtering. The <code>onFetchData</code> callback receives the full filter model including AND / OR logic.
+          </Typography>
+        </Alert>
 
-      <Alert severity="error" sx={{ mb: 3 }}>
-        <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-          Server-Side Mode
-        </Typography>
-        <Typography variant="body2">
-          Set <code>filterMode="server"</code> or <code>dataMode="server"</code> to delegate 
-          filtering to your backend. The <code>onFetchData</code> callback receives filter state.
-        </Typography>
-      </Alert>
-
-      <Paper elevation={1} sx={{ p: 3, mb: 4 }}>
-        <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
-          Example: Server-Side Filtering
-        </Typography>
-        <Box
-          component="pre"
-          sx={{
-            backgroundColor: '#f5f5f5',
-            color: '#333',
-            borderRadius: 1,
-            p: 2,
-            fontFamily: 'Menlo, Consolas, Monaco, "Courier New", monospace',
-            fontSize: 14,
-            overflowX: 'auto',
-            mb: 3,
-          }}
-        >
-{`const handleFetchData = async (filters) => {
+        <Paper elevation={1} sx={{ p: 3 }}>
+          <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
+            Example: Server-Side Filtering
+          </Typography>
+          <CodeBlock
+            language="ts"
+            code={`const handleFetchData = async (filters) => {
   // Filter structure received:
   // {
   //   columnFilter: {
@@ -656,88 +558,47 @@ const columns: DataTableColumn<Product>[] = [
   enableColumnFilter={true}
   filterMode="server"            // Server-side filtering
 />`}
-        </Box>
+          />
 
-        {serverFilters && (
-          <Box sx={{ p: 2, backgroundColor: 'grey.50', borderRadius: 1, mb: 2 }}>
-            <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-              Current Server Filters:
-            </Typography>
-            <Box
-              component="pre"
-              sx={{
-                fontSize: 12,
-                fontFamily: 'monospace',
-                overflow: 'auto',
-              }}
-            >
-              {JSON.stringify(serverFilters, null, 2)}
+          {serverFilters && (
+            <Box sx={{ p: 2, backgroundColor: 'grey.50', borderRadius: 1, mb: 2 }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+                Current Server Filters
+              </Typography>
+              <CodeBlock
+                language="json"
+                code={JSON.stringify(serverFilters || {}, null, 2)}
+              />
             </Box>
-          </Box>
-        )}
+          )}
 
-        <DataTable
-          columns={filterableColumns}
-          dataMode="server"
-          onFetchData={handleFetchData}
-          enableColumnFilter={true}
-          enableGlobalFilter={true}
-          filterMode="server"
-        />
-      </Paper>
+          <DataTable
+            columns={filterableColumns}
+            dataMode="server"
+            onFetchData={handleFetchData}
+            enableColumnFilter={true}
+            enableGlobalFilter={true}
+            filterMode="server"
+          />
+        </Paper>
+      </FeatureSection>
 
       <Divider sx={{ my: 4 }} />
 
-      {/* Filter Operators Reference */}
-      <Typography variant="h5" gutterBottom sx={{ fontWeight: 600, mb: 2 }}>
-        Filter Operators Reference
-      </Typography>
-
-      <Paper elevation={1} sx={{ p: 3, mb: 4 }}>
-        <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
-          Available Operators by Type
-        </Typography>
-        <Table size="small">
-          <TableHead>
-            <TableRow>
-              <TableCell sx={{ fontWeight: 700 }}>Filter Type</TableCell>
-              <TableCell sx={{ fontWeight: 700 }}>Available Operators</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            <TableRow>
-              <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>text</TableCell>
-              <TableCell>
-                Contains, Starts with, Ends with, Equals, Not equals, Is empty, Is not empty
-              </TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>select</TableCell>
-              <TableCell>
-                Equals, Not equals, In (multi-select), Not in, Is empty, Is not empty
-              </TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>number</TableCell>
-              <TableCell>
-                Equals, Not equals, Greater than, Less than, Greater than or equal, Less than or equal, Is empty, Is not empty
-              </TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>boolean</TableCell>
-              <TableCell>
-                Is (True/False/Any)
-              </TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>date</TableCell>
-              <TableCell>
-                Equals, Not equals, After, Before, Is empty, Is not empty
-              </TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
-      </Paper>
+      <FeatureSection
+        title="Filter Operators Reference"
+        description="Every built-in filter type ships with a tailored operator list. Use this matrix to map UI controls to the supported comparisons."
+        spacing={3}
+      >
+        <Paper elevation={1} sx={{ p: 3 }}>
+          <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
+            Available Operators by Type
+          </Typography>
+          <Box sx={{ overflowX: 'auto' }}>
+            <FeatureMetadataTable items={operatorGroup?.items ?? []} size="small" />
+          </Box>
+        </Paper>
+      </FeatureSection>
 
       <Divider sx={{ my: 4 }} />
 
@@ -753,20 +614,9 @@ const columns: DataTableColumn<Product>[] = [
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
           Control filters programmatically using the table API ref:
         </Typography>
-        <Box
-          component="pre"
-          sx={{
-            backgroundColor: '#f5f5f5',
-            color: '#333',
-            borderRadius: 1,
-            p: 2,
-            fontFamily: 'Menlo, Consolas, Monaco, "Courier New", monospace',
-            fontSize: 14,
-            overflowX: 'auto',
-            mb: 2,
-          }}
-        >
-{`import { useRef } from 'react';
+        <CodeBlock
+          language="tsx"
+          code={`import { useRef } from 'react';
 import { DataTableApi } from '@ackplus/react-tanstack-data-table';
 
 const tableRef = useRef<DataTableApi<Product>>(null);
@@ -789,7 +639,7 @@ const filters = tableRef.current?.state.getCurrentFilters();
   data={data}
   enableColumnFilter={true}
 />`}
-        </Box>
+        />
       </Paper>
 
       <Divider sx={{ my: 4 }} />

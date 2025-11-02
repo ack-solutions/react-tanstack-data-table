@@ -1,7 +1,7 @@
 import { Box, Typography, Paper, Alert, Divider, Table, TableBody, TableCell, TableHead, TableRow, Stack, Button, Chip, LinearProgress } from '@mui/material';
 import { DataTable, DataTableColumn } from '@ackplus/react-tanstack-data-table';
 import { useState, useCallback, useRef, useMemo } from 'react';
-import { FeatureLayout } from './common';
+import { FeatureLayout, CodeBlock } from './common';
 
 interface Product {
   id: number;
@@ -77,7 +77,7 @@ export function ExportPage() {
       accessorKey: 'rating',
       header: 'Rating',
       size: 100,
-      cell: ({ getValue }) => `⭐ ${getValue<number>().toFixed(1)}`,
+      cell: ({ getValue }) => `${getValue<number>().toFixed(1)}`,
     },
     {
       accessorKey: 'releaseDate',
@@ -136,11 +136,11 @@ export function ExportPage() {
           Export Features
         </Typography>
         <Typography variant="body2">
-          • Export to CSV or Excel formats<br />
-          • Export all data or only selected rows<br />
-          • Export only visible columns<br />
-          • Custom export headers and formatting<br />
-          • Progress tracking for large datasets
+          Export to CSV or Excel formats<br />
+          Export all data or only selected rows<br />
+          Export only visible columns<br />
+          Custom export headers and formatting<br />
+          Progress tracking for large datasets
         </Typography>
       </Alert>
 
@@ -158,20 +158,9 @@ export function ExportPage() {
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
           Export is enabled by default via the toolbar export button:
         </Typography>
-        <Box
-          component="pre"
-          sx={{
-            backgroundColor: '#f5f5f5',
-            color: '#333',
-            borderRadius: 1,
-            p: 2,
-            fontFamily: 'Menlo, Consolas, Monaco, "Courier New", monospace',
-            fontSize: 14,
-            overflowX: 'auto',
-            mb: 2,
-          }}
-        >
-          {`<DataTable
+        <CodeBlock
+          language="tsx"
+          code={`<DataTable
   columns={columns}
   data={data}
   enableExport={true}               // Enable export button in toolbar
@@ -183,7 +172,7 @@ export function ExportPage() {
     console.error('Export failed:', error);
   }}
 />`}
-        </Box>
+        />
       </Paper>
 
       <Divider sx={{ my: 4 }} />
@@ -212,23 +201,14 @@ export function ExportPage() {
         <Stack spacing={2}>
           <Box sx={{ p: 2, backgroundColor: 'grey.50', borderRadius: 1 }}>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-              1️⃣ accessorFn (Recommended for Export)
+              1. accessorFn (Recommended for Export)
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
               Use <code>accessorFn</code> to format data specifically for export:
             </Typography>
-            <Box
-              component="pre"
-              sx={{
-                backgroundColor: '#fff',
-                p: 1.5,
-                borderRadius: 1,
-                fontSize: 13,
-                fontFamily: 'monospace',
-                overflow: 'auto',
-              }}
-            >
-              {`{
+            <CodeBlock
+              language="ts"
+              code={`{
   accessorKey: 'price',
   header: 'Price',
   accessorFn: (row) => \`$\${row.price}\`,  // Exports: "$1299"
@@ -236,28 +216,19 @@ export function ExportPage() {
     <Chip label={getValue()} />  // Display: Chip component
   ),
 }`}
-            </Box>
+            />
           </Box>
 
           <Box sx={{ p: 2, backgroundColor: 'grey.50', borderRadius: 1 }}>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-              2️⃣ accessorKey (Raw Value)
+              2. accessorKey (Raw Value)
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
               If no <code>accessorFn</code>, uses raw data value:
             </Typography>
-            <Box
-              component="pre"
-              sx={{
-                backgroundColor: '#fff',
-                p: 1.5,
-                borderRadius: 1,
-                fontSize: 13,
-                fontFamily: 'monospace',
-                overflow: 'auto',
-              }}
-            >
-              {`{
+            <CodeBlock
+              language="ts"
+              code={`{
   accessorKey: 'status',
   header: 'Status',
   // Exports: "active" (raw value from data)
@@ -265,33 +236,24 @@ export function ExportPage() {
     <Chip label={getValue()} />  // Display: Chip
   ),
 }`}
-            </Box>
+            />
           </Box>
 
           <Box sx={{ p: 2, backgroundColor: 'grey.50', borderRadius: 1 }}>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-              3️⃣ header (Column Header)
+              3. header (Column Header)
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
               The column header is used for both display and export:
             </Typography>
-            <Box
-              component="pre"
-              sx={{
-                backgroundColor: '#fff',
-                p: 1.5,
-                borderRadius: 1,
-                fontSize: 13,
-                fontFamily: 'monospace',
-                overflow: 'auto',
-              }}
-            >
-              {`{
+            <CodeBlock
+              language="ts"
+              code={`{
   accessorKey: 'salary',
   header: 'Annual Salary (USD)',  // Used for display AND export
   cell: ({ getValue }) => \`$\${getValue()}\`,
 }`}
-            </Box>
+            />
           </Box>
         </Stack>
       </Paper>
@@ -317,20 +279,9 @@ export function ExportPage() {
         <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
           Example: Export Progress
         </Typography>
-        <Box
-          component="pre"
-          sx={{
-            backgroundColor: '#f5f5f5',
-            color: '#333',
-            borderRadius: 1,
-            p: 2,
-            fontFamily: 'Menlo, Consolas, Monaco, "Courier New", monospace',
-            fontSize: 14,
-            overflowX: 'auto',
-            mb: 3,
-          }}
-        >
-          {`import { useState } from 'react';
+        <CodeBlock
+          language="tsx"
+          code={`import { useState } from 'react';
 
 function MyComponent() {
   const [exportProgress, setExportProgress] = useState(0);
@@ -379,7 +330,7 @@ function MyComponent() {
     />
   );
 }`}
-        </Box>
+        />
 
         {isExporting && (
           <Box sx={{ mb: 2 }}>
@@ -431,20 +382,9 @@ function MyComponent() {
         <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
           Example: Programmatic Export
         </Typography>
-        <Box
-          component="pre"
-          sx={{
-            backgroundColor: '#f5f5f5',
-            color: '#333',
-            borderRadius: 1,
-            p: 2,
-            fontFamily: 'Menlo, Consolas, Monaco, "Courier New", monospace',
-            fontSize: 14,
-            overflowX: 'auto',
-            mb: 3,
-          }}
-        >
-          {`import { useRef } from 'react';
+        <CodeBlock
+          language="tsx"
+          code={`import { useRef } from 'react';
 import { DataTableApi } from '@ackplus/react-tanstack-data-table';
 
 const tableRef = useRef<DataTableApi<Product>>(null);
@@ -486,7 +426,7 @@ const cancelExport = () => {
     enableExport={true}
   />
 </>`}
-        </Box>
+        />
 
         <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
           <Button
@@ -543,20 +483,9 @@ const cancelExport = () => {
         <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
           Example: Server-Side Export
         </Typography>
-        <Box
-          component="pre"
-          sx={{
-            backgroundColor: '#f5f5f5',
-            color: '#333',
-            borderRadius: 1,
-            p: 2,
-            fontFamily: 'Menlo, Consolas, Monaco, "Courier New", monospace',
-            fontSize: 14,
-            overflowX: 'auto',
-            mb: 3,
-          }}
-        >
-          {`const handleServerExport = async (filters, selection) => {
+        <CodeBlock
+          language="ts"
+          code={`const handleServerExport = async (filters, selection) => {
   // Receives current filters and selection state
   // {
   //   globalFilter: 'search term',
@@ -597,7 +526,7 @@ const cancelExport = () => {
     console.log(\`Exporting: \${progress.percentage}%\`);
   }}
 />`}
-        </Box>
+        />
 
         <DataTable
           columns={columns}
@@ -752,19 +681,9 @@ const cancelExport = () => {
           <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
             Insight: Example: Export-Friendly Columns
           </Typography>
-          <Box
-            component="pre"
-            sx={{
-              backgroundColor: '#fff',
-              color: '#333',
-              borderRadius: 1,
-              p: 2,
-              fontFamily: 'Menlo, Consolas, Monaco, "Courier New", monospace',
-              fontSize: 13,
-              overflowX: 'auto',
-            }}
-          >
-            {`const columns: DataTableColumn<Product>[] = [
+          <CodeBlock
+            language="ts"
+            code={`const columns: DataTableColumn<Product>[] = [
   {
     accessorKey: 'price',
     header: 'Unit Price (USD)',           // Used for display AND export
@@ -793,7 +712,7 @@ const cancelExport = () => {
     ),
   },
 ];`}
-          </Box>
+          />
         </Box>
       </Paper>
 
@@ -818,20 +737,9 @@ const cancelExport = () => {
         <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
           Example: Export with Selection
         </Typography>
-        <Box
-          component="pre"
-          sx={{
-            backgroundColor: '#f5f5f5',
-            color: '#333',
-            borderRadius: 1,
-            p: 2,
-            fontFamily: 'Menlo, Consolas, Monaco, "Courier New", monospace',
-            fontSize: 14,
-            overflowX: 'auto',
-            mb: 3,
-          }}
-        >
-          {`<DataTable
+        <CodeBlock
+          language="tsx"
+          code={`<DataTable
   columns={columns}
   data={data}
   enableRowSelection={true}         // Enable selection
@@ -845,7 +753,7 @@ const cancelExport = () => {
     console.log(\`Exported \${result.totalRows} rows\`);
   }}
 />`}
-        </Box>
+        />
 
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
           Try selecting some rows and then exporting:
