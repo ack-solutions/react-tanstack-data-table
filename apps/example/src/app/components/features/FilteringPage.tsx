@@ -2,6 +2,7 @@ import { Box, Typography, Paper, Alert, Divider, Table, TableBody, TableCell, Ta
 import { DataTable, DataTableColumn } from '@ackplus/react-tanstack-data-table';
 import { useState, useCallback } from 'react';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import { FeatureLayout } from './common';
 
 interface Product {
   id: number;
@@ -187,16 +188,10 @@ export function FilteringPage() {
   }, []);
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h3" gutterBottom sx={{ fontWeight: 700, mb: 2 }}>
-        Filtering
-      </Typography>
-      
-      <Typography variant="body1" color="text.secondary" paragraph>
-        The DataTable component provides powerful filtering capabilities including global search 
-        and advanced column-specific filters with various operators and data types.
-      </Typography>
-
+    <FeatureLayout
+      title="Filtering"
+      description="The DataTable component provides powerful filtering capabilities including global search and advanced column-specific filters with various operators and data types."
+    >
       <Alert severity="info" sx={{ mb: 4 }}>
         <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
           Two Types of Filtering
@@ -808,7 +803,7 @@ const filters = tableRef.current?.state.getCurrentFilters();
         <Stack spacing={2}>
           <Box>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-              ✅ Set Appropriate Filter Types
+              Tip: Set Appropriate Filter Types
             </Typography>
             <Typography variant="body2" color="text.secondary">
               Always set the correct <code>type</code> for each column to get the appropriate filter UI and operators.
@@ -816,7 +811,7 @@ const filters = tableRef.current?.state.getCurrentFilters();
           </Box>
           <Box>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-              ✅ Provide Options for Select Filters
+              Tip: Provide Options for Select Filters
             </Typography>
             <Typography variant="body2" color="text.secondary">
               When using <code>type: 'select'</code>, always provide the <code>options</code> array with all possible values.
@@ -824,7 +819,7 @@ const filters = tableRef.current?.state.getCurrentFilters();
           </Box>
           <Box>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-              ✅ Use Server-Side for Large Datasets
+              Tip: Use Server-Side for Large Datasets
             </Typography>
             <Typography variant="body2" color="text.secondary">
               For datasets with 10,000+ rows, use <code>filterMode="server"</code> to improve performance.
@@ -832,7 +827,7 @@ const filters = tableRef.current?.state.getCurrentFilters();
           </Box>
           <Box>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-              ✅ Enable Global Filter for Common Searches
+              Tip: Enable Global Filter for Common Searches
             </Typography>
             <Typography variant="body2" color="text.secondary">
               Set <code>enableGlobalFilter: true</code> on columns that should be searchable via the global search bar.
@@ -840,7 +835,7 @@ const filters = tableRef.current?.state.getCurrentFilters();
           </Box>
           <Box>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-              ⚠️ Test Filter Logic (AND/OR)
+              Warning: Test Filter Logic (AND/OR)
             </Typography>
             <Typography variant="body2" color="text.secondary">
               When using multiple filters, test both AND and OR logic to ensure expected behavior.
@@ -848,6 +843,6 @@ const filters = tableRef.current?.state.getCurrentFilters();
           </Box>
         </Stack>
       </Paper>
-    </Box>
+    </FeatureLayout>
   );
 }

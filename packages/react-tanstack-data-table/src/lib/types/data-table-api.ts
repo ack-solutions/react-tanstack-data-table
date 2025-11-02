@@ -69,6 +69,7 @@ export interface DataTableApi<T = any> {
         setPageSize: (pageSize: number) => void;
         goToFirstPage: () => void;
         goToLastPage: () => void;
+        resetPagination?: () => void;
     };
 
     // Enhanced Row Selection with automatic mode detection

@@ -1,6 +1,7 @@
 import { Box, Typography, Paper, Alert, Divider, Table, TableBody, TableCell, TableHead, TableRow, Stack, Chip, Button } from '@mui/material';
 import { DataTable, DataTableColumn, createLogger } from '@ackplus/react-tanstack-data-table';
 import { useState, useCallback, useRef, useMemo } from 'react';
+import { FeatureLayout } from './common';
 
 interface Product {
   id: number;
@@ -113,16 +114,10 @@ export function PaginationPage() {
   }, [sampleData, logger]);
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h3" gutterBottom sx={{ fontWeight: 700, mb: 2 }}>
-        Pagination
-      </Typography>
-      
-      <Typography variant="body1" color="text.secondary" paragraph>
-        Control how data is displayed across multiple pages with flexible pagination options, 
-        customizable page sizes, and client or server-side processing.
-      </Typography>
-
+    <FeatureLayout
+      title="Pagination"
+      description="Control how data is displayed across multiple pages with flexible pagination options, customizable page sizes, and client or server-side processing."
+    >
       <Alert severity="info" sx={{ mb: 4 }}>
         <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
           Automatic Pagination
@@ -696,7 +691,7 @@ const paginationState = tableRef.current?.state.getCurrentPagination();
 
         <Box sx={{ mt: 3, p: 2, backgroundColor: 'grey.50', borderRadius: 1 }}>
           <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-            💡 Example: Full Customization
+            Insight: Example: Full Customization
           </Typography>
           <Box
             component="pre"
@@ -799,7 +794,7 @@ const paginationState = tableRef.current?.state.getCurrentPagination();
         <Stack spacing={2}>
           <Box>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-              ✅ Set Appropriate Page Sizes
+              Tip: Set Appropriate Page Sizes
             </Typography>
             <Typography variant="body2" color="text.secondary">
               Choose page sizes based on your data: 10-25 for detailed rows, 50-100 for compact data.
@@ -807,7 +802,7 @@ const paginationState = tableRef.current?.state.getCurrentPagination();
           </Box>
           <Box>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-              ✅ Provide Multiple Page Size Options
+              Tip: Provide Multiple Page Size Options
             </Typography>
             <Typography variant="body2" color="text.secondary">
               Give users flexibility with options like [10, 25, 50, 100, 200] to suit different use cases.
@@ -815,7 +810,7 @@ const paginationState = tableRef.current?.state.getCurrentPagination();
           </Box>
           <Box>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-              ✅ Use Server-Side for Large Datasets
+              Tip: Use Server-Side for Large Datasets
             </Typography>
             <Typography variant="body2" color="text.secondary">
               For datasets with 1,000+ rows, use <code>paginationMode="server"</code> to improve performance.
@@ -823,7 +818,7 @@ const paginationState = tableRef.current?.state.getCurrentPagination();
           </Box>
           <Box>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-              ✅ Always Provide totalRow for Server Mode
+              Tip: Always Provide totalRow for Server Mode
             </Typography>
             <Typography variant="body2" color="text.secondary">
               When using <code>paginationMode="server"</code>, always set <code>totalRow</code> to the 
@@ -832,7 +827,7 @@ const paginationState = tableRef.current?.state.getCurrentPagination();
           </Box>
           <Box>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-              ⚠️ Don't Use with Virtualization
+              Warning: Don't Use with Virtualization
             </Typography>
             <Typography variant="body2" color="text.secondary">
               Pagination and virtualization are mutually exclusive. Use one or the other, not both.
@@ -840,7 +835,7 @@ const paginationState = tableRef.current?.state.getCurrentPagination();
           </Box>
           <Box>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-              💡 Reset to First Page on Filter
+              Insight: Reset to First Page on Filter
             </Typography>
             <Typography variant="body2" color="text.secondary">
               The table automatically resets to page 1 when filters change to avoid showing empty pages.
@@ -848,6 +843,6 @@ const paginationState = tableRef.current?.state.getCurrentPagination();
           </Box>
         </Stack>
       </Paper>
-    </Box>
+    </FeatureLayout>
   );
 }

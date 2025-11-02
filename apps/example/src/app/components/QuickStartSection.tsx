@@ -1,4 +1,5 @@
 import { Box, Typography, Paper, Alert } from '@mui/material';
+import { CodeBlock } from './features/common';
 
 export function QuickStartSection() {
   return (
@@ -24,69 +25,36 @@ export function QuickStartSection() {
         <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
           1. Import the Component
         </Typography>
-        <Box
-          component="pre"
-          sx={{
-            backgroundColor: '#f5f5f5',
-            color: '#333',
-            borderRadius: 1,
-            p: 2,
-            fontFamily: 'Menlo, Consolas, Monaco, "Courier New", monospace',
-            fontSize: 14,
-            overflowX: 'auto',
-            mb: 2,
-          }}
-        >
-{`import { DataTable } from '@ackplus/react-tanstack-data-table';
+        <CodeBlock
+          language="ts"
+          code={`import { DataTable } from '@ackplus/react-tanstack-data-table';
 import { createColumnHelper } from '@tanstack/react-table';`}
-        </Box>
+        />
       </Paper>
 
       <Paper elevation={1} sx={{ p: 3, mb: 4 }}>
         <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
           2. Define Your Data Type
         </Typography>
-        <Box
-          component="pre"
-          sx={{
-            backgroundColor: '#f5f5f5',
-            color: '#333',
-            borderRadius: 1,
-            p: 2,
-            fontFamily: 'Menlo, Consolas, Monaco, "Courier New", monospace',
-            fontSize: 14,
-            overflowX: 'auto',
-            mb: 2,
-          }}
-        >
-{`interface User {
+        <CodeBlock
+          language="ts"
+          code={`interface User {
   id: number;
   name: string;
   email: string;
   status: 'active' | 'inactive';
   role: string;
 }`}
-        </Box>
+        />
       </Paper>
 
       <Paper elevation={1} sx={{ p: 3, mb: 4 }}>
         <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
           3. Create Column Definitions
         </Typography>
-        <Box
-          component="pre"
-          sx={{
-            backgroundColor: '#f5f5f5',
-            color: '#333',
-            borderRadius: 1,
-            p: 2,
-            fontFamily: 'Menlo, Consolas, Monaco, "Courier New", monospace',
-            fontSize: 14,
-            overflowX: 'auto',
-            mb: 2,
-          }}
-        >
-{`const columnHelper = createColumnHelper<User>();
+        <CodeBlock
+          language="tsx"
+          code={`const columnHelper = createColumnHelper<User>();
 
 const columns = [
   columnHelper.accessor('name', {
@@ -111,27 +79,16 @@ const columns = [
     size: 120,
   }),
 ];`}
-        </Box>
+        />
       </Paper>
 
       <Paper elevation={1} sx={{ p: 3, mb: 4 }}>
         <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
           4. Use the Component
         </Typography>
-        <Box
-          component="pre"
-          sx={{
-            backgroundColor: '#f5f5f5',
-            color: '#333',
-            borderRadius: 1,
-            p: 2,
-            fontFamily: 'Menlo, Consolas, Monaco, "Courier New", monospace',
-            fontSize: 14,
-            overflowX: 'auto',
-            mb: 2,
-          }}
-        >
-{`const data: User[] = [
+        <CodeBlock
+          language="tsx"
+          code={`const data: User[] = [
   { id: 1, name: 'John Doe', email: 'john@example.com', status: 'active', role: 'Admin' },
   { id: 2, name: 'Jane Smith', email: 'jane@example.com', status: 'inactive', role: 'User' },
   // ... more data
@@ -151,7 +108,7 @@ function MyDataTable() {
     />
   );
 }`}
-        </Box>
+        />
       </Paper>
 
       <Alert severity="info">

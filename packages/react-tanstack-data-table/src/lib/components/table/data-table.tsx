@@ -961,7 +961,6 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                 });
             },
             resetFilters: () => {
-                table.resetGlobalFilter();
                 handleColumnFilterStateChange({
                     filters: [],
                     logic: 'AND',
@@ -996,7 +995,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                 table.resetSorting();
             },
             resetSorting: () => {
-                table.resetSorting();
+                table.setSorting(initialStateConfig.sorting || []);
             },
         },
 
@@ -1040,6 +1039,9 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                         paginationLogger.debug(`Going to last page ${pageCount - 1}`);
                     }
                 }
+            },
+            resetPagination: () => {
+                table.setPagination(initialStateConfig.pagination || { pageIndex: 0, pageSize: 10 });
             },
         },
 

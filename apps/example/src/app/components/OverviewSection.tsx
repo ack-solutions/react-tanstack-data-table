@@ -1,4 +1,5 @@
 import { Box, Typography, Stack, Chip, Paper, Alert } from '@mui/material';
+import { CodeBlock } from './features/common';
 
 export function OverviewSection() {
   return (
@@ -37,7 +38,7 @@ export function OverviewSection() {
         <Stack spacing={2}>
           <Box>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-              🚀 High Performance
+              High Performance
             </Typography>
             <Typography variant="body2" color="text.secondary">
               Built on TanStack Table for excellent performance with large datasets and virtualization support.
@@ -45,7 +46,7 @@ export function OverviewSection() {
           </Box>
           <Box>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-              🎨 Material Design
+              Material Design
             </Typography>
             <Typography variant="body2" color="text.secondary">
               Beautiful UI components using MUI with consistent design system and theming support.
@@ -53,7 +54,7 @@ export function OverviewSection() {
           </Box>
           <Box>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-              🔧 Highly Customizable
+              Highly Customizable
             </Typography>
             <Typography variant="body2" color="text.secondary">
               Extensive customization through slots, props, and the ability to replace any component.
@@ -61,7 +62,7 @@ export function OverviewSection() {
           </Box>
           <Box>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-              📝 TypeScript Ready
+              TypeScript Ready
             </Typography>
             <Typography variant="body2" color="text.secondary">
               Full TypeScript support with comprehensive type definitions and excellent IDE support.
@@ -74,24 +75,13 @@ export function OverviewSection() {
         <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
           Installation
         </Typography>
-        <Box
-          component="pre"
-          sx={{
-            backgroundColor: '#f5f5f5',
-            color: '#333',
-            borderRadius: 1,
-            p: 2,
-            fontFamily: 'Menlo, Consolas, Monaco, "Courier New", monospace',
-            fontSize: 14,
-            overflowX: 'auto',
-            mb: 2,
-          }}
-        >
-{`npm install @ackplus/react-tanstack-data-table
+        <CodeBlock
+          language="bash"
+          code={`npm install @ackplus/react-tanstack-data-table
 
 # Peer dependencies
 npm install @emotion/react @emotion/styled @mui/icons-material @mui/material @tanstack/react-table @tanstack/react-virtual react react-dom`}
-        </Box>
+        />
         <Typography variant="body2" color="text.secondary">
           Make sure to install the required peer dependencies for the component to work properly.
         </Typography>

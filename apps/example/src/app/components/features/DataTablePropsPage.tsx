@@ -1,17 +1,13 @@
 import { Box, Typography, Paper, Alert, Divider, Table, TableBody, TableCell, TableHead, TableRow, Stack, Accordion, AccordionSummary, AccordionDetails } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import { FeatureLayout } from './common';
 
 export function DataTablePropsPage() {
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h3" gutterBottom sx={{ fontWeight: 700, mb: 2 }}>
-        DataTable Props Reference
-      </Typography>
-      
-      <Typography variant="body1" color="text.secondary" paragraph>
-        Complete reference for all DataTable component properties, organized by functionality.
-      </Typography>
-
+    <FeatureLayout
+      title="DataTable Props Reference"
+      description="Complete reference for all DataTable component properties, organized by functionality."
+    >
       <Alert severity="info" sx={{ mb: 4 }}>
         <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
           Comprehensive Configuration
@@ -123,7 +119,7 @@ export function DataTablePropsPage() {
 
           <Box sx={{ mt: 3, p: 2, backgroundColor: 'grey.50', borderRadius: 1 }}>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-              💡 Example
+              Insight: Example
             </Typography>
             <Box
               component="pre"
@@ -237,7 +233,7 @@ export function DataTablePropsPage() {
 
           <Box sx={{ mt: 3, p: 2, backgroundColor: 'grey.50', borderRadius: 1 }}>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-              💡 Example: Server-Side Data
+              Insight: Example: Server-Side Data
             </Typography>
             <Box
               component="pre"
@@ -344,7 +340,7 @@ export function DataTablePropsPage() {
 
           <Box sx={{ mt: 3, p: 2, backgroundColor: 'grey.50', borderRadius: 1 }}>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-              💡 Example
+              Insight: Example
             </Typography>
             <Box
               component="pre"
@@ -461,7 +457,7 @@ export function DataTablePropsPage() {
 
           <Box sx={{ mt: 3, p: 2, backgroundColor: 'grey.50', borderRadius: 1 }}>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-              💡 Example
+              Insight: Example
             </Typography>
             <Box
               component="pre"
@@ -552,7 +548,7 @@ export function DataTablePropsPage() {
 
           <Box sx={{ mt: 3, p: 2, backgroundColor: 'grey.50', borderRadius: 1 }}>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-              💡 Example
+              Insight: Example
             </Typography>
             <Box
               component="pre"
@@ -781,7 +777,7 @@ export function DataTablePropsPage() {
 
         <Box sx={{ mt: 3, p: 2, backgroundColor: 'grey.50', borderRadius: 1 }}>
           <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-            💡 Complete initialState Example
+            Insight: Complete initialState Example
           </Typography>
           <Box
             component="pre"
@@ -1033,7 +1029,7 @@ export function DataTablePropsPage() {
 
         <Box sx={{ mt: 3, p: 2, backgroundColor: 'grey.50', borderRadius: 1 }}>
           <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-            💡 Example: Replace Components with Slots
+            Insight: Example: Replace Components with Slots
           </Typography>
           <Box
             component="pre"
@@ -1237,7 +1233,7 @@ const CustomLoading = ({ colSpan }) => (
         <Stack spacing={3}>
           <Box>
             <Typography variant="h6" sx={{ fontWeight: 600, mb: 1, color: 'success.main' }}>
-              ✅ Use SlotProps When:
+              Tip: Use SlotProps When:
             </Typography>
             <Stack spacing={1}>
               <Typography variant="body2">
@@ -1280,7 +1276,7 @@ const CustomLoading = ({ colSpan }) => (
 
         <Box sx={{ mt: 3, p: 2, backgroundColor: 'grey.50', borderRadius: 1 }}>
           <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-            💡 Example Comparison
+            Insight: Example Comparison
           </Typography>
           <Box
             component="pre"
@@ -1294,7 +1290,7 @@ const CustomLoading = ({ colSpan }) => (
               overflowX: 'auto',
             }}
           >
-{`// ✅ SlotProps: Just customize the search placeholder
+{`// Tip: SlotProps: Just customize the search placeholder
 <DataTable
   columns={columns}
   data={data}
@@ -1769,6 +1765,6 @@ const MyCustomSearch = () => {
           </Typography>
         </Stack>
       </Paper>
-    </Box>
+    </FeatureLayout>
   );
 }

@@ -168,7 +168,7 @@ export function ExamplesSection() {
 
                   <Box sx={{ mt: 2 }}>
                     <Typography variant="body2" color="text.secondary">
-                      💡 <strong>Tip:</strong> This example demonstrates {example.features.join(', ').toLowerCase()}. 
+                      <strong>Tip:</strong> This example demonstrates {example.features.join(', ').toLowerCase()}. 
                       Try interacting with the table to see the features in action!
                     </Typography>
                   </Box>
@@ -186,7 +186,7 @@ export function ExamplesSection() {
         <Stack spacing={2}>
           <Box>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-              🏠 Local Data Example
+              Local Data Example
             </Typography>
             <Typography variant="body2" color="text.secondary">
               Perfect starting point showing basic table functionality with client-side data management.
@@ -194,7 +194,7 @@ export function ExamplesSection() {
           </Box>
           <Box>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-              🌐 Server-Side Fetching
+              Server-Side Fetching
             </Typography>
             <Typography variant="body2" color="text.secondary">
               Demonstrates real-world usage with API integration, loading states, and server-side operations.
@@ -202,7 +202,7 @@ export function ExamplesSection() {
           </Box>
           <Box>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-              🔧 Improved Server-Side (Fixed Filtering)
+              Improved Server-Side (Fixed Filtering)
             </Typography>
             <Typography variant="body2" color="text.secondary">
               Enhanced version with proper status filtering, department filtering, and custom filter controls.
@@ -210,7 +210,7 @@ export function ExamplesSection() {
           </Box>
           <Box>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-              🎨 Custom Slots & Styling
+              Custom Slots & Styling
             </Typography>
             <Typography variant="body2" color="text.secondary">
               Shows how to customize the table appearance and behavior using the powerful slots system.
@@ -218,7 +218,7 @@ export function ExamplesSection() {
           </Box>
           <Box>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-              🧪 API Playground
+              API Playground
             </Typography>
             <Typography variant="body2" color="text.secondary">
               Interactive testing environment to explore the imperative API and advanced features.
