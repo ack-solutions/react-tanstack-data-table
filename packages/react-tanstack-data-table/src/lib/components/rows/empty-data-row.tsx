@@ -1,10 +1,10 @@
 import { TableCell, TableRow, TableRowProps, TableCellProps, SxProps } from '@mui/material';
-
+import { ReactNode } from 'react';
 import { getSlotComponent, mergeSlotProps, extractSlotProps } from '../../utils/slot-helpers';
 
 export interface EmptyDataRowProps {
     colSpan: number;
-    message: string;
+    message: string | ReactNode;
     // Enhanced customization props
     rowProps?: TableRowProps;
     cellProps?: TableCellProps;

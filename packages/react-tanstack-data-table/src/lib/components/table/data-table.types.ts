@@ -122,7 +122,7 @@ export interface DataTableProps<T> {
 
     // Loading and empty states
     loading?: boolean;
-    emptyMessage?: string;
+    emptyMessage?: string | ReactNode;
     skeletonRows?: number;
 
     // Column filters props

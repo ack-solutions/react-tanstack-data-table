@@ -33,8 +33,7 @@ import React, { useState, useCallback, useMemo, useRef, useEffect, forwardRef, u
 
 // Import from new organized structure
 import { DataTableProvider } from '../../contexts/data-table-context';
-import { useDataTableApi } from '../../hooks/use-data-table-api';
-import { DataTableSize, exportClientData, exportServerData, generateRowId, createLogger } from '../../utils';
+import { DataTableSize, exportClientData, exportServerData, generateRowId, createLogger, withIdsDeep } from '../../utils';
 import { useDebouncedFetch } from '../../utils/debounced-fetch.utils';
 import { getSlotComponentWithProps, mergeSlotProps } from '../../utils/slot-helpers';
 import { TableHeader } from '../headers';
@@ -122,7 +121,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     renderSubComponent,
 
     // Pagination props
-    enablePagination = true,
+    enablePagination = false,
     paginationMode = 'client',
 
     // Filtering props
@@ -144,7 +143,6 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     // Styling props
     enableHover = true,
     enableStripes = false,
-    tableContainerProps = {},
     tableProps = {},
     fitToScreen = true,
     tableSize: initialTableSize = 'medium',
@@ -160,7 +158,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     // Toolbar props
     enableColumnVisibility = true,
     enableTableSizeControl = true,
-    enableExport = true,
+    enableExport = false,
     enableReset = true,
 
     // Loading and empty states
@@ -228,7 +226,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     const [selectionState, setSelectionState] = useState<SelectionState>(initialState?.selectionState || DEFAULT_INITIAL_STATE.selectionState);
     const [columnFilter, setColumnFilter] = useState<ColumnFilterState>(initialState?.columnFilter || DEFAULT_INITIAL_STATE.columnFilter);
     const [expanded, setExpanded] = useState({});
-    const [tableSize, setTableSize] = useState<DataTableSize>();
+    const [tableSize, setTableSize] = useState<DataTableSize>(initialTableSize || 'medium');
     const [columnOrder, setColumnOrder] = useState<ColumnOrderState>(initialState?.columnOrder || DEFAULT_INITIAL_STATE.columnOrder);
     const [columnPinning, setColumnPinning] = useState<ColumnPinningState>(initialState?.columnPinning || DEFAULT_INITIAL_STATE.columnPinning);
     const [serverData, setServerData] = useState<T[] | null>(null);
@@ -245,6 +243,8 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     const tableData = useMemo(() => serverData ? serverData : data, [onFetchData, serverData, data]);
     const tableTotalRow = useMemo(() => serverData ? serverTotal : totalRow, [onFetchData, serverTotal, totalRow]);
     const tableLoading = useMemo(() => onFetchData ? (loading || fetchLoading) : loading, [onFetchData, loading, fetchLoading]);
+
+    
     const enhancedColumns = useMemo(
         () => {
             let columnsMap = [...columns];
@@ -261,17 +261,10 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                 });
                 columnsMap = [selectionColumnMap, ...columnsMap];
             }
-            return columnsMap;
-        },
-        [
-            columns,
-            slotProps?.selectionColumn,
-            slotProps?.expandColumn,
-            enableRowSelection,
-            enableExpanding,
-            enableMultiRowSelection,
-        ],
-    );
+            return withIdsDeep(columnsMap);
+        }, [columns, enableExpanding, enableRowSelection, enableMultiRowSelection, slotProps?.expandColumn, slotProps?.selectionColumn]);
+
+
     const isExporting = useMemo(() => exportController !== null, [exportController]);
     const isSomeRowsSelected = useMemo(() => {
         if (!enableBulkActions || !enableRowSelection) return false;

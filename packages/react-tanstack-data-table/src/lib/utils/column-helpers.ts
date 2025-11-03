@@ -2,7 +2,7 @@
  * Column utilities for DataTable components
  */
 import { DataTableColumn } from '../types';
-import { Column } from "@tanstack/react-table";
+import { Column, ColumnDef } from "@tanstack/react-table";
 
 
 export type ColumnType = 'text' | 'number' | 'date' | 'boolean' | 'select' | 'actions';
@@ -46,6 +46,16 @@ export function getColumnOptions(column: Column<any, unknown>): any[] {
     }
 
     return [];
+}
+
+export function withIdsDeep<T>(cols: ColumnDef<T, any>[]): ColumnDef<T, any>[] {
+    return cols.map((c, i) => ({
+        ...c,
+        id: c.id ?? (c as any).accessorKey ?? `col_${i}`,
+        ...(Array.isArray((c as any).columns) && {
+            columns: withIdsDeep((c as any).columns)
+        }),
+    }));
 }
 
 
