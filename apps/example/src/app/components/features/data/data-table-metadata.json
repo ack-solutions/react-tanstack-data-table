@@ -305,6 +305,13 @@
           "defaultValue": "'onChange'",
           "description": "When to apply resize: during drag or after release.",
           "possibleValues": ["onChange", "onEnd"]
+        },
+        {
+          "name": "onColumnSizingChange",
+          "type": "(sizing: Record<string, number>) => void",
+          "defaultValue": "undefined",
+          "description": "Callback when column sizing changes. Receives a record mapping column IDs to width values.",
+          "possibleValues": []
         }
       ]
     },

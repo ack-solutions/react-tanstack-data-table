@@ -70,6 +70,7 @@ export interface DataTableProps<T> {
     // Column resizing props
     enableColumnResizing?: boolean;
     columnResizeMode?: ColumnResizeMode;
+    onColumnSizingChange?: (sizing: Record<string, number>) => void;
 
     // Column ordering props
     enableColumnDragging?: boolean;

@@ -66,6 +66,7 @@ const DEFAULT_INITIAL_STATE = {
         right: [],
     },
     columnVisibility: {},
+    columnSizing: {},
     columnFilter: {
         filters: [],
         logic: 'AND',
@@ -106,6 +107,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     // Column resizing props
     enableColumnResizing = false,
     columnResizeMode = 'onChange',
+    onColumnSizingChange,
 
     // Column ordering props
     enableColumnDragging = false,
@@ -509,6 +511,27 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         }
     }, [onColumnVisibilityChange, onDataStateChange, tableStateChange]);
 
+    // Column sizing change handler
+    const handleColumnSizingChange = useCallback((updater: any) => {
+        const tableInstance = internalApiRef.current?.table?.getTable();
+        if (!tableInstance) return;
+
+        const currentSizing = tableInstance.getState().columnSizing;
+        const newSizing = typeof updater === 'function' ? updater(currentSizing) : updater;
+
+        if (onColumnSizingChange) {
+            setTimeout(() => {
+                onColumnSizingChange(newSizing);
+            }, 0);
+        }
+
+        if (onDataStateChange) {
+            setTimeout(() => {
+                tableStateChange({ columnSizing: newSizing });
+            }, 0);
+        }
+    }, [onColumnSizingChange, onDataStateChange, tableStateChange]);
+
     const handlePaginationChange = useCallback((updater: any) => {
         const newPagination = typeof updater === 'function' ? updater(pagination) : updater;
         if (logger.isLevelEnabled('debug')) {
@@ -675,6 +698,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         ...(enableColumnDragging ? { onColumnOrderChange: handleColumnOrderChange } : {}),
         ...(enableColumnPinning ? { onColumnPinningChange: handleColumnPinningChange } : {}),
         ...(enableColumnVisibility ? { onColumnVisibilityChange: handleColumnVisibilityChange } : {}),
+        ...(enableColumnResizing ? { onColumnSizingChange: handleColumnSizingChange } : {}),
 
         // Row model
         getCoreRowModel: getCoreRowModel(),

@@ -299,6 +299,33 @@ export function DataTablePropsPage() {
 />`}
             />
           </Box>
+
+          <Box sx={{ mt: 3, p: 2, backgroundColor: 'grey.50', borderRadius: 1 }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+              Insight: Example: Column Sizing Control
+            </Typography>
+            <CodeBlock
+              language="tsx"
+              code={`<DataTable
+  columns={columns}
+  data={data}
+  enableColumnResizing={true}
+  onColumnSizingChange={(sizing) => {
+    console.log('Column sizing changed:', sizing);
+    // sizing is a Record<string, number>
+    // e.g., { name: 200, email: 300, phone: 150 }
+    // Save to localStorage or sync with server
+    localStorage.setItem('columnSizes', JSON.stringify(sizing));
+  }}
+  initialState={{
+    columnSizing: {
+      name: 200,      // Set initial column width
+      email: 300,    // Set initial column width
+    },
+  }}
+/>`}
+            />
+          </Box>
         </AccordionDetails>
       </Accordion>
 
