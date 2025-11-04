@@ -214,11 +214,11 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
             ...DEFAULT_INITIAL_STATE,
             ...initialState,
         };
-        if (fetchLogger.isLevelEnabled('debug')) {
-            fetchLogger.debug('initialStateConfig', { config });
+        if (logger.isLevelEnabled('info')) {
+            logger.info('initialStateConfig', { config });
         }
         return config;
-    }, [initialState, fetchLogger]);
+    }, [initialState, logger]);
 
     // -------------------------------
     // State hooks (grouped together)
@@ -266,8 +266,8 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                 columnsMap = [selectionColumnMap, ...columnsMap];
             }
             const enhancedColumns = withIdsDeep(columnsMap);
-            if (fetchLogger.isLevelEnabled('debug')) {
-                fetchLogger.debug('enhancedColumns', { enhancedColumns });
+            if (logger.isLevelEnabled('info')) {
+                logger.info('enhancedColumns', { enhancedColumns });
             }
             return enhancedColumns;
         }, [columns, enableExpanding, enableRowSelection, enableMultiRowSelection, slotProps?.expandColumn, slotProps?.selectionColumn]);
@@ -327,15 +327,15 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
             ...overrides,
         };
 
-        if (fetchLogger.isLevelEnabled('debug')) {
-            fetchLogger.debug('Requesting data', { filters });
+        if (fetchLogger.isLevelEnabled('info')) {
+            fetchLogger.info('Requesting data', { filters });
         }
 
         try {
             const result = await debouncedFetch(filters);
 
-            if (fetchLogger.isLevelEnabled('debug')) {
-                fetchLogger.debug('Fetch resolved', {
+            if (fetchLogger.isLevelEnabled('info')) {
+                fetchLogger.info('Fetch resolved', {
                     rows: result?.data?.length ?? 0,
                     total: result?.total,
                 });
