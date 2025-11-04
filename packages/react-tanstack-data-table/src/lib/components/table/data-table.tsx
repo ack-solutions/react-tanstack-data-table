@@ -47,7 +47,6 @@ import {
     createExpandingColumn,
     createSelectionColumn,
 } from '../../utils/special-columns.utils';
-import { cloneDeep } from 'lodash';
 
 
 
@@ -186,9 +185,6 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     const isServerSorting = sortingMode === 'server' || isServerMode;
 
     const logger = useMemo(() => createLogger('DataTable', logging), [logging]);
-    const fetchLogger = useMemo(() => logger.child('fetch'), [logger]);
-    const paginationLogger = useMemo(() => logger.child('pagination'), [logger]);
-    const stateLogger = useMemo(() => logger.child('state'), [logger]);
 
     useEffect(() => {
         if (logger.isLevelEnabled('info')) {
@@ -219,6 +215,8 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         }
         return config;
     }, [initialState, logger]);
+
+    console.log('initialStateConfig', initialStateConfig);
 
     // -------------------------------
     // State hooks (grouped together)
@@ -313,8 +311,8 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     // -------------------------------
     const fetchData = useCallback(async (overrides: Partial<TableState> = {}) => {
         if (!onFetchData) {
-            if (fetchLogger.isLevelEnabled('debug')) {
-                fetchLogger.debug('onFetchData not provided, skipping fetch', { overrides, columnFilter, sorting, pagination  });
+            if (logger.isLevelEnabled('debug')) {
+                logger.debug('onFetchData not provided, skipping fetch', { overrides, columnFilter, sorting, pagination  });
             }
             return;
         }
@@ -327,15 +325,16 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
             ...overrides,
         };
 
-        if (fetchLogger.isLevelEnabled('info')) {
-            fetchLogger.info('Requesting data', { filters });
+        console.log('filters', filters);
+        if (logger.isLevelEnabled('info')) {
+            logger.info('Requesting data', { filters });
         }
 
         try {
             const result = await debouncedFetch(filters);
 
-            if (fetchLogger.isLevelEnabled('info')) {
-                fetchLogger.info('Fetch resolved', {
+            if (logger.isLevelEnabled('info')) {
+                logger.info('Fetch resolved', {
                     rows: result?.data?.length ?? 0,
                     total: result?.total,
                 });
@@ -344,13 +343,13 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
             if (result?.data && result?.total !== undefined) {
                 setServerData(result.data);
                 setServerTotal(result.total);
-            } else if (fetchLogger.isLevelEnabled('warn')) {
-                fetchLogger.warn('Fetch handler returned unexpected shape', result);
+            } else if (logger.isLevelEnabled('warn')) {
+                logger.warn('Fetch handler returned unexpected shape', result);
             }
 
             return result;
         } catch (error) {
-            fetchLogger.error('Fetch failed', error);
+            logger.error('Fetch failed', error);
             throw error;
         }
     }, [
@@ -360,7 +359,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         columnFilter,
         sorting,
         debouncedFetch,
-        fetchLogger,
+        logger,
     ]);
 
 
@@ -387,8 +386,8 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
 
     const tableStateChange = useCallback((overrides: Partial<TableState> = {}) => {
         if (!onDataStateChange) {
-            if (stateLogger.isLevelEnabled('debug')) {
-                stateLogger.debug('No onDataStateChange handler registered; skipping state update notification', { overrides });
+            if (logger.isLevelEnabled('debug')) {
+                logger.debug('No onDataStateChange handler registered; skipping state update notification', { overrides });
             }
             return;
         }
@@ -403,8 +402,8 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
             ...overrides,
         };
 
-        if (stateLogger.isLevelEnabled('debug')) {
-            stateLogger.debug('Emitting tableStateChange', currentState);
+        if (logger.isLevelEnabled('debug')) {
+            logger.debug('Emitting tableStateChange', currentState);
         }
 
         onDataStateChange(currentState);
@@ -416,7 +415,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         pagination,
         columnOrder,
         columnPinning,
-        stateLogger,
+        logger,
     ]);
 
     const handleSortingChange = useCallback((updaterOrValue: any) => {
@@ -427,8 +426,8 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         setSorting(newSorting);
         onSortingChange?.(newSorting);
 
-        if (stateLogger.isLevelEnabled('debug')) {
-            stateLogger.debug('Sorting change applied', {
+        if (logger.isLevelEnabled('debug')) {
+            logger.debug('Sorting change applied', {
                 sorting: newSorting,
                 serverMode: isServerMode,
                 serverSorting: isServerSorting,
@@ -437,8 +436,8 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
 
         if (isServerMode || isServerSorting) {
             const pagination = resetPageToFirst();
-            if (stateLogger.isLevelEnabled('debug')) {
-                stateLogger.debug('Sorting change triggered server fetch', { pagination, sorting: newSorting });
+            if (logger.isLevelEnabled('debug')) {
+                logger.debug('Sorting change triggered server fetch', { pagination, sorting: newSorting });
             }
             tableStateChange({ sorting: newSorting, pagination });
             fetchData({
@@ -448,8 +447,8 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         } else if (onDataStateChange) {
             const pagination = resetPageToFirst();
             setTimeout(() => {
-                if (stateLogger.isLevelEnabled('debug')) {
-                    stateLogger.debug('Sorting change notified client state change', { pagination, sorting: newSorting });
+                if (logger.isLevelEnabled('debug')) {
+                    logger.debug('Sorting change notified client state change', { pagination, sorting: newSorting });
                 }
                 tableStateChange({ sorting: newSorting, pagination });
             }, 0);
@@ -462,7 +461,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         isServerSorting,
         onDataStateChange,
         tableStateChange,
-        stateLogger,
+        logger,
     ]);
 
     const handleColumnOrderChange = useCallback((updatedColumnOrder: Updater<ColumnOrderState>) => {
@@ -487,35 +486,37 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
 
     const handlePaginationChange = useCallback((updater: any) => {
         const newPagination = typeof updater === 'function' ? updater(pagination) : updater;
-        if (paginationLogger.isLevelEnabled('debug')) {
-            paginationLogger.debug('Pagination change requested', {
+        if (logger.isLevelEnabled('debug')) {
+            logger.debug('Pagination change requested', {
                 previous: pagination,
                 next: newPagination,
                 serverSide: isServerMode || isServerPagination,
             });
         }
 
+        console.log('newPagination', newPagination);
+
         // Update pagination state
         setPagination(newPagination);
         onPaginationChange?.(newPagination);
 
-        if (paginationLogger.isLevelEnabled('debug')) {
-            paginationLogger.debug('Pagination state updated', newPagination);
+        if (logger.isLevelEnabled('debug')) {
+            logger.debug('Pagination state updated', newPagination);
         }
 
         // Notify state change and fetch data if needed
         if (isServerMode || isServerPagination) {
             setTimeout(() => {
-                if (paginationLogger.isLevelEnabled('debug')) {
-                    paginationLogger.debug('Notifying server-side pagination change', newPagination);
+                if (logger.isLevelEnabled('debug')) {
+                    logger.debug('Notifying server-side pagination change', newPagination);
                 }
                 tableStateChange({ pagination: newPagination });
                 fetchData({ pagination: newPagination });
             }, 0);
         } else if (onDataStateChange) {
             setTimeout(() => {
-                if (paginationLogger.isLevelEnabled('debug')) {
-                    paginationLogger.debug('Notifying client-side pagination change', newPagination);
+                if (logger.isLevelEnabled('debug')) {
+                    logger.debug('Notifying client-side pagination change', newPagination);
                 }
                 tableStateChange({ pagination: newPagination });
             }, 0);
@@ -527,7 +528,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         onDataStateChange,
         fetchData,
         tableStateChange,
-        paginationLogger,
+        logger,
         onPaginationChange,
     ]);
 
@@ -537,8 +538,8 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
             : updaterOrValue;
         setGlobalFilter(newFilter);
 
-        if (stateLogger.isLevelEnabled('debug')) {
-            stateLogger.debug('Global filter change applied', {
+        if (logger.isLevelEnabled('debug')) {
+            logger.debug('Global filter change applied', {
                 value: newFilter,
                 serverMode: isServerMode,
                 serverFiltering: isServerFiltering,
@@ -548,8 +549,8 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         if (isServerMode || isServerFiltering) {
             const pagination = resetPageToFirst();
             setTimeout(() => {
-                if (stateLogger.isLevelEnabled('debug')) {
-                    stateLogger.debug('Global filter change triggering server fetch', {
+                if (logger.isLevelEnabled('debug')) {
+                    logger.debug('Global filter change triggering server fetch', {
                         pagination,
                         value: newFilter,
                     });
@@ -560,8 +561,8 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         } else if (onDataStateChange) {
             const pagination = resetPageToFirst();
             setTimeout(() => {
-                if (stateLogger.isLevelEnabled('debug')) {
-                    stateLogger.debug('Global filter change notifying client listeners', {
+                if (logger.isLevelEnabled('debug')) {
+                    logger.debug('Global filter change notifying client listeners', {
                         pagination,
                         value: newFilter,
                     });
@@ -570,7 +571,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
             }, 0);
         }
         onGlobalFilterChange?.(newFilter);
-    }, [globalFilter, isServerMode, isServerFiltering, onDataStateChange, fetchData, tableStateChange, stateLogger]);
+    }, [globalFilter, isServerMode, isServerFiltering, onDataStateChange, fetchData, tableStateChange, logger]);
 
     const onColumnFilterChangeHandler = useCallback((updater: any) => {
         const currentState = columnFilter;
@@ -690,8 +691,8 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     });
 
     const resetPageToFirst = () => {
-        if (paginationLogger.isLevelEnabled('info')) {
-            paginationLogger.info('Resetting to first page due to state change', {
+        if (logger.isLevelEnabled('info')) {
+            logger.info('Resetting to first page due to state change', {
                 previousPageIndex: pagination.pageIndex,
                 pageSize: pagination.pageSize,
             });
@@ -699,6 +700,8 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         const newPagination = { pageIndex: 0, pageSize: pagination.pageSize };
         setPagination(newPagination);
         onPaginationChange?.(newPagination);
+        console.log('newPagination', newPagination);
+        console.log('onPaginationChange', onPaginationChange);
         return newPagination;
     };
 
@@ -728,12 +731,12 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     // -------------------------------
     useEffect(() => {
         if (initialLoadData && onFetchData) {
-            if (fetchLogger.isLevelEnabled('info')) {
-                fetchLogger.info('Initial data load triggered', { initialLoadData });
+            if (logger.isLevelEnabled('info')) {
+                logger.info('Initial data load triggered', { initialLoadData });
             }
             fetchData();
-        } else if (fetchLogger.isLevelEnabled('debug')) {
-            fetchLogger.debug('Skipping initial data load', {
+        } else if (logger.isLevelEnabled('debug')) {
+            logger.debug('Skipping initial data load', {
                 initialLoadData,
                 hasOnFetchData: !!onFetchData
             });
@@ -933,8 +936,8 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                     pendingFilters: columnFilter.pendingFilters || [],
                     pendingLogic: columnFilter.pendingLogic || 'AND',
                 });
-                if (stateLogger.isLevelEnabled('debug')) {
-                    stateLogger.debug(`Adding column filter ${columnId} ${operator} ${value}`, newFilters);
+                if (logger.isLevelEnabled('debug')) {
+                    logger.debug(`Adding column filter ${columnId} ${operator} ${value}`, newFilters);
                 }
             },
             removeColumnFilter: (filterId: string) => {
@@ -947,8 +950,8 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                     pendingFilters: columnFilter.pendingFilters || [],
                     pendingLogic: columnFilter.pendingLogic || 'AND',
                 });
-                if (stateLogger.isLevelEnabled('debug')) {
-                    stateLogger.debug(`Removing column filter ${filterId}`, newFilters);
+                if (logger.isLevelEnabled('debug')) {
+                    logger.debug(`Removing column filter ${filterId}`, newFilters);
                 }
             },
             clearAllFilters: () => {
@@ -967,8 +970,8 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                     pendingFilters: [],
                     pendingLogic: 'AND',
                 });
-                if (stateLogger.isLevelEnabled('debug')) {
-                    stateLogger.debug('Resetting filters');
+                if (logger.isLevelEnabled('debug')) {
+                    logger.debug('Resetting filters');
                 }
             },
         },
@@ -977,8 +980,8 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         sorting: {
             setSorting: (sortingState: SortingState) => {
                 table.setSorting(sortingState);
-                if (stateLogger.isLevelEnabled('debug')) {
-                    stateLogger.debug(`Setting sorting`, sortingState);
+                if (logger.isLevelEnabled('debug')) {
+                    logger.debug(`Setting sorting`, sortingState);
                 }
             },
             sortColumn: (columnId: string, direction: 'asc' | 'desc' | false) => {
@@ -1003,40 +1006,40 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         pagination: {
             goToPage: (pageIndex: number) => {
                 table.setPageIndex(pageIndex);
-                if (paginationLogger.isLevelEnabled('debug')) {
-                    paginationLogger.debug(`Going to page ${pageIndex}`);
+                if (logger.isLevelEnabled('debug')) {
+                    logger.debug(`Going to page ${pageIndex}`);
                 }
             },
             nextPage: () => {
                 table.nextPage();
-                if (paginationLogger.isLevelEnabled('debug')) {
-                    paginationLogger.debug('Next page');
+                if (logger.isLevelEnabled('debug')) {
+                    logger.debug('Next page');
                 }
             },
             previousPage: () => {
                 table.previousPage();
-                if (paginationLogger.isLevelEnabled('debug')) {
-                    paginationLogger.debug('Previous page');
+                if (logger.isLevelEnabled('debug')) {
+                    logger.debug('Previous page');
                 }
             },
             setPageSize: (pageSize: number) => {
                 table.setPageSize(pageSize);
-                if (paginationLogger.isLevelEnabled('debug')) {
-                    paginationLogger.debug(`Setting page size to ${pageSize}`);
+                if (logger.isLevelEnabled('debug')) {
+                    logger.debug(`Setting page size to ${pageSize}`);
                 }
             },
             goToFirstPage: () => {
                 table.setPageIndex(0);
-                if (paginationLogger.isLevelEnabled('debug')) {
-                    paginationLogger.debug('Going to first page');
+                if (logger.isLevelEnabled('debug')) {
+                    logger.debug('Going to first page');
                 }
             },
             goToLastPage: () => {
                 const pageCount = table.getPageCount();
                 if (pageCount > 0) {
                     table.setPageIndex(pageCount - 1);
-                    if (paginationLogger.isLevelEnabled('debug')) {
-                        paginationLogger.debug(`Going to last page ${pageCount - 1}`);
+                    if (logger.isLevelEnabled('debug')) {
+                        logger.debug(`Going to last page ${pageCount - 1}`);
                     }
                 }
             },
@@ -1061,18 +1064,18 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
 
         // Data Management
         data: {
-            refresh: () => {
+            refresh: (resetPagination = false) => {
                 const filters = table.getState();
                 const pagination = {
-                    pageIndex: 0,
+                    pageIndex: resetPagination ? 0 : initialStateConfig.pagination?.pageIndex || 0,
                     pageSize: filters.pagination?.pageSize || initialStateConfig.pagination?.pageSize || 10,
                 };
                 const allState = table.getState();
                 setPagination(pagination);
-                onDataStateChange?.(allState);
+                onDataStateChange?.({ ...allState, pagination });
                 fetchData?.({ pagination });
-                if (fetchLogger.isLevelEnabled('debug')) {
-                    fetchLogger.debug('Refreshing data using Ref', { pagination, allState });
+                if (logger.isLevelEnabled('debug')) {
+                    logger.debug('Refreshing data using Ref', { pagination, allState });
                 }
             },
             reload: () => {
@@ -1080,8 +1083,8 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
 
                 onDataStateChange?.(allState);
                 onFetchData?.({});
-                if (fetchLogger.isLevelEnabled('debug')) {
-                    fetchLogger.debug('Reloading data', allState);
+                if (logger.isLevelEnabled('debug')) {
+                    logger.info('Reloading data', allState);
                 }
             },
             // Data CRUD operations
@@ -1102,8 +1105,8 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                     }
                     : row.original);
                 setServerData?.(newData || []);
-                if (fetchLogger.isLevelEnabled('debug')) {
-                    fetchLogger.debug(`Updating row ${rowId}`, updates);
+                if (logger.isLevelEnabled('debug')) {
+                    logger.debug(`Updating row ${rowId}`, updates);
                 }
             },
             updateRowByIndex: (index: number, updates: Partial<T>) => {
@@ -1114,8 +1117,8 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                         ...updates,
                     };
                     setServerData(newData);
-                    if (fetchLogger.isLevelEnabled('debug')) {
-                        fetchLogger.debug(`Updating row by index ${index}`, updates);
+                    if (logger.isLevelEnabled('debug')) {
+                        logger.debug(`Updating row by index ${index}`, updates);
                     }
                 }
             },
@@ -1127,23 +1130,23 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                     newData.push(newRow);
                 }
                 setServerData(newData || []);
-                if (fetchLogger.isLevelEnabled('debug')) {
-                    fetchLogger.debug(`Inserting row`, newRow);
+                if (logger.isLevelEnabled('debug')) {
+                    logger.debug(`Inserting row`, newRow);
                 }
             },
             deleteRow: (rowId: string) => {
                 const newData = (table.getRowModel().rows || [])?.filter(row => String(row.original[idKey]) !== rowId);
                 setServerData?.(newData?.map(row => row.original) || []);
-                if (fetchLogger.isLevelEnabled('debug')) {
-                    fetchLogger.debug(`Deleting row ${rowId}`);
+                if (logger.isLevelEnabled('debug')) {
+                    logger.debug(`Deleting row ${rowId}`);
                 }
             },
             deleteRowByIndex: (index: number) => {
                 const newData = (table.getRowModel().rows || [])?.map(row => row.original);
                 newData.splice(index, 1);
                 setServerData(newData);
-                if (fetchLogger.isLevelEnabled('debug')) {
-                    fetchLogger.debug(`Deleting row by index ${index}`);
+                if (logger.isLevelEnabled('debug')) {
+                    logger.debug(`Deleting row by index ${index}`);
                 }
             },
             deleteSelectedRows: () => {
@@ -1153,8 +1156,8 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                 setServerData(newData?.map(row => row.original) || []);
                 // Clear selection after deletion
                 table.resetRowSelection();
-                if (fetchLogger.isLevelEnabled('debug')) {
-                    fetchLogger.debug('Deleting selected rows');
+                if (logger.isLevelEnabled('debug')) {
+                    logger.debug('Deleting selected rows');
                 }
             },
             replaceAllData: (newData: T[]) => {
@@ -1332,8 +1335,8 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                             sorting: table.getState().sorting,
                             pagination: table.getState().pagination,
                         };
-                        if (stateLogger.isLevelEnabled('debug')) {
-                            stateLogger.debug('Server export CSV', { currentFilters });
+                        if (logger.isLevelEnabled('debug')) {
+                            logger.debug('Server export CSV', { currentFilters });
                         }
                         await exportServerData(table, {
                             format: 'csv',
@@ -1354,8 +1357,8 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                             onComplete: onExportComplete,
                             onError: onExportError,
                         });
-                        if (stateLogger.isLevelEnabled('debug')) {
-                            stateLogger.debug('Client export CSV', filename);
+                        if (logger.isLevelEnabled('debug')) {
+                            logger.debug('Client export CSV', filename);
                         }
                     }
                 } catch (error: any) {
@@ -1384,8 +1387,8 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                             pagination: table.getState().pagination,
                         };
 
-                        if (stateLogger.isLevelEnabled('debug')) {
-                            stateLogger.debug('Server export Excel', { currentFilters });
+                        if (logger.isLevelEnabled('debug')) {
+                            logger.debug('Server export Excel', { currentFilters });
                         }
                         await exportServerData(table, {
                             format: 'excel',
@@ -1406,8 +1409,8 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                             onComplete: onExportComplete,
                             onError: onExportError,
                         });
-                        if (stateLogger.isLevelEnabled('debug')) {
-                            stateLogger.debug('Client export Excel', filename);
+                        if (logger.isLevelEnabled('debug')) {
+                            logger.debug('Client export Excel', filename);
                         }
                     }
                 } catch (error: any) {
@@ -1415,8 +1418,8 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                         message: error.message || 'Export failed',
                         code: 'EXPORT_ERROR',
                     });
-                    if (stateLogger.isLevelEnabled('debug')) {
-                        stateLogger.debug('Server export Excel failed', error);
+                    if (logger.isLevelEnabled('debug')) {
+                        logger.debug('Server export Excel failed', error);
                     }
                 } finally {
                     setExportController?.(null);
@@ -1434,8 +1437,8 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                         message: 'No server export function provided',
                         code: 'NO_SERVER_EXPORT',
                     });
-                    if (stateLogger.isLevelEnabled('debug')) {
-                        stateLogger.debug('Server export data failed', 'No server export function provided');
+                    if (logger.isLevelEnabled('debug')) {
+                        logger.debug('Server export data failed', 'No server export function provided');
                     }
                     return;
                 }
@@ -1451,8 +1454,8 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                         sorting: table.getState().sorting,
                         pagination: table.getState().pagination,
                     };
-                    if (stateLogger.isLevelEnabled('debug')) {
-                        stateLogger.debug('Server export data', { currentFilters });
+                    if (logger.isLevelEnabled('debug')) {
+                        logger.debug('Server export data', { currentFilters });
                     }
                     await exportServerData(table, {
                         format,
@@ -1469,8 +1472,8 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                         message: error.message || 'Export failed',
                         code: 'EXPORT_ERROR',
                     });
-                    if (stateLogger.isLevelEnabled('debug')) {
-                        stateLogger.debug('Server export data failed', error);
+                    if (logger.isLevelEnabled('debug')) {
+                        logger.debug('Server export data failed', error);
                     }
                 } finally {
                     setExportController?.(null);
@@ -1481,8 +1484,8 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
             cancelExport: () => {
                 exportController?.abort();
                 setExportController?.(null);
-                if (stateLogger.isLevelEnabled('debug')) {
-                    stateLogger.debug('Export cancelled');
+                if (logger.isLevelEnabled('debug')) {
+                    logger.debug('Export cancelled');
                 }
             },
         },

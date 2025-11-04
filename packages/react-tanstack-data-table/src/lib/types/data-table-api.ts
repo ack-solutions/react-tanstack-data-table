@@ -94,7 +94,7 @@ export interface DataTableApi<T = any> {
 
     // Data Management
     data: {
-        refresh: () => void;
+        refresh: (resetPagination?: boolean) => void;
         reload: () => void;
 
         // Data CRUD operations
