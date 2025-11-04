@@ -210,11 +210,15 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     // Memoized values (grouped together)
     // -------------------------------
     const initialStateConfig = useMemo(() => {
-        return {
+        const config = {
             ...DEFAULT_INITIAL_STATE,
             ...initialState,
         };
-    }, [initialState]);
+        if (fetchLogger.isLevelEnabled('debug')) {
+            fetchLogger.debug('initialStateConfig', { config });
+        }
+        return config;
+    }, [initialState, fetchLogger]);
 
     // -------------------------------
     // State hooks (grouped together)
@@ -261,7 +265,11 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                 });
                 columnsMap = [selectionColumnMap, ...columnsMap];
             }
-            return withIdsDeep(columnsMap);
+            const enhancedColumns = withIdsDeep(columnsMap);
+            if (fetchLogger.isLevelEnabled('debug')) {
+                fetchLogger.debug('enhancedColumns', { enhancedColumns });
+            }
+            return enhancedColumns;
         }, [columns, enableExpanding, enableRowSelection, enableMultiRowSelection, slotProps?.expandColumn, slotProps?.selectionColumn]);
 
 
@@ -304,10 +312,9 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     // Callback hooks (grouped together)
     // -------------------------------
     const fetchData = useCallback(async (overrides: Partial<TableState> = {}) => {
-        console.info('fetchData', cloneDeep(overrides), cloneDeep(columnFilter), cloneDeep(sorting), cloneDeep(pagination));
         if (!onFetchData) {
             if (fetchLogger.isLevelEnabled('debug')) {
-                fetchLogger.debug('onFetchData not provided, skipping fetch', { overrides });
+                fetchLogger.debug('onFetchData not provided, skipping fetch', { overrides, columnFilter, sorting, pagination  });
             }
             return;
         }
@@ -1056,19 +1063,16 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         data: {
             refresh: () => {
                 const filters = table.getState();
-                console.info('filters', cloneDeep(filters));
                 const pagination = {
                     pageIndex: 0,
                     pageSize: filters.pagination?.pageSize || initialStateConfig.pagination?.pageSize || 10,
                 };
-                console.info('pagination', cloneDeep(pagination));
                 const allState = table.getState();
-                console.info('allState', cloneDeep(allState));
                 setPagination(pagination);
                 onDataStateChange?.(allState);
                 fetchData?.({ pagination });
                 if (fetchLogger.isLevelEnabled('debug')) {
-                    fetchLogger.debug('Refreshing data', { pagination, allState });
+                    fetchLogger.debug('Refreshing data using Ref', { pagination, allState });
                 }
             },
             reload: () => {
