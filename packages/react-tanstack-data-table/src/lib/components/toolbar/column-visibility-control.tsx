@@ -1,6 +1,6 @@
 import { ViewColumnOutlined } from '@mui/icons-material';
 import { Box, Checkbox, CheckboxProps, Divider, FormControlLabel, SxProps, FormGroup, IconButton, Tooltip, Typography, FormControlLabelProps } from '@mui/material';
-import { useMemo } from 'react';
+import React, { useMemo } from 'react';
 
 import { MenuDropdown } from '../droupdown/menu-dropdown';
 import { useDataTableContext } from '../../contexts/data-table-context';
@@ -26,13 +26,13 @@ export function ColumnVisibilityControl(props: ColumnVisibilityControlProps = {}
 
     const columns = useMemo(() => {
         if (slotProps?.columnsPanel?.getTogglableColumns) {
-            return slotProps?.columnsPanel?.getTogglableColumns(table.getAllLeafColumns());
+            return slotProps?.columnsPanel?.getTogglableColumns(table?.getAllLeafColumns() || []);
         }
-        return table.getAllLeafColumns().filter(column => column.getCanHide());
+        return table?.getAllLeafColumns()?.filter(column => column.getCanHide()) || [];
     }, [slotProps?.columnsPanel, table]);
 
     const handleColumnVisibilityChange = ((columnId: string, visible: boolean) => {
-        table.getColumn(columnId)?.toggleVisibility(visible);
+        table?.getColumn(columnId)?.toggleVisibility(visible);
     });
 
     // Merge all props for maximum flexibility

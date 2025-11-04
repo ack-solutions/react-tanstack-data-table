@@ -246,6 +246,69 @@
       ]
     },
     {
+      "id": "columns",
+      "title": "Column Features",
+      "description": "Control column behavior including visibility, ordering, pinning, and resizing.",
+      "items": [
+        {
+          "name": "enableColumnVisibility",
+          "type": "boolean",
+          "defaultValue": "true",
+          "description": "Enable column visibility toggle control in toolbar.",
+          "possibleValues": ["true", "false"]
+        },
+        {
+          "name": "onColumnVisibilityChange",
+          "type": "(visibility: Record<string, boolean>) => void",
+          "defaultValue": "undefined",
+          "description": "Callback when column visibility changes. Receives a record mapping column IDs to visibility state.",
+          "possibleValues": []
+        },
+        {
+          "name": "enableColumnDragging",
+          "type": "boolean",
+          "defaultValue": "false",
+          "description": "Enable column reordering by drag and drop.",
+          "possibleValues": ["true", "false"]
+        },
+        {
+          "name": "onColumnDragEnd",
+          "type": "(columnOrder: string[]) => void",
+          "defaultValue": "undefined",
+          "description": "Callback when column order changes via drag and drop.",
+          "possibleValues": []
+        },
+        {
+          "name": "enableColumnPinning",
+          "type": "boolean",
+          "defaultValue": "false",
+          "description": "Enable column pinning to left or right side.",
+          "possibleValues": ["true", "false"]
+        },
+        {
+          "name": "onColumnPinningChange",
+          "type": "(pinning: ColumnPinningState) => void",
+          "defaultValue": "undefined",
+          "description": "Callback when column pinning changes.",
+          "possibleValues": []
+        },
+        {
+          "name": "enableColumnResizing",
+          "type": "boolean",
+          "defaultValue": "false",
+          "description": "Enable column resizing by dragging column borders.",
+          "possibleValues": ["true", "false"]
+        },
+        {
+          "name": "columnResizeMode",
+          "type": "'onChange' | 'onEnd'",
+          "defaultValue": "'onChange'",
+          "description": "When to apply resize: during drag or after release.",
+          "possibleValues": ["onChange", "onEnd"]
+        }
+      ]
+    },
+    {
       "id": "export",
       "title": "Export & Customization",
       "description": "Data export and UI customization options.",

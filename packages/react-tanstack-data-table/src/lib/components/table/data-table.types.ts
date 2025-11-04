@@ -79,6 +79,10 @@ export interface DataTableProps<T> {
     enableColumnPinning?: boolean;
     onColumnPinningChange?: (pinning: ColumnPinningState) => void;
 
+    // Column visibility props
+    enableColumnVisibility?: boolean;
+    onColumnVisibilityChange?: (visibility: Record<string, boolean>) => void;
+
     // Expandable rows props
     enableExpanding?: boolean;
     getRowCanExpand?: (row: Row<T>) => boolean;
@@ -115,7 +119,6 @@ export interface DataTableProps<T> {
     estimateRowHeight?: number;
 
     // Toolbar props
-    enableColumnVisibility?: boolean;
     enableTableSizeControl?: boolean;
     enableExport?: boolean;
     enableReset?: boolean;

@@ -10,6 +10,7 @@ export function DataTablePropsPage() {
   const filteringPropsGroup = findGroup('propGroups', 'filtering');
   const sortingPropsGroup = findGroup('propGroups', 'sorting');
   const selectionPropsGroup = findGroup('propGroups', 'selection');
+  const columnsPropsGroup = findGroup('propGroups', 'columns');
   return (
     <FeatureLayout
       title="DataTable Props Reference"
@@ -254,6 +255,48 @@ export function DataTablePropsPage() {
             <FeatureMetadataTable
               items={selectionPropsGroup?.items ?? []}
               includePossibleValues
+            />
+          </Box>
+        </AccordionDetails>
+      </Accordion>
+
+      {/* Column Features Props */}
+      <Accordion sx={{ mt: 2 }}>
+        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+          <Typography variant="h6" sx={{ fontWeight: 600 }}>
+            Column Features Props
+          </Typography>
+        </AccordionSummary>
+        <AccordionDetails>
+          <Box sx={{ overflowX: 'auto' }}>
+            <FeatureMetadataTable
+              items={columnsPropsGroup?.items ?? []}
+              includePossibleValues
+            />
+          </Box>
+
+          <Box sx={{ mt: 3, p: 2, backgroundColor: 'grey.50', borderRadius: 1 }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+              Insight: Example: Column Visibility Control
+            </Typography>
+            <CodeBlock
+              language="tsx"
+              code={`<DataTable
+  columns={columns}
+  data={data}
+  enableColumnVisibility={true}
+  onColumnVisibilityChange={(visibility) => {
+    console.log('Column visibility changed:', visibility);
+    // visibility is a Record<string, boolean>
+    // e.g., { email: false, phone: true, name: true }
+  }}
+  initialState={{
+    columnVisibility: {
+      email: false,      // Hide email column by default
+      phone: false,      // Hide phone column by default
+    },
+  }}
+/>`}
             />
           </Box>
         </AccordionDetails>
@@ -924,6 +967,26 @@ const MyCustomSearch = () => {
                   undefined
                 </TableCell>
                 <TableCell>Callback when column pinning changes.</TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>enableColumnVisibility</TableCell>
+                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>
+                  boolean
+                </TableCell>
+                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13 }}>
+                  true
+                </TableCell>
+                <TableCell>Enable column visibility toggle control in toolbar.</TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell sx={{ fontFamily: 'monospace', fontWeight: 600 }}>onColumnVisibilityChange</TableCell>
+                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13, color: 'primary.main' }}>
+                  {'(visibility: Record<string, boolean>) => void'}
+                </TableCell>
+                <TableCell sx={{ fontFamily: 'monospace', fontSize: 13 }}>
+                  undefined
+                </TableCell>
+                <TableCell>Callback when column visibility changes. Receives a record mapping column IDs to visibility state.</TableCell>
               </TableRow>
             </TableBody>
           </Table>

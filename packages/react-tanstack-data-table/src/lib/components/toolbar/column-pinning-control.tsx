@@ -12,7 +12,7 @@ import {
     SxProps,
 } from '@mui/material';
 import { ColumnPinningState, Column } from '@tanstack/react-table';
-import { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo } from 'react';
 
 import { MenuDropdown } from '../droupdown/menu-dropdown';
 import { useDataTableContext } from '../../contexts/data-table-context';
@@ -48,17 +48,17 @@ export function ColumnPinningControl(props: ColumnPinningControlProps = {}) {
     const LeftIconSlot = getSlotComponent(slots, 'leftIcon', ArrowLeftOutlined);
     const RightIconSlot = getSlotComponent(slots, 'rightIcon', ArrowRightOutlined);
 
-    const columnPinning = table.getState().columnPinning;
+    const columnPinning = table?.getState().columnPinning || {};
 
     const allColumns: Column<any, unknown>[] = useMemo(() => {
         if (slotProps?.columnsPanel?.getPinnableColumns) {
-            return slotProps?.columnsPanel?.getPinnableColumns(table.getAllLeafColumns());
+            return slotProps?.columnsPanel?.getPinnableColumns(table?.getAllLeafColumns() || []);
         }
-        return table.getAllLeafColumns().filter(column => column.getCanPin());
+        return table?.getAllLeafColumns()?.filter(column => column.getCanPin()) || [];
     }, [slotProps?.columnsPanel, table]);
 
     const handlePinColumn = (columnId: string, position: 'left' | 'right' | 'none') => {
-        const currentPinning = table.getState().columnPinning;
+        const currentPinning = table?.getState().columnPinning || {};
         const newPinning: ColumnPinningState = { ...currentPinning };
 
         // Remove from current position
@@ -72,7 +72,7 @@ export function ColumnPinningControl(props: ColumnPinningControlProps = {}) {
             newPinning.right = [...(newPinning.right || []), columnId];
         }
 
-        table.setColumnPinning(newPinning);
+        table?.setColumnPinning(newPinning);
     };
 
     const getColumnPinStatus = (columnId: string): 'left' | 'right' | 'none' => {

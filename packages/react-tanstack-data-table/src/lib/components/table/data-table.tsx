@@ -65,6 +65,7 @@ const DEFAULT_INITIAL_STATE = {
         left: [],
         right: [],
     },
+    columnVisibility: {},
     columnFilter: {
         filters: [],
         logic: 'AND',
@@ -114,6 +115,10 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     enableColumnPinning = false,
     onColumnPinningChange,
 
+    // Column visibility props
+    onColumnVisibilityChange,
+    enableColumnVisibility = true,
+
     // Expandable rows props
     enableExpanding = false,
     getRowCanExpand,
@@ -155,7 +160,6 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     estimateRowHeight = 52,
 
     // Toolbar props
-    enableColumnVisibility = true,
     enableTableSizeControl = true,
     enableExport = false,
     enableReset = true,
@@ -246,7 +250,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     const tableTotalRow = useMemo(() => serverData ? serverTotal : totalRow, [onFetchData, serverTotal, totalRow]);
     const tableLoading = useMemo(() => onFetchData ? (loading || fetchLoading) : loading, [onFetchData, loading, fetchLoading]);
 
-    
+
     const enhancedColumns = useMemo(
         () => {
             let columnsMap = [...columns];
@@ -312,7 +316,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     const fetchData = useCallback(async (overrides: Partial<TableState> = {}) => {
         if (!onFetchData) {
             if (logger.isLevelEnabled('debug')) {
-                logger.debug('onFetchData not provided, skipping fetch', { overrides, columnFilter, sorting, pagination  });
+                logger.debug('onFetchData not provided, skipping fetch', { overrides, columnFilter, sorting, pagination });
             }
             return;
         }
@@ -406,7 +410,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
             logger.debug('Emitting tableStateChange', currentState);
         }
 
-        onDataStateChange(currentState);
+        onDataStateChange?.(currentState);
     }, [
         onDataStateChange,
         globalFilter,
@@ -483,6 +487,27 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
             onColumnPinningChange(newColumnPinning);
         }
     }, [onColumnPinningChange, columnPinning]);
+
+    // Column visibility change handler - will use table from closure when called
+    const handleColumnVisibilityChange = useCallback((updater: any) => {
+        const tableInstance = internalApiRef.current?.table?.getTable();
+        if (!tableInstance) return;
+
+        const currentVisibility = tableInstance.getState().columnVisibility;
+        const newVisibility = typeof updater === 'function' ? updater(currentVisibility) : updater;
+
+        if (onColumnVisibilityChange) {
+            setTimeout(() => {
+                onColumnVisibilityChange(newVisibility);
+            }, 0);
+        }
+
+        if (onDataStateChange) {
+            setTimeout(() => {
+                tableStateChange({ columnVisibility: newVisibility });
+            }, 0);
+        }
+    }, [onColumnVisibilityChange, onDataStateChange, tableStateChange]);
 
     const handlePaginationChange = useCallback((updater: any) => {
         const newPagination = typeof updater === 'function' ? updater(pagination) : updater;
@@ -649,6 +674,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         ...(enableExpanding ? { onExpandedChange: setExpanded } : {}),
         ...(enableColumnDragging ? { onColumnOrderChange: handleColumnOrderChange } : {}),
         ...(enableColumnPinning ? { onColumnPinningChange: handleColumnPinningChange } : {}),
+        ...(enableColumnVisibility ? { onColumnVisibilityChange: handleColumnVisibilityChange } : {}),
 
         // Row model
         getCoreRowModel: getCoreRowModel(),
@@ -678,6 +704,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         debugAll: false, // Disabled for production
     });
 
+
     // -------------------------------
     // Virtualization and row memo
     // -------------------------------
@@ -704,6 +731,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         console.log('onPaginationChange', onPaginationChange);
         return newPagination;
     };
+
 
     // -------------------------------
     // Callbacks (after table creation)
