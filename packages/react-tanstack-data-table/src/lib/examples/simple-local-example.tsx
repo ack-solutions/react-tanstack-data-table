@@ -38,12 +38,10 @@ const columns = [
     {
         accessorKey: 'name',
         header: 'Product Name',
-        size: 180,
     },
     {
         accessorKey: 'category',
         header: 'Category',
-        size: 120,
         cell: ({ getValue }: { getValue: () => any }) => (
             <Chip
                 label={getValue() as string}
@@ -56,14 +54,12 @@ const columns = [
     {
         accessorKey: 'price',
         header: 'Price',
-        size: 100,
         cell: ({ getValue }: { getValue: () => any }) =>
             `$${(getValue() as number).toFixed(2)}`,
     },
     {
         accessorKey: 'inStock',
         header: 'In Stock',
-        size: 100,
         cell: ({ getValue }: { getValue: () => any }) => (
             <Chip
                 label={getValue() ? 'Yes' : 'No'}
@@ -76,6 +72,8 @@ const columns = [
         accessorKey: 'rating',
         header: 'Rating',
         size: 100,
+        minSize: 100,
+        maxSize: 100,
         cell: ({ getValue }: { getValue: () => any }) =>
             `⭐ ${(getValue() as number).toFixed(1)}`,
     },

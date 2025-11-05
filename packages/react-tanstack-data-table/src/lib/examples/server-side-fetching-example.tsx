@@ -227,35 +227,30 @@ export function ServerSideFetchingExample() {
             id: 'name',
             accessorKey: 'name',
             header: 'Name',
-            size: 200,
             enableGlobalFilter: true,
         },
         {
             id: 'email',
             accessorKey: 'email',
             header: 'Email',
-            size: 250,
             enableGlobalFilter: true,
         },
         {
             id: 'department',
             accessorKey: 'department',
             header: 'Department',
-            size: 150,
             enableGlobalFilter: true,
         },
         {
             id: 'role',
             accessorKey: 'role',
             header: 'Role',
-            size: 120,
             enableGlobalFilter: true,
         },
         {
             id: 'salary',
             accessorKey: 'salary',
             header: 'Salary',
-            size: 120,
             accessorFn: (row) => `$${row.salary.toLocaleString()}`,
             hideInExport: true, // This column will be excluded from exports
         },
@@ -263,7 +258,6 @@ export function ServerSideFetchingExample() {
             id: 'isActive',
             accessorKey: 'isActive',
             header: 'Status',
-            size: 100,
             accessorFn: (row) => row.isActive ? 'Active' : 'Inactive',
             cell: ({ getValue }) => (
                 <Chip
@@ -277,7 +271,6 @@ export function ServerSideFetchingExample() {
             id: 'joinDate',
             accessorKey: 'joinDate',
             header: 'Join Date',
-            size: 120,
             accessorFn: (row) => new Date(row.joinDate).toLocaleDateString(),
         },
     ];

@@ -7,7 +7,7 @@
  * - Hover effects
  * - Striped styling
  */
-import { TableRow, TableCell, Collapse, TableRowProps, TableCellProps, SxProps } from '@mui/material';
+import { TableRow, TableCell, Collapse, TableRowProps, TableCellProps, SxProps, tableRowClasses, alpha } from '@mui/material';
 import { flexRender, Row } from '@tanstack/react-table';
 import { ReactNode } from 'react';
 
@@ -67,15 +67,29 @@ export function DataTableRow<T>(props: DataTableRowProps<T>) {
     const mergedRowProps = mergeSlotProps(
         {
             hover: enableHover,
-            sx: {
-                backgroundColor: enableStripes && isOdd ? 'action.hover' : 'transparent',
+            sx: (theme) => ({
+                // set the row background as a variable
+                '--row-bg': enableStripes && isOdd
+                    ? theme.palette.action.hover
+                    : theme.palette.background.paper,
+
+                backgroundColor: 'var(--row-bg)',
+
+                // keep the variable in sync for hover/selected
+                ...(enableHover && {
+                    '&:hover': { '--row-bg': theme.palette.action.hover },
+                }),
+                [`&.${tableRowClasses.selected}`]: {
+                    '--row-bg': alpha(theme.palette.primary.dark, 0.08),
+                    backgroundColor: 'var(--row-bg)',
+                },
+
                 ...containerSx,
-            },
+            }),
         },
         rowSlotProps,
         otherProps
     );
-
     const mergedExpandedRowProps = mergeSlotProps(
         {
             sx: expandedContainerSx,
@@ -95,12 +109,18 @@ export function DataTableRow<T>(props: DataTableRowProps<T>) {
                     const pinnedRightPosition = isPinned === 'right' ? cell.column.getAfter('right') : undefined;
                     const alignment = getColumnAlignment(cell.column.columnDef);
 
+                    // Get minSize and maxSize from column definition
+                    const minSize = cell.column.columnDef?.minSize;
+                    const maxSize = cell.column.columnDef.maxSize;
+
                     const mergedCellProps = mergeSlotProps(
                         {
                             align: alignment,
                             sx: {
                                 ...getPinnedColumnStyle({
                                     width: cell.column.getSize() || 'auto',
+                                    minWidth: minSize !== undefined ? minSize : undefined,
+                                    maxWidth: maxSize !== undefined ? maxSize : undefined,
                                     isPinned,
                                     pinnedPosition,
                                     pinnedRightPosition,

@@ -309,3 +309,6 @@ export function DraggableHeader<T>(props: DraggableHeaderProps<T>) {
         </Box>
     );
 }
+
+// Memoize component to prevent unnecessary re-renders
+export const DraggableHeaderMemo = React.memo(DraggableHeader) as typeof DraggableHeader;

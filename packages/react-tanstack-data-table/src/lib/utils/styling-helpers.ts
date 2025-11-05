@@ -30,6 +30,8 @@ const getBoxShadow = (isPinned: 'left' | 'right' | false | undefined, isLastLeft
 export function getPinnedColumnStyle(options: PinnedColumnStyleOptions) {
     const {
         width = 'auto',
+        minWidth,
+        maxWidth,
         isPinned,
         pinnedPosition,
         pinnedRightPosition,
@@ -41,27 +43,27 @@ export function getPinnedColumnStyle(options: PinnedColumnStyleOptions) {
 
     // Pinned columns should ALWAYS be sticky, regardless of enableStickyHeader setting
     const needsPinnedPositioning = isPinned;
-    const shouldBeSticky = isPinned; // Pinned columns are always sticky
+    const shouldBeSticky = !!isPinned; // Pinned columns are always sticky
 
     // Position logic
     let positionStyle = {};
     if (shouldBeSticky) {
-        // Pinned columns must always be sticky
         positionStyle = { position: 'sticky' };
     } else if (!disableStickyHeader) {
-        // Non-pinned columns: only sticky when enableStickyHeader is false
         positionStyle = { position: 'relative' };
     }
     // When disableStickyHeader is true and column is not pinned, let Table handle stickiness
-
     return {
-        // Width constraints - more strict for narrow columns
+        // Width constraints - enforce minSize/maxSize from column definition
         width,
-        maxWidth: width,
+        ...(minWidth !== undefined && { minWidth }),
+        ...(maxWidth !== undefined ? { maxWidth } : width !== 'auto' ? { maxWidth: width } : {}),
         overflow: 'hidden',
         whiteSpace: 'nowrap',
+        textOverflow: 'ellipsis',
         // Position handling
         ...positionStyle,
+
         // Pinned positioning (works with both sticky modes)
         ...(needsPinnedPositioning ? {
             left: isPinned === 'left' ? pinnedPosition : undefined,
@@ -69,14 +71,29 @@ export function getPinnedColumnStyle(options: PinnedColumnStyleOptions) {
             zIndex,
         } : {}),
 
-        // Background handling for pinned columns - simpler approach
-        ...(isPinned && {
-            // Use theme background as fallback, but allow inheritance from parent
-            backgroundColor: 'background.paper',
-        }),
+        // backgroundColor: 'var(--row-bg, inherit)',
+        // backgroundClip: 'padding-box',
 
-        // Box shadow only on trailing edge with subtle shadows
-        boxShadow: getBoxShadow(isPinned, !!isLastLeftPinnedColumn, !!isFirstRightPinnedColumn),
+        // keep pinned cells above the scrolling content
+        // zIndex: Math.max(zIndex, 3),
+        backgroundColor: isPinned ? 'background.paper' : 'var(--row-bg, var(--mui-palette-background-paper))',
+        backgroundClip: 'padding-box',
+
+        // ✅ be above scrollable cells
+
+        // Background handling for pinned columns - simpler approach
+        // ...(isPinned && {
+        //     // Use theme background as fallback, but allow inheritance from parent
+        //     backgroundColor: 'background.paper',
+        // }),
+        boxShadow:
+            isPinned === 'left' && isLastLeftPinnedColumn
+                ? 'inset -1px 0 0 var(--palette-TableCell-border), 6px 0 6px -4px rgba(0,0,0,.18)'
+                : isPinned === 'right' && isFirstRightPinnedColumn
+                    ? 'inset 1px 0 0 var(--palette-TableCell-border), -6px 0 6px -4px rgba(0,0,0,.18)'
+                    : undefined,
+        willChange: 'transform',
+        transform: 'translateZ(0)',
     };
 }
 

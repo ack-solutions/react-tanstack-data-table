@@ -106,6 +106,8 @@ export interface ChunkProcessingConfig {
  */
 export interface PinnedColumnStyleOptions {
     width?: number | string;
+    minWidth?: number;
+    maxWidth?: number;
     isPinned?: 'left' | 'right' | false;
     pinnedPosition?: number;
     pinnedRightPosition?: number;

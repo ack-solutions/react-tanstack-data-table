@@ -15,9 +15,10 @@ export interface SelectionColumnConfig<T> {
 /**
  * Creates a default selection column using TanStack Table custom feature methods
  */
-export const createSelectionColumn = <T>(config: Partial<DataTableColumn<T>> & SelectionColumnConfig<T>): DataTableColumn<T> => ({
+export const createSelectionColumn = <T>(config: Partial<DataTableColumn<T>> & SelectionColumnConfig<T>): DataTableColumn<T, any> => ({
     id: DEFAULT_SELECTION_COLUMN_NAME,
     size: 60,
+    minSize: 60,
     align: 'center',
     filterable: false,
     enableResizing: false,
@@ -75,6 +76,7 @@ export const createSelectionColumn = <T>(config: Partial<DataTableColumn<T>> & S
 export const createExpandingColumn = <T>(config: Partial<DataTableColumn<T>>): DataTableColumn<T> => ({
     id: DEFAULT_EXPANDING_COLUMN_NAME,
     size: 60,
+    minSize: 60,
     align: 'center',
     filterable: false,
     enableResizing: false,

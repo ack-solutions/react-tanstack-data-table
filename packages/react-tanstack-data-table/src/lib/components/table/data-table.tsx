@@ -222,8 +222,6 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         return config;
     }, [initialState, logger]);
 
-    console.log('initialStateConfig', initialStateConfig);
-
     // -------------------------------
     // State hooks (grouped together)
     // -------------------------------
@@ -237,6 +235,8 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     const [tableSize, setTableSize] = useState<DataTableSize>(initialTableSize || 'medium');
     const [columnOrder, setColumnOrder] = useState<ColumnOrderState>(initialState?.columnOrder || DEFAULT_INITIAL_STATE.columnOrder);
     const [columnPinning, setColumnPinning] = useState<ColumnPinningState>(initialState?.columnPinning || DEFAULT_INITIAL_STATE.columnPinning);
+    const [columnVisibility, setColumnVisibility] = useState<Record<string, boolean>>(initialState?.columnVisibility || DEFAULT_INITIAL_STATE.columnVisibility);
+    const [columnSizing, setColumnSizing] = useState<Record<string, number>>(initialState?.columnSizing || DEFAULT_INITIAL_STATE.columnSizing);
     const [serverData, setServerData] = useState<T[] | null>(null);
     const [serverTotal, setServerTotal] = useState(0);
     const [exportController, setExportController] = useState<AbortController | null>(null);
@@ -331,7 +331,6 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
             ...overrides,
         };
 
-        console.log('filters', filters);
         if (logger.isLevelEnabled('info')) {
             logger.info('Requesting data', { filters });
         }
@@ -405,6 +404,8 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
             pagination,
             columnOrder,
             columnPinning,
+            columnVisibility,
+            columnSizing,
             ...overrides,
         };
 
@@ -421,6 +422,8 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         pagination,
         columnOrder,
         columnPinning,
+        columnVisibility,
+        columnSizing,
         logger,
     ]);
 
@@ -490,14 +493,13 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         }
     }, [onColumnPinningChange, columnPinning]);
 
-    // Column visibility change handler - will use table from closure when called
+    // Column visibility change handler - same pattern as column order
     const handleColumnVisibilityChange = useCallback((updater: any) => {
-        const tableInstance = internalApiRef.current?.table?.getTable();
-        if (!tableInstance) return;
-
-        const currentVisibility = tableInstance.getState().columnVisibility;
-        const newVisibility = typeof updater === 'function' ? updater(currentVisibility) : updater;
-
+        const newVisibility = typeof updater === 'function'
+            ? updater(columnVisibility)
+            : updater;
+        setColumnVisibility(newVisibility);
+        
         if (onColumnVisibilityChange) {
             setTimeout(() => {
                 onColumnVisibilityChange(newVisibility);
@@ -509,16 +511,15 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                 tableStateChange({ columnVisibility: newVisibility });
             }, 0);
         }
-    }, [onColumnVisibilityChange, onDataStateChange, tableStateChange]);
+    }, [onColumnVisibilityChange, onDataStateChange, tableStateChange, columnVisibility]);
 
-    // Column sizing change handler
+    // Column sizing change handler - same pattern as column order
     const handleColumnSizingChange = useCallback((updater: any) => {
-        const tableInstance = internalApiRef.current?.table?.getTable();
-        if (!tableInstance) return;
-
-        const currentSizing = tableInstance.getState().columnSizing;
-        const newSizing = typeof updater === 'function' ? updater(currentSizing) : updater;
-
+        const newSizing = typeof updater === 'function'
+            ? updater(columnSizing)
+            : updater;
+        setColumnSizing(newSizing);
+        
         if (onColumnSizingChange) {
             setTimeout(() => {
                 onColumnSizingChange(newSizing);
@@ -530,7 +531,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                 tableStateChange({ columnSizing: newSizing });
             }, 0);
         }
-    }, [onColumnSizingChange, onDataStateChange, tableStateChange]);
+    }, [onColumnSizingChange, onDataStateChange, tableStateChange, columnSizing]);
 
     const handlePaginationChange = useCallback((updater: any) => {
         const newPagination = typeof updater === 'function' ? updater(pagination) : updater;
@@ -541,8 +542,6 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                 serverSide: isServerMode || isServerPagination,
             });
         }
-
-        console.log('newPagination', newPagination);
 
         // Update pagination state
         setPagination(newPagination);
@@ -675,6 +674,8 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
             ...(enableExpanding ? { expanded } : {}),
             ...(enableColumnDragging ? { columnOrder } : {}),
             ...(enableColumnPinning ? { columnPinning } : {}),
+            ...(enableColumnVisibility ? { columnVisibility } : {}),
+            ...(enableColumnResizing ? { columnSizing } : {}),
             ...(enableColumnFilter ? { columnFilter } : {}),
             ...(enableRowSelection ? { selectionState } : {}),
         },
@@ -751,8 +752,6 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         const newPagination = { pageIndex: 0, pageSize: pagination.pageSize };
         setPagination(newPagination);
         onPaginationChange?.(newPagination);
-        console.log('newPagination', newPagination);
-        console.log('onPaginationChange', onPaginationChange);
         return newPagination;
     };
 
@@ -809,6 +808,48 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
             setColumnOrder(initialOrder);
         }
     }, [enableColumnDragging, enhancedColumns, columnOrder.length]);
+
+    // Validate column sizing against minSize/maxSize constraints
+    // useEffect(() => {
+    //     if (!enableColumnResizing || !table) return;
+        
+    //     const currentSizing = columnSizing;
+    //     const validatedSizing: Record<string, number> = {};
+    //     let hasChanges = false;
+
+    //     Object.entries(currentSizing).forEach(([columnId, size]) => {
+    //         const column = table.getColumn(columnId);
+    //         if (column) {
+    //             const minSize = column.columnDef.minSize;
+    //             const maxSize = column.columnDef.maxSize;
+    //             let validatedSize = size as number;
+                
+    //             // Enforce minimum size
+    //             if (minSize !== undefined && validatedSize < minSize) {
+    //                 validatedSize = minSize;
+    //                 hasChanges = true;
+    //             }
+                
+    //             // Enforce maximum size
+    //             if (maxSize !== undefined && validatedSize > maxSize) {
+    //                 validatedSize = maxSize;
+    //                 hasChanges = true;
+    //             }
+                
+    //             validatedSizing[columnId] = validatedSize;
+    //         } else {
+    //             validatedSizing[columnId] = size as number;
+    //         }
+    //     });
+
+    //     // Only update if validation found issues
+    //     if (hasChanges) {
+    //         setColumnSizing(validatedSizing);
+    //         if (onColumnSizingChange) {
+    //             onColumnSizingChange(validatedSizing);
+    //         }
+    //     }
+    // }, [columnSizing, table, enableColumnResizing, onColumnSizingChange]);
 
 
     // -------------------------------
