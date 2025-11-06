@@ -276,7 +276,9 @@ export function DraggableHeader<T>(props: DraggableHeaderProps<T>) {
                     cursor: draggable ? 'grabbing' : 'pointer',
                 },
                 '.header-content': {
-                    display: 'inline-flex',
+                    display: 'block',
+                    flex: 1,
+                    minWidth: 0,
                     overflow: 'hidden',
                     whiteSpace: 'nowrap',
                     textOverflow: 'ellipsis',
