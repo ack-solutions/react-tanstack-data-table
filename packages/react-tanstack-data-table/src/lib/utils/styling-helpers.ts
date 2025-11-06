@@ -68,11 +68,10 @@ export function getPinnedColumnStyle(options: PinnedColumnStyleOptions) {
 
         boxShadow:
             isPinned === 'left' && isLastLeftPinnedColumn
-                ? 'inset -1px 0 0 var(--palette-TableCell-border), 6px 0 6px -4px rgba(0,0,0,.18)'
+                ? 'inset -1px 0 0 var(--palette-TableCell-border), 2px 0 2px -4px rgba(0,0,0,.18)'
                 : isPinned === 'right' && isFirstRightPinnedColumn
-                    ? 'inset 1px 0 0 var(--palette-TableCell-border), -6px 0 6px -4px rgba(0,0,0,.18)'
+                    ? 'inset 1px 0 0 var(--palette-TableCell-border), -1px 0 2px -4px rgba(0,0,0,.18)'
                     : undefined,
-
         // For pinned columns: use solid background + transparent overlay to prevent text bleeding through
         ...(isPinned ? {
             // Solid base background (opaque)

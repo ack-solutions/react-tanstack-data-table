@@ -909,7 +909,10 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                 table.toggleAllColumnsVisible(false);
             },
             resetColumnVisibility: () => {
-                table.resetColumnVisibility();
+                const initialVisibility = initialStateConfig.columnVisibility || {};
+                table.setColumnVisibility(initialVisibility);
+                // Manually trigger handler to ensure callbacks are called
+                handleColumnVisibilityChange(initialVisibility);
             },
         },
 
@@ -939,6 +942,8 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                     return `column_${index}`;
                 });
                 table.setColumnOrder(initialOrder);
+                // Manually trigger handler to ensure callbacks are called
+                handleColumnOrderChange(initialOrder);
             },
         },
 
@@ -961,8 +966,9 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
 
                 // Remove from left if exists
                 newPinning.left = (newPinning.left || []).filter(id => id !== columnId);
-                // Add to right if not exists
-                newPinning.right = [...(newPinning.right || []).filter(id => id !== columnId), columnId];
+                // Add to right if not exists - prepend to beginning (appears rightmost to leftmost)
+                // First column pinned appears rightmost, second appears to its left, etc.
+                newPinning.right = [columnId, ...(newPinning.right || []).filter(id => id !== columnId)];
 
                 table.setColumnPinning(newPinning);
             },
@@ -979,7 +985,10 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                 table.setColumnPinning(pinning);
             },
             resetColumnPinning: () => {
-                table.setColumnPinning(initialStateConfig.columnPinning || { left: [], right: [] });
+                const initialPinning = initialStateConfig.columnPinning || { left: [], right: [] };
+                table.setColumnPinning(initialPinning);
+                // Manually trigger handler to ensure callbacks are called
+                handleColumnPinningChange(initialPinning);
             },
         },
 
@@ -998,10 +1007,16 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                 table.getColumn(columnId)?.resetSize();
             },
             autoSizeAllColumns: () => {
-                table.resetColumnSizing();
+                const initialSizing = initialStateConfig.columnSizing || {};
+                table.setColumnSizing(initialSizing);
+                // Manually trigger handler to ensure callbacks are called
+                handleColumnSizingChange(initialSizing);
             },
             resetColumnSizing: () => {
-                table.resetColumnSizing();
+                const initialSizing = initialStateConfig.columnSizing || {};
+                table.setColumnSizing(initialSizing);
+                // Manually trigger handler to ensure callbacks are called
+                handleColumnSizingChange(initialSizing);
             },
         },
 
@@ -1092,10 +1107,15 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                 }
             },
             clearSorting: () => {
-                table.resetSorting();
+                table.setSorting([]);
+                // Manually trigger handler to ensure callbacks are called
+                handleSortingChange([]);
             },
             resetSorting: () => {
-                table.setSorting(initialStateConfig.sorting || []);
+                const initialSorting = initialStateConfig.sorting || [];
+                table.setSorting(initialSorting);
+                // Manually trigger handler to ensure callbacks are called
+                handleSortingChange(initialSorting);
             },
         },
 
@@ -1141,7 +1161,10 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                 }
             },
             resetPagination: () => {
-                table.setPagination(initialStateConfig.pagination || { pageIndex: 0, pageSize: 10 });
+                const initialPagination = initialStateConfig.pagination || { pageIndex: 0, pageSize: 10 };
+                table.setPagination(initialPagination);
+                // Manually trigger handler to ensure callbacks are called
+                handlePaginationChange(initialPagination);
             },
         },
 
