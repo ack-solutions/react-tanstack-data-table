@@ -7,9 +7,8 @@
  * - Column resizing
  * - Pinning support
  */
-import React, { useMemo, useCallback } from 'react';
 import { TableHead, TableRow, TableCell, Box, useTheme, TableHeadProps, TableRowProps, TableCellProps, SxProps } from '@mui/material';
-import { flexRender, Header } from '@tanstack/react-table';
+import { Header } from '@tanstack/react-table';
 
 import { DraggableHeader } from './draggable-header';
 import { useDataTableContext } from '../../contexts/data-table-context';
@@ -78,28 +77,20 @@ export function TableHeader<T>(props: TableHeaderProps) {
         headerRowProps || {}
     );
 
-    const renderHeaderCell = useCallback((header: Header<T, unknown>) => {
+    const renderHeaderCell = (header: Header<T, unknown>) => {
         const isPinned = header.column.getIsPinned();
         const pinnedPosition = isPinned ? header.column.getStart('left') : undefined;
         const pinnedRightPosition = isPinned === 'right' ? header.column.getAfter('right') : undefined;
         const alignment = getColumnAlignment(header.column.columnDef);
         const enableSorting = header.column.getCanSort();
-        
-        // Get minSize and maxSize from column definition
-        const minSize = header.column.columnDef.minSize;
-        const maxSize = header.column.columnDef.maxSize;
-        // When resizing is enabled, always use explicit size (even with fitToScreen)
-        // When resizing is disabled and fitToScreen is true, use 'auto' to fill space
-        const columnSize = enableColumnResizing ? header.getSize() : (fitToScreen ? 'auto' : header.getSize());
+        const wrapText = header.column.columnDef.wrapText ?? false;
 
         const mergedHeaderCellProps = mergeSlotProps(
             {
                 align: alignment,
                 sx: {
                     ...getPinnedColumnStyle({
-                        width: columnSize,
-                        minWidth: minSize !== undefined ? minSize : undefined,
-                        maxWidth: maxSize !== undefined ? maxSize : undefined,
+                        width: (fitToScreen && !enableColumnResizing) ? 'auto' : header.getSize(),
                         isPinned,
                         pinnedPosition,
                         isLastLeftPinnedColumn: isPinned === 'left' && header.column.getIsLastColumn('left'),
@@ -107,6 +98,7 @@ export function TableHeader<T>(props: TableHeaderProps) {
                         pinnedRightPosition,
                         zIndex: isPinned ? 10 : 1,
                         disableStickyHeader: enableStickyHeader,
+                        wrapText,
                     }),
                 },
             },
@@ -160,27 +152,13 @@ export function TableHeader<T>(props: TableHeaderProps) {
                 ) : null}
             </HeaderCellSlot>
         );
-    }, [
-        fitToScreen,
-        enableColumnResizing,
-        enableStickyHeader,
-        headerCellSlotProps,
-        headerCellProps,
-        resizeHandleSx,
-        theme,
-        draggable,
-        onColumnReorder,
-        slots,
-        slotProps,
-    ]);
-
-    const headerGroups = useMemo(() => table.getHeaderGroups(), [table]);
+    };
 
     return (
         <HeaderSlot
             {...mergedHeaderProps}
         >
-            {headerGroups.map(headerGroup => (
+            {table.getHeaderGroups().map(headerGroup => (
                 <HeaderRowSlot
                     key={headerGroup.id}
                     {...mergedHeaderRowProps}
@@ -191,6 +169,3 @@ export function TableHeader<T>(props: TableHeaderProps) {
         </HeaderSlot>
     );
 }
-
-// Memoize component to prevent unnecessary re-renders
-export const TableHeaderMemo = React.memo(TableHeader) as typeof TableHeader;

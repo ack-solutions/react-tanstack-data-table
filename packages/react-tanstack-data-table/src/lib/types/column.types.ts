@@ -24,6 +24,7 @@ declare module '@tanstack/table-core' {
         align?: 'left' | 'center' | 'right';
         filterable?: boolean;
         hideInExport?: boolean;
+        wrapText?: boolean; // If true, text will wrap; if false, text will truncate with ellipsis (default: false)
         editComponent?: React.ComponentType<{
             value: any;
             onChange: (value: any) => void;

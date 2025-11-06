@@ -89,7 +89,7 @@ export function ColumnPinningControl(props: ColumnPinningControlProps = {}) {
     };
 
     const handleUnpinAll = useCallback(() => {
-        table.setColumnPinning(table.initialState.columnPinning || {});
+        table?.setColumnPinning(table?.initialState?.columnPinning || {});
     }, [table]);
 
     // Count only user-pinned columns (exclude system columns like select and action)

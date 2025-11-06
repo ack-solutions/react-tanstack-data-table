@@ -100,6 +100,10 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     isRowSelectable,
     onSelectionChange,
 
+    // Row click props
+    onRowClick,
+    selectOnRowClick = false,
+
     // Bulk action props
     enableBulkActions = false,
     bulkActions,
@@ -1680,6 +1684,8 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                                 isOdd={virtualRow.index % 2 === 1}
                                 renderSubComponent={renderSubComponent}
                                 disableStickyHeader={enableStickyHeaderOrFooter}
+                                onRowClick={onRowClick}
+                                selectOnRowClick={selectOnRowClick}
                                 slots={slots}
                                 slotProps={slotProps}
                             />
@@ -1710,6 +1716,8 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                 isOdd={index % 2 === 1}
                 renderSubComponent={renderSubComponent}
                 disableStickyHeader={enableStickyHeaderOrFooter}
+                onRowClick={onRowClick}
+                selectOnRowClick={selectOnRowClick}
                 slots={slots}
                 slotProps={slotProps}
             />
@@ -1729,6 +1737,8 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         enableStripes,
         renderSubComponent,
         enableStickyHeaderOrFooter,
+        onRowClick,
+        selectOnRowClick,
         slots,
     ]);
 

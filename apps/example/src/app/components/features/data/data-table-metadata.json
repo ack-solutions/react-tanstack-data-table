@@ -59,7 +59,10 @@
           "type": "'client' | 'server'",
           "defaultValue": "'client'",
           "description": "Enable server-driven pagination, filtering, and sorting when set to 'server'.",
-          "possibleValues": ["client", "server"]
+          "possibleValues": [
+            "client",
+            "server"
+          ]
         },
         {
           "name": "onFetchData",
@@ -73,7 +76,10 @@
           "type": "boolean",
           "defaultValue": "true",
           "description": "Whether to fetch data on component mount. Set to false to manually control initial fetch.",
-          "possibleValues": ["true", "false"]
+          "possibleValues": [
+            "true",
+            "false"
+          ]
         },
         {
           "name": "onDataStateChange",
@@ -101,21 +107,30 @@
           "type": "boolean | ((row) => boolean)",
           "defaultValue": "false",
           "description": "Turn on row selection or supply a predicate to disable rows individually.",
-          "possibleValues": ["true", "false"]
+          "possibleValues": [
+            "true",
+            "false"
+          ]
         },
         {
           "name": "enableMultiRowSelection",
           "type": "boolean",
           "defaultValue": "true",
           "description": "Allow toggling multiple rows at once. Combine with selectMode for all-page selection.",
-          "possibleValues": ["true", "false"]
+          "possibleValues": [
+            "true",
+            "false"
+          ]
         },
         {
           "name": "selectMode",
           "type": "'page' | 'all'",
           "defaultValue": "'page'",
           "description": "Choose between page-scoped selection or whole-dataset selection helpers.",
-          "possibleValues": ["page", "all"]
+          "possibleValues": [
+            "page",
+            "all"
+          ]
         },
         {
           "name": "isRowSelectable",
@@ -132,11 +147,31 @@
           "possibleValues": []
         },
         {
+          "name": "selectOnRowClick",
+          "type": "boolean",
+          "defaultValue": "false",
+          "description": "If true, row click will toggle selection.",
+          "possibleValues": [
+            "true",
+            "false"
+          ]
+        },
+        {
+          "name": "onRowClick",
+          "type": "(event: React.MouseEvent<HTMLTableRowElement>, row: Row<T>) => void",
+          "defaultValue": "undefined",
+          "description": "Callback when a row is clicked.",
+          "possibleValues": []
+        },
+        {
           "name": "enableBulkActions",
           "type": "boolean",
           "defaultValue": "false",
           "description": "Display the bulk action toolbar when rows are selected.",
-          "possibleValues": ["true", "false"]
+          "possibleValues": [
+            "true",
+            "false"
+          ]
         },
         {
           "name": "bulkActions",
@@ -157,21 +192,30 @@
           "type": "boolean",
           "defaultValue": "true",
           "description": "Enable global search across all columns.",
-          "possibleValues": ["true", "false"]
+          "possibleValues": [
+            "true",
+            "false"
+          ]
         },
         {
           "name": "enableColumnFilter",
           "type": "boolean",
           "defaultValue": "false",
           "description": "Enable individual column filters.",
-          "possibleValues": ["true", "false"]
+          "possibleValues": [
+            "true",
+            "false"
+          ]
         },
         {
           "name": "filterMode",
           "type": "'client' | 'server'",
           "defaultValue": "'client'",
           "description": "Choose between client-side or server-side filtering.",
-          "possibleValues": ["client", "server"]
+          "possibleValues": [
+            "client",
+            "server"
+          ]
         },
         {
           "name": "onGlobalFilterChange",
@@ -199,14 +243,20 @@
           "type": "boolean",
           "defaultValue": "true",
           "description": "Enable pagination controls.",
-          "possibleValues": ["true", "false"]
+          "possibleValues": [
+            "true",
+            "false"
+          ]
         },
         {
           "name": "paginationMode",
           "type": "'client' | 'server'",
           "defaultValue": "'client'",
           "description": "Choose between client-side or server-side pagination.",
-          "possibleValues": ["client", "server"]
+          "possibleValues": [
+            "client",
+            "server"
+          ]
         },
         {
           "name": "onPaginationChange",
@@ -227,14 +277,20 @@
           "type": "boolean",
           "defaultValue": "true",
           "description": "Enable column sorting.",
-          "possibleValues": ["true", "false"]
+          "possibleValues": [
+            "true",
+            "false"
+          ]
         },
         {
           "name": "sortingMode",
           "type": "'client' | 'server'",
           "defaultValue": "'client'",
           "description": "Choose between client-side or server-side sorting.",
-          "possibleValues": ["client", "server"]
+          "possibleValues": [
+            "client",
+            "server"
+          ]
         },
         {
           "name": "onSortingChange",
@@ -255,7 +311,10 @@
           "type": "boolean",
           "defaultValue": "true",
           "description": "Enable column visibility toggle control in toolbar.",
-          "possibleValues": ["true", "false"]
+          "possibleValues": [
+            "true",
+            "false"
+          ]
         },
         {
           "name": "onColumnVisibilityChange",
@@ -269,7 +328,10 @@
           "type": "boolean",
           "defaultValue": "false",
           "description": "Enable column reordering by drag and drop.",
-          "possibleValues": ["true", "false"]
+          "possibleValues": [
+            "true",
+            "false"
+          ]
         },
         {
           "name": "onColumnDragEnd",
@@ -283,7 +345,10 @@
           "type": "boolean",
           "defaultValue": "false",
           "description": "Enable column pinning to left or right side.",
-          "possibleValues": ["true", "false"]
+          "possibleValues": [
+            "true",
+            "false"
+          ]
         },
         {
           "name": "onColumnPinningChange",
@@ -297,14 +362,20 @@
           "type": "boolean",
           "defaultValue": "false",
           "description": "Enable column resizing by dragging column borders.",
-          "possibleValues": ["true", "false"]
+          "possibleValues": [
+            "true",
+            "false"
+          ]
         },
         {
           "name": "columnResizeMode",
           "type": "'onChange' | 'onEnd'",
           "defaultValue": "'onChange'",
           "description": "When to apply resize: during drag or after release.",
-          "possibleValues": ["onChange", "onEnd"]
+          "possibleValues": [
+            "onChange",
+            "onEnd"
+          ]
         },
         {
           "name": "onColumnSizingChange",
@@ -325,7 +396,10 @@
           "type": "boolean",
           "defaultValue": "true",
           "description": "Enable CSV/Excel export functionality.",
-          "possibleValues": ["true", "false"]
+          "possibleValues": [
+            "true",
+            "false"
+          ]
         },
         {
           "name": "exportFilename",
@@ -362,21 +436,32 @@
           "type": "SlotComponent<BoxProps & { children: ReactNode }>",
           "defaultValue": "DefaultRoot",
           "description": "Root wrapper around the entire table experience.",
-          "possibleValues": ["Box", "Card", "Paper"]
+          "possibleValues": [
+            "Box",
+            "Card",
+            "Paper"
+          ]
         },
         {
           "name": "tableContainer",
           "type": "SlotComponent<TableContainerProps & { enableStickyHeader?: boolean }>",
           "defaultValue": "Paper",
           "description": "Scrollable container hosting the table element.",
-          "possibleValues": ["Paper", "div", "ScrollArea"]
+          "possibleValues": [
+            "Paper",
+            "div",
+            "ScrollArea"
+          ]
         },
         {
           "name": "table",
           "type": "SlotComponent<TableProps & { tableSize?: DataTableSize }>",
           "defaultValue": "MUITable",
           "description": "Underlying MUI table element for styling or virtualization tweaks.",
-          "possibleValues": ["Table", "CustomTable"]
+          "possibleValues": [
+            "Table",
+            "CustomTable"
+          ]
         }
       ]
     },
@@ -390,63 +475,88 @@
           "type": "SlotComponent<ToolbarProps & DataTableToolbarProps>",
           "defaultValue": "DefaultToolbar",
           "description": "Wraps the entire toolbar area including built-in controls and extra filters.",
-          "possibleValues": ["CustomToolbar"]
+          "possibleValues": [
+            "CustomToolbar"
+          ]
         },
         {
           "name": "searchInput",
           "type": "SlotComponent<ComponentProps<'input'>>",
           "defaultValue": "DefaultSearchInput",
           "description": "Replace the global search input element.",
-          "possibleValues": ["TextField", "CustomDebouncedInput"]
+          "possibleValues": [
+            "TextField",
+            "CustomDebouncedInput"
+          ]
         },
         {
           "name": "columnVisibilityControl",
           "type": "SlotComponent<HTMLDivElement>",
           "defaultValue": "ColumnVisibilityToggle",
           "description": "Customize the column visibility toggle button and dropdown.",
-          "possibleValues": ["IconButton", "Menu"]
+          "possibleValues": [
+            "IconButton",
+            "Menu"
+          ]
         },
         {
           "name": "columnCustomFilterControl",
           "type": "SlotComponent<HTMLDivElement>",
           "defaultValue": "ColumnFilterButton",
           "description": "Control the advanced filters button/drawer.",
-          "possibleValues": ["Button", "MenuItem"]
+          "possibleValues": [
+            "Button",
+            "MenuItem"
+          ]
         },
         {
           "name": "columnPinningControl",
           "type": "SlotComponent<HTMLDivElement>",
           "defaultValue": "ColumnPinningButton",
           "description": "Trigger and menu for column pinning.",
-          "possibleValues": ["IconButton", "MenuItem"]
+          "possibleValues": [
+            "IconButton",
+            "MenuItem"
+          ]
         },
         {
           "name": "tableSizeControl",
           "type": "SlotComponent<HTMLDivElement>",
           "defaultValue": "DensityControl",
           "description": "Button group for switching compact/comfortable modes.",
-          "possibleValues": ["ToggleButtonGroup"]
+          "possibleValues": [
+            "ToggleButtonGroup"
+          ]
         },
         {
           "name": "resetButton",
           "type": "SlotComponent<ComponentProps<'button'>>",
           "defaultValue": "ResetButton",
           "description": "Resets filters, sorting, and column settings.",
-          "possibleValues": ["Button", "IconButton"]
+          "possibleValues": [
+            "Button",
+            "IconButton"
+          ]
         },
         {
           "name": "exportButton",
           "type": "SlotComponent<ComponentProps<'button'>>",
           "defaultValue": "DefaultExportButton",
           "description": "Swap the export trigger with your own button.",
-          "possibleValues": ["Button", "LoadingButton"]
+          "possibleValues": [
+            "Button",
+            "LoadingButton"
+          ]
         },
         {
           "name": "bulkActionsToolbar",
           "type": "SlotComponent<ToolbarProps & { selectionState: any }>",
           "defaultValue": "DefaultBulkActionsToolbar",
           "description": "Replace the selection bulk actions toolbar when rows are selected.",
-          "possibleValues": ["Toolbar", "Stack"]
+          "possibleValues": [
+            "Toolbar",
+            "Stack"
+          ]
         }
       ]
     },
@@ -460,63 +570,91 @@
           "type": "SlotComponent<TableHeadProps>",
           "defaultValue": "DefaultHeader",
           "description": "Custom table head wrapper allowing sticky headers and drag-n-drop.",
-          "possibleValues": ["TableHead"]
+          "possibleValues": [
+            "TableHead"
+          ]
         },
         {
           "name": "headerRow",
           "type": "SlotComponent<TableRowProps & { headerGroups: any[] }>",
           "defaultValue": "DefaultHeaderRow",
           "description": "Render the header row, enabling draggable columns or grouping.",
-          "possibleValues": ["TableRow"]
+          "possibleValues": [
+            "TableRow"
+          ]
         },
         {
           "name": "headerCell",
           "type": "SlotComponent<TableCellProps & { column: Column<T> }>",
           "defaultValue": "DefaultHeaderCell",
           "description": "Override individual header cells for custom sorting UI.",
-          "possibleValues": ["TableCell", "ButtonBase"]
+          "possibleValues": [
+            "TableCell",
+            "ButtonBase"
+          ]
         },
         {
           "name": "body",
           "type": "SlotComponent<TableBodyProps & { rows: Row<T>[] }>",
           "defaultValue": "DefaultBody",
           "description": "Wraps all visible rows, useful for virtualization.",
-          "possibleValues": ["TableBody"]
+          "possibleValues": [
+            "TableBody"
+          ]
         },
         {
           "name": "row",
           "type": "SlotComponent<TableRowProps & { row: Row<T>; index: number }>",
           "defaultValue": "DefaultRow",
           "description": "Control how each body row renders including hover states.",
-          "possibleValues": ["TableRow", "VirtualRow"]
+          "possibleValues": [
+            "TableRow",
+            "VirtualRow"
+          ]
+        },
+        {
+          "name": "onRowClick",
+          "type": "(event: React.MouseEvent<HTMLTableRowElement>, row: Row<T>) => void",
+          "defaultValue": "undefined",
+          "description": "Callback when a row is clicked.",
+          "possibleValues": []
         },
         {
           "name": "cell",
           "type": "SlotComponent<TableCellProps & { value: any }>",
           "defaultValue": "DefaultCell",
           "description": "Override individual cell rendering and styling.",
-          "possibleValues": ["TableCell", "Span"]
+          "possibleValues": [
+            "TableCell",
+            "Span"
+          ]
         },
         {
           "name": "loadingRow",
           "type": "SlotComponent<TableRowProps & { rowCount: number; colSpan: number }>",
           "defaultValue": "LoadingRow",
           "description": "Custom loading placeholder when data is being fetched.",
-          "possibleValues": ["TableRow"]
+          "possibleValues": [
+            "TableRow"
+          ]
         },
         {
           "name": "emptyRow",
           "type": "SlotComponent<TableRowProps & { colSpan: number; message: string }>",
           "defaultValue": "EmptyRow",
           "description": "Custom empty state row when there is no data.",
-          "possibleValues": ["TableRow"]
+          "possibleValues": [
+            "TableRow"
+          ]
         },
         {
           "name": "expandedRow",
           "type": "SlotComponent<TableRowProps & { row: Row<T>; colSpan: number }>",
           "defaultValue": "ExpandedRow",
           "description": "Render content when a row is expanded.",
-          "possibleValues": ["TableRow"]
+          "possibleValues": [
+            "TableRow"
+          ]
         }
       ]
     },
@@ -530,14 +668,20 @@
           "type": "SlotComponent<BoxProps & { enableStickyFooter?: boolean }>",
           "defaultValue": "DefaultFooter",
           "description": "Wrap the footer container which hosts pagination and custom content.",
-          "possibleValues": ["Box", "Stack"]
+          "possibleValues": [
+            "Box",
+            "Stack"
+          ]
         },
         {
           "name": "pagination",
           "type": "SlotComponent<DataTablePaginationProps>",
           "defaultValue": "DefaultPagination",
           "description": "Override the pagination component (rows per page, navigation).",
-          "possibleValues": ["TablePagination", "CustomPagination"]
+          "possibleValues": [
+            "TablePagination",
+            "CustomPagination"
+          ]
         }
       ]
     },
@@ -551,14 +695,18 @@
           "type": "SlotComponent<DataTableColumn<T>>",
           "defaultValue": "createSelectionColumn(config)",
           "description": "Provide a custom selection column implementation.",
-          "possibleValues": ["DataTableColumn"]
+          "possibleValues": [
+            "DataTableColumn"
+          ]
         },
         {
           "name": "expandColumn",
           "type": "SlotComponent<DataTableColumn<T>>",
           "defaultValue": "createExpandingColumn(config)",
           "description": "Provide a custom expansion toggle column.",
-          "possibleValues": ["DataTableColumn"]
+          "possibleValues": [
+            "DataTableColumn"
+          ]
         }
       ]
     }
@@ -574,21 +722,32 @@
           "type": "DataTableToolbarProps",
           "defaultValue": "{}",
           "description": "Configure built-in toolbar options like search, filters, export, and custom labels.",
-          "possibleValues": ["enableGlobalFilter", "enableColumnVisibility", "title"]
+          "possibleValues": [
+            "enableGlobalFilter",
+            "enableColumnVisibility",
+            "title"
+          ]
         },
         {
           "name": "searchInput",
           "type": "{ placeholder?: string; debounceMs?: number }",
           "defaultValue": "{ placeholder: 'Search…' }",
           "description": "Customize the global search input placeholder, debounce, and adornments.",
-          "possibleValues": ["placeholder", "InputProps"]
+          "possibleValues": [
+            "placeholder",
+            "InputProps"
+          ]
         },
         {
           "name": "exportButton",
           "type": "{ filename?: string; variant?: 'text' | 'outlined' | 'contained' }",
           "defaultValue": "{ filename: 'export', variant: 'outlined' }",
           "description": "Pass props to the export trigger without replacing the button component.",
-          "possibleValues": ["filename", "variant", "color"]
+          "possibleValues": [
+            "filename",
+            "variant",
+            "color"
+          ]
         }
       ]
     },
@@ -602,21 +761,33 @@
           "type": "{ maxHeight?: number | string; enableStickyHeader?: boolean }",
           "defaultValue": "{ maxHeight: undefined }",
           "description": "Control scroll height and sticky header behavior without swapping components.",
-          "possibleValues": ["maxHeight", "enableStickyHeader", "enableVirtualization"]
+          "possibleValues": [
+            "maxHeight",
+            "enableStickyHeader",
+            "enableVirtualization"
+          ]
         },
         {
           "name": "table",
           "type": "{ size?: 'compact' | 'medium' | 'comfortable'; stickyHeader?: boolean }",
           "defaultValue": "{ size: 'medium' }",
           "description": "Adjust table density and sticky header options.",
-          "possibleValues": ["size", "stickyHeader", "fitToScreen"]
+          "possibleValues": [
+            "size",
+            "stickyHeader",
+            "fitToScreen"
+          ]
         },
         {
           "name": "row",
           "type": "{ hover?: boolean; striped?: boolean }",
           "defaultValue": "{ hover: true }",
           "description": "Set hover, stripe, and expansion behavior for rows.",
-          "possibleValues": ["hover", "striped", "onClick"]
+          "possibleValues": [
+            "hover",
+            "striped",
+            "onClick"
+          ]
         }
       ]
     },
@@ -630,14 +801,21 @@
           "type": "{ rowsPerPageOptions?: number[]; showFirstButton?: boolean; showLastButton?: boolean }",
           "defaultValue": "{ rowsPerPageOptions: [10, 25, 50] }",
           "description": "Control page size options, navigation buttons, and localized labels.",
-          "possibleValues": ["rowsPerPageOptions", "showFirstButton", "labelRowsPerPage"]
+          "possibleValues": [
+            "rowsPerPageOptions",
+            "showFirstButton",
+            "labelRowsPerPage"
+          ]
         },
         {
           "name": "footer",
           "type": "{ stickyFooter?: boolean }",
           "defaultValue": "{ stickyFooter: false }",
           "description": "Enable sticky footer or add custom padding without replacing the container.",
-          "possibleValues": ["stickyFooter", "sx"]
+          "possibleValues": [
+            "stickyFooter",
+            "sx"
+          ]
         }
       ]
     }

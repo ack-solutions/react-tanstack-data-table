@@ -491,6 +491,49 @@ const columns: DataTableColumn<Employee>[] = [
         />
       </Paper>
 
+      {/* Text Wrapping */}
+      <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, mb: 2 }}>
+        Text Wrapping
+      </Typography>
+
+      <Paper elevation={1} sx={{ p: 3, mb: 4 }}>
+        <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 600 }}>
+          Example: Enable Text Wrapping
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          By default, text in cells is truncated with ellipsis. Use <code>wrapText: true</code> to enable text wrapping for long content.
+        </Typography>
+        <CodeBlock
+          language="ts"
+          code={`const columns: DataTableColumn<Employee>[] = [
+  {
+    accessorKey: 'name',
+    header: 'Name',
+    size: 200,
+    wrapText: false,              // Default: truncate with ellipsis
+  },
+  {
+    accessorKey: 'description',
+    header: 'Description',
+    size: 300,
+    wrapText: true,               // Enable text wrapping
+  },
+  {
+    accessorKey: 'email',
+    header: 'Email',
+    size: 250,
+    wrapText: false,              // Keep email truncated
+  },
+];`}
+        />
+        <Alert severity="info" sx={{ mt: 2 }}>
+          <Typography variant="body2">
+            <strong>Tip:</strong> Use <code>wrapText: true</code> for columns with long text content (descriptions, notes, comments). 
+            Keep <code>wrapText: false</code> (default) for compact columns like IDs, emails, or short codes.
+          </Typography>
+        </Alert>
+      </Paper>
+
       {/* Custom Filter Component */}
       <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, mb: 2 }}>
         Custom Filter Component
