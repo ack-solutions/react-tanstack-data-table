@@ -5,31 +5,14 @@
 // Import types from centralized location
 import type { DataTableColumn, PinnedColumnStyleOptions } from '../types';
 
-
-/**
- * Generate box shadow for pinned columns using subtle theme-compatible shadows
- * Only shows shadow on the trailing edge of pinned columns
- */
-const getBoxShadow = (isPinned: 'left' | 'right' | false | undefined, isLastLeftPinnedColumn: boolean, isFirstRightPinnedColumn: boolean) => {
-    if (isPinned === 'left' && isLastLeftPinnedColumn) {
-        // Subtle shadow on right side of left-pinned column
-        return '1px 0 3px rgba(0, 0, 0, 0.12)';
-    }
-
-    if (isPinned === 'right' && isFirstRightPinnedColumn) {
-        // Subtle shadow on left side of right-pinned column
-        return '-1px 0 3px rgba(0, 0, 0, 0.12)';
-    }
-
-    return 'none';
-};
-
 /**
  * Generate consistent styling for pinned columns
  */
 export function getPinnedColumnStyle(options: PinnedColumnStyleOptions) {
     const {
         width = 'auto',
+        minWidth,
+        maxWidth,
         isPinned,
         pinnedPosition,
         pinnedRightPosition,
@@ -71,7 +54,8 @@ export function getPinnedColumnStyle(options: PinnedColumnStyleOptions) {
     return {
         // Width constraints - more strict for narrow columns
         width,
-        maxWidth: width,
+        ...(minWidth !== undefined && { minWidth }),
+        ...(maxWidth !== undefined ? { maxWidth } : { maxWidth: width }),
         ...textWrappingStyles,
         // Position handling
         ...positionStyle,
@@ -82,12 +66,6 @@ export function getPinnedColumnStyle(options: PinnedColumnStyleOptions) {
             zIndex,
         } : {}),
 
-        // Background handling for pinned columns - simpler approach
-        // ...(isPinned && {
-        //     // Use theme background as fallback, but allow inheritance from parent
-        //     backgroundColor: 'background.paper',
-        // }),
-
         boxShadow:
             isPinned === 'left' && isLastLeftPinnedColumn
                 ? 'inset -1px 0 0 var(--palette-TableCell-border), 6px 0 6px -4px rgba(0,0,0,.18)'
@@ -95,9 +73,16 @@ export function getPinnedColumnStyle(options: PinnedColumnStyleOptions) {
                     ? 'inset 1px 0 0 var(--palette-TableCell-border), -6px 0 6px -4px rgba(0,0,0,.18)'
                     : undefined,
 
-        backgroundColor: (theme) => `var(--row-bg, ${theme.palette.background.paper})`,
-        // Box shadow only on trailing edge with subtle shadows
-        // boxShadow: getBoxShadow(isPinned, !!isLastLeftPinnedColumn, !!isFirstRightPinnedColumn),
+        // For pinned columns: use solid background + transparent overlay to prevent text bleeding through
+        ...(isPinned ? {
+            // Solid base background (opaque)
+            backgroundColor: (theme) => theme.palette.background.paper,
+            // Transparent overlay for hover/selected states
+            backgroundImage: (theme) => `linear-gradient(var(--row-bg, ${theme.palette.background.paper}), var(--row-bg, ${theme.palette.background.paper}))`,
+        } : {
+            // Non-pinned columns: use standard transparent background
+            backgroundColor: (theme) => `var(--row-bg, ${theme.palette.background.paper})`,
+        }),
     };
 }
 

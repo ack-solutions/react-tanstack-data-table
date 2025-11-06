@@ -7,7 +7,7 @@
  * - Hover effects
  * - Striped styling
  */
-import { TableRow, TableCell, Collapse, TableRowProps, TableCellProps, SxProps, tableRowClasses } from '@mui/material';
+import { TableRow, TableCell, Collapse, TableRowProps, TableCellProps, SxProps, tableRowClasses, Box } from '@mui/material';
 import { flexRender, Row } from '@tanstack/react-table';
 import { ReactNode } from 'react';
 
@@ -77,7 +77,6 @@ export function DataTableRow<T>(props: DataTableRowProps<T>) {
         const isCheckboxClick = target.closest('input[type="checkbox"]') !== null;
         const isButtonClick = target.closest('button') !== null;
         const isLinkClick = target.closest('a') !== null;
-        const isInteractiveElement = isCheckboxClick || isButtonClick || isLinkClick;
 
         // If selectOnRowClick is enabled and it's not a checkbox/interactive element click, toggle selection
         if (selectOnRowClick && !isCheckboxClick && !isButtonClick && !isLinkClick && table?.toggleRowSelected) {
@@ -99,15 +98,15 @@ export function DataTableRow<T>(props: DataTableRowProps<T>) {
             sx: (theme) => ({
                 // set the row background as a variable
                 '--row-bg': enableStripes && isOdd
-                    ? theme.palette.background.hover
+                    ? theme.palette.action.hover
                     : theme.palette.background.paper,
                 backgroundColor: 'var(--row-bg)',
                 // keep the variable in sync for hover/selected
                 ...(enableHover && {
-                    '&:hover': { '--row-bg': theme.palette.background.hover },
+                    '&:hover': { '--row-bg': theme.palette.action.hover },
                 }),
                 [`&.${tableRowClasses.selected}`]: {
-                    '--row-bg': theme.palette.grey[200],
+                    '--row-bg': theme.palette.action.selected,
                     backgroundColor: 'var(--row-bg)',
                 },
                 // Add cursor pointer if row is clickable

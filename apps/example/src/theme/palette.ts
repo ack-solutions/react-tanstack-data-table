@@ -12,7 +12,6 @@ export type ColorSchema =
 declare module '@mui/material/styles/createPalette' {
     interface TypeBackground {
         neutral: string;
-        hover: string;
     }
 
     interface SimplePaletteColorOptions {
@@ -157,9 +156,7 @@ export const lightPalette = {
         appPink: '#f7dbf8',
         appPositive: '#d6f7e4',
         appNegative: 'rgba(157, 255, 118, 0.49)',
-        appTheme: 'rgb(218 230 248)',
-        hover: '#f7f8f9',
-        selected: '#e8e8e9',
+        appTheme: 'rgb(218 230 248)'
     },
 
     action: {
@@ -183,8 +180,6 @@ export const darkPalette = {
         appPositive: '#567a5f',
         appNegative: 'rgba(67, 109, 49, 0.7)',
         appTheme: 'rgb(98 108 116 / 0.9)',
-        hover: '#1c252e',
-        selected: '#27323b',
     },
     action: {
         ...COMMON.action,
