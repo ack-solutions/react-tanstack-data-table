@@ -67,9 +67,12 @@ export function ColumnPinningControl(props: ColumnPinningControlProps = {}) {
 
         // Add to new position
         if (position === 'left') {
+            // Left-pinned: append to end (appears leftmost to rightmost)
             newPinning.left = [...(newPinning.left || []), columnId];
         } else if (position === 'right') {
-            newPinning.right = [...(newPinning.right || []), columnId];
+            // Right-pinned: prepend to beginning (appears rightmost to leftmost)
+            // First column pinned appears rightmost, second appears to its left, etc.
+            newPinning.right = [columnId, ...(newPinning.right || [])];
         }
 
         table?.setColumnPinning(newPinning);
