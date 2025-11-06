@@ -115,6 +115,7 @@ export interface PinnedColumnStyleOptions {
     disableStickyHeader?: boolean;
     isLastLeftPinnedColumn?: boolean;
     isFirstRightPinnedColumn?: boolean;
+    wrapText?: boolean; // If true, text will wrap; if false, text will truncate with ellipsis (default: false)
 }
 
 /**

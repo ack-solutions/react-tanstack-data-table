@@ -42,7 +42,7 @@ export function DraggableHeader<T>(props: DraggableHeaderProps<T>) {
     // Extract slot-specific props with enhanced merging
     const sortIconAscSlotProps = extractSlotProps(slotProps, 'sortIconAsc');
     const sortIconDescSlotProps = extractSlotProps(slotProps, 'sortIconDesc');
-    
+
     const SortIconAscSlot = getSlotComponent(slots, 'sortIconAsc', ArrowUpwardOutlined);
     const SortIconDescSlot = getSlotComponent(slots, 'sortIconDesc', ArrowDownwardOutlined);
 
@@ -271,8 +271,15 @@ export function DraggableHeader<T>(props: DraggableHeaderProps<T>) {
                 padding: dragOver ? '0 0 0 -2px' : '0',
                 width: '100%',
                 height: '100%',
+                minWidth: '0',
                 '&:active': {
                     cursor: draggable ? 'grabbing' : 'pointer',
+                },
+                '.header-content': {
+                    display: 'inline-flex',
+                    overflow: 'hidden',
+                    whiteSpace: 'nowrap',
+                    textOverflow: 'ellipsis',
                 },
                 ...containerSx,
             },
@@ -298,12 +305,15 @@ export function DraggableHeader<T>(props: DraggableHeaderProps<T>) {
         >
             <Box
                 component="span"
+                className='header-wrapper'
                 sx={{
                     display: 'inline-flex',
                     gap: 1,
                 }}
             >
-                {flexRender(header.column.columnDef.header, header.getContext())}
+                <Box component="span" className='header-content'>
+                    {flexRender(header.column.columnDef.header, header.getContext())}
+                </Box>
                 {getSortIcon()}
             </Box>
         </Box>

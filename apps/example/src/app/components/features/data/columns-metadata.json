@@ -27,6 +27,13 @@
           "possibleValues": ["left", "center", "right"]
         },
         {
+          "name": "wrapText",
+          "type": "boolean",
+          "defaultValue": "false",
+          "description": "Controls whether text should wrap or truncate with ellipsis.",
+          "possibleValues": ["true", "false"]
+        },
+        {
           "name": "filterable",
           "type": "boolean",
           "defaultValue": "false",

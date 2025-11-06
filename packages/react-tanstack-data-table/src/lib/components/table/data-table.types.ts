@@ -63,6 +63,10 @@ export interface DataTableProps<T> {
     
     onSelectionChange?: (selection: SelectionState) => void;
 
+    // Row click props
+    onRowClick?: (event: React.MouseEvent<HTMLTableRowElement>, row: Row<T>) => void;
+    selectOnRowClick?: boolean; // If true, row click will toggle selection (default: false)
+
     // Bulk action props
     enableBulkActions?: boolean;
     bulkActions?: (selectionState: SelectionState) => ReactNode;

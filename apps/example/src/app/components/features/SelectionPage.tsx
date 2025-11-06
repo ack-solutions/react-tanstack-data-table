@@ -304,6 +304,101 @@ const isRowSelectable = useCallback(({ row, id }) => {
 
       <Divider sx={{ my: 4 }} />
 
+      {/* Row Click */}
+      <Typography variant="h5" gutterBottom sx={{ fontWeight: 600, mb: 2 }}>
+        Row Click Events
+      </Typography>
+
+      <Alert severity="info" sx={{ mb: 3 }}>
+        <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+          Handle Row Clicks
+        </Typography>
+        <Typography variant="body2">
+          You can handle row clicks separately from selection. Use <code>onRowClick</code> for custom actions 
+          (like navigation), and <code>selectOnRowClick</code> to enable selection on row click (in addition to checkbox).
+        </Typography>
+      </Alert>
+
+      <Paper elevation={1} sx={{ p: 3, mb: 4 }}>
+        <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
+          Example: Row Click Handler
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          Handle row clicks for navigation or custom actions:
+        </Typography>
+        <CodeBlock
+          language="tsx"
+          code={`<DataTable
+  columns={columns}
+  data={data}
+  enableRowSelection={true}
+  onRowClick={(event, row) => {
+    // Navigate to detail page
+    navigate(\`/employees/\${row.original.id}\`);
+    
+    // Or show a modal
+    setSelectedEmployee(row.original);
+    setModalOpen(true);
+    
+    // Or perform any custom action
+    console.log('Clicked row:', row.original);
+  }}
+/>`}
+        />
+      </Paper>
+
+      <Paper elevation={1} sx={{ p: 3, mb: 4 }}>
+        <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
+          Example: Select on Row Click
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          Enable selection when clicking anywhere on the row (not just checkbox):
+        </Typography>
+        <CodeBlock
+          language="tsx"
+          code={`<DataTable
+  columns={columns}
+  data={data}
+  enableRowSelection={true}
+  selectOnRowClick={true}              // Enable selection on row click
+  onRowClick={(event, row) => {
+    // This will still fire, but selection happens automatically
+    console.log('Row clicked:', row.original);
+  }}
+/>`}
+        />
+        <Alert severity="warning" sx={{ mt: 2 }}>
+          <Typography variant="body2">
+            <strong>Note:</strong> When <code>selectOnRowClick</code> is enabled, clicking on checkboxes, buttons, 
+            or links within the row will NOT trigger selection (to prevent conflicts). Only clicking on the row itself will toggle selection.
+          </Typography>
+        </Alert>
+      </Paper>
+
+      <Paper elevation={1} sx={{ p: 3, mb: 4 }}>
+        <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
+          Example: Separate Actions
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          Use row click for navigation while keeping selection checkbox-only:
+        </Typography>
+        <CodeBlock
+          language="tsx"
+          code={`<DataTable
+  columns={columns}
+  data={data}
+  enableRowSelection={true}
+  selectOnRowClick={false}             // Selection only via checkbox
+  onRowClick={(event, row) => {
+    // Navigate on row click
+    navigate(\`/employees/\${row.original.id}\`);
+  }}
+/>`}
+        />
+      </Paper>
+
+      <Divider sx={{ my: 4 }} />
+
       {/* Bulk Actions */}
       <Typography variant="h5" gutterBottom sx={{ fontWeight: 600, mb: 2 }}>
         Bulk Actions
@@ -329,6 +424,7 @@ const isRowSelectable = useCallback(({ row, id }) => {
   columns={columns}
   data={data}
   enableRowSelection={true}
+  selectOnRowClick
   enableBulkActions={true}             // Enable bulk actions toolbar
   bulkActions={(selectionState) => {
     // Calculate actual selected count
@@ -384,6 +480,7 @@ const isRowSelectable = useCallback(({ row, id }) => {
           }}
           enableBulkActions={true}
           onSelectionChange={handleSelectionChange}
+          selectOnRowClick   
           bulkActions={(selection) => (
             <Box sx={{ display: 'flex', gap: 1 }}>
               <Button

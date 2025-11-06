@@ -156,7 +156,7 @@ export const lightPalette = {
         appPink: '#f7dbf8',
         appPositive: '#d6f7e4',
         appNegative: 'rgba(157, 255, 118, 0.49)',
-        appTheme: 'rgb(218 230 248)',
+        appTheme: 'rgb(218 230 248)'
     },
 
     action: {
