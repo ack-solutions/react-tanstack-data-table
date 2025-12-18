@@ -1,80 +1,86 @@
-import { useState, useEffect } from 'react';
-import CssBaseline from '@mui/material/CssBaseline';
+import { useEffect, useMemo, useState } from 'react';
 import {
-  Typography,
-  Box,
   AppBar,
-  Toolbar,
+  Box,
+  CssBaseline,
   Drawer,
+  FormControlLabel,
+  IconButton,
   List,
   ListItemButton,
-  ListItemIcon,
   ListItemText,
-  IconButton,
-  FormControlLabel,
   Switch,
+  Toolbar,
+  Typography,
   useMediaQuery,
   useTheme,
+  Stack,
+  Chip,
+  Collapse,
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
-import HomeIcon from '@mui/icons-material/Home';
-import CodeIcon from '@mui/icons-material/Code';
-import ApiIcon from '@mui/icons-material/Api';
-import PlayArrowIcon from '@mui/icons-material/PlayArrow';
-import InfoIcon from '@mui/icons-material/Info';
-
-// Import documentation components
-import { OverviewSection } from './components/OverviewSection';
-import { QuickStartSection } from './components/QuickStartSection';
-import { PropsSection } from './components/PropsSection';
-import { ApiSection } from './components/ApiSection';
-import { ExamplesSection } from './components/ExamplesSection';
-
-// Import feature documentation pages
-import { ColumnsPage } from './components/features/ColumnsPage';
-import { ToolbarPage } from './components/features/ToolbarPage';
-import { ExportPage } from './components/features/ExportPage';
-import { SelectionPage } from './components/features/SelectionPage';
-import { FilteringPage } from './components/features/FilteringPage';
-import { SortingPage } from './components/features/SortingPage';
-import { PaginationPage } from './components/features/PaginationPage';
-import { VirtualizationPage } from './components/features/VirtualizationPage';
-import { PinningPage } from './components/features/PinningPage';
-import { ExpansionPage } from './components/features/ExpansionPage';
-import { DataTablePropsPage } from './components/features/DataTablePropsPage';
-import { ThemeProvider } from '../theme/theme-provider';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { configureDataTableLogging } from '@ackplus/react-tanstack-data-table';
+import { navigationTree, NavNode } from '../content/navigation';
+import { contentRegistry } from '../content/registry';
+import { ThemeProvider } from '../theme/theme-provider';
 
-const drawerWidth = 280;
+const drawerWidth = 320;
 
-const navigationItems = [
-  { id: 'overview', label: 'Overview', icon: HomeIcon, section: 'Getting Started' },
-  { id: 'quickstart', label: 'Quick Start', icon: CodeIcon, section: 'Getting Started' },
-  { id: 'examples', label: 'Examples', icon: PlayArrowIcon, section: 'Getting Started' },
-  { id: 'columns', label: 'Columns', icon: InfoIcon, section: 'Main Features' },
-  { id: 'filtering', label: 'Filtering', icon: InfoIcon, section: 'Main Features' },
-  { id: 'pinning', label: 'Pinning', icon: InfoIcon, section: 'Main Features' },
-  { id: 'sorting', label: 'Sorting', icon: InfoIcon, section: 'Main Features' },
-  { id: 'pagination', label: 'Pagination', icon: InfoIcon, section: 'Main Features' },
-  { id: 'selection', label: 'Selection', icon: InfoIcon, section: 'Main Features' },
-  { id: 'expansion', label: 'Row Expansion', icon: InfoIcon, section: 'Main Features' },
-  { id: 'virtualization', label: 'Virtualization', icon: InfoIcon, section: 'Advanced Features' },
-  { id: 'toolbar', label: 'Toolbar', icon: InfoIcon, section: 'Customization' },
-  { id: 'export', label: 'Export', icon: InfoIcon, section: 'Advanced Features' },
-  { id: 'datatable-props', label: 'DataTable Props', icon: InfoIcon, section: 'API Reference' },
-  { id: 'column-props', label: 'Column Props', icon: InfoIcon, section: 'API Reference' },
-  { id: 'api', label: 'API Methods', icon: ApiIcon, section: 'API Reference' },
-];
+const flattenItems = (nodes: NavNode[]): string[] => {
+  const ids: string[] = [];
+  const walk = (list: NavNode[]) => {
+    list.forEach((node) => {
+      if (node.type === 'item') {
+        ids.push(node.id);
+      }
+      if (node.children) {
+        walk(node.children);
+      }
+    });
+  };
+  walk(nodes);
+  return ids;
+};
 
+const collectExpandable = (nodes: NavNode[]): string[] => {
+  const ids: string[] = [];
+  const walk = (list: NavNode[]) => {
+    list.forEach((node) => {
+      if (node.children && node.children.length > 0) {
+        ids.push(node.id);
+        walk(node.children);
+      }
+    });
+  };
+  walk(nodes);
+  return ids;
+};
 
 export function App() {
   const theme = useTheme();
-  const [mobileOpen, setMobileOpen] = useState(false);
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const [loggingEnabled, setLoggingEnabled] = useState(() => {
-    if (typeof window === 'undefined') {
-      return false;
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  const itemIds = useMemo(() => flattenItems(navigationTree), []);
+  const expandableIds = useMemo(() => collectExpandable(navigationTree), []);
+
+  const getInitialSection = () => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const section = params.get('section');
+      if (section && itemIds.includes(section)) {
+        return section;
+      }
     }
+    return itemIds[0] ?? '';
+  };
+
+  const [activeSection, setActiveSection] = useState(getInitialSection);
+  const [expanded, setExpanded] = useState<Set<string>>(new Set(expandableIds));
+  const [loggingEnabled, setLoggingEnabled] = useState(() => {
+    if (typeof window === 'undefined') return false;
     try {
       return window.localStorage.getItem('datatable-logging') === 'true';
     } catch {
@@ -93,181 +99,140 @@ export function App() {
       try {
         window.localStorage.setItem('datatable-logging', loggingEnabled ? 'true' : 'false');
       } catch {
-        // Ignore storage errors (e.g. private browsing)
+        // ignore
       }
     }
   }, [loggingEnabled]);
 
-  // Get initial section from URL query params
-  const getInitialSection = () => {
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      const section = params.get('section');
-      if (section && navigationItems.some(item => item.id === section)) {
-        return section;
-      }
-    }
-    return 'overview';
-  };
-
-  const [activeSection, setActiveSection] = useState(getInitialSection());
-
-  // Update URL when section changes
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined' && activeSection) {
       const url = new URL(window.location.href);
       url.searchParams.set('section', activeSection);
       window.history.pushState({}, '', url);
     }
   }, [activeSection]);
 
-  // Handle browser back/forward buttons
   useEffect(() => {
-    const handlePopState = () => {
-      setActiveSection(getInitialSection());
-    };
-
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
+    const handler = () => setActiveSection(getInitialSection());
+    window.addEventListener('popstate', handler);
+    return () => window.removeEventListener('popstate', handler);
   }, []);
 
-  const handleDrawerToggle = () => {
-    setMobileOpen(!mobileOpen);
+  const handleDrawerToggle = () => setMobileOpen(!mobileOpen);
+
+  const toggleExpand = (id: string) => {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
   };
 
-  const handleSectionChange = (sectionId: string) => {
-    setActiveSection(sectionId);
-    if (isMobile) {
-      setMobileOpen(false);
-    }
-  };
+  const renderNav = (nodes: NavNode[], depth = 0) => (
+    <List disablePadding>
+      {nodes.map((node) => {
+        const indent = depth * 16;
+        if (node.type === 'item') {
+          return (
+            <ListItemButton
+              key={node.id}
+              onClick={() => {
+                setActiveSection(node.id);
+                if (isMobile) setMobileOpen(false);
+              }}
+              selected={activeSection === node.id}
+              sx={{
+                pl: 2 + indent / 8,
+                py: 1,
+                borderRadius: 1,
+                mx: 1,
+                my: 0.25,
+                '&.Mui-selected': {
+                  backgroundColor: 'action.selected',
+                },
+              }}
+            >
+              <ListItemText primary={node.title} primaryTypographyProps={{ fontWeight: 600 }} />
+              {node.badge ? <Chip label={node.badge.toUpperCase()} size="small" color="success" /> : null}
+            </ListItemButton>
+          );
+        }
 
-  const renderContent = () => {
-    switch (activeSection) {
-      case 'overview':
-        return <OverviewSection />;
-      case 'quickstart':
-        return <QuickStartSection />;
-      case 'examples':
-        return <ExamplesSection />;
-      case 'columns':
-        return <ColumnsPage />;
-      case 'filtering':
-        return <FilteringPage />;
-      case 'sorting':
-        return <SortingPage />;
-      case 'pinning':
-        return <PinningPage />;
-      case 'pagination':
-        return <PaginationPage />;
-      case 'selection':
-        return <SelectionPage />;
-      case 'expansion':
-        return <ExpansionPage />;
-      case 'virtualization':
-        return <VirtualizationPage />;
-      case 'toolbar':
-        return <ToolbarPage />;
-      case 'export':
-        return <ExportPage />;
-      case 'datatable-props':
-        return <DataTablePropsPage />;
-      case 'column-props':
-        return <ColumnsPage />;
-      case 'api':
-        return <ApiSection />;
-      case 'props':
-        return <PropsSection />;
-      default:
-        return <OverviewSection />;
-    }
-  };
-
-  // Group navigation items by section
-  const groupedNavItems = navigationItems.reduce((acc, item) => {
-    if (!acc[item.section]) {
-      acc[item.section] = [];
-    }
-    acc[item.section].push(item);
-    return acc;
-  }, {} as Record<string, typeof navigationItems>);
-
-  const NavigationContent = () => (
-    <Box sx={{ overflow: 'auto', py: 2 }}>
-      {Object.entries(groupedNavItems).map(([section, items]) => (
-        <Box key={section} sx={{ mb: 2 }}>
-          <Typography
-            variant="caption"
-            sx={{
-              px: 2,
-              py: 1,
-              display: 'block',
-              fontWeight: 700,
-              textTransform: 'uppercase',
-              color: 'text.secondary',
-              letterSpacing: 1.2,
-            }}
-          >
-            {section}
-          </Typography>
-          <List disablePadding>
-            {items.map((item) => {
-              const Icon = item.icon;
-              const isActive = activeSection === item.id;
-
-              return (
-                <ListItemButton
-                  key={item.id}
-                  selected={isActive}
-                  onClick={() => handleSectionChange(item.id)}
-                  sx={{
-                    px: 2,
-                    borderRadius: 1,
-                    mx: 1,
-                    '&.Mui-selected': {
-                      backgroundColor: 'primary.light',
-                      color: 'primary.contrastText',
-                      '&:hover': {
-                        backgroundColor: 'primary.main',
-                      },
-                    },
+        if (node.type === 'label') {
+          const isOpen = expanded.has(node.id);
+          return (
+            <Box key={node.id} sx={{ mt: 2 }}>
+              <ListItemButton
+                onClick={() => toggleExpand(node.id)}
+                sx={{ pl: 2 + indent / 8, py: 0.75, opacity: 0.9 }}
+              >
+                <ListItemText
+                  primary={node.title}
+                  primaryTypographyProps={{
+                    variant: 'overline',
+                    letterSpacing: 1.2,
+                    fontWeight: 700,
                   }}
-                >
-                  <ListItemIcon sx={{ minWidth: 36 }}>
-                    <Icon
-                      color={isActive ? 'inherit' : 'action'}
-                      fontSize="small"
-                    />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary={item.label}
-                    primaryTypographyProps={{
-                      fontSize: '0.875rem',
-                      fontWeight: isActive ? 600 : 400,
-                    }}
-                  />
-                </ListItemButton>
-              );
-            })}
-          </List>
+                />
+                {isOpen ? <ExpandMoreIcon fontSize="small" /> : <ChevronRightIcon fontSize="small" />}
+              </ListItemButton>
+              <Collapse in={isOpen} timeout="auto" unmountOnExit>
+                <Box sx={{ ml: 1 }}>{node.children ? renderNav(node.children, depth + 1) : null}</Box>
+              </Collapse>
+            </Box>
+          );
+        }
+
+        return (
+          <Box key={node.id} sx={{ mt: 1 }}>
+            <Typography variant="overline" sx={{ px: 3, color: 'text.secondary', letterSpacing: 1.2, fontWeight: 700 }}>
+              {node.title}
+            </Typography>
+            {node.children ? renderNav(node.children, depth + 1) : null}
+          </Box>
+        );
+      })}
+    </List>
+  );
+
+  const drawer = (
+    <Box sx={{ p: 2 }}>
+      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 1, py: 1 }}>
+        <Box>
+          <Typography variant="subtitle2" color="text.secondary" sx={{ letterSpacing: 1, textTransform: 'uppercase' }}>
+            Data Grid
+          </Typography>
+          <Typography variant="h6" sx={{ fontWeight: 800 }}>
+            Docs & Demos
+          </Typography>
         </Box>
-      ))}
+      </Stack>
+      {renderNav(navigationTree)}
     </Box>
   );
 
+  const ActiveComponent = contentRegistry[activeSection] ?? contentRegistry[itemIds[0]];
+
   return (
     <ThemeProvider>
-      <CssBaseline />
-      <Box sx={{ display: 'flex', flexDirection: 'column', height: 1, width: 1 }}>
+      <Box sx={{ display: 'flex' }}>
+        <CssBaseline />
         <AppBar
           position="fixed"
           sx={{
-            zIndex: 5000,
+            width: { md: `calc(100% - ${drawerWidth}px)` },
+            ml: { md: `${drawerWidth}px` },
+            boxShadow: 'none',
+            borderBottom: '1px solid',
+            borderColor: 'divider',
           }}
+          color="inherit"
         >
-          <Toolbar sx={{
-            pl: { md: `${drawerWidth + 24}px` },
-          }}>
+          <Toolbar>
             <IconButton
               color="inherit"
               aria-label="open drawer"
@@ -277,81 +242,48 @@ export function App() {
             >
               <MenuIcon />
             </IconButton>
-            <Typography variant="h6" noWrap component="div">
-              React TanStack Data Table
+            <Typography variant="h6" noWrap sx={{ flexGrow: 1, fontWeight: 700 }}>
+              MUI TanStack DataTable
             </Typography>
-            <Box sx={{ flexGrow: 1 }} />
             <FormControlLabel
-              control={
-                <Switch
-                  checked={loggingEnabled}
-                  onChange={(_, value) => setLoggingEnabled(value)}
-                  color="default"
-                />
-              }
-              label="Debug logs"
-              sx={{
-                ml: 2,
-                color: 'inherit',
-                '& .MuiFormControlLabel-label': {
-                  fontSize: 14,
-                  color: 'inherit',
-                },
-              }}
+              control={<Switch checked={loggingEnabled} onChange={(_, checked) => setLoggingEnabled(checked)} color="primary" />}
+              label="Verbose logs"
             />
           </Toolbar>
         </AppBar>
-
-        <Drawer
-          variant="temporary"
-          open={mobileOpen}
-          onClose={handleDrawerToggle}
-          ModalProps={{
-            keepMounted: true,
-          }}
-          sx={{
-            display: { xs: 'block', md: 'none' },
-            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
-          }}
+        <Box
+          component="nav"
+          sx={{ width: { md: drawerWidth }, flexShrink: { md: 0 } }}
+          aria-label="navigation"
         >
-          <Toolbar />
-          <NavigationContent />
-        </Drawer>
-
-        <Drawer
-          variant="permanent"
-          sx={{
-            display: { xs: 'none', md: 'block' },
-            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
-          }}
-          open
-        >
-          <Toolbar />
-          <NavigationContent />
-        </Drawer>
-
+          <Drawer
+            variant={isMobile ? 'temporary' : 'permanent'}
+            open={isMobile ? mobileOpen : true}
+            onClose={handleDrawerToggle}
+            ModalProps={{ keepMounted: true }}
+            sx={{
+              '& .MuiDrawer-paper': {
+                boxSizing: 'border-box',
+                width: drawerWidth,
+                borderRight: '1px solid',
+                borderColor: 'divider',
+              },
+            }}
+          >
+            {drawer}
+          </Drawer>
+        </Box>
         <Box
           component="main"
           sx={{
             flexGrow: 1,
-            px: { xs: 2, md: 6 },
-            py: 4,
-            mt: { xs: 8, md: 10 },
-            ml: { md: `${drawerWidth}px` },
-            backgroundColor: 'background.default',
+            p: { xs: 2, md: 4 },
+            width: { md: `calc(100% - ${drawerWidth}px)` },
           }}
         >
-          <Box
-            sx={{
-              maxWidth: 1100,
-              mx: 'auto',
-              width: '100%',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 4,
-            }}
-          >
-            {renderContent()}
+          <Toolbar />
+          <Box sx={{ maxWidth: 1200, mx: 'auto', width: '100%' }}>
+            {ActiveComponent ? <ActiveComponent /> : null}
           </Box>
         </Box>
       </Box>

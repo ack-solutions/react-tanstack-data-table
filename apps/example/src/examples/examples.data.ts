@@ -6,6 +6,11 @@ import {
   ServerSideTest,
 } from '@ackplus/react-tanstack-data-table';
 
+import simpleLocalCode from '../../../../packages/react-tanstack-data-table/src/lib/examples/simple-local-example.tsx?raw';
+import serverSideCode from '../../../../packages/react-tanstack-data-table/src/lib/examples/server-side-fetching-example.tsx?raw';
+import simpleSlotsCode from '../../../../packages/react-tanstack-data-table/src/lib/examples/simple-slots-example.tsx?raw';
+import apiPlaygroundCode from '../../../../packages/react-tanstack-data-table/src/lib/examples/server-side-test.tsx?raw';
+import improvedServerCode from './ImprovedServerSideExample.tsx?raw';
 import { ImprovedServerSideExample } from './ImprovedServerSideExample';
 
 export interface ExampleDefinition {
@@ -15,6 +20,7 @@ export interface ExampleDefinition {
   component: ComponentType<any>;
   features: string[];
   githubPath: string;
+  code?: string;
 }
 
 export const exampleDefinitions: ExampleDefinition[] = [
@@ -25,6 +31,7 @@ export const exampleDefinitions: ExampleDefinition[] = [
     component: SimpleLocalExample,
     features: ['Client-side data', 'Sorting', 'Filtering', 'Pagination', 'Row selection'],
     githubPath: 'packages/react-tanstack-data-table/src/lib/examples/simple-local-example.tsx',
+    code: simpleLocalCode,
   },
   {
     id: 'server-side',
@@ -33,6 +40,7 @@ export const exampleDefinitions: ExampleDefinition[] = [
     component: ServerSideFetchingExample,
     features: ['Server-side data', 'API integration', 'Debounced search', 'Loading states'],
     githubPath: 'packages/react-tanstack-data-table/src/lib/examples/server-side-fetching-example.tsx',
+    code: serverSideCode,
   },
   {
     id: 'improved-server-side',
@@ -40,7 +48,8 @@ export const exampleDefinitions: ExampleDefinition[] = [
     description: 'Enhanced server-side example with proper status and department filtering.',
     component: ImprovedServerSideExample,
     features: ['Fixed status filtering', 'Department filtering', 'Custom filter controls', 'Better UX'],
-    githubPath: 'apps/example/src/app/components/examples/ImprovedServerSideExample.tsx',
+    githubPath: 'apps/example/src/examples/ImprovedServerSideExample.tsx',
+    code: improvedServerCode,
   },
   {
     id: 'custom-slots',
@@ -49,6 +58,7 @@ export const exampleDefinitions: ExampleDefinition[] = [
     component: SimpleEnhancedSlotsExample,
     features: ['Custom components', 'Slot system', 'Advanced styling', 'Theme integration'],
     githubPath: 'packages/react-tanstack-data-table/src/lib/examples/simple-slots-example.tsx',
+    code: simpleSlotsCode,
   },
   {
     id: 'api-playground',
@@ -57,5 +67,6 @@ export const exampleDefinitions: ExampleDefinition[] = [
     component: ServerSideTest,
     features: ['API testing', 'Interactive controls', 'Feature demonstration', 'Real-time updates'],
     githubPath: 'packages/react-tanstack-data-table/src/lib/examples/server-side-test.tsx',
+    code: apiPlaygroundCode,
   },
 ];

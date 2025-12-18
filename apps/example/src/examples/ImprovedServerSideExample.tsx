@@ -18,7 +18,7 @@ import {
     TextField,
     Grid,
 } from '@mui/material';
-import { DataTable, DEFAULT_EXPANDING_COLUMN_NAME, DEFAULT_SELECTION_COLUMN_NAME, createLogger, DataTableLoggingOptions } from '@ackplus/react-tanstack-data-table';
+import { DataTable, DEFAULT_EXPANDING_COLUMN_NAME, DEFAULT_SELECTION_COLUMN_NAME, createLogger } from '@ackplus/react-tanstack-data-table';
 import { DataTableApi, DataTableColumn } from '@ackplus/react-tanstack-data-table';
 import { TableFilters } from '@ackplus/react-tanstack-data-table';
 import { SelectionState } from '@ackplus/react-tanstack-data-table';

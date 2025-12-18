@@ -10,14 +10,20 @@ export default defineConfig({
     emptyOutDir: true
   },
   server: {
-    port: 4200
+    port: 4200,
+    fs: {
+      allow: [
+        path.resolve(__dirname),
+        path.resolve(__dirname, '..'),
+        path.resolve(__dirname, '../..')
+      ]
+    }
   },
   resolve: {
     alias: {
       '@ackplus/react-tanstack-data-table': path.resolve(
         __dirname,
-        '../..',
-        'packages/react-tanstack-data-table/src'
+        '../../packages/react-tanstack-data-table/src/index.ts'
       )
     }
   },
