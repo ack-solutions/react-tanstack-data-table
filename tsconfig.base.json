@@ -1,43 +1,22 @@
 {
-  "compileOnSave": false,
   "compilerOptions": {
-    "rootDir": ".",
-    "sourceMap": true,
-    "declaration": false,
-    "moduleResolution": "node",
-    "emitDecoratorMetadata": true,
-    "experimentalDecorators": true,
-    "importHelpers": true,
-    "target": "es2015",
-    "module": "esnext",
-    "lib": ["es2020", "dom"],
-    "skipLibCheck": true,
-    "noUnusedLocals": false,
-    "noUnusedParameters": false,
-    "noImplicitReturns": false,
-    "noImplicitAny": false,
-    "strictPropertyInitialization": false,
-    "strict": false,
-    "skipDefaultLibCheck": true,
-    "noFallthroughCasesInSwitch": true,
-    "removeComments": true,
-    "allowSyntheticDefaultImports": true,
-    "incremental": true,
-    "allowJs": false,
-    "resolveJsonModule": true,
-    "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
-    "noImplicitOverride": true,
-    "noPropertyAccessFromIndexSignature": false,
-    "strictNullChecks": false,
-    "noUncheckedIndexedAccess": false,
-    "baseUrl": ".",
+    "target": "ES2020",
+    "module": "ESNext",
+    "moduleResolution": "Node",
     "jsx": "react-jsx",
+    "strict": false,
+    "allowJs": false,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "skipLibCheck": true,
+    "baseUrl": ".",
+    "types": ["node"],
     "paths": {
       "@ackplus/react-tanstack-data-table": [
         "packages/react-tanstack-data-table/src/index.ts"
       ]
     }
-  },
-  "exclude": ["node_modules", "tmp"]
+  }
 }
