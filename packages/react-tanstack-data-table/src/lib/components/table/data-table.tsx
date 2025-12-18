@@ -226,6 +226,11 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         return config;
     }, [initialState, logger]);
 
+
+    const initialSelectionState = useMemo(() => {
+        return initialStateConfig.selectionState || DEFAULT_INITIAL_STATE.selectionState;
+    }, [initialStateConfig.selectionState]);
+
     // -------------------------------
     // State hooks (grouped together)
     // -------------------------------
@@ -298,24 +303,6 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
             return selectionState.ids.length;
         }
     }, [enableBulkActions, enableRowSelection, selectionState, tableTotalRow]);
-    const tableWidth = useMemo(() => {
-        if (fitToScreen) {
-            return '100%';
-        }
-        if (enableColumnResizing) {
-            return table.getCenterTotalSize();
-        }
-        return '100%';
-    }, [
-        fitToScreen,
-        enableColumnResizing,
-        // table is defined later, but this is safe as it's only used after table is defined
-    ]);
-    const tableStyle = useMemo(() => ({
-        width: tableWidth,
-        minWidth: '100%',
-    }), [tableWidth]);
-
     // -------------------------------
     // Callback hooks (grouped together)
     // -------------------------------
@@ -372,27 +359,6 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     ]);
 
 
-
-    const handleSelectionStateChange = useCallback((updaterOrValue: any) => {
-        setSelectionState((prevState) => {
-            const newSelectionState = typeof updaterOrValue === 'function'
-                ? updaterOrValue(prevState)
-                : updaterOrValue;
-            setTimeout(() => {
-                if (onSelectionChange) {
-                    onSelectionChange(newSelectionState);
-                }
-            }, 0);
-            return newSelectionState;
-        });
-    }, [onSelectionChange]);
-
-    const handleColumnFilterStateChange = useCallback((filterState: ColumnFilterState) => {
-        if (filterState && typeof filterState === 'object') {
-            setColumnFilter(filterState);
-        }
-    }, [onColumnFiltersChange]);
-
     const tableStateChange = useCallback((overrides: Partial<TableState> = {}) => {
         if (!onDataStateChange) {
             if (logger.isLevelEnabled('debug')) {
@@ -431,6 +397,38 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         logger,
     ]);
 
+
+    const handleSelectionStateChange = useCallback((updaterOrValue) => {
+        setSelectionState((prevState) => {
+            const newSelectionState = typeof updaterOrValue === 'function'
+                ? updaterOrValue(prevState)
+                : updaterOrValue;
+            setTimeout(() => {
+                if (onSelectionChange) {
+                    onSelectionChange(newSelectionState);
+                }
+                if (onDataStateChange) {
+                    tableStateChange({ selectionState: newSelectionState });
+                }
+            }, 0);
+            return newSelectionState;
+        });
+    }, [onSelectionChange, onDataStateChange, tableStateChange]);
+
+    const handleColumnFilterStateChange = useCallback((filterState: ColumnFilterState) => {
+        if (!filterState || typeof filterState !== 'object') return;
+
+        setColumnFilter(filterState);
+
+        if (onColumnFiltersChange) {
+            setTimeout(() => onColumnFiltersChange(filterState), 0);
+        }
+
+        if (onDataStateChange) {
+            setTimeout(() => tableStateChange({ columnFilter: filterState }), 0);
+        }
+    }, [onColumnFiltersChange, onDataStateChange, tableStateChange]);
+    
     const handleSortingChange = useCallback((updaterOrValue: any) => {
         let newSorting = typeof updaterOrValue === 'function'
             ? updaterOrValue(sorting)
@@ -638,30 +636,26 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         handleColumnFilterStateChange(legacyFilterState);
     }, [columnFilter, handleColumnFilterStateChange]);
 
-    const onColumnFilterApplyHandler = useCallback((appliedState: any) => {
+    const onColumnFilterApplyHandler = useCallback((appliedState: ColumnFilterState) => {
         const pagination = resetPageToFirst();
+
         if (isServerFiltering) {
-            const serverFilterState = {
-                filters: appliedState.filters,
-                logic: appliedState.logic,
-                pendingFilters: appliedState.pendingFilters,
-                pendingLogic: appliedState.pendingLogic,
-            };
             tableStateChange({
-                columnFilter: serverFilterState,
+                columnFilter: appliedState,
                 pagination,
             });
             fetchData({
-                columnFilter: serverFilterState,
+                columnFilter: appliedState,
                 pagination,
             });
+        } else if (onDataStateChange) {
+            setTimeout(() => tableStateChange({ columnFilter: appliedState, pagination }), 0);
         }
+
         setTimeout(() => {
-            if (onColumnFiltersChange) {
-                onColumnFiltersChange(appliedState);
-            }
+            onColumnFiltersChange?.(appliedState);
         }, 0);
-    }, [isServerFiltering, fetchData, tableStateChange]);
+    }, [isServerFiltering, fetchData, tableStateChange, onDataStateChange, onColumnFiltersChange]);
 
     // -------------------------------
     // Table creation (after callbacks/memo)
@@ -670,7 +664,8 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         _features: [ColumnFilterFeature, SelectionFeature],
         data: tableData,
         columns: enhancedColumns,
-        initialState: { ...DEFAULT_INITIAL_STATE },
+        // Use merged initial state so built-in reset helpers align with our controlled state defaults
+        initialState: initialStateConfig,
         state: {
             ...(enableSorting ? { sorting } : {}),
             ...(enablePagination ? { pagination } : {}),
@@ -697,7 +692,6 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
 
         ...(enableSorting ? { onSortingChange: handleSortingChange } : {}),
         ...(enablePagination ? { onPaginationChange: handlePaginationChange } : {}),
-        ...(enableRowSelection ? { onRowSelectionChange: handleSelectionStateChange } : {}),
         ...(enableGlobalFilter ? { onGlobalFilterChange: handleGlobalFilterChange } : {}),
         ...(enableExpanding ? { onExpandedChange: setExpanded } : {}),
         ...(enableColumnDragging ? { onColumnOrderChange: handleColumnOrderChange } : {}),
@@ -726,12 +720,28 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         manualPagination: isServerPagination,
         autoResetPageIndex: false, // Prevent automatic page reset on state changes
         // pageCount: enablePagination ? Math.ceil(tableTotalRow / pagination.pageSize) : -1,
-        rowCount: tableTotalRow,
+        rowCount: enablePagination ? (tableTotalRow ?? tableData.length) : tableData.length,
         // Row ID
         getRowId: (row: any, index: number) => generateRowId(row, index, idKey),
         // Debug
         debugAll: false, // Disabled for production
     });
+
+    // Compute width after table is created so column resizing is safe and reflects changes
+    const tableWidth = useMemo(() => {
+        if (fitToScreen) {
+            return '100%';
+        }
+        if (enableColumnResizing) {
+            return table.getCenterTotalSize();
+        }
+        return '100%';
+    }, [fitToScreen, enableColumnResizing, table, columnSizing]);
+
+    const tableStyle = useMemo(() => ({
+        width: tableWidth,
+        minWidth: '100%',
+    }), [tableWidth]);
 
 
     // -------------------------------
@@ -813,79 +823,6 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         }
     }, [enableColumnDragging, enhancedColumns, columnOrder.length]);
 
-    // Validate column sizing against minSize/maxSize constraints
-    // useEffect(() => {
-    //     if (!enableColumnResizing || !table) return;
-        
-    //     const currentSizing = columnSizing;
-    //     const validatedSizing: Record<string, number> = {};
-    //     let hasChanges = false;
-
-    //     Object.entries(currentSizing).forEach(([columnId, size]) => {
-    //         const column = table.getColumn(columnId);
-    //         if (column) {
-    //             const minSize = column.columnDef.minSize;
-    //             const maxSize = column.columnDef.maxSize;
-    //             let validatedSize = size as number;
-                
-    //             // Enforce minimum size
-    //             if (minSize !== undefined && validatedSize < minSize) {
-    //                 validatedSize = minSize;
-    //                 hasChanges = true;
-    //             }
-                
-    //             // Enforce maximum size
-    //             if (maxSize !== undefined && validatedSize > maxSize) {
-    //                 validatedSize = maxSize;
-    //                 hasChanges = true;
-    //             }
-                
-    //             validatedSizing[columnId] = validatedSize;
-    //         } else {
-    //             validatedSizing[columnId] = size as number;
-    //         }
-    //     });
-
-    //     // Only update if validation found issues
-    //     if (hasChanges) {
-    //         setColumnSizing(validatedSizing);
-    //         if (onColumnSizingChange) {
-    //             onColumnSizingChange(validatedSizing);
-    //         }
-    //     }
-    // }, [columnSizing, table, enableColumnResizing, onColumnSizingChange]);
-
-
-    // -------------------------------
-    // Expose imperative API via ref using custom hook
-    // -------------------------------
-    // useDataTableApi({
-    //     table,
-    //     idKey,
-    //     enhancedColumns,
-    //     enablePagination,
-    //     enableColumnPinning,
-    //     initialStateConfig: {
-    //         ...DEFAULT_INITIAL_STATE,
-    //         ...initialState,
-    //     },
-    //     selectMode,
-    //     onSelectionChange: handleSelectionStateChange,
-    //     handleColumnFilterStateChange,
-    //     onDataStateChange,
-    //     onFetchData: fetchData,
-    //     exportFilename,
-    //     onExportProgress,
-    //     onExportComplete,
-    //     onExportError,
-    //     onServerExport,
-    //     exportController,
-    //     setExportController,
-    //     isExporting,
-    //     onDataChange: setServerData,
-    //     dataMode,
-    //     logging,
-    // }, internalApiRef);
 
     const dataTableApi = useMemo(() => ({
         table: {
@@ -1270,12 +1207,15 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                 }
             },
             deleteSelectedRows: () => {
-                const selectedRowIds = Object.keys(table.getState().rowSelection)
-                    .filter(key => table.getState().rowSelection[key]);
-                const newData = (table.getRowModel().rows || [])?.filter(row => !selectedRowIds.includes(String(row.original[idKey])));
+                const selectedRows = table.getSelectedRows?.() || [];
+                if (selectedRows.length === 0) return;
+
+                const selectedIds = new Set(selectedRows.map(row => String(row.original[idKey])));
+                const newData = (table.getRowModel().rows || [])?.filter(row => !selectedIds.has(String(row.original[idKey])));
+
                 setServerData(newData?.map(row => row.original) || []);
-                // Clear selection after deletion
-                table.resetRowSelection();
+                table.deselectAll?.();
+
                 if (logger.isLevelEnabled('debug')) {
                     logger.debug('Deleting selected rows');
                 }
@@ -1364,7 +1304,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                 table.resetGlobalFilter();
                 table.resetColumnOrder();
                 table.resetExpanded();
-                table.resetRowSelection();
+                handleSelectionStateChange(initialSelectionState);
                 table.resetColumnPinning();
 
                 handleColumnFilterStateChange(initialStateConfig.columnFilter || { filters: [], logic: 'AND', pendingFilters: [], pendingLogic: 'AND' });
@@ -1431,9 +1371,9 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
             getCurrentPagination: () => {
                 return table.getState().pagination;
             },
+            // Backward compatibility: expose the raw selection array expected by older consumers
             getCurrentSelection: () => {
-                return Object.keys(table.getState().rowSelection)
-                    .filter(key => table.getState().rowSelection[key]);
+              return table.getSelectionState?.();
             },
         },
 
@@ -1636,7 +1576,6 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     internalApiRef.current = dataTableApi;
 
     useImperativeHandle(ref, () => dataTableApi, [dataTableApi]);
-
 
 
     // -------------------------------

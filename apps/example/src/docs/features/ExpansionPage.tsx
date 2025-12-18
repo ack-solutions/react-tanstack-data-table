@@ -1,7 +1,7 @@
 import { Box, Typography, Paper, Alert, Divider, Table, TableBody, TableCell, TableHead, TableRow, Stack, Button, Chip, Grid } from '@mui/material';
-import { DataTable, DataTableColumn, DEFAULT_EXPANDING_COLUMN_NAME } from '@ackplus/react-tanstack-data-table';
-import { useState, useCallback, useRef, useMemo } from 'react';
+import { useCallback, useRef } from 'react';
 import { FeatureLayout, CodeBlock } from './common';
+import { DataTable, DataTableColumn } from '@ackplus/react-tanstack-data-table';
 
 interface Order {
   id: number;

@@ -16,7 +16,7 @@ export type SelectMode = 'page' | 'all';
 
 // Import consolidated types
 
-declare module '@tanstack/table-core' {
+declare module '@tanstack/react-table' {
     interface ColumnMeta<TData extends RowData, TValue> { // eslint-disable-line @typescript-eslint/no-unused-vars
     }
 }

@@ -1,10 +1,8 @@
-import { Box, Typography, Paper, Alert, Divider, Table, TableBody, TableCell, TableHead, TableRow, Stack, Button, FormControl, InputLabel, Select, MenuItem, Chip, TextField, Accordion, AccordionSummary, AccordionDetails } from '@mui/material';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import { DataTable, DataTableColumn } from '@ackplus/react-tanstack-data-table';
-import { useState, useCallback, useMemo } from 'react';
-import { Add as AddIcon } from '@mui/icons-material';
+import { Box, Typography, Paper, Alert, Divider, Table, TableBody, TableCell, TableHead, TableRow, Stack, Button, FormControl, InputLabel, Select, MenuItem, Chip } from '@mui/material';
+import { useState, useMemo } from 'react';
 import { FeatureLayout, CodeBlock, FeatureMetadataTable, FeatureMetadataAccordion } from './common';
-import { toolbarTableGroups, toolbarSlotPropGroups, getToolbarTableGroup } from './data/toolbar-metadata';
+import { toolbarSlotPropGroups, getToolbarTableGroup } from './data/toolbar-metadata';
+import { DataTable, DataTableColumn } from '@ackplus/react-tanstack-data-table';
 
 interface Task {
   id: number;

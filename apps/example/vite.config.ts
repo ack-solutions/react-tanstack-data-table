@@ -21,9 +21,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@ackplus/react-tanstack-data-table': path.resolve(
-        __dirname,
-        '../../packages/react-tanstack-data-table/src/index.ts'
+      '@ackplus/react-tanstack-data-table': path.resolve(__dirname, '../../packages/react-tanstack-data-table/src/index.ts'
       )
     }
   },

@@ -8,7 +8,14 @@
     "build": "pnpm -r build",
     "lint": "pnpm -r lint --if-present",
     "test": "pnpm -r test --if-present",
-    "format": "pnpm -r format --if-present"
+    "format": "pnpm -r format --if-present",
+    "publish": "node scripts/publish.js"
+  },
+  "pnpm": {
+    "overrides": {
+      "@types/react": "^19.2.7",
+      "@types/react-dom": "^19.2.3"
+    }
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^8.35.0",

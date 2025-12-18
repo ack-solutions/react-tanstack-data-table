@@ -21,7 +21,6 @@ import {
 import MenuIcon from '@mui/icons-material/Menu';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import { configureDataTableLogging } from '@ackplus/react-tanstack-data-table';
 import { navigationTree, NavNode } from '../content/navigation';
 import { contentRegistry } from '../content/registry';
 import { ThemeProvider } from '../theme/theme-provider';
@@ -89,12 +88,6 @@ export function App() {
   });
 
   useEffect(() => {
-    configureDataTableLogging({
-      enabled: loggingEnabled,
-      level: loggingEnabled ? 'debug' : 'warn',
-      includeTimestamp: loggingEnabled,
-    });
-
     if (typeof window !== 'undefined') {
       try {
         window.localStorage.setItem('datatable-logging', loggingEnabled ? 'true' : 'false');

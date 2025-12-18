@@ -182,7 +182,7 @@ export function DataTableRow<T>(props: DataTableRowProps<T>) {
                     {...mergedExpandedRowProps}
                 >
                     <CellSlot
-                        colSpan={row.getVisibleCells().length + 1}
+                        colSpan={row.getVisibleCells().length}
                         sx={{
                             py: 0,
                             ...expandedCellProps?.sx,

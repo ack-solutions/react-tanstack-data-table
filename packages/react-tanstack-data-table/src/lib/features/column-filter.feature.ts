@@ -41,7 +41,7 @@ export interface ColumnFilterTableState {
 }
 
 // Declaration merging to extend TanStack Table types
-declare module '@tanstack/table-core' {
+declare module '@tanstack/react-table' {
     interface TableState extends ColumnFilterTableState { }
     interface TableOptionsResolved<TData extends RowData>
         extends ColumnFilterOptions { }
@@ -298,6 +298,11 @@ export function matchesCustomColumnFilters<TData extends RowData>(
 
 export const getCombinedFilteredRowModel = <TData,>() => {
     return (table: Table<TData>) => (): RowModel<TData> => {
+        // Respect server/manual filtering: skip client filtering when manualFiltering is enabled
+        if (table.options.manualFiltering) {
+            return table.getCoreRowModel();
+        }
+
         // Run the built-in global + column filters first:
         const baseFilteredModel = getDefaultFilter<TData>()(table)();
 

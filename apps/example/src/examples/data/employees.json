@@ -1,0 +1,168 @@
+[
+  {
+    "id": "1",
+    "name": "John Doe",
+    "email": "john.doe@example.com",
+    "department": "Engineering",
+    "position": "Senior Software Engineer",
+    "salary": 95000,
+    "status": "active",
+    "joinDate": "2020-01-15",
+    "location": "New York"
+  },
+  {
+    "id": "2",
+    "name": "Jane Smith",
+    "email": "jane.smith@example.com",
+    "department": "Marketing",
+    "position": "Marketing Manager",
+    "salary": 85000,
+    "status": "active",
+    "joinDate": "2019-03-20",
+    "location": "San Francisco"
+  },
+  {
+    "id": "3",
+    "name": "Bob Johnson",
+    "email": "bob.johnson@example.com",
+    "department": "Sales",
+    "position": "Sales Representative",
+    "salary": 65000,
+    "status": "active",
+    "joinDate": "2021-06-10",
+    "location": "Chicago"
+  },
+  {
+    "id": "4",
+    "name": "Alice Williams",
+    "email": "alice.williams@example.com",
+    "department": "Engineering",
+    "position": "Frontend Developer",
+    "salary": 80000,
+    "status": "active",
+    "joinDate": "2020-09-05",
+    "location": "Seattle"
+  },
+  {
+    "id": "5",
+    "name": "Charlie Brown",
+    "email": "charlie.brown@example.com",
+    "department": "HR",
+    "position": "HR Manager",
+    "salary": 75000,
+    "status": "active",
+    "joinDate": "2018-11-12",
+    "location": "Boston"
+  },
+  {
+    "id": "6",
+    "name": "Diana Prince",
+    "email": "diana.prince@example.com",
+    "department": "Engineering",
+    "position": "Backend Developer",
+    "salary": 90000,
+    "status": "active",
+    "joinDate": "2021-02-28",
+    "location": "Austin"
+  },
+  {
+    "id": "7",
+    "name": "Edward Norton",
+    "email": "edward.norton@example.com",
+    "department": "Sales",
+    "position": "Sales Manager",
+    "salary": 95000,
+    "status": "active",
+    "joinDate": "2019-07-15",
+    "location": "Los Angeles"
+  },
+  {
+    "id": "8",
+    "name": "Fiona Apple",
+    "email": "fiona.apple@example.com",
+    "department": "Marketing",
+    "position": "Content Writer",
+    "salary": 60000,
+    "status": "inactive",
+    "joinDate": "2022-01-10",
+    "location": "Portland"
+  },
+  {
+    "id": "9",
+    "name": "George Lucas",
+    "email": "george.lucas@example.com",
+    "department": "Engineering",
+    "position": "DevOps Engineer",
+    "salary": 100000,
+    "status": "active",
+    "joinDate": "2020-04-22",
+    "location": "Denver"
+  },
+  {
+    "id": "10",
+    "name": "Helen Keller",
+    "email": "helen.keller@example.com",
+    "department": "Finance",
+    "position": "Financial Analyst",
+    "salary": 70000,
+    "status": "active",
+    "joinDate": "2021-08-30",
+    "location": "Miami"
+  },
+  {
+    "id": "11",
+    "name": "Ian Fleming",
+    "email": "ian.fleming@example.com",
+    "department": "Sales",
+    "position": "Sales Representative",
+    "salary": 68000,
+    "status": "active",
+    "joinDate": "2022-03-14",
+    "location": "Phoenix"
+  },
+  {
+    "id": "12",
+    "name": "Julia Roberts",
+    "email": "julia.roberts@example.com",
+    "department": "Marketing",
+    "position": "Social Media Manager",
+    "salary": 72000,
+    "status": "active",
+    "joinDate": "2021-05-18",
+    "location": "Nashville"
+  },
+  {
+    "id": "13",
+    "name": "Kevin Spacey",
+    "email": "kevin.spacey@example.com",
+    "department": "Engineering",
+    "position": "Full Stack Developer",
+    "salary": 92000,
+    "status": "active",
+    "joinDate": "2020-10-08",
+    "location": "Atlanta"
+  },
+  {
+    "id": "14",
+    "name": "Laura Palmer",
+    "email": "laura.palmer@example.com",
+    "department": "HR",
+    "position": "Recruiter",
+    "salary": 58000,
+    "status": "active",
+    "joinDate": "2022-02-25",
+    "location": "Minneapolis"
+  },
+  {
+    "id": "15",
+    "name": "Michael Jordan",
+    "email": "michael.jordan@example.com",
+    "department": "Sales",
+    "position": "Sales Director",
+    "salary": 110000,
+    "status": "active",
+    "joinDate": "2018-05-03",
+    "location": "Charlotte"
+  }
+]
+

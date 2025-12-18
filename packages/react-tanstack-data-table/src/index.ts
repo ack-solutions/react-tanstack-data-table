@@ -50,7 +50,6 @@ export * from './lib/utils/table-helpers';
 export * from './lib/utils/logger';
 
 // Custom hooks
-export * from './lib/hooks';
 export * from './lib/types';
 
 // Re-export commonly used types from TanStack Table
@@ -71,6 +70,3 @@ export type {
 
 // Custom features (this includes SelectMode from features)
 export * from './lib/features';
-
-// Examples
-export * from './lib/examples';
