@@ -34,7 +34,7 @@ export const DataTablePagination = memo((props: DataTablePaginationProps) => {
         ...otherProps
     } = props;
 
-    const { table } = useDataTableContext();
+    const { table, tableSize } = useDataTableContext();
 
     // Extract slot-specific props with enhanced merging
     // const paginationSlotProps = extractSlotProps(slotProps, 'pagination');
@@ -58,6 +58,7 @@ export const DataTablePagination = memo((props: DataTablePaginationProps) => {
     const mergedPaginationProps:any = mergeSlotProps(
         {
             component: 'div',
+            size: tableSize === 'small' ? 'small' : 'medium',
             count: totalRow,
             rowsPerPage: pagination?.pageSize,
             page: pagination?.pageIndex,
