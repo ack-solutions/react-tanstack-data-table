@@ -1,3 +1,4 @@
+import React, { ReactElement } from 'react';
 import { Autorenew } from '@mui/icons-material';
 import { IconButton, Tooltip, IconButtonProps } from '@mui/material';
 
@@ -12,7 +13,7 @@ export interface ColumnResetControlProps {
     [key: string]: any;
 }
 
-export function ColumnResetControl(props: ColumnResetControlProps = {}) {
+export function ColumnResetControl(props: ColumnResetControlProps = {}): ReactElement {
     const { apiRef, slots, slotProps } = useDataTableContext();
 
     // Extract slot-specific props with enhanced merging

@@ -1,7 +1,8 @@
+import React, { ReactElement } from 'react';
 import { SvgIcon, SvgIconProps } from '@mui/material';
 
 
-export function DeleteIcon(props: SvgIconProps) {
+export function DeleteIcon(props: SvgIconProps): ReactElement {
     return (
         <SvgIcon
             {...props}

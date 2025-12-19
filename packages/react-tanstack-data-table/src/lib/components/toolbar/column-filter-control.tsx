@@ -14,7 +14,7 @@ import {
     IconButtonProps,
     SxProps,
 } from '@mui/material';
-import { useMemo, useCallback, useEffect } from 'react';
+import React, { useMemo, useCallback, useEffect, ReactElement } from 'react';
 
 import { MenuDropdown } from '../droupdown/menu-dropdown';
 import { useDataTableContext } from '../../contexts/data-table-context';
@@ -42,7 +42,7 @@ export interface ColumnFilterControlProps {
     [key: string]: any;
 }
 
-export function ColumnFilterControl(props: ColumnFilterControlProps = {}) {
+export function ColumnFilterControl(props: ColumnFilterControlProps = {}): ReactElement {
     const { table, slots, slotProps } = useDataTableContext();
     
     // Extract slot-specific props with enhanced merging

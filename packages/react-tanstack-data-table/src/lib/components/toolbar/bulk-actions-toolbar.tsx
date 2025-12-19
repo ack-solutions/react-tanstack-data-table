@@ -9,7 +9,7 @@ import {
     ToolbarProps,
     SxProps,
 } from '@mui/material';
-import { ReactNode, useMemo } from 'react';
+import { ReactNode, useMemo, ReactElement } from 'react';
 
 import { useDataTableContext } from '../../contexts/data-table-context';
 import { getSlotComponent, mergeSlotProps, extractSlotProps } from '../../utils/slot-helpers';
@@ -28,7 +28,7 @@ export interface BulkActionsToolbarProps extends ToolbarProps {
     [key: string]: any;
 }
 
-export function BulkActionsToolbar(props: BulkActionsToolbarProps) {
+export function BulkActionsToolbar(props: BulkActionsToolbarProps): ReactElement {
     const {
         selectionState,
         selectedRowCount,

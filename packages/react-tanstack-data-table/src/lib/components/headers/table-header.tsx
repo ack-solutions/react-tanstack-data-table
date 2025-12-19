@@ -7,6 +7,7 @@
  * - Column resizing
  * - Pinning support
  */
+import React, { ReactElement } from 'react';
 import { TableHead, TableRow, TableCell, Box, useTheme, TableHeadProps, TableRowProps, TableCellProps, SxProps } from '@mui/material';
 import { Header } from '@tanstack/react-table';
 
@@ -34,7 +35,7 @@ export interface TableHeaderProps extends TableHeadProps {
 /**
  * Renders table headers with sorting, dragging, and resizing capabilities
  */
-export function TableHeader<T>(props: TableHeaderProps) {
+export function TableHeader<T>(props: TableHeaderProps): ReactElement {
     const {
         draggable = false,
         enableColumnResizing = false,

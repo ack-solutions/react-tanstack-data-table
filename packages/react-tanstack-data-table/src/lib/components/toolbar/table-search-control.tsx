@@ -1,6 +1,6 @@
 import { Clear, Search } from '@mui/icons-material';
 import { Box, Tooltip, IconButton, Collapse, OutlinedInput, InputAdornment, IconButtonProps, OutlinedInputProps, SxProps } from '@mui/material';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState, ReactElement } from 'react';
 
 import { useDataTableContext } from '../../contexts/data-table-context';
 import { getSlotComponent, mergeSlotProps, extractSlotProps } from '../../utils/slot-helpers';
@@ -17,7 +17,7 @@ export interface TableSearchControlProps {
     [key: string]: any;
 }
 
-export function TableSearchControl(props: TableSearchControlProps = {}) {
+export function TableSearchControl(props: TableSearchControlProps = {}): ReactElement {
     const { table, slots, slotProps } = useDataTableContext();
     const [searchVisible, setSearchVisible] = useState(false);
     const searchInputRef = useRef<HTMLInputElement>(null);

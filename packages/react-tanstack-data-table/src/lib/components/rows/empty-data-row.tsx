@@ -1,5 +1,5 @@
 import { TableCell, TableRow, TableRowProps, TableCellProps, SxProps } from '@mui/material';
-import { ReactNode } from 'react';
+import React, { ReactElement, ReactNode } from 'react';
 import { getSlotComponent, mergeSlotProps, extractSlotProps } from '../../utils/slot-helpers';
 
 export interface EmptyDataRowProps {
@@ -14,7 +14,7 @@ export interface EmptyDataRowProps {
     slotProps?: Record<string, any>;
 }
 
-export function EmptyDataRow(props: EmptyDataRowProps) {
+export function EmptyDataRow(props: EmptyDataRowProps): ReactElement {
     const {
         colSpan,
         message,

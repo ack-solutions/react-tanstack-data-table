@@ -9,7 +9,7 @@
  */
 import { TableRow, TableCell, Collapse, TableRowProps, TableCellProps, SxProps, tableRowClasses } from '@mui/material';
 import { flexRender, Row } from '@tanstack/react-table';
-import { ReactNode } from 'react';
+import { ReactNode, ReactElement } from 'react';
 
 import { getPinnedColumnStyle, getColumnAlignment } from '../../utils';
 import { getSlotComponent, mergeSlotProps, extractSlotProps } from '../../utils/slot-helpers';
@@ -40,7 +40,7 @@ export interface DataTableRowProps<T> extends TableRowProps {
 /**
  * Individual table row component with cell rendering and expansion support
  */
-export function DataTableRow<T>(props: DataTableRowProps<T>) {
+export function DataTableRow<T>(props: DataTableRowProps<T>): ReactElement {
     const {
         row,
         enableHover = true,

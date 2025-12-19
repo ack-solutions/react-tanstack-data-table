@@ -1,3 +1,4 @@
+import React, { ReactElement } from 'react';
 import { LineWeightOutlined } from '@mui/icons-material';
 import { MenuItem, ListItemIcon, ListItemText, Tooltip, IconButton, IconButtonProps, SxProps } from '@mui/material';
 
@@ -15,7 +16,7 @@ export interface TableSizeControlProps {
     [key: string]: any;
 }
 
-export function TableSizeControl(props: TableSizeControlProps = {}) {
+export function TableSizeControl(props: TableSizeControlProps = {}): ReactElement {
     const { tableSize, onTableSizeChange, slotProps, slots } = useDataTableContext();
     
     // Extract slot-specific props with enhanced merging

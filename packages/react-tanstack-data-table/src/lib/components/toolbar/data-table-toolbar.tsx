@@ -6,7 +6,7 @@ import {
     ToolbarProps,
     SxProps,
 } from '@mui/material';
-import { ReactNode } from 'react';
+import React, { ReactNode, ReactElement } from 'react';
 
 import { ColumnFilterControl } from './column-filter-control';
 import { ColumnPinningControl } from './column-pinning-control';
@@ -39,7 +39,7 @@ export interface DataTableToolbarProps extends ToolbarProps {
     [key: string]: any;
 }
 
-export function DataTableToolbar(props: DataTableToolbarProps = {}) {
+export function DataTableToolbar(props: DataTableToolbarProps = {}): ReactElement {
     const {
         extraFilter = null,
         enableGlobalFilter = true,
