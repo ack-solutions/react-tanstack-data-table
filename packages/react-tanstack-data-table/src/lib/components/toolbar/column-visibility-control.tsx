@@ -12,14 +12,14 @@ export interface ColumnVisibilityControlProps {
     titleSx?: SxProps;
     menuSx?: SxProps;
     checkboxProps?: CheckboxProps;
-    labelProps?: FormControlLabelProps;     
+    labelProps?: FormControlLabelProps;
     [key: string]: any;
 }
 
 export function ColumnVisibilityControl(props: ColumnVisibilityControlProps = {}) {
     // Use context if no props provided (MUI DataGrid style)
     const { table, slots, slotProps } = useDataTableContext();
-    
+
     // Extract slot-specific props with enhanced merging
     const iconSlotProps = extractSlotProps(slotProps, 'columnIcon');
     const ColumnIconSlot = getSlotComponent(slots, 'columnIcon', ViewColumnOutlined);
@@ -60,48 +60,46 @@ export function ColumnVisibilityControl(props: ColumnVisibilityControlProps = {}
                 </Tooltip>
             )}
         >
-            {({ handleClose }: { handleClose: () => void }) => (
-                <Box
+            <Box
+                sx={{
+                    p: 2,
+                    minWidth: 200,
+                    // Allow user to override these styles
+                    ...mergedProps.menuSx,
+                }}
+            >
+                <Typography
+                    variant="subtitle2"
                     sx={{
-                        p: 2,
-                        minWidth: 200,
-                        // Allow user to override these styles
-                        ...mergedProps.menuSx,
+                        mb: 1,
+                        // Allow user to override title styles
+                        ...mergedProps.titleSx,
                     }}
                 >
-                    <Typography
-                        variant="subtitle2"
-                        sx={{ 
-                            mb: 1,
-                            // Allow user to override title styles
-                            ...mergedProps.titleSx,
-                        }}
-                    >
-                        {mergedProps.title || 'Show/Hide Columns'}
-                    </Typography>
-                    <Divider sx={{ mb: 1 }} />
-                    <FormGroup>
-                        {columns.map((column: any) => (
-                            <FormControlLabel
-                                key={column.id}
-                                control={(
-                                    <Checkbox
-                                        disabled={!column.getCanHide()}
-                                        checked={column.getIsVisible()}
-                                        onChange={(e: any) => handleColumnVisibilityChange(column.id, e.target.checked)}
-                                        size="small"
-                                        // Allow user to override checkbox props
-                                        {...mergedProps.checkboxProps}
-                                    />
-                                )}
-                                label={typeof column.columnDef.header === 'string' ? column.columnDef.header : column.id}
-                                // Allow user to override label props
-                                {...mergedProps.labelProps}
-                            />
-                        ))}
-                    </FormGroup>
-                </Box>
-            )}
+                    {mergedProps.title || 'Show/Hide Columns'}
+                </Typography>
+                <Divider sx={{ mb: 1 }} />
+                <FormGroup>
+                    {columns.map((column: any) => (
+                        <FormControlLabel
+                            key={column.id}
+                            control={(
+                                <Checkbox
+                                    disabled={!column.getCanHide()}
+                                    checked={column.getIsVisible()}
+                                    onChange={(e: any) => handleColumnVisibilityChange(column.id, e.target.checked)}
+                                    size="small"
+                                    // Allow user to override checkbox props
+                                    {...mergedProps.checkboxProps}
+                                />
+                            )}
+                            label={typeof column.columnDef.header === 'string' ? column.columnDef.header : column.id}
+                            // Allow user to override label props
+                            {...mergedProps.labelProps}
+                        />
+                    ))}
+                </FormGroup>
+            </Box>
         </MenuDropdown>
     );
 }

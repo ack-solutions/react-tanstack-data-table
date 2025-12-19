@@ -19,8 +19,7 @@
  */
 
 // Main components - be specific to avoid conflicts
-export { DataTable } from './lib/components/table';
-export type { DataTableProps } from './lib/components/table';
+export { DataTable } from './lib/data-table';
 
 // Other component exports
 export * from './lib/components/headers';

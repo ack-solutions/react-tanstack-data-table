@@ -32,7 +32,9 @@ export function FeatureSection({
           </Typography>
         ) : null}
       </Box>
-      {children}
+      <Box width="100%">
+        {children}
+      </Box>
     </Stack>
   );
 }

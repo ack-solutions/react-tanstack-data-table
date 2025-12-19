@@ -1,9 +1,14 @@
+/* eslint-disable react/no-unescaped-entities */
 import { Box, Typography, Paper, Alert, Divider, Stack, Chip, TextField, Accordion, AccordionSummary, AccordionDetails } from '@mui/material';
 import { DataTable, DataTableColumn } from '@ackplus/react-tanstack-data-table';
 import { useState, useCallback } from 'react';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import { FeatureLayout, FeatureSection, CodeBlock, FeatureMetadataTable } from './common';
+import { FeatureLayout, FeatureSection, CodeBlock, FeatureMetadataTable, ExampleViewer } from './common';
 import { getOperatorGroup } from './data/filtering-metadata';
+import { BasicFilteringExample } from '../../examples/filtering';
+
+// Import code as raw strings
+import basicFilteringCode from '../../examples/filtering/BasicFilteringExample.tsx?raw';
 
 interface Product {
   id: number;
@@ -434,16 +439,10 @@ export function FilteringPage() {
         <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 600 }}>
           Example: Client-Side Filtering
         </Typography>
-        <DataTable
-          columns={filterableColumns}
-          data={sampleProducts}
-          enableColumnFilter={true}
-          enableGlobalFilter={true}
-          enableSorting={true}
-          filterMode="client"
-          onColumnFiltersChange={(filters) => {
-            console.log('Column filters changed:', filters);
-          }}
+        <ExampleViewer
+          exampleId="basic-filtering"
+          code={basicFilteringCode}
+          component={<BasicFilteringExample />}
         />
       </Paper>
 

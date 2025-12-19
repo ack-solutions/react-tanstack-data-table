@@ -15,17 +15,15 @@ import {
 import { MenuDropdown } from '../droupdown/menu-dropdown';
 import { useDataTableContext } from '../../contexts/data-table-context';
 import { ExcelIcon, CsvIcon } from '../../icons';
-import { TableFilters } from '../../types';
 import { getSlotComponent, mergeSlotProps, extractSlotProps } from '../../utils/slot-helpers';
-import { SelectionState } from '../../features';
 
 interface TableExportControlProps {
     // Optional props to override context defaults
     exportFilename?: string;
-    onServerExport?: (filters?: Partial<TableFilters>, selection?: SelectionState) => Promise<{ data: any[]; total: number }>;
-    onExportProgress?: (progress: { processedRows?: number; totalRows?: number; percentage?: number }) => void;
-    onExportComplete?: (result: { success: boolean; filename: string; totalRows: number }) => void;
-    onExportError?: (error: { message: string; code: string }) => void;
+    // onServerExport?: (filters?: Partial<TableFilters>, selection?: SelectionState) => Promise<{ data: any[]; total: number }>;
+    // onExportProgress?: (progress: { processedRows?: number; totalRows?: number; percentage?: number }) => void;
+    // onExportComplete?: (result: { success: boolean; filename: string; totalRows: number }) => void;
+    // onExportError?: (error: { message: string; code: string }) => void;
     // Enhanced customization props
     iconButtonProps?: IconButtonProps;
     tooltipProps?: any;
@@ -37,15 +35,10 @@ interface TableExportControlProps {
 export function TableExportControl(props: TableExportControlProps = {}) {
     const {
         exportFilename: propsExportFilename,
-        onServerExport: propsOnServerExport,
-        onExportProgress: propsOnExportProgress,
-        onExportComplete: propsOnExportComplete,
-        onExportError: propsOnExportError,
         iconButtonProps,
         tooltipProps,
         menuSx,
         menuItemProps,
-        ...otherProps
     } = props;
 
     const {

@@ -17,18 +17,17 @@ export function QuickStartSection() {
           Basic Usage
         </Typography>
         <Typography variant="body2">
-          Here's a simple example to get you started with the DataTable component.
+          Here is a simple example to get you started with the DataTable component.
         </Typography>
       </Alert>
 
       <Paper elevation={1} sx={{ p: 3, mb: 4 }}>
         <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
-          1. Import the Component
+          1. Import the Component and Types
         </Typography>
         <CodeBlock
           language="ts"
-          code={`import { DataTable } from '@ackplus/react-tanstack-data-table';
-import { createColumnHelper } from '@tanstack/react-table';`}
+          code={`import { DataTable, DataTableColumn } from '@ackplus/react-tanstack-data-table';`}
         />
       </Paper>
 
@@ -54,47 +53,76 @@ import { createColumnHelper } from '@tanstack/react-table';`}
         </Typography>
         <CodeBlock
           language="tsx"
-          code={`const columnHelper = createColumnHelper<User>();
-
-const columns = [
-  columnHelper.accessor('name', {
+          code={`const columns: DataTableColumn<User>[] = [
+  {
+    accessorKey: 'name',
     header: 'Name',
-    size: 150,
-  }),
-  columnHelper.accessor('email', {
+    enableSorting: true,
+    enableGlobalFilter: true,
+  },
+  {
+    accessorKey: 'email',
     header: 'Email',
-    size: 200,
-  }),
-  columnHelper.accessor('status', {
+    enableSorting: true,
+    enableGlobalFilter: true,
+  },
+  {
+    accessorKey: 'status',
     header: 'Status',
-    cell: ({ getValue }) => (
-      <Chip 
-        label={getValue()} 
-        color={getValue() === 'active' ? 'success' : 'default'} 
-      />
-    ),
-  }),
-  columnHelper.accessor('role', {
+    enableSorting: true,
+    cell: ({ getValue }) => {
+      const status = getValue<string>();
+      return (
+        <Chip 
+          label={status} 
+          color={status === 'active' ? 'success' : 'default'}
+          size="small"
+        />
+      );
+    },
+  },
+  {
+    accessorKey: 'role',
     header: 'Role',
-    size: 120,
-  }),
+    enableSorting: true,
+  },
 ];`}
         />
       </Paper>
 
       <Paper elevation={1} sx={{ p: 3, mb: 4 }}>
         <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
-          4. Use the Component
+          4. Prepare Your Data
         </Typography>
         <CodeBlock
           language="tsx"
           code={`const data: User[] = [
-  { id: 1, name: 'John Doe', email: 'john@example.com', status: 'active', role: 'Admin' },
-  { id: 2, name: 'Jane Smith', email: 'jane@example.com', status: 'inactive', role: 'User' },
+  { 
+    id: 1, 
+    name: 'John Doe', 
+    email: 'john@example.com', 
+    status: 'active', 
+    role: 'Admin' 
+  },
+  { 
+    id: 2, 
+    name: 'Jane Smith', 
+    email: 'jane@example.com', 
+    status: 'inactive', 
+    role: 'User' 
+  },
   // ... more data
-];
+];`}
+        />
+      </Paper>
 
-function MyDataTable() {
+      <Paper elevation={1} sx={{ p: 3, mb: 4 }}>
+        <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
+          5. Use the DataTable Component
+        </Typography>
+        <CodeBlock
+          language="tsx"
+          code={`function MyDataTable() {
   return (
     <DataTable
       columns={columns}
@@ -105,6 +133,7 @@ function MyDataTable() {
       enableRowSelection
       enableColumnVisibility
       enableExport
+      idKey="id"
     />
   );
 }`}
@@ -116,8 +145,8 @@ function MyDataTable() {
           Next Steps
         </Typography>
         <Typography variant="body2">
-          Check out the Examples section to see more advanced usage patterns and the Props section 
-          to explore all available configuration options.
+          Check out the Examples section to see more advanced usage patterns including server-side data fetching, 
+          column filtering, bulk actions, and the Props section to explore all available configuration options.
         </Typography>
       </Alert>
     </Box>

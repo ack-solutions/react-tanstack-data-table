@@ -1,7 +1,12 @@
+/* eslint-disable react/no-unescaped-entities */
 import { Box, Typography, Paper, Alert, Divider, Table, TableBody, TableCell, TableHead, TableRow, Stack, Button, Chip, LinearProgress } from '@mui/material';
 import { DataTable, DataTableColumn } from '@ackplus/react-tanstack-data-table';
 import { useState, useCallback, useRef, useMemo } from 'react';
-import { FeatureLayout, CodeBlock } from './common';
+import { FeatureLayout, CodeBlock, ExampleViewer } from './common';
+import { BasicExportExample } from '../../examples/export';
+
+// Import code as raw strings
+import basicExportCode from '../../examples/export/BasicExportExample.tsx?raw';
 
 interface Product {
   id: number;
@@ -103,28 +108,6 @@ export function ExportPage() {
     setIsExporting(false);
     setExportProgress(0);
   }, []);
-
-  // Server-side export handler
-  const handleServerExport = useCallback(async (filters: any, selection: any) => {
-    console.log('Server export with filters:', filters);
-    console.log('Server export with selection:', selection);
-
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
-    // In real app, send to backend:
-    // const response = await fetch('/api/products/export', {
-    //   method: 'POST',
-    //   body: JSON.stringify({ filters, selection }),
-    // });
-    // return await response.json();
-
-    // For demo, return filtered data
-    return {
-      data: sampleData,
-      total: sampleData.length
-    };
-  }, [sampleData]);
 
   return (
     <FeatureLayout
@@ -347,18 +330,10 @@ function MyComponent() {
           </Alert>
         )}
 
-        <DataTable
-          columns={columns}
-          data={sampleData}
-          enableExport={true}
-          exportFilename="products-demo"
-          onExportProgress={handleExportProgress}
-          onExportComplete={handleExportComplete}
-          onExportError={handleExportError}
-          enablePagination={true}
-          initialState={{
-            pagination: { pageIndex: 0, pageSize: 10 },
-          }}
+        <ExampleViewer
+          exampleId="basic-export"
+          code={basicExportCode}
+          component={<BasicExportExample />}
         />
       </Paper>
 

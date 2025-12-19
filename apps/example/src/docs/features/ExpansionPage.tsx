@@ -1,7 +1,12 @@
+/* eslint-disable react/no-unescaped-entities */
 import { Box, Typography, Paper, Alert, Divider, Table, TableBody, TableCell, TableHead, TableRow, Stack, Button, Chip, Grid } from '@mui/material';
 import { useCallback, useRef } from 'react';
-import { FeatureLayout, CodeBlock } from './common';
+import { FeatureLayout, CodeBlock, ExampleViewer } from './common';
 import { DataTable, DataTableColumn } from '@ackplus/react-tanstack-data-table';
+import { BasicExpansionExample } from '../../examples/expansion';
+
+// Import code as raw strings
+import basicExpansionCode from '../../examples/expansion/BasicExpansionExample.tsx?raw';
 
 interface Order {
   id: number;
@@ -234,13 +239,10 @@ const renderSubComponent = useCallback(({ row }) => (
 />`}
         />
 
-        <DataTable
-          columns={columns}
-          data={sampleOrders}
-          enableExpanding={true}
-          renderSubComponent={renderSubComponent}
-          getRowCanExpand={() => true}
-          enablePagination={false}
+        <ExampleViewer
+          exampleId="basic-expansion"
+          code={basicExpansionCode}
+          component={<BasicExpansionExample />}
         />
       </Paper>
 

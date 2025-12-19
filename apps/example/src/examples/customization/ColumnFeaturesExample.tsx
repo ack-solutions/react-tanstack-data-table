@@ -16,27 +16,23 @@ export function ColumnFeaturesExample() {
     {
       accessorKey: 'name',
       header: 'Name',
-      size: 150,
+      size: 300,
     },
     {
       accessorKey: 'email',
       header: 'Email',
-      size: 200,
     },
     {
       accessorKey: 'department',
       header: 'Department',
-      size: 150,
     },
     {
       accessorKey: 'position',
       header: 'Position',
-      size: 180,
     },
     {
       accessorKey: 'salary',
       header: 'Salary',
-      size: 120,
       cell: ({ getValue }) => {
         const value = getValue<number>();
         return `$${value.toLocaleString()}`;
@@ -45,12 +41,11 @@ export function ColumnFeaturesExample() {
     {
       accessorKey: 'status',
       header: 'Status',
-      size: 100,
+      maxSize: 100,
     },
     {
       accessorKey: 'location',
       header: 'Location',
-      size: 150,
     },
   ];
 

@@ -1,115 +1,22 @@
-import { Box, Typography, Paper, Alert, Divider, Table, TableBody, TableCell, TableHead, TableRow, Stack, Chip, Button, Accordion, AccordionSummary, AccordionDetails } from '@mui/material';
+import { Box, Typography, Paper, Alert, Divider, Stack, Accordion, AccordionSummary, AccordionDetails } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import { DataTable, DataTableColumn } from '@ackplus/react-tanstack-data-table';
-import { useState, useCallback, useRef, useMemo } from 'react';
-import type { SelectionState } from '@ackplus/react-tanstack-data-table';
-import { FeatureLayout, CodeBlock, FeatureMetadataTable, FeatureMetadataAccordion } from './common';
-import { selectionTableGroups, selectionSlotPropGroups, getSelectionTableGroup, getSelectionSlotPropGroup } from './data/selection-metadata';
+import { FeatureLayout, CodeBlock, FeatureMetadataTable, FeatureMetadataAccordion, ExampleViewer } from './common';
+import { getSelectionTableGroup, selectionSlotPropGroups } from './data/selection-metadata';
+import {
+  ConditionalSelectionExample,
+  BulkActionsExample,
+  ServerSelectionExample,
+} from '../../examples/selection';
 
-interface Employee {
-  id: number;
-  name: string;
-  email: string;
-  department: string;
-  salary: number;
-  status: 'active' | 'inactive';
-}
-
-// Generate sample data
-const generateEmployees = (count: number): Employee[] => {
-  const departments = ['Engineering', 'Marketing', 'Sales', 'HR', 'Finance'];
-  const names = ['John Doe', 'Jane Smith', 'Bob Johnson', 'Alice Williams', 'Charlie Brown'];
-  
-  return Array.from({ length: count }, (_, i) => ({
-    id: i + 1,
-    name: names[i % names.length] || `Employee ${i + 1}`,
-    email: `employee${i + 1}@company.com`,
-    department: departments[i % departments.length],
-    salary: 50000 + (i * 5000),
-    status: Math.random() > 0.3 ? 'active' : 'inactive',
-  }));
-};
+// Import code as raw strings
+import conditionalSelectionCode from '../../examples/selection/ConditionalSelectionExample.tsx?raw';
+import bulkActionsCode from '../../examples/selection/BulkActionsExample.tsx?raw';
+import serverSelectionCode from '../../examples/selection/ServerSelectionExample.tsx?raw';
 
 export function SelectionPage() {
-  const tableRef = useRef<any>(null);
-  const [selectionMode, setSelectionMode] = useState<'page' | 'all'>('page');
-  const [selectionState, setSelectionState] = useState<SelectionState>({
-    ids: [],
-    type: 'include',
-  });
-  const [serverSelectionState, setServerSelectionState] = useState<any>(null);
   const selectionTableGroup = getSelectionTableGroup('selection-table-props');
   const selectionStateGroup = getSelectionTableGroup('selection-state');
-  const selectionSlotPropGroup = getSelectionSlotPropGroup('selection-slot-props');
-  
-  const sampleData = useMemo(() => generateEmployees(50), []);
-
-  // Columns
-  const columns: DataTableColumn<Employee>[] = [
-    {
-      accessorKey: 'name',
-      header: 'Name',
-      size: 180,
-    },
-    {
-      accessorKey: 'email',
-      header: 'Email',
-      size: 220,
-    },
-    {
-      accessorKey: 'department',
-      header: 'Department',
-      size: 150,
-    },
-    {
-      accessorKey: 'salary',
-      header: 'Salary',
-      size: 120,
-      cell: ({ getValue }) => `$${getValue<number>().toLocaleString()}`,
-    },
-    {
-      accessorKey: 'status',
-      header: 'Status',
-      size: 100,
-      cell: ({ getValue }) => (
-        <Chip
-          label={getValue<string>()}
-          color={getValue<string>() === 'active' ? 'success' : 'default'}
-          size="small"
-        />
-      ),
-    },
-  ];
-
-  // Row selectability - disable inactive employees
-  const isRowSelectable = useCallback(({ row }: { row: Employee; id: string }) => {
-    return row.status === 'active' && row.salary < 100000;
-  }, []);
-
-  // Handle selection change
-  const handleSelectionChange = useCallback((newSelectionState: SelectionState) => {
-    setSelectionState(newSelectionState);
-  }, []);
-
-  // Server-side fetch with selection
-  const handleFetchData = useCallback(async (filters: any) => {
-    console.log('Fetching data, current selection:', filters);
-    setServerSelectionState(filters);
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    const pageIndex = filters.pagination?.pageIndex || 0;
-    const pageSize = filters.pagination?.pageSize || 10;
-    const startIndex = pageIndex * pageSize;
-    const endIndex = startIndex + pageSize;
-    
-    return { 
-      data: sampleData.slice(startIndex, endIndex), 
-      total: sampleData.length 
-    };
-  }, [sampleData]);
-
   return (
     <FeatureLayout
       title="Row Selection"
@@ -190,7 +97,7 @@ export function SelectionPage() {
             Tip: Selection clears when changing pages
           </Typography>
           <Typography variant="body2">
-            Warning: Can't select across multiple pages
+            Warning: Can&apos;t select across multiple pages
           </Typography>
         </Stack>
         <CodeBlock
@@ -293,12 +200,10 @@ const isRowSelectable = useCallback(({ row, id }) => {
 />`}
         />
 
-        <DataTable
-          columns={columns}
-          data={sampleData.slice(0, 15)}
-          enableRowSelection={true}
-          enablePagination={false}
-          isRowSelectable={isRowSelectable}
+        <ExampleViewer
+          exampleId="conditional-selection"
+          code={conditionalSelectionCode}
+          component={<ConditionalSelectionExample />}
         />
       </Paper>
 
@@ -469,47 +374,10 @@ const isRowSelectable = useCallback(({ row, id }) => {
 />`}
         />
 
-        <DataTable
-          columns={columns}
-          data={sampleData.slice(0, 20)}
-          enableRowSelection={true}
-          enablePagination={true}
-          selectMode="page"
-          initialState={{
-            pagination: { pageIndex: 0, pageSize: 10 },
-          }}
-          enableBulkActions={true}
-          onSelectionChange={handleSelectionChange}
-          selectOnRowClick   
-          bulkActions={(selection) => (
-            <Box sx={{ display: 'flex', gap: 1 }}>
-              <Button
-                variant="outlined"
-                size="small"
-                onClick={() => {
-                  const count = selection.type === 'include' 
-                    ? selection.ids.length 
-                    : 20 - selection.ids.length;
-                  alert(`Would export ${count} employees`);
-                }}
-              >
-                Export Selected
-              </Button>
-              <Button
-                variant="outlined"
-                size="small"
-                color="error"
-                onClick={() => {
-                  const count = selection.type === 'include' 
-                    ? selection.ids.length 
-                    : 20 - selection.ids.length;
-                  alert(`Would delete ${count} employees`);
-                }}
-              >
-                Delete Selected
-              </Button>
-            </Box>
-          )}
+        <ExampleViewer
+          exampleId="bulk-actions"
+          code={bulkActionsCode}
+          component={<BulkActionsExample />}
         />
       </Paper>
 
@@ -580,7 +448,7 @@ const isSelected = tableRef.current?.selection.isRowSelected('3');
           Selection with Server-Side Data
         </Typography>
         <Typography variant="body2">
-          Use <code>selectMode="all"</code> with server-side data to efficiently handle 
+          Use <code>selectMode=`&quot;all&quot;`</code> with server-side data to efficiently handle 
           selection across large datasets. The selection state is sent to your backend.
         </Typography>
       </Alert>
@@ -642,52 +510,10 @@ const handleServerExport = async (filters, selection) => {
 />`}
         />
 
-        {serverSelectionState && (
-          <Box sx={{ p: 2, backgroundColor: 'grey.50', borderRadius: 1, mb: 2 }}>
-            <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-              Current Server State:
-            </Typography>
-            <CodeBlock
-              language="json"
-              code={JSON.stringify(serverSelectionState, null, 2)}
-            />
-          </Box>
-        )}
-
-        <DataTable
-          columns={columns}
-          dataMode="server"
-          totalRow={sampleData.length}
-          onFetchData={handleFetchData}
-          enableRowSelection={true}
-          selectMode="all"
-          onSelectionChange={handleSelectionChange}
-          enablePagination={true}
-          initialState={{
-            pagination: { pageIndex: 0, pageSize: 10 },
-          }}
-          enableBulkActions={true}
-          bulkActions={(selection) => (
-            <Box sx={{ display: 'flex', gap: 1 }}>
-              <Chip 
-                label={`Selection: ${selection.type}`} 
-                size="small" 
-                color="primary"
-              />
-              <Button
-                variant="outlined"
-                size="small"
-                onClick={() => {
-                  const count = selection.type === 'include' 
-                    ? selection.ids.length 
-                    : sampleData.length - selection.ids.length;
-                  alert(`Server export ${count} rows with selection:\n${JSON.stringify(selection, null, 2)}`);
-                }}
-              >
-                Export Selected
-              </Button>
-            </Box>
-          )}
+        <ExampleViewer
+          exampleId="server-selection"
+          code={serverSelectionCode}
+          component={<ServerSelectionExample />}
         />
       </Paper>
 
@@ -861,8 +687,8 @@ const handleServerExport = async (filters, selection) => {
               Tip: Use Page Mode for Most Cases
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              <code>selectMode="page"</code> is simpler and sufficient for most use cases. 
-              Only use "all" mode when you need cross-page selection.
+              <code>selectMode=&quot;page&quot;</code> is simpler and sufficient for most use cases. 
+              Only use &quot;all&quot; mode when you need cross-page selection.
             </Typography>
           </Box>
           <Box>
@@ -878,7 +704,7 @@ const handleServerExport = async (filters, selection) => {
               Tip: Provide totalRow for All Mode
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              When using <code>selectMode="all"</code> with server-side data, always provide <code>totalRow</code> 
+              When using <code>selectMode=&quot;all&quot;</code> with server-side data, always provide <code>totalRow</code> 
               so the selection count can be calculated correctly.
             </Typography>
           </Box>

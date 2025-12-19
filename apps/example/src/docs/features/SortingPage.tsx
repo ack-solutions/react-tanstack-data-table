@@ -1,104 +1,20 @@
 import { Box, Typography, Paper, Alert, Divider, Stack } from '@mui/material';
-import { DataTable, DataTableColumn } from '@ackplus/react-tanstack-data-table';
-import { useState, useCallback, useRef } from 'react';
-import { FeatureLayout, FeatureSection, CodeBlock, FeatureMetadataTable } from './common';
+import { FeatureLayout, FeatureSection, CodeBlock, FeatureMetadataTable, ExampleViewer } from './common';
 import { getSortingColumnGroup, getSortingTableGroup } from './data/sorting-metadata';
+import {
+  BasicSortingExample,
+  DefaultSortingExample,
+  ServerSortingExample,
+} from '../../examples/sorting';
 
-interface Product {
-  id: number;
-  name: string;
-  category: string;
-  price: number;
-  rating: number;
-  sales: number;
-  releaseDate: string;
-}
-
-const sampleProducts: Product[] = [
-  { id: 1, name: 'Laptop Pro', category: 'Electronics', price: 1299, rating: 4.5, sales: 150, releaseDate: '2024-01-15' },
-  { id: 2, name: 'Wireless Mouse', category: 'Electronics', price: 29, rating: 4.2, sales: 420, releaseDate: '2024-02-20' },
-  { id: 3, name: 'Office Chair', category: 'Furniture', price: 299, rating: 4.8, sales: 89, releaseDate: '2023-11-10' },
-  { id: 4, name: 'Desk Lamp', category: 'Furniture', price: 45, rating: 4.0, sales: 230, releaseDate: '2024-03-05' },
-  { id: 5, name: 'Notebook Set', category: 'Stationery', price: 15, rating: 4.3, sales: 550, releaseDate: '2024-01-25' },
-  { id: 6, name: 'Pen Pack', category: 'Stationery', price: 8, rating: 3.9, sales: 780, releaseDate: '2023-12-15' },
-];
+// Import code as raw strings
+import basicSortingCode from '../../examples/sorting/BasicSortingExample.tsx?raw';
+import defaultSortingCode from '../../examples/sorting/DefaultSortingExample.tsx?raw';
+import serverSortingCode from '../../examples/sorting/ServerSortingExample.tsx?raw';
 
 export function SortingPage() {
-  const [serverSortState, setServerSortState] = useState<any>(null);
-  const tableRef = useRef<any>(null);
   const sortingColumnGroup = getSortingColumnGroup('sorting-column-props');
   const sortingTableGroup = getSortingTableGroup('sorting-table-props');
-
-  // Columns with sorting enabled
-  const sortableColumns: DataTableColumn<Product>[] = [
-    {
-      accessorKey: 'name',
-      header: 'Product Name',
-      size: 200,
-      enableSorting: true,          // Enable sorting for this column
-    },
-    {
-      accessorKey: 'category',
-      header: 'Category',
-      size: 150,
-      enableSorting: true,
-    },
-    {
-      accessorKey: 'price',
-      header: 'Price',
-      size: 120,
-      enableSorting: true,
-      cell: ({ getValue }) => `$${getValue<number>()}`,
-    },
-    {
-      accessorKey: 'rating',
-      header: 'Rating',
-      size: 100,
-      enableSorting: true,
-      sortDescFirst: true,          // Sort descending first
-      cell: ({ getValue }) => `${getValue<number>().toFixed(1)}`,
-    },
-    {
-      accessorKey: 'sales',
-      header: 'Sales',
-      size: 100,
-      enableSorting: true,
-      sortDescFirst: true,
-    },
-    {
-      accessorKey: 'releaseDate',
-      header: 'Release Date',
-      size: 130,
-      enableSorting: true,
-    },
-  ];
-
-  // Server-side fetch handler
-  const handleFetchData = useCallback(async (filters: any) => {
-    console.log('Fetching with sorting:', filters.sorting);
-    setServerSortState(filters.sorting);
-    
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    let sortedData = [...sampleProducts];
-    
-    // Apply sorting
-    if (filters.sorting?.length) {
-      sortedData.sort((a, b) => {
-        for (const sort of filters.sorting) {
-          const aValue = a[sort.id as keyof Product];
-          const bValue = b[sort.id as keyof Product];
-          
-          if (aValue < bValue) return sort.desc ? 1 : -1;
-          if (aValue > bValue) return sort.desc ? -1 : 1;
-        }
-        return 0;
-      });
-    }
-    
-    return { data: sortedData, total: sortedData.length };
-  }, []);
 
   return (
     <FeatureLayout
@@ -155,6 +71,12 @@ export function SortingPage() {
   }}
 />`}
           />
+          
+          <ExampleViewer
+            exampleId="basic-sorting"
+            code={basicSortingCode}
+            component={<BasicSortingExample />}
+          />
         </Paper>
       </FeatureSection>
 
@@ -196,16 +118,10 @@ export function SortingPage() {
 />`}
           />
 
-          <DataTable
-            columns={sortableColumns}
-            data={sampleProducts}
-            enableSorting={true}
-            sortingMode="client"
-            initialState={{
-              sorting: [
-                { id: 'rating', desc: true },
-              ],
-            }}
+          <ExampleViewer
+            exampleId="default-sorting"
+            code={defaultSortingCode}
+            component={<DefaultSortingExample />}
           />
         </Paper>
       </FeatureSection>
@@ -239,7 +155,7 @@ export function SortingPage() {
             Server-Side Mode
           </Typography>
           <Typography variant="body2">
-            Set <code>sortingMode="server"</code> or <code>dataMode="server"</code> to delegate sorting. The <code>onFetchData</code> callback receives the current sort state.
+            Set <code>sortingMode=&quot;server&quot;</code> or <code>dataMode=&quot;server&quot;</code> to delegate sorting. The <code>onFetchData</code> callback receives the current sort state.
           </Typography>
         </Alert>
 
@@ -279,24 +195,10 @@ export function SortingPage() {
 />`}
           />
 
-          {serverSortState && (
-            <Box sx={{ p: 2, backgroundColor: 'grey.50', borderRadius: 1, mb: 2 }}>
-              <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-                Current Server Sort State
-              </Typography>
-              <CodeBlock
-                language="json"
-                code={JSON.stringify(serverSortState || {}, null, 2)}
-              />
-            </Box>
-          )}
-
-          <DataTable
-            columns={sortableColumns}
-            dataMode="server"
-            onFetchData={handleFetchData}
-            enableSorting={true}
-            sortingMode="server"
+          <ExampleViewer
+            exampleId="server-sorting"
+            code={serverSortingCode}
+            component={<ServerSortingExample />}
           />
         </Paper>
       </FeatureSection>
@@ -395,7 +297,7 @@ const currentSorting = tableRef.current?.state.getCurrentSorting();
               Tip: Use Server-Side for Large Datasets
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              For datasets with 10,000+ rows, use <code>sortingMode="server"</code> to offload sorting to your backend.
+              For datasets with 10,000+ rows, use <code>sortingMode=&quot;server&quot;</code> to offload sorting to your backend.
             </Typography>
           </Box>
           <Box>

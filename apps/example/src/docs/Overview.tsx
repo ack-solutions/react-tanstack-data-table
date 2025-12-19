@@ -1,7 +1,24 @@
 import { Box, Typography, Stack, Chip, Paper, Alert } from '@mui/material';
+import { 
+  CheckCircleOutline, 
+  CloudUpload, 
+  FilterList, 
+  GridView, 
+  GetApp,
+  Search,
+} from '@mui/icons-material';
 import { CodeBlock } from './features/common';
 
 export function OverviewSection() {
+  const features = [
+    { icon: <GridView />, title: 'Client & Server-Side', description: 'Support for both client and server-side data handling with seamless switching' },
+    { icon: <FilterList />, title: 'Advanced Filtering', description: 'Global search, column filters, and custom filter operators' },
+    { icon: <CheckCircleOutline />, title: 'Row Selection', description: 'Single and multi-row selection with include/exclude modes' },
+    { icon: <GetApp />, title: 'Data Export', description: 'Export to CSV, XLSX, and JSON with customizable options' },
+    { icon: <CloudUpload />, title: 'Virtualization', description: 'Handle thousands of rows efficiently with virtual scrolling' },
+    { icon: <Search />, title: 'Column Management', description: 'Sorting, resizing, reordering, pinning, and visibility control' },
+  ];
+
   return (
     <Box>
       <Typography variant="h4" gutterBottom sx={{ fontWeight: 700, mb: 2 }}>
@@ -13,23 +30,36 @@ export function OverviewSection() {
       </Typography>
 
       <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mb: 4 }}>
-        <Chip label="Server-side" color="primary" variant="outlined" />
+        <Chip label="TypeScript" color="primary" variant="outlined" />
+        <Chip label="Server-side Ready" color="primary" variant="outlined" />
         <Chip label="Virtualized" color="primary" variant="outlined" />
         <Chip label="Export Ready" color="primary" variant="outlined" />
-        <Chip label="TypeScript" color="primary" variant="outlined" />
         <Chip label="Customizable" color="primary" variant="outlined" />
         <Chip label="Responsive" color="primary" variant="outlined" />
       </Stack>
 
-      <Alert severity="info" sx={{ mb: 4 }}>
-        <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
+      <Paper elevation={1} sx={{ p: 3, mb: 4 }}>
+        <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, mb: 3 }}>
           Key Features
         </Typography>
-        <Typography variant="body2">
-          The DataTable component provides a complete solution for data display with advanced features like 
-          server-side pagination, filtering, sorting, row selection, export capabilities, and extensive customization options.
-        </Typography>
-      </Alert>
+        <Stack spacing={2}>
+          {features.map((feature, index) => (
+            <Stack key={index} direction="row" spacing={2} alignItems="flex-start">
+              <Box sx={{ color: 'primary.main', mt: 0.5 }}>
+                {feature.icon}
+              </Box>
+              <Box>
+                <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5 }}>
+                  {feature.title}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {feature.description}
+                </Typography>
+              </Box>
+            </Stack>
+          ))}
+        </Stack>
+      </Paper>
 
       <Paper elevation={1} sx={{ p: 3, mb: 4 }}>
         <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
@@ -41,7 +71,8 @@ export function OverviewSection() {
               High Performance
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Built on TanStack Table for excellent performance with large datasets and virtualization support.
+              Built on TanStack Table v8 for excellent performance with large datasets. Includes virtual scrolling 
+              support to handle thousands of rows efficiently.
             </Typography>
           </Box>
           <Box>
@@ -49,7 +80,8 @@ export function OverviewSection() {
               Material Design
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Beautiful UI components using MUI with consistent design system and theming support.
+              Beautiful UI components using MUI v5+ with consistent design system, theming support, and full 
+              dark mode compatibility.
             </Typography>
           </Box>
           <Box>
@@ -57,34 +89,55 @@ export function OverviewSection() {
               Highly Customizable
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Extensive customization through slots, props, and the ability to replace any component.
+              Extensive customization through slots, props, and component replacement. Every visual element 
+              can be customized or replaced with your own implementation.
             </Typography>
           </Box>
           <Box>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-              TypeScript Ready
+              TypeScript First
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Full TypeScript support with comprehensive type definitions and excellent IDE support.
+              Full TypeScript support with comprehensive type definitions, generics, and excellent IDE 
+              autocomplete support.
             </Typography>
           </Box>
         </Stack>
       </Paper>
 
-      <Paper elevation={1} sx={{ p: 3 }}>
+      <Paper elevation={1} sx={{ p: 3, mb: 4 }}>
         <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
           Installation
         </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          Install the package using npm or yarn:
+        </Typography>
         <CodeBlock
           language="bash"
-          code={`npm install @ackplus/react-tanstack-data-table
-
-# Peer dependencies
-npm install @emotion/react @emotion/styled @mui/icons-material @mui/material @tanstack/react-table @tanstack/react-virtual react react-dom`}
+          code={`npm install @ackplus/react-tanstack-data-table`}
         />
-        <Typography variant="body2" color="text.secondary">
-          Make sure to install the required peer dependencies for the component to work properly.
+      </Paper>
+
+      <Paper elevation={1} sx={{ p: 3 }}>
+        <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
+          Peer Dependencies
         </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          This package requires the following peer dependencies:
+        </Typography>
+        <CodeBlock
+          language="bash"
+          code={`npm install react@">=18.0.0" react-dom@">=18.0.0"
+npm install @mui/material@">=5.0.0" @mui/icons-material@">=5.0.0"
+npm install @emotion/react@">=11.0.0" @emotion/styled@">=11.0.0"
+npm install @mui/x-date-pickers@">=5.0.0"`}
+        />
+        <Alert severity="info" sx={{ mt: 2 }}>
+          <Typography variant="body2">
+            <strong>Note:</strong> TanStack Table and React Virtual are bundled as regular dependencies, 
+            so you do not need to install them separately.
+          </Typography>
+        </Alert>
       </Paper>
     </Box>
   );

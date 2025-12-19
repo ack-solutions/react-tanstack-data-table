@@ -9,7 +9,7 @@ export type NavNode = {
 export const navigationTree: NavNode[] = [
   {
     id: 'data-grid',
-    title: 'Data Grid',
+    title: 'React tanStack Data Grid',
     type: 'section',
     children: [
       { id: 'overview', title: 'Overview', type: 'item' },

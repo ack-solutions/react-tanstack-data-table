@@ -1,120 +1,34 @@
-import { Box, Typography, Paper, Alert, Divider, Stack, Chip, Button, Table, TableBody, TableCell, TableHead, TableRow } from '@mui/material';
-import { DataTable, DataTableColumn, createLogger } from '@ackplus/react-tanstack-data-table';
-import { useState, useCallback, useRef, useMemo } from 'react';
-import { FeatureLayout, FeatureSection, CodeBlock, FeatureMetadataTable } from './common';
-import { getPaginationTableGroup, getPaginationSlotPropGroup } from './data/pagination-metadata';
+/* eslint-disable react/no-unescaped-entities */
+import { Box, Typography, Paper, Alert, Divider, Stack, Button, Table, TableBody, TableCell, TableHead, TableRow } from '@mui/material';
+import { DataTable } from '@ackplus/react-tanstack-data-table';
+import { useRef } from 'react';
+import { FeatureLayout, FeatureSection, CodeBlock, ExampleViewer } from './common';
+import {
+  BasicPaginationExample,
+  CustomPageSizeExample,
+  ServerPaginationExample,
+} from '../../examples/pagination';
 
-interface Product {
-  id: number;
-  name: string;
-  category: string;
-  price: number;
-  inStock: boolean;
-  rating: number;
-}
-
-// Generate sample data
-const generateProducts = (count: number): Product[] => {
-  const categories = ['Electronics', 'Furniture', 'Stationery', 'Clothing', 'Sports'];
-  return Array.from({ length: count }, (_, i) => ({
-    id: i + 1,
-    name: `Product ${i + 1}`,
-    category: categories[Math.floor(Math.random() * categories.length)],
-    price: Math.floor(Math.random() * 1000) + 10,
-    inStock: Math.random() > 0.3,
-    rating: Math.floor(Math.random() * 50) / 10,
-  }));
-};
+// Import code as raw strings
+import basicPaginationCode from '../../examples/pagination/BasicPaginationExample.tsx?raw';
+import customPageSizeCode from '../../examples/pagination/CustomPageSizeExample.tsx?raw';
+import serverPaginationCode from '../../examples/pagination/ServerPaginationExample.tsx?raw';
 
 export function PaginationPage() {
   const tableRef = useRef<any>(null);
-  const [serverPaginationState, setServerPaginationState] = useState<any>(null);
-  const [currentPage, setCurrentPage] = useState(0);
-  const logger = useMemo(() => createLogger('Examples.Pagination'), []);
-  const paginationTableGroup = getPaginationTableGroup('pagination-table-props');
-  const paginationSlotGroup = getPaginationSlotPropGroup('pagination-slot-props');
-  
-  const sampleData = useMemo(() => generateProducts(100), []);
 
-  // Columns
-  const columns: DataTableColumn<Product>[] = [
-    {
-      accessorKey: 'id',
-      header: 'ID',
-      size: 80,
-    },
-    {
-      accessorKey: 'name',
-      header: 'Product Name',
-      size: 200,
-    },
-    {
-      accessorKey: 'category',
-      header: 'Category',
-      size: 150,
-      cell: ({ getValue }) => (
-        <Chip label={getValue<string>()} size="small" variant="outlined" />
-      ),
-    },
-    {
-      accessorKey: 'price',
-      header: 'Price',
-      size: 120,
-      cell: ({ getValue }) => `$${getValue<number>()}`,
-    },
-    {
-      accessorKey: 'inStock',
-      header: 'In Stock',
-      size: 100,
-      cell: ({ getValue }) => (
-        <Chip
-          label={getValue<boolean>() ? 'Yes' : 'No'}
-          color={getValue<boolean>() ? 'success' : 'error'}
-          size="small"
-        />
-      ),
-    },
-    {
-      accessorKey: 'rating',
-      header: 'Rating',
-      size: 100,
-      cell: ({ getValue }) => `${getValue<number>().toFixed(1)}`,
-    },
+  // Minimal data for API demo
+  const apiDemoData = Array.from({ length: 50 }, (_, i) => ({
+    id: i + 1,
+    name: `Product ${i + 1}`,
+    price: Math.floor(Math.random() * 100) + 10,
+  }));
+
+  const apiDemoColumns = [
+    { accessorKey: 'id', header: 'ID', size: 80 },
+    { accessorKey: 'name', header: 'Name', size: 200 },
+    { accessorKey: 'price', header: 'Price', size: 120 },
   ];
-
-  // Server-side fetch handler
-  const handleFetchData = useCallback(async (filters: any) => {
-    if (logger.isLevelEnabled('debug')) {
-      logger.debug('Fetching with pagination', filters.pagination);
-    }
-    setServerPaginationState(filters.pagination);
-    setCurrentPage(filters.pagination?.pageIndex || 0);
-    
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    const pageIndex = filters.pagination?.pageIndex || 0;
-    const pageSize = filters.pagination?.pageSize || 10;
-    const startIndex = pageIndex * pageSize;
-    const endIndex = startIndex + pageSize;
-    
-    const paginatedData = sampleData.slice(startIndex, endIndex);
-    const result = { 
-      data: paginatedData, 
-      total: sampleData.length 
-    };
-    
-    if (logger.isLevelEnabled('debug')) {
-      logger.debug('Fetch resolved', {
-        pageIndex,
-        pageSize,
-        returnedRows: result.data.length,
-        totalRows: result.total,
-      });
-    }
-
-    return result;
-  }, [sampleData, logger]);
 
   return (
     <FeatureLayout
@@ -219,16 +133,10 @@ const data = [...]; // 100 items
             </Typography>
           </Box>
 
-          <DataTable
-            columns={columns}
-            data={sampleData}
-            enablePagination={true}
-            initialState={{
-              pagination: {
-                pageIndex: 2,
-                pageSize: 20,
-              },
-            }}
+          <ExampleViewer
+            exampleId="basic-pagination"
+            code={basicPaginationCode}
+            component={<BasicPaginationExample />}
           />
         </Paper>
       </FeatureSection>
@@ -271,19 +179,10 @@ const data = [...]; // 100 items
 />`}
           />
 
-          <DataTable
-            columns={columns}
-            data={sampleData}
-            enablePagination={true}
-            initialState={{
-              pagination: { pageIndex: 0, pageSize: 25 },
-            }}
-            slotProps={{
-              pagination: {
-                rowsPerPageOptions: [10, 25, 50, 100],
-                labelRowsPerPage: 'Items:',
-              },
-            }}
+          <ExampleViewer
+            exampleId="custom-page-size"
+            code={customPageSizeCode}
+            component={<CustomPageSizeExample />}
           />
         </Paper>
       </FeatureSection>
@@ -345,28 +244,10 @@ const data = [...]; // 100 items
 />`}
           />
 
-          {serverPaginationState && (
-            <Box sx={{ p: 2, backgroundColor: 'grey.50', borderRadius: 1, mb: 2 }}>
-              <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-                Current Server Pagination State
-              </Typography>
-              <CodeBlock
-                language="json"
-                code={JSON.stringify(serverPaginationState || {}, null, 2)}
-              />
-              <Typography variant="body2" sx={{ mt: 1 }}>
-                Current Page: {currentPage + 1}
-              </Typography>
-            </Box>
-          )}
-
-          <DataTable
-            columns={columns}
-            dataMode="server"
-            onFetchData={handleFetchData}
-            enablePagination={true}
-            paginationMode="server"
-            totalRow={sampleData.length}
+          <ExampleViewer
+            exampleId="server-pagination"
+            code={serverPaginationCode}
+            component={<ServerPaginationExample />}
           />
         </Paper>
       </FeatureSection>
@@ -462,8 +343,8 @@ const paginationState = tableRef.current?.state.getCurrentPagination();
 
         <DataTable
           ref={tableRef}
-          columns={columns}
-          data={sampleData}
+          columns={apiDemoColumns}
+          data={apiDemoData}
           enablePagination={true}
           initialState={{
             pagination: { pageIndex: 0, pageSize: 10 },

@@ -83,13 +83,15 @@ export function TableSizeControl(props: TableSizeControlProps = {}) {
                     <ListItemText
                         primary={option.label}
                         secondary={option.description}
-                        primaryTypographyProps={{
-                            variant: 'body2',
-                            fontWeight: tableSize === option.value ? 600 : 400,
-                        }}
-                        secondaryTypographyProps={{
-                            variant: 'caption',
-                            color: 'text.secondary',
+                        slotProps={{
+                            primary: {
+                                variant: 'body2',
+                                fontWeight: tableSize === option.value ? 600 : 400,
+                            },
+                            secondary: {
+                                variant: 'caption',
+                                color: 'text.secondary',
+                            },
                         }}
                     />
                 </MenuItem>

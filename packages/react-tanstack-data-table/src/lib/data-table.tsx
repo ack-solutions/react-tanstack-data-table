@@ -25,28 +25,28 @@ import {
 } from '@tanstack/react-table';
 
 // Import custom features
-import { ColumnFilterFeature, getCombinedFilteredRowModel } from '../../features/column-filter.feature';
-import { SelectionFeature, SelectionState } from '../../features';
+import { ColumnFilterFeature, getCombinedFilteredRowModel } from './features/column-filter.feature';
+import { SelectionFeature, SelectionState } from './features';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import React, { useState, useCallback, useMemo, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
 
 
 // Import from new organized structure
-import { DataTableProvider } from '../../contexts/data-table-context';
-import { DataTableSize, exportClientData, exportServerData, generateRowId, createLogger, withIdsDeep } from '../../utils';
-import { useDebouncedFetch } from '../../utils/debounced-fetch.utils';
-import { getSlotComponentWithProps, mergeSlotProps } from '../../utils/slot-helpers';
-import { TableHeader } from '../headers';
-import { DataTablePagination } from '../pagination';
-import { DataTableRow, LoadingRows, EmptyDataRow } from '../rows';
-import { DataTableToolbar, BulkActionsToolbar } from '../toolbar';
-import { DataTableProps } from './data-table.types';
-import { ColumnFilterState, TableFiltersForFetch, TableState } from '../../types';
-import { DataTableApi } from '../../types/data-table-api';
+import { DataTableProvider } from './contexts/data-table-context';
+import { DataTableSize, exportClientData, exportServerData, generateRowId, createLogger, withIdsDeep } from './utils';
+import { useDebouncedFetch } from './utils/debounced-fetch.utils';
+import { getSlotComponentWithProps, mergeSlotProps } from './utils/slot-helpers';
+import { TableHeader } from './components/headers';
+import { DataTablePagination } from './components/pagination';
+import { DataTableRow, LoadingRows, EmptyDataRow } from './components/rows';
+import { DataTableToolbar, BulkActionsToolbar } from './components/toolbar';
+import { DataTableProps } from './types/data-table.types';
+import { ColumnFilterState, TableFiltersForFetch, TableState } from './types';
+import { DataTableApi } from './types/data-table-api';
 import {
     createExpandingColumn,
     createSelectionColumn,
-} from '../../utils/special-columns.utils';
+} from './utils/special-columns.utils';
 
 
 
@@ -257,8 +257,8 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     const internalApiRef = useRef<DataTableApi<T>>(null);
 
     const { debouncedFetch, isLoading: fetchLoading } = useDebouncedFetch(onFetchData);
-    const tableData = useMemo(() => serverData ? serverData : data, [onFetchData, serverData, data]);
-    const tableTotalRow = useMemo(() => serverData ? serverTotal : totalRow, [onFetchData, serverTotal, totalRow]);
+    const tableData = useMemo(() => serverData ? serverData : data, [serverData, data]);
+    const tableTotalRow = useMemo(() => serverData ? serverTotal : totalRow || data.length, [serverData, serverTotal, totalRow, data]);
     const tableLoading = useMemo(() => onFetchData ? (loading || fetchLoading) : loading, [onFetchData, loading, fetchLoading]);
 
 
@@ -283,7 +283,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                 logger.info('enhancedColumns', { enhancedColumns });
             }
             return enhancedColumns;
-        }, [columns, enableExpanding, enableRowSelection, enableMultiRowSelection, slotProps?.expandColumn, slotProps?.selectionColumn]);
+        }, [columns, enableExpanding, enableRowSelection, logger, slotProps.expandColumn, slotProps.selectionColumn, enableMultiRowSelection]);
 
 
     const isExporting = useMemo(() => exportController !== null, [exportController]);
@@ -428,6 +428,21 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
             setTimeout(() => tableStateChange({ columnFilter: filterState }), 0);
         }
     }, [onColumnFiltersChange, onDataStateChange, tableStateChange]);
+
+
+    const resetPageToFirst = useCallback(() => {
+        if (logger.isLevelEnabled('info')) {
+            logger.info('Resetting to first page due to state change', {
+                previousPageIndex: pagination.pageIndex,
+                pageSize: pagination.pageSize,
+            });
+        }
+        const newPagination = { pageIndex: 0, pageSize: pagination.pageSize };
+        setPagination(newPagination);
+        onPaginationChange?.(newPagination);
+        return newPagination;
+    }, [pagination, logger, onPaginationChange]);
+
     
     const handleSortingChange = useCallback((updaterOrValue: any) => {
         let newSorting = typeof updaterOrValue === 'function'
@@ -464,16 +479,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                 tableStateChange({ sorting: newSorting, pagination });
             }, 0);
         }
-    }, [
-        sorting,
-        onSortingChange,
-        fetchData,
-        isServerMode,
-        isServerSorting,
-        onDataStateChange,
-        tableStateChange,
-        logger,
-    ]);
+    }, [sorting, onSortingChange, logger, isServerMode, isServerSorting, onDataStateChange, resetPageToFirst, tableStateChange, fetchData]);
 
     const handleColumnOrderChange = useCallback((updatedColumnOrder: Updater<ColumnOrderState>) => {
         const newColumnOrder = typeof updatedColumnOrder === 'function'
@@ -501,7 +507,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
             ? updater(columnVisibility)
             : updater;
         setColumnVisibility(newVisibility);
-        
+
         if (onColumnVisibilityChange) {
             setTimeout(() => {
                 onColumnVisibilityChange(newVisibility);
@@ -521,7 +527,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
             ? updater(columnSizing)
             : updater;
         setColumnSizing(newSizing);
-        
+
         if (onColumnSizingChange) {
             setTimeout(() => {
                 onColumnSizingChange(newSizing);
@@ -581,6 +587,8 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         onPaginationChange,
     ]);
 
+
+
     const handleGlobalFilterChange = useCallback((updaterOrValue: any) => {
         const newFilter = typeof updaterOrValue === 'function'
             ? updaterOrValue(globalFilter)
@@ -620,7 +628,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
             }, 0);
         }
         onGlobalFilterChange?.(newFilter);
-    }, [globalFilter, isServerMode, isServerFiltering, onDataStateChange, fetchData, tableStateChange, logger]);
+    }, [globalFilter, logger, isServerMode, isServerFiltering, onDataStateChange, onGlobalFilterChange, resetPageToFirst, tableStateChange, fetchData]);
 
     const onColumnFilterChangeHandler = useCallback((updater: any) => {
         const currentState = columnFilter;
@@ -655,7 +663,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         setTimeout(() => {
             onColumnFiltersChange?.(appliedState);
         }, 0);
-    }, [isServerFiltering, fetchData, tableStateChange, onDataStateChange, onColumnFiltersChange]);
+    }, [resetPageToFirst, isServerFiltering, onDataStateChange, tableStateChange, fetchData, onColumnFiltersChange]);
 
     // -------------------------------
     // Table creation (after callbacks/memo)
@@ -736,7 +744,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
             return table.getCenterTotalSize();
         }
         return '100%';
-    }, [fitToScreen, enableColumnResizing, table, columnSizing]);
+    }, [fitToScreen, enableColumnResizing, table]);
 
     const tableStyle = useMemo(() => ({
         width: tableWidth,
@@ -747,7 +755,8 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     // -------------------------------
     // Virtualization and row memo
     // -------------------------------
-    const rows = table.getRowModel()?.rows || [];
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const rows = useMemo(() => table.getRowModel()?.rows || [], [table, tableData]);
     const rowVirtualizer = useVirtualizer({
         count: rows.length,
         getScrollElement: () => tableContainerRef.current,
@@ -755,19 +764,6 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         overscan: 10,
         enabled: enableVirtualization && !enablePagination && rows.length > 0,
     });
-
-    const resetPageToFirst = () => {
-        if (logger.isLevelEnabled('info')) {
-            logger.info('Resetting to first page due to state change', {
-                previousPageIndex: pagination.pageIndex,
-                pageSize: pagination.pageSize,
-            });
-        }
-        const newPagination = { pageIndex: 0, pageSize: pagination.pageSize };
-        setPagination(newPagination);
-        onPaginationChange?.(newPagination);
-        return newPagination;
-    };
 
 
     // -------------------------------
@@ -1373,7 +1369,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
             },
             // Backward compatibility: expose the raw selection array expected by older consumers
             getCurrentSelection: () => {
-              return table.getSelectionState?.();
+                return table.getSelectionState?.();
             },
         },
 
@@ -1549,6 +1545,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                 }
             },
         },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }), [
         table,
         enhancedColumns,

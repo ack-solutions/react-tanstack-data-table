@@ -31,7 +31,6 @@ export function MenuDropdown({
     anchor,
     label,
     component,
-    sx,
     ...props
 }: MenuDropdownProps) {
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);

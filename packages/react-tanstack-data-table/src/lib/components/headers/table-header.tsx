@@ -84,6 +84,7 @@ export function TableHeader<T>(props: TableHeaderProps) {
         const alignment = getColumnAlignment(header.column.columnDef);
         const enableSorting = header.column.getCanSort();
         const wrapText = header.column.columnDef.wrapText ?? false;
+        const canResize = enableColumnResizing && header.column.getCanResize();
 
         const mergedHeaderCellProps = mergeSlotProps(
             {
@@ -145,7 +146,7 @@ export function TableHeader<T>(props: TableHeaderProps) {
                 />
 
                 {/* Column resizer */}
-                {enableColumnResizing && header.column.getCanResize() ? (
+                {canResize ? (
                     <Box
                         {...mergedResizeHandleProps}
                     />

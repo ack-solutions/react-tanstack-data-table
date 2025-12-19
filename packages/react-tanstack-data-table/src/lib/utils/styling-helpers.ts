@@ -56,6 +56,7 @@ export function getPinnedColumnStyle(options: PinnedColumnStyleOptions) {
         width,
         ...(minWidth !== undefined && { minWidth }),
         ...(maxWidth !== undefined ? { maxWidth } : { maxWidth: width }),
+        boxSizing: 'border-box',
         ...textWrappingStyles,
         // Position handling
         ...positionStyle,

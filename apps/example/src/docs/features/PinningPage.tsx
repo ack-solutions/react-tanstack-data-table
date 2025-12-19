@@ -1,95 +1,23 @@
-import { Box, Typography, Paper, Alert, Divider, Table, TableBody, TableCell, TableHead, TableRow, Stack, Chip, Accordion, AccordionSummary, AccordionDetails } from '@mui/material';
+/* eslint-disable react/no-unescaped-entities */
+import { Box, Typography, Paper, Alert, Divider, Table, TableBody, TableCell, TableHead, TableRow, Stack, Accordion, AccordionSummary, AccordionDetails } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import { DataTable, DataTableColumn, DEFAULT_SELECTION_COLUMN_NAME, DEFAULT_EXPANDING_COLUMN_NAME } from '@ackplus/react-tanstack-data-table';
-import { useRef } from 'react';
-import { FeatureLayout, CodeBlock, FeatureMetadataTable, FeatureMetadataAccordion } from './common';
-import { pinningTableGroups, pinningSlotPropGroups, getPinningTableGroup, getPinningSlotPropGroup } from './data/pinning-metadata';
+import { FeatureLayout, CodeBlock, ExampleViewer, FeatureMetadataTable, FeatureMetadataAccordion } from './common';
+import { getPinningTableGroup, pinningSlotPropGroups } from './data/pinning-metadata';
+import {
+  BasicPinningExample,
+  InteractivePinningDemo,
+  PinningWithSelectionExample,
+} from '../../examples/pinning';
 
-interface Employee {
-  id: number;
-  name: string;
-  email: string;
-  department: string;
-  position: string;
-  salary: number;
-  status: 'active' | 'inactive';
-  performanceScore: number;
-}
-
-const sampleEmployees: Employee[] = [
-  { id: 1, name: 'John Doe', email: 'john@company.com', department: 'Engineering', position: 'Senior Developer', salary: 95000, status: 'active', performanceScore: 92 },
-  { id: 2, name: 'Jane Smith', email: 'jane@company.com', department: 'Marketing', position: 'Marketing Manager', salary: 85000, status: 'active', performanceScore: 88 },
-  { id: 3, name: 'Bob Johnson', email: 'bob@company.com', department: 'Sales', position: 'Sales Rep', salary: 65000, status: 'inactive', performanceScore: 75 },
-  { id: 4, name: 'Alice Williams', email: 'alice@company.com', department: 'HR', position: 'HR Specialist', salary: 60000, status: 'active', performanceScore: 85 },
-  { id: 5, name: 'Charlie Brown', email: 'charlie@company.com', department: 'Finance', position: 'Financial Analyst', salary: 75000, status: 'active', performanceScore: 90 },
-];
+// Import code as raw strings
+import basicPinningCode from '../../examples/pinning/BasicPinningExample.tsx?raw';
+import interactivePinningCode from '../../examples/pinning/InteractivePinningDemo.tsx?raw';
+import pinningWithSelectionCode from '../../examples/pinning/PinningWithSelectionExample.tsx?raw';
 
 export function PinningPage() {
-  const tableRef = useRef<any>(null);
   const pinningTableGroup = getPinningTableGroup('pinning-table-props');
   const pinningColumnGroup = getPinningTableGroup('pinning-column-props');
-  const pinningSlotPropGroup = getPinningSlotPropGroup('pinning-slot-props');
-
-  // Columns for pinning demo
-  const pinnableColumns: DataTableColumn<Employee>[] = [
-    {
-      accessorKey: 'id',
-      header: 'ID',
-      size: 80,
-      enablePinning: true,          // Enable pinning for this column
-    },
-    {
-      accessorKey: 'name',
-      header: 'Name',
-      size: 180,
-      enablePinning: true,
-    },
-    {
-      accessorKey: 'email',
-      header: 'Email',
-      size: 220,
-      enablePinning: true,
-    },
-    {
-      accessorKey: 'department',
-      header: 'Department',
-      size: 150,
-      enablePinning: true,
-    },
-    {
-      accessorKey: 'position',
-      header: 'Position',
-      size: 180,
-      enablePinning: true,
-    },
-    {
-      accessorKey: 'salary',
-      header: 'Salary',
-      size: 120,
-      enablePinning: true,
-      cell: ({ getValue }) => `$${getValue<number>().toLocaleString()}`,
-    },
-    {
-      accessorKey: 'status',
-      header: 'Status',
-      size: 100,
-      enablePinning: true,
-      cell: ({ getValue }) => (
-        <Chip
-          label={getValue<string>()}
-          color={getValue<string>() === 'active' ? 'success' : 'default'}
-          size="small"
-        />
-      ),
-    },
-    {
-      accessorKey: 'performanceScore',
-      header: 'Performance',
-      size: 130,
-      enablePinning: true,
-      cell: ({ getValue }) => `${getValue<number>()}%`,
-    },
-  ];
+  // const pinningSlotPropGroup = getPinningSlotPropGroup('pinning-slot-props'); // Unused
 
   return (
     <FeatureLayout
@@ -180,17 +108,10 @@ export function PinningPage() {
 />`}
         />
 
-        <DataTable
-          columns={pinnableColumns}
-          data={sampleEmployees}
-          enableColumnPinning={true}
-          enablePagination={false}
-          initialState={{
-            columnPinning: {
-              left: ['id', 'name'],
-              right: ['performanceScore'],
-            },
-          }}
+        <ExampleViewer
+          exampleId="basic-pinning"
+          code={basicPinningCode}
+          component={<BasicPinningExample />}
         />
       </Paper>
 
@@ -229,7 +150,7 @@ export function PinningPage() {
                 DEFAULT_SELECTION_COLUMN_NAME
               </TableCell>
               <TableCell sx={{ fontFamily: 'monospace', fontSize: 13 }}>
-                '_selection'
+                &apos;_selection&apos;
               </TableCell>
               <TableCell>
                 ID for the checkbox selection column (when enableRowSelection=true)
@@ -240,7 +161,7 @@ export function PinningPage() {
                 DEFAULT_EXPANDING_COLUMN_NAME
               </TableCell>
               <TableCell sx={{ fontFamily: 'monospace', fontSize: 13 }}>
-                '_expanding'
+                &apos;_expanding&apos;
               </TableCell>
               <TableCell>
                 ID for the row expansion column (when enableExpanding=true)
@@ -449,19 +370,10 @@ tableRef.current?.columnPinning.resetColumnPinning();
           Try scrolling horizontally to see the effect.
         </Typography>
         
-        <DataTable
-          ref={tableRef}
-          columns={pinnableColumns}
-          data={sampleEmployees}
-          enableColumnPinning={true}
-          enablePagination={false}
-          initialState={{
-            columnPinning: {
-              left: ['id', 'name'],
-              right: ['performanceScore'],
-            },
-          }}
-          fitToScreen={false}      // Allow horizontal scrolling
+        <ExampleViewer
+          exampleId="interactive-pinning"
+          code={interactivePinningCode}
+          component={<InteractivePinningDemo />}
         />
       </Paper>
 
@@ -515,19 +427,10 @@ tableRef.current?.columnPinning.resetColumnPinning();
 />`}
         />
 
-        <DataTable
-          columns={pinnableColumns}
-          data={sampleEmployees}
-          enableRowSelection={true}
-          enableColumnPinning={true}
-          enablePagination={false}
-          initialState={{
-            columnPinning: {
-              left: [DEFAULT_SELECTION_COLUMN_NAME, 'name'],
-              right: ['status'],
-            },
-          }}
-          fitToScreen={false}
+        <ExampleViewer
+          exampleId="pinning-with-selection"
+          code={pinningWithSelectionCode}
+          component={<PinningWithSelectionExample />}
         />
       </Paper>
 
@@ -620,7 +523,7 @@ tableRef.current?.columnPinning.resetColumnPinning();
               Tip: Limit Pinned Columns
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Don't pin too many columns as it reduces scrollable space. Typically 2-3 columns on each side is optimal.
+              Don&apos;t pin too many columns as it reduces scrollable space. Typically 2-3 columns on each side is optimal.
             </Typography>
           </Box>
           <Box>

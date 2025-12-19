@@ -1,25 +1,17 @@
 /**
  * Type definitions for DataTable components
  */
-import { Row, SortingState, ColumnResizeMode, ColumnPinningState, RowData, PaginationState, AccessorKeyColumnDef, ColumnDef } from '@tanstack/react-table';
+import { Row, SortingState, ColumnResizeMode, ColumnPinningState, PaginationState, ColumnDef } from '@tanstack/react-table';
 import { ReactNode } from 'react';
 
-import type { ColumnFilterState, TableFilters, TableState } from '../../types';
-import { DataTableColumn } from '../../types';
-import { DataTableSlots, PartialSlotProps } from '../../types/slots.types';
-import { DataTableSize } from '../../utils/table-helpers';
-import { SelectionState } from '../../features';
-import { DataTableLoggingOptions } from '../../utils/logger';
+import type { ColumnFilterState, TableFilters, TableState } from './index';
+import { DataTableSlots, PartialSlotProps } from './slots.types';
+import { DataTableSize } from '../utils/table-helpers';
+import { SelectionState } from '../features';
+import { DataTableLoggingOptions } from '../utils/logger';
 
 // Selection mode type
 export type SelectMode = 'page' | 'all';
-
-// Import consolidated types
-
-declare module '@tanstack/react-table' {
-    interface ColumnMeta<TData extends RowData, TValue> { // eslint-disable-line @typescript-eslint/no-unused-vars
-    }
-}
 
 // Dynamic data management interfaces
 // TableFilters now imported from types folder
@@ -145,9 +137,3 @@ export interface DataTableProps<T> {
     // Logging configuration
     logging?: boolean | DataTableLoggingOptions;
 }
-
-// All interfaces moved to centralized types folder:
-// - TableState
-// - TablePerformanceMetrics
-// - ColumnConfig<T>
-// - ExportConfig

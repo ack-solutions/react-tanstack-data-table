@@ -34,7 +34,7 @@ export interface BaseSlotProps<T = any> {
 /**
  * Enhanced slot props that merge base props with component-specific props
  */
-export type EnhancedSlotProps<TBase, TComponent = {}> = TBase & TComponent & {
+export type EnhancedSlotProps<TBase, TComponent> = TBase & TComponent & {
     // Allow any additional props for maximum flexibility
     [key: string]: any;
 };
@@ -301,9 +301,9 @@ export type ExtractSlotProps<TSlot> = TSlot extends SlotComponent<infer TProps> 
 /**
  * Default slot components - can be overridden by users
  */
-export interface DefaultSlots<T = any> extends DataTableSlots<T> {
-    // All slots should have default implementations
-}
+// export interface DefaultSlots<T = any> extends DataTableSlots<T> {
+//     // All slots should have default implementations
+// }
 
 /**
  * Enhanced slot configuration with better prop merging

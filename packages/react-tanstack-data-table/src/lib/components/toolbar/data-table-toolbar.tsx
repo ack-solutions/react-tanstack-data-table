@@ -85,9 +85,9 @@ export function DataTableToolbar(props: DataTableToolbarProps = {}) {
         {
             // Default toolbar props
             table,
+            ...otherProps,
         },
-        toolbarSlotProps,
-        otherProps
+        toolbarSlotProps
     );
 
     return (

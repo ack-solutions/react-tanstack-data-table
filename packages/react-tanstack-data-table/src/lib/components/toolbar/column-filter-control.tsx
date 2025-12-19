@@ -8,7 +8,6 @@ import {
     Button,
     Stack,
     Typography,
-    Chip,
     IconButton,
     Divider,
     Badge,
@@ -267,7 +266,7 @@ export function ColumnFilterControl(props: ColumnFilterControlProps = {}) {
 
                     {/* Filter Rules */}
                     <Stack spacing={2} sx={{ mb: 2 }}>
-                        {filters.map((filter, index) => {
+                        {filters.map((filter) => {
                             const selectedColumn = filterableColumns?.find(col => col.id === filter.columnId);
                             const operators = filter.columnId ? getOperatorsForColumn(filter.columnId) : [];
                             const needsValue = !['isEmpty', 'isNotEmpty'].includes(filter.operator);

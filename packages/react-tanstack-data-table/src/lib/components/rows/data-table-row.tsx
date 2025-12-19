@@ -7,7 +7,7 @@
  * - Hover effects
  * - Striped styling
  */
-import { TableRow, TableCell, Collapse, TableRowProps, TableCellProps, SxProps, tableRowClasses, Box } from '@mui/material';
+import { TableRow, TableCell, Collapse, TableRowProps, TableCellProps, SxProps, tableRowClasses } from '@mui/material';
 import { flexRender, Row } from '@tanstack/react-table';
 import { ReactNode } from 'react';
 

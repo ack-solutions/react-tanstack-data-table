@@ -12,7 +12,6 @@ export interface EmptyDataRowProps {
     messageSx?: SxProps;
     slots?: Record<string, any>;
     slotProps?: Record<string, any>;
-    [key: string]: any;
 }
 
 export function EmptyDataRow(props: EmptyDataRowProps) {
@@ -25,7 +24,6 @@ export function EmptyDataRow(props: EmptyDataRowProps) {
         messageSx,
         slots,
         slotProps,
-        ...otherProps
     } = props;
 
     // Extract slot-specific props with enhanced merging

@@ -3,7 +3,7 @@ import { TablePagination, Box, TablePaginationProps, SxProps } from '@mui/materi
 import { memo, ReactNode } from 'react';
 
 import { useDataTableContext } from '../../contexts/data-table-context';
-import { getSlotComponent, mergeSlotProps, extractSlotProps } from '../../utils/slot-helpers';
+import { mergeSlotProps } from '../../utils/slot-helpers';
 
 export interface DataTablePaginationProps extends Omit<TablePaginationProps, 'count' | 'rowsPerPage' | 'page' | 'onPageChange' | 'onRowsPerPageChange'> {
     totalRow: number;
@@ -29,8 +29,6 @@ export const DataTablePagination = memo((props: DataTablePaginationProps) => {
         containerSx,
         paginationProps,
         footerSx,
-        slots,
-        slotProps,
         ...otherProps
     } = props;
 
@@ -53,9 +51,9 @@ export const DataTablePagination = memo((props: DataTablePaginationProps) => {
         }
     );
 
-  
 
-    const mergedPaginationProps:any = mergeSlotProps(
+
+    const mergedPaginationProps: any = mergeSlotProps(
         {
             component: 'div',
             size: tableSize === 'small' ? 'small' : 'medium',
@@ -75,7 +73,7 @@ export const DataTablePagination = memo((props: DataTablePaginationProps) => {
             showFirstButton: true,
             showLastButton: true,
             labelRowsPerPage: 'Rows per page:',
-            labelDisplayedRows: ({ from, to, count }: { from: number; to: number; count: number }) => 
+            labelDisplayedRows: ({ from, to, count }: { from: number; to: number; count: number }) =>
                 `${from}–${to} of ${count !== -1 ? count : `more than ${to}`}`,
         },
         { ...paginationProps, ...otherProps }
@@ -97,3 +95,5 @@ export const DataTablePagination = memo((props: DataTablePaginationProps) => {
         </Box>
     );
 });
+
+DataTablePagination.displayName = 'DataTablePagination';
