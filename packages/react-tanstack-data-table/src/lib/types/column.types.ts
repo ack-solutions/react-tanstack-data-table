@@ -14,7 +14,7 @@ export const DEFAULT_EXPANDING_COLUMN_NAME = '_expanding';
  * Module augmentation to extend TanStack Table's ColumnMeta interface
  * This automatically extends all ColumnDef types since they use ColumnMeta in their meta property
  */
-declare module '@tanstack/table-core' {
+declare module '@tanstack/react-table' {
     interface ColumnDefBase<TData extends RowData, TValue> {
         type?: 'boolean' | 'number' | 'date' | 'select' | 'text';
         options?: {

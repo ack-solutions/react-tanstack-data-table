@@ -139,7 +139,7 @@ export interface DataTableApi<T = any> {
         getCurrentFilters: () => ColumnFilterState;
         getCurrentSorting: () => SortingState;
         getCurrentPagination: () => { pageIndex: number; pageSize: number };
-        getCurrentSelection: () => string[];
+        getCurrentSelection: () => SelectionState;
     };
 
     // Simplified Export

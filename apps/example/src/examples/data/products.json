@@ -1,0 +1,103 @@
+[
+  {
+    "id": "1",
+    "name": "Laptop Pro 15",
+    "category": "Electronics",
+    "price": 1299.99,
+    "stock": 45,
+    "status": "in_stock",
+    "rating": 4.5,
+    "brand": "TechCorp"
+  },
+  {
+    "id": "2",
+    "name": "Wireless Mouse",
+    "category": "Accessories",
+    "price": 29.99,
+    "stock": 120,
+    "status": "in_stock",
+    "rating": 4.2,
+    "brand": "TechCorp"
+  },
+  {
+    "id": "3",
+    "name": "Mechanical Keyboard",
+    "category": "Accessories",
+    "price": 149.99,
+    "stock": 0,
+    "status": "out_of_stock",
+    "rating": 4.8,
+    "brand": "KeyMaster"
+  },
+  {
+    "id": "4",
+    "name": "4K Monitor 27\"",
+    "category": "Electronics",
+    "price": 599.99,
+    "stock": 25,
+    "status": "in_stock",
+    "rating": 4.7,
+    "brand": "DisplayTech"
+  },
+  {
+    "id": "5",
+    "name": "USB-C Hub",
+    "category": "Accessories",
+    "price": 79.99,
+    "stock": 80,
+    "status": "in_stock",
+    "rating": 4.0,
+    "brand": "ConnectPro"
+  },
+  {
+    "id": "6",
+    "name": "Gaming Headset",
+    "category": "Audio",
+    "price": 199.99,
+    "stock": 30,
+    "status": "in_stock",
+    "rating": 4.6,
+    "brand": "SoundMax"
+  },
+  {
+    "id": "7",
+    "name": "Webcam HD",
+    "category": "Electronics",
+    "price": 89.99,
+    "stock": 0,
+    "status": "out_of_stock",
+    "rating": 4.3,
+    "brand": "VisionCam"
+  },
+  {
+    "id": "8",
+    "name": "Standing Desk",
+    "category": "Furniture",
+    "price": 499.99,
+    "stock": 15,
+    "status": "in_stock",
+    "rating": 4.4,
+    "brand": "ErgoDesk"
+  },
+  {
+    "id": "9",
+    "name": "Desk Chair Pro",
+    "category": "Furniture",
+    "price": 349.99,
+    "stock": 20,
+    "status": "in_stock",
+    "rating": 4.5,
+    "brand": "ErgoDesk"
+  },
+  {
+    "id": "10",
+    "name": "Tablet 12\"",
+    "category": "Electronics",
+    "price": 799.99,
+    "stock": 35,
+    "status": "in_stock",
+    "rating": 4.1,
+    "brand": "TechCorp"
+  }
+]
+

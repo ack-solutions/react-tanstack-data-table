@@ -1,5 +1,5 @@
 import { Table } from '@tanstack/react-table';
-import { createContext, useContext, ReactNode, useMemo, RefObject } from 'react';
+import React, { createContext, useContext, ReactNode, useMemo, RefObject, ReactElement } from 'react';
 
 import { ColumnFilterState, TableSize } from '../types';
 import { DataTableApi } from '../types/data-table-api';
@@ -57,7 +57,7 @@ export function DataTableProvider<T = any>({
     onExportComplete,
     onExportError,
     onServerExport,
-}: DataTableProviderProps<T>) {
+}: DataTableProviderProps<T>): ReactElement {
     const value = useMemo(() => ({
         table,
         apiRef,

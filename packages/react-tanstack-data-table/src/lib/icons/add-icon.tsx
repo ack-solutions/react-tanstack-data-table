@@ -1,7 +1,8 @@
+import React, { ReactElement } from 'react';
 import { SvgIcon, SvgIconProps } from '@mui/material';
 
 
-export function AddIcon(props: SvgIconProps) {
+export function AddIcon(props: SvgIconProps): ReactElement {
     return (
         <SvgIcon
             {...props}

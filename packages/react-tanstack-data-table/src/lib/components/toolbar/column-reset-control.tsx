@@ -1,3 +1,4 @@
+import React, { ReactElement } from 'react';
 import { Autorenew } from '@mui/icons-material';
 import { IconButton, Tooltip, IconButtonProps } from '@mui/material';
 
@@ -12,9 +13,9 @@ export interface ColumnResetControlProps {
     [key: string]: any;
 }
 
-export function ColumnResetControl(props: ColumnResetControlProps = {}) {
-    const {apiRef, table, slots, slotProps } = useDataTableContext();
-    
+export function ColumnResetControl(props: ColumnResetControlProps = {}): ReactElement {
+    const { apiRef, slots, slotProps } = useDataTableContext();
+
     // Extract slot-specific props with enhanced merging
     const resetIconSlotProps = extractSlotProps(slotProps, 'resetIcon');
     const ResetIconSlot = getSlotComponent(slots, 'resetIcon', Autorenew);
@@ -22,7 +23,7 @@ export function ColumnResetControl(props: ColumnResetControlProps = {}) {
     const handleResetLayout = () => {
         const actions = props.resetActions || ['columnOrder', 'columnPinning', 'columnSizing'];
         if (!apiRef?.current) return;
-        
+
         // Reset based on specified actions
         if (actions.includes('columnOrder')) {
             apiRef?.current?.columnOrdering?.resetColumnOrder();
@@ -59,7 +60,7 @@ export function ColumnResetControl(props: ColumnResetControlProps = {}) {
     );
 
     return (
-        <Tooltip 
+        <Tooltip
             title="Reset layout"
             {...props.tooltipProps}
         >

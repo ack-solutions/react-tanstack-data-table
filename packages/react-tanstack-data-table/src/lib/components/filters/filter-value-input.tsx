@@ -1,3 +1,4 @@
+import React, { ReactElement } from 'react';
 import { FormControl, InputLabel, Select, MenuItem, TextField, Checkbox, ListItemText, Box, FormControlProps, TextFieldProps, SelectProps, SxProps } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { Column } from '@tanstack/react-table';
@@ -21,7 +22,7 @@ interface FilterValueInputProps<T> {
     [key: string]: any;
 }
 
-export function FilterValueInput<T>(props: FilterValueInputProps<T>) {
+export function FilterValueInput<T>(props: FilterValueInputProps<T>): ReactElement {
     const {
         filter,
         column,

@@ -19,8 +19,7 @@
  */
 
 // Main components - be specific to avoid conflicts
-export { DataTable } from './lib/components/table';
-export type { DataTableProps } from './lib/components/table';
+export { DataTable } from './lib/data-table';
 
 // Other component exports
 export * from './lib/components/headers';
@@ -50,7 +49,6 @@ export * from './lib/utils/table-helpers';
 export * from './lib/utils/logger';
 
 // Custom hooks
-export * from './lib/hooks';
 export * from './lib/types';
 
 // Re-export commonly used types from TanStack Table
@@ -71,6 +69,3 @@ export type {
 
 // Custom features (this includes SelectMode from features)
 export * from './lib/features';
-
-// Examples
-export * from './lib/examples';

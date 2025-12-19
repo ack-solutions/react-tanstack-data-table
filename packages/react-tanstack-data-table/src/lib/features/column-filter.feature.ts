@@ -36,49 +36,76 @@ export interface ColumnFilterOptions {
     onColumnFilterApply?: (state: ColumnFilterState) => void;
 }
 
-export interface ColumnFilterTableState {
-    columnFilter: ColumnFilterState;
-}
-
 // Declaration merging to extend TanStack Table types
-declare module '@tanstack/table-core' {
-    interface TableState extends ColumnFilterTableState { }
-    interface TableOptionsResolved<TData extends RowData>
-        extends ColumnFilterOptions { }
-    interface Table<TData extends RowData> extends ColumnFilterInstance<TData> { }
+declare module '@tanstack/react-table' {
+    interface TableState {
+        columnFilter: ColumnFilterState;
+    }
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    interface TableOptionsResolved<TData extends RowData> {
+        enableAdvanceColumnFilter?: boolean;
+        onColumnFilterChange?: (updater: Updater<ColumnFilterState>) => void;
+        onColumnFilterApply?: (state: ColumnFilterState) => void;
+    }
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    interface Table<TData extends RowData> {
+        setColumnFilterState: (updater: Updater<ColumnFilterState>) => void;
+
+        // Pending filter methods (for draft state)
+        addPendingColumnFilter: (columnId: string, operator: string, value: any) => void;
+        updatePendingColumnFilter: (filterId: string, updates: Partial<ColumnFilterRule>) => void;
+        removePendingColumnFilter: (filterId: string) => void;
+        clearAllPendingColumnFilters: () => void;
+        setPendingFilterLogic: (logic: 'AND' | 'OR') => void;
+
+        // Apply pending filters to active filters
+        applyPendingColumnFilters: () => void;
+
+        // Legacy methods (for backward compatibility)
+        addColumnFilter: (columnId: string, operator: string, value: any) => void;
+        updateColumnFilter: (filterId: string, updates: Partial<ColumnFilterRule>) => void;
+        removeColumnFilter: (filterId: string) => void;
+        clearAllColumnFilters: () => void;
+        setFilterLogic: (logic: 'AND' | 'OR') => void;
+
+        // Getters
+        getActiveColumnFilters: () => ColumnFilterRule[];
+        getPendingColumnFilters: () => ColumnFilterRule[];
+        getColumnFilterState: () => ColumnFilterState;
+    }
 }
 
 // Table instance methods for custom column filtering
-export interface ColumnFilterInstance<TData extends RowData> {
-    setColumnFilterState: (updater: Updater<ColumnFilterState>) => void;
+// export interface ColumnFilterInstance<TData extends RowData> {
+//     setColumnFilterState: (updater: Updater<ColumnFilterState>) => void;
 
-    // Pending filter methods (for draft state)
-    addPendingColumnFilter: (columnId: string, operator: string, value: any) => void;
-    updatePendingColumnFilter: (filterId: string, updates: Partial<ColumnFilterRule>) => void;
-    removePendingColumnFilter: (filterId: string) => void;
-    clearAllPendingColumnFilters: () => void;
-    setPendingFilterLogic: (logic: 'AND' | 'OR') => void;
+//     // Pending filter methods (for draft state)
+//     addPendingColumnFilter: (columnId: string, operator: string, value: any) => void;
+//     updatePendingColumnFilter: (filterId: string, updates: Partial<ColumnFilterRule>) => void;
+//     removePendingColumnFilter: (filterId: string) => void;
+//     clearAllPendingColumnFilters: () => void;
+//     setPendingFilterLogic: (logic: 'AND' | 'OR') => void;
 
-    // Apply pending filters to active filters
-    applyPendingColumnFilters: () => void;
+//     // Apply pending filters to active filters
+//     applyPendingColumnFilters: () => void;
 
-    // Legacy methods (for backward compatibility)
-    addColumnFilter: (columnId: string, operator: string, value: any) => void;
-    updateColumnFilter: (filterId: string, updates: Partial<ColumnFilterRule>) => void;
-    removeColumnFilter: (filterId: string) => void;
-    clearAllColumnFilters: () => void;
-    setFilterLogic: (logic: 'AND' | 'OR') => void;
+//     // Legacy methods (for backward compatibility)
+//     addColumnFilter: (columnId: string, operator: string, value: any) => void;
+//     updateColumnFilter: (filterId: string, updates: Partial<ColumnFilterRule>) => void;
+//     removeColumnFilter: (filterId: string) => void;
+//     clearAllColumnFilters: () => void;
+//     setFilterLogic: (logic: 'AND' | 'OR') => void;
 
-    // Getters
-    getActiveColumnFilters: () => ColumnFilterRule[];
-    getPendingColumnFilters: () => ColumnFilterRule[];
-    getColumnFilterState: () => ColumnFilterState;
-}
+//     // Getters
+//     getActiveColumnFilters: () => ColumnFilterRule[];
+//     getPendingColumnFilters: () => ColumnFilterRule[];
+//     getColumnFilterState: () => ColumnFilterState;
+// }
 
 // The custom feature implementation
 export const ColumnFilterFeature: TableFeature<any> = {
     // Define the feature's initial state
-    getInitialState: (state): ColumnFilterTableState => {
+    getInitialState: (state): { columnFilter: ColumnFilterState } => {
         return {
             columnFilter: {
                 filters: [],
@@ -97,7 +124,7 @@ export const ColumnFilterFeature: TableFeature<any> = {
         return {
             enableAdvanceColumnFilter: true,
             onColumnFilterChange: makeStateUpdater('columnFilter', table),
-            onColumnFilterApply: (state) => {
+            onColumnFilterApply: () => {
                 // Implementation of onColumnFilterApply
             },
         } as ColumnFilterOptions;
@@ -263,7 +290,7 @@ export const ColumnFilterFeature: TableFeature<any> = {
  * Utility function to check if a row matches the custom column filters
  * This can be used for client-side filtering
  */
-export function matchesCustomColumnFilters<TData extends RowData>(
+export function matchesCustomColumnFilters(
     row: any,
     filters: ColumnFilterRule[],
     logic: 'AND' | 'OR' = 'AND'
@@ -298,6 +325,11 @@ export function matchesCustomColumnFilters<TData extends RowData>(
 
 export const getCombinedFilteredRowModel = <TData,>() => {
     return (table: Table<TData>) => (): RowModel<TData> => {
+        // Respect server/manual filtering: skip client filtering when manualFiltering is enabled
+        if (table.options.manualFiltering) {
+            return table.getCoreRowModel();
+        }
+
         // Run the built-in global + column filters first:
         const baseFilteredModel = getDefaultFilter<TData>()(table)();
 

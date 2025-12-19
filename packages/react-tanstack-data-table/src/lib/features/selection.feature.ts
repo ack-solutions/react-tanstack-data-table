@@ -41,7 +41,7 @@ export interface SelectionTableState {
 }
 
 // Declaration merging to extend TanStack Table types
-declare module '@tanstack/table-core' {
+declare module '@tanstack/react-table' {
     interface TableState extends SelectionTableState { }
     interface TableOptionsResolved<TData extends RowData>
         extends SelectionOptions { }
@@ -166,6 +166,10 @@ export const SelectionFeature: TableFeature<any> = {
             if (!table.options.enableAdvanceSelection) return;
             const selectMode = table.options.selectMode || 'page';
 
+            const currentRows =
+                table.getPaginationRowModel?.()?.rows ||
+                table.getRowModel().rows;
+
             if (selectMode === 'all') {
                 // In 'all' mode, use exclude type with empty list (select all)
                 table.setSelectionState((old) => ({
@@ -175,8 +179,7 @@ export const SelectionFeature: TableFeature<any> = {
                 }));
             } else {
                 // In 'page' mode, select current page rows
-                const currentPageRows = table.getPaginationRowModel().rows;
-                const selectableRowIds = currentPageRows
+                const selectableRowIds = currentRows
                     .filter(row => table.canSelectRow(row.id))
                     .map(row => row.id);
 
@@ -223,15 +226,17 @@ export const SelectionFeature: TableFeature<any> = {
             const selectMode = table.options.selectMode || 'page';
 
             if (selectMode === 'all') {
+                const totalCount = table.getRowCount();
+                if (totalCount === 0) return false;
+
                 if (state.type === 'exclude') {
                     return state.ids.length === 0;
                 } else {
-                    const totalCount = table.getRowCount();
                     return state.ids.length === totalCount;
                 }
             } else {
                 // Page mode - check if all selectable rows on current page are selected
-                const currentPageRows = table.getPaginationRowModel().rows;
+                const currentPageRows = table.getPaginationRowModel?.()?.rows || table.getRowModel().rows;
                 const selectableRows = currentPageRows.filter(row => table.canSelectRow(row.id));
 
                 if (selectableRows.length === 0) return false;
@@ -246,7 +251,7 @@ export const SelectionFeature: TableFeature<any> = {
             if (selectMode === 'all' && state.type === 'exclude') {
                 // In exclude mode, we have some selected if not all are excluded
                 const totalCount = table.getRowCount();
-                return state.ids.length < totalCount && totalCount > 0;
+                return totalCount > 0 && state.ids.length < totalCount;
             } else {
                 // In include mode, we have some selected if list has items
                 return state.ids.length > 0;

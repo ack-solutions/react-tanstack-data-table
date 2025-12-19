@@ -1,3 +1,4 @@
+import React, { ReactElement } from 'react';
 import { TableCell, TableRow, Skeleton, TableRowProps, TableCellProps, SxProps } from '@mui/material';
 
 import { useDataTableContext } from '../../contexts/data-table-context';
@@ -16,7 +17,7 @@ export interface LoadingRowsProps {
     [key: string]: any;
 }
 
-export function LoadingRows(props: LoadingRowsProps) {
+export function LoadingRows(props: LoadingRowsProps): ReactElement {
     const {
         rowCount = 5,
         rowProps,
@@ -25,7 +26,6 @@ export function LoadingRows(props: LoadingRowsProps) {
         containerSx,
         slots,
         slotProps,
-        ...otherProps
     } = props;
 
     const { table } = useDataTableContext();

@@ -36,13 +36,13 @@ export interface ColumnPinningControlProps {
 export function ColumnPinningControl(props: ColumnPinningControlProps = {}) {
     // Use context if no props provided (MUI DataGrid style)
     const { table, slots, slotProps } = useDataTableContext();
-    
+
     // Extract slot-specific props with enhanced merging
     const pinIconSlotProps = extractSlotProps(slotProps, 'pinIcon');
     const unpinIconSlotProps = extractSlotProps(slotProps, 'unpinIcon');
     const leftIconSlotProps = extractSlotProps(slotProps, 'leftIcon');
     const rightIconSlotProps = extractSlotProps(slotProps, 'rightIcon');
-    
+
     const PinIconSlot = getSlotComponent(slots, 'pinIcon', PushPinOutlined);
     const UnpinIconSlot = getSlotComponent(slots, 'unpinIcon', UnpinIcon);
     const LeftIconSlot = getSlotComponent(slots, 'leftIcon', ArrowLeftOutlined);
@@ -113,7 +113,7 @@ export function ColumnPinningControl(props: ColumnPinningControlProps = {}) {
     return (
         <MenuDropdown
             anchor={(
-                <Tooltip 
+                <Tooltip
                     title="Pin columns"
                     {...props.tooltipProps}
                 >
@@ -147,130 +147,129 @@ export function ColumnPinningControl(props: ColumnPinningControlProps = {}) {
                 </Tooltip>
             )}
         >
-            {({ handleClose }: { handleClose: () => void }) => (
-                <Box
+
+            <Box
+                sx={{
+                    p: 2,
+                    minWidth: 300,
+                    maxWidth: 400,
+                    ...props.menuSx,
+                }}
+            >
+                <Typography
+                    variant="subtitle2"
                     sx={{
-                        p: 2,
-                        minWidth: 300,
-                        maxWidth: 400,
-                        ...props.menuSx,
+                        mb: 1,
+                        ...props.titleSx,
                     }}
                 >
-                    <Typography
-                        variant="subtitle2"
-                        sx={{
-                            mb: 1,
-                            ...props.titleSx,
-                        }}
-                    >
-                        {props.title || 'Pin Columns'}
-                    </Typography>
-                    <Divider sx={{ mb: 2 }} />
+                    {props.title || 'Pin Columns'}
+                </Typography>
+                <Divider sx={{ mb: 2 }} />
 
-                    {totalPinned > 0 && (
-                        <Box sx={{ mb: 2 }}>
-                            <IconButton
-                                size="small"
-                                onClick={handleUnpinAll}
-                                color="warning"
-                                {...props.clearButtonProps}
-                            >
-                                <UnpinIconSlot {...unpinIconSlotProps} />
-                            </IconButton>
-                            <Typography variant="caption" sx={{ ml: 1 }}>
-                                Unpin all columns
-                            </Typography>
-                        </Box>
-                    )}
+                {totalPinned > 0 && (
+                    <Box sx={{ mb: 2 }}>
+                        <IconButton
+                            size="small"
+                            onClick={handleUnpinAll}
+                            color="warning"
+                            {...props.clearButtonProps}
+                        >
+                            <UnpinIconSlot {...unpinIconSlotProps} />
+                        </IconButton>
+                        <Typography variant="caption" sx={{ ml: 1 }}>
+                            Unpin all columns
+                        </Typography>
+                    </Box>
+                )}
 
-                    <List
-                        dense
-                        sx={{ py: 0 }}
-                    >
-                        {allColumns.map((column: any) => {
-                            const pinStatus = getColumnPinStatus(column.id);
-                            const displayName = getColumnDisplayName(column);
+                <List
+                    dense
+                    sx={{ py: 0 }}
+                >
+                    {allColumns.map((column: any) => {
+                        const pinStatus = getColumnPinStatus(column.id);
+                        const displayName = getColumnDisplayName(column);
 
-                            return (
-                                <ListItem
-                                    key={column.id}
-                                    sx={{ py: 0.5 }}
-                                    secondaryAction={(
-                                        <Box
-                                            sx={{
-                                                display: 'flex',
-                                                gap: 0.5,
-                                            }}
-                                        >
-                                            {/* Pin Left */}
-                                            <Tooltip title="Pin left">
-                                                <IconButton
-                                                    size="small"
-                                                    onClick={() => handlePinColumn(column.id, pinStatus === 'left' ? 'none' : 'left')}
-                                                    color={pinStatus === 'left' ? 'primary' : 'default'}
-                                                >
-                                                    <LeftIconSlot
-                                                        fontSize="small"
-                                                        {...leftIconSlotProps}
-                                                    />
-                                                </IconButton>
-                                            </Tooltip>
-
-                                            {/* Pin Right */}
-                                            <Tooltip title="Pin right">
-                                                <IconButton
-                                                    size="small"
-                                                    onClick={() => handlePinColumn(column.id, pinStatus === 'right' ? 'none' : 'right')}
-                                                    color={pinStatus === 'right' ? 'secondary' : 'default'}
-                                                >
-                                                    <RightIconSlot
-                                                        fontSize="small"
-                                                        {...rightIconSlotProps}
-                                                    />
-                                                </IconButton>
-                                            </Tooltip>
-
-                                            {/* Unpin */}
-                                            {pinStatus !== 'none' && (
-                                                <Tooltip title="Unpin">
-                                                    <IconButton
-                                                        size="small"
-                                                        onClick={() => handlePinColumn(column.id, 'none')}
-                                                    >
-                                                        <UnpinIconSlot
-                                                            fontSize="small"
-                                                            {...unpinIconSlotProps}
-                                                        />
-                                                    </IconButton>
-                                                </Tooltip>
-                                            )}
-                                        </Box>
-                                    )}
-                                >
-                                    <ListItemText
-                                        primary={displayName}
-                                        secondary={
-                                            pinStatus === 'left' ? 'Pinned left' :
-                                            pinStatus === 'right' ? 'Pinned right' :
-                                            'Not pinned'
-                                        }
-                                        slotProps={{
-                                            primary: {
-                                                variant: 'body2',
-                                                fontWeight: pinStatus !== 'none' ? 600 : 400,
-                                            },
-                                            secondary: {
-                                                variant: 'caption',
-                                                color: pinStatus !== 'none' ? 'primary.main' : 'text.secondary',
-                                            },
+                        return (
+                            <ListItem
+                                key={column.id}
+                                sx={{ py: 0.25 }}
+                                secondaryAction={(
+                                    <Box
+                                        sx={{
+                                            display: 'flex',
+                                            gap: 0.5,
                                         }}
-                                    />
-                                </ListItem>
-                            );
-                        })}
-                    </List>
-                </Box>
-            )}
+                                    >
+                                        {/* Pin Left */}
+                                        <Tooltip title="Pin left">
+                                            <IconButton
+                                                size="small"
+                                                onClick={() => handlePinColumn(column.id, pinStatus === 'left' ? 'none' : 'left')}
+                                                color={pinStatus === 'left' ? 'primary' : 'default'}
+                                            >
+                                                <LeftIconSlot
+                                                    fontSize="small"
+                                                    {...leftIconSlotProps}
+                                                />
+                                            </IconButton>
+                                        </Tooltip>
+
+                                        {/* Pin Right */}
+                                        <Tooltip title="Pin right">
+                                            <IconButton
+                                                size="small"
+                                                onClick={() => handlePinColumn(column.id, pinStatus === 'right' ? 'none' : 'right')}
+                                                color={pinStatus === 'right' ? 'secondary' : 'default'}
+                                            >
+                                                <RightIconSlot
+                                                    fontSize="small"
+                                                    {...rightIconSlotProps}
+                                                />
+                                            </IconButton>
+                                        </Tooltip>
+
+                                        {/* Unpin */}
+                                        {pinStatus !== 'none' && (
+                                            <Tooltip title="Unpin">
+                                                <IconButton
+                                                    size="small"
+                                                    onClick={() => handlePinColumn(column.id, 'none')}
+                                                >
+                                                    <UnpinIconSlot
+                                                        fontSize="small"
+                                                        {...unpinIconSlotProps}
+                                                    />
+                                                </IconButton>
+                                            </Tooltip>
+                                        )}
+                                    </Box>
+                                )}
+                            >
+                                <ListItemText
+                                    primary={displayName}
+                                    secondary={
+                                        pinStatus === 'left' ? 'Pinned left' :
+                                            pinStatus === 'right' ? 'Pinned right' :
+                                                'Not pinned'
+                                    }
+                                    slotProps={{
+                                        primary: {
+                                            variant: 'body2',
+                                            fontWeight: pinStatus !== 'none' ? 600 : 400,
+                                        },
+                                        secondary: {
+                                            variant: 'caption',
+                                            color: pinStatus !== 'none' ? 'primary.main' : 'text.secondary',
+                                        },
+                                    }}
+                                />
+                            </ListItem>
+                        );
+                    })}
+                </List>
+            </Box>
         </MenuDropdown>
     );
 }

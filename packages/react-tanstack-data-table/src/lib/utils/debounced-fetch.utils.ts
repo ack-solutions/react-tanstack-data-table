@@ -28,6 +28,7 @@ export function useDebouncedFetch<T extends Record<string, any>>(
                     resolve(result);
                 } catch (error) {
                     // Handle fetch error silently or could be passed to onError callback
+                    console.error('Error fetching data:', error);
                     resolve(null);
                 } finally {
                     setIsLoading(false);

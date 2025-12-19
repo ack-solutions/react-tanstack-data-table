@@ -10,8 +10,6 @@ export {
     matchesCustomColumnFilters,
     type ColumnFilterRule,
     type ColumnFilterOptions,
-    type ColumnFilterTableState,
-    type ColumnFilterInstance,
 } from './column-filter.feature';
 
 // Export custom selection feature

@@ -1,7 +1,6 @@
 /**
  * Column utilities for DataTable components
  */
-import { DataTableColumn } from '../types';
 import { Column, ColumnDef } from "@tanstack/react-table";
 
 

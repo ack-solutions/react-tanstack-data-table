@@ -3,10 +3,6 @@
  *
  * Organized component exports for the MUI TanStack DataTable
  */
-
-// Main table components
-export * from './table';
-
 // Header components
 export * from './headers';
 

@@ -1,0 +1,53 @@
+[
+  {
+    "id": "ORD-001",
+    "customerName": "John Doe",
+    "product": "Laptop Pro 15",
+    "quantity": 1,
+    "total": 1299.99,
+    "status": "completed",
+    "orderDate": "2024-01-15",
+    "shippingAddress": "123 Main St, New York, NY"
+  },
+  {
+    "id": "ORD-002",
+    "customerName": "Jane Smith",
+    "product": "Wireless Mouse",
+    "quantity": 2,
+    "total": 59.98,
+    "status": "pending",
+    "orderDate": "2024-01-16",
+    "shippingAddress": "456 Oak Ave, San Francisco, CA"
+  },
+  {
+    "id": "ORD-003",
+    "customerName": "Bob Johnson",
+    "product": "Mechanical Keyboard",
+    "quantity": 1,
+    "total": 149.99,
+    "status": "processing",
+    "orderDate": "2024-01-17",
+    "shippingAddress": "789 Pine Rd, Chicago, IL"
+  },
+  {
+    "id": "ORD-004",
+    "customerName": "Alice Williams",
+    "product": "4K Monitor 27\"",
+    "quantity": 1,
+    "total": 599.99,
+    "status": "completed",
+    "orderDate": "2024-01-18",
+    "shippingAddress": "321 Elm St, Seattle, WA"
+  },
+  {
+    "id": "ORD-005",
+    "customerName": "Charlie Brown",
+    "product": "USB-C Hub",
+    "quantity": 3,
+    "total": 239.97,
+    "status": "shipped",
+    "orderDate": "2024-01-19",
+    "shippingAddress": "654 Maple Dr, Boston, MA"
+  }
+]
+

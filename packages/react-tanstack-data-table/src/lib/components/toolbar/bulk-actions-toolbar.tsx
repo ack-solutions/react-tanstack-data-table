@@ -9,13 +9,13 @@ import {
     ToolbarProps,
     SxProps,
 } from '@mui/material';
-import { ReactNode, useMemo } from 'react';
+import { ReactNode, useMemo, ReactElement } from 'react';
 
 import { useDataTableContext } from '../../contexts/data-table-context';
 import { getSlotComponent, mergeSlotProps, extractSlotProps } from '../../utils/slot-helpers';
 import { SelectionState } from '../../features';
 
-export interface BulkActionsToolbarProps<T = any> extends ToolbarProps {
+export interface BulkActionsToolbarProps extends ToolbarProps {
     selectionState: SelectionState;
     selectedRowCount: number;
     bulkActions?: (selectionState: SelectionState) => ReactNode;
@@ -28,7 +28,7 @@ export interface BulkActionsToolbarProps<T = any> extends ToolbarProps {
     [key: string]: any;
 }
 
-export function BulkActionsToolbar<T = any>(props: BulkActionsToolbarProps<T>) {
+export function BulkActionsToolbar(props: BulkActionsToolbarProps): ReactElement {
     const {
         selectionState,
         selectedRowCount,
@@ -43,7 +43,7 @@ export function BulkActionsToolbar<T = any>(props: BulkActionsToolbarProps<T>) {
     } = props;
 
     const { slots, slotProps } = useDataTableContext();
-    
+
     // Extract slot-specific props with enhanced merging
     const toolbarSlotProps = extractSlotProps(slotProps, 'bulkActionsToolbar');
     const ToolbarSlot = getSlotComponent(slots, 'bulkActionsToolbar', Toolbar);
@@ -83,7 +83,7 @@ export function BulkActionsToolbar<T = any>(props: BulkActionsToolbarProps<T>) {
     );
 
     return (
-        <Fade 
+        <Fade
             in={selectedRowCount > 0}
             {...fadeProps}
         >
@@ -91,8 +91,8 @@ export function BulkActionsToolbar<T = any>(props: BulkActionsToolbarProps<T>) {
                 {...mergedToolbarProps}
             >
                 {/* Left section - Selection info */}
-                <Box 
-                    sx={{ 
+                <Box
+                    sx={{
                         flex: '1 1 100%',
                         ...leftSectionSx,
                     }}

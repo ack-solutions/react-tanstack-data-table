@@ -7,6 +7,7 @@
  * - Column resizing
  * - Pinning support
  */
+import React, { ReactElement } from 'react';
 import { TableHead, TableRow, TableCell, Box, useTheme, TableHeadProps, TableRowProps, TableCellProps, SxProps } from '@mui/material';
 import { Header } from '@tanstack/react-table';
 
@@ -34,7 +35,7 @@ export interface TableHeaderProps extends TableHeadProps {
 /**
  * Renders table headers with sorting, dragging, and resizing capabilities
  */
-export function TableHeader<T>(props: TableHeaderProps) {
+export function TableHeader<T>(props: TableHeaderProps): ReactElement {
     const {
         draggable = false,
         enableColumnResizing = false,
@@ -84,6 +85,7 @@ export function TableHeader<T>(props: TableHeaderProps) {
         const alignment = getColumnAlignment(header.column.columnDef);
         const enableSorting = header.column.getCanSort();
         const wrapText = header.column.columnDef.wrapText ?? false;
+        const canResize = enableColumnResizing && header.column.getCanResize();
 
         const mergedHeaderCellProps = mergeSlotProps(
             {
@@ -145,7 +147,7 @@ export function TableHeader<T>(props: TableHeaderProps) {
                 />
 
                 {/* Column resizer */}
-                {enableColumnResizing && header.column.getCanResize() ? (
+                {canResize ? (
                     <Box
                         {...mergedResizeHandleProps}
                     />

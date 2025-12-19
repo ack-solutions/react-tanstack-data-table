@@ -1,5 +1,5 @@
 import { Button, Menu, MenuProps, Popover } from '@mui/material';
-import {
+import React, {
     cloneElement,
     ReactElement,
     ReactNode,
@@ -31,9 +31,8 @@ export function MenuDropdown({
     anchor,
     label,
     component,
-    sx,
     ...props
-}: MenuDropdownProps) {
+}: MenuDropdownProps): ReactElement {
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const isOpen = useMemo(() => Boolean(anchorEl), [anchorEl]);
     const handleClick = useCallback(
