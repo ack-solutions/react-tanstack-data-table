@@ -127,10 +127,7 @@ export function OverviewSection() {
         </Typography>
         <CodeBlock
           language="bash"
-          code={`npm install react@">=18.0.0" react-dom@">=18.0.0"
-npm install @mui/material@">=5.0.0" @mui/icons-material@">=5.0.0"
-npm install @emotion/react@">=11.0.0" @emotion/styled@">=11.0.0"
-npm install @mui/x-date-pickers@">=5.0.0"`}
+          code={`npm install react react-dom @mui/material @mui/icons-material @emotion/react @emotion/styled @mui/x-date-pickers`}
         />
         <Alert severity="info" sx={{ mt: 2 }}>
           <Typography variant="body2">

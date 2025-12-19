@@ -55,7 +55,7 @@ pnpm add @ackplus/react-tanstack-data-table
 Make sure you have the following peer dependencies installed:
 
 ```bash
-npm install @emotion/react @emotion/styled @mui/icons-material @mui/material @tanstack/react-table @tanstack/react-virtual react react-dom
+npm install react react-dom @mui/material @mui/icons-material @emotion/react @emotion/styled @mui/x-date-pickers
 ```
 
 ## 🚀 Quick Start
