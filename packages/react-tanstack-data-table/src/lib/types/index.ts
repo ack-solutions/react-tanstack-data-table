@@ -18,5 +18,7 @@ export * from './data-table-api';
 // Slots and slotProps types
 export * from './slots.types';
 
+// DataTable types
+export * from './data-table.types';
 // Re-export commonly used types for convenience
 export type { DataTableApi } from './data-table-api';
