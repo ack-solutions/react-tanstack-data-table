@@ -17,7 +17,7 @@ export interface SelectionColumnConfig<T> {
  */
 export const createSelectionColumn = <T>(config: Partial<DataTableColumn<T>> & SelectionColumnConfig<T>): DataTableColumn<T, any> => ({
     id: DEFAULT_SELECTION_COLUMN_NAME,
-    size: 60,
+    maxSize: 60,
     minSize: 60,
     align: 'center',
     filterable: false,
@@ -42,6 +42,8 @@ export const createSelectionColumn = <T>(config: Partial<DataTableColumn<T>> & S
             },
             size: 'small',
             sx: { p: 0 },
+            role: 'checkbox',
+            'aria-checked': allSelected ? 'true' : (someSelected ? 'mixed' : 'false'),
         });
     },
 
@@ -65,6 +67,8 @@ export const createSelectionColumn = <T>(config: Partial<DataTableColumn<T>> & S
                 p: 0,
                 opacity: canSelect ? 1 : 0.5
             },
+            role: 'checkbox',
+            'aria-checked': checked ? 'true' : 'false',
         });
     },
     ...config,
@@ -75,7 +79,7 @@ export const createSelectionColumn = <T>(config: Partial<DataTableColumn<T>> & S
  */
 export const createExpandingColumn = <T>(config: Partial<DataTableColumn<T>>): DataTableColumn<T> => ({
     id: DEFAULT_EXPANDING_COLUMN_NAME,
-    size: 60,
+    maxSize: 60,
     minSize: 60,
     align: 'center',
     filterable: false,
@@ -89,6 +93,9 @@ export const createExpandingColumn = <T>(config: Partial<DataTableColumn<T>>): D
         onClick: row.getToggleExpandedHandler(),
         size: 'small',
         sx: { p: 0 },
+        role: 'button',
+        'aria-label': row.getIsExpanded() ? 'Collapse row' : 'Expand row',
+        'aria-expanded': row.getIsExpanded(),
     }, row.getIsExpanded() ? createElement(KeyboardArrowUpOutlined) : createElement(KeyboardArrowDownOutlined)),
     ...config,
 });

@@ -154,7 +154,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     enableHover = true,
     enableStripes = false,
     tableProps = {},
-    fitToScreen = true,
+    fitToScreen = false,
     tableSize: initialTableSize = 'medium',
 
     // Sticky header/footer props
@@ -710,7 +710,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         // Row model
         getCoreRowModel: getCoreRowModel(),
         ...(enableSorting ? { getSortedRowModel: getSortedRowModel() } : {}),
-        ...(enableColumnFilter ? { getFilteredRowModel: getCombinedFilteredRowModel<T>() } : {}),
+        ...(enableColumnFilter || enableGlobalFilter ? { getFilteredRowModel: getCombinedFilteredRowModel<T>() } : {}),
         ...(enablePagination ? { getPaginationRowModel: getPaginationRowModel() } : {}),
         // Sorting
         enableSorting: enableSorting,
@@ -755,8 +755,13 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     // -------------------------------
     // Virtualization and row memo
     // -------------------------------
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    const rows = useMemo(() => table.getRowModel()?.rows || [], [table, tableData]);
+    // Note: globalFilter is needed in dependencies to trigger recalculation when filter changes
+    // The table object is stable, so we need to depend on the filter state directly
+    const rows = useMemo(() => {
+        const rowModel = table.getRowModel();
+        return rowModel?.rows || [];
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [table, globalFilter, enableGlobalFilter, enableColumnFilter, enablePagination]);
     const rowVirtualizer = useVirtualizer({
         count: rows.length,
         getScrollElement: () => tableContainerRef.current,

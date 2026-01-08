@@ -16,11 +16,13 @@ export function SimpleLocalExample() {
       accessorKey: 'name',
       header: 'Name',
       enableSorting: true,
+      enableGlobalFilter: true,
     },
     {
       accessorKey: 'email',
       header: 'Email',
       enableSorting: true,
+      enableGlobalFilter: true,
     },
     {
       accessorKey: 'department',

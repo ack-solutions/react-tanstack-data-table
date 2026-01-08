@@ -74,17 +74,27 @@ export function DataTableRow<T>(props: DataTableRowProps<T>): ReactElement {
     const handleRowClick = (event: React.MouseEvent<HTMLTableRowElement>) => {
         // Check if click target is a checkbox, button, or interactive element
         const target = event.target as HTMLElement;
+        
+        // Check for various interactive elements
         const isCheckboxClick = target.closest('input[type="checkbox"]') !== null;
         const isButtonClick = target.closest('button') !== null;
         const isLinkClick = target.closest('a') !== null;
+        // Check for elements with interactive roles (button, checkbox, switch, etc.)
+        const isInteractiveRole = target.closest('[role="button"]') !== null || 
+                                  target.closest('[role="checkbox"]') !== null ||
+                                  target.closest('[role="switch"]') !== null ||
+                                  target.closest('[role="menuitem"]') !== null;
+        
+        // Determine if this is an interactive element click
+        const isInteractiveClick = isCheckboxClick || isButtonClick || isLinkClick || isInteractiveRole;
 
-        // If selectOnRowClick is enabled and it's not a checkbox/interactive element click, toggle selection
-        if (selectOnRowClick && !isCheckboxClick && !isButtonClick && !isLinkClick && table?.toggleRowSelected) {
+        // If selectOnRowClick is enabled and it's not an interactive element click, toggle selection
+        if (selectOnRowClick && !isInteractiveClick && table?.toggleRowSelected) {
             table.toggleRowSelected(row.id);
         }
 
-        // Always call onRowClick if provided
-        if (onRowClick) {
+        // Only call onRowClick if it's not an interactive element click
+        if (onRowClick && !isInteractiveClick) {
             onRowClick(event, row);
         }
     };

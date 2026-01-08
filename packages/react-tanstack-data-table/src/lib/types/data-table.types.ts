@@ -7,11 +7,8 @@ import { ReactNode } from 'react';
 import type { ColumnFilterState, TableFilters, TableState } from './index';
 import { DataTableSlots, PartialSlotProps } from './slots.types';
 import { DataTableSize } from '../utils/table-helpers';
-import { SelectionState } from '../features';
+import { SelectionState, SelectMode } from '../features';
 import { DataTableLoggingOptions } from '../utils/logger';
-
-// Selection mode type
-export type SelectMode = 'page' | 'all';
 
 // Dynamic data management interfaces
 // TableFilters now imported from types folder

@@ -338,7 +338,9 @@ export const getCombinedFilteredRowModel = <TData,>() => {
             logic: 'AND',
         };
 
-        if (!filters.length || !table.options.enableAdvanceColumnFilter) return baseFilteredModel;
+        if (!filters.length || !table.options.enableAdvanceColumnFilter) {
+            return baseFilteredModel;
+        }
 
         // Apply custom column filters to pre-filtered rows
         const filteredRows = baseFilteredModel.rows.filter(row =>

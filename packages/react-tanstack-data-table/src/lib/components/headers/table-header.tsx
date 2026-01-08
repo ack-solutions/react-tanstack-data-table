@@ -92,7 +92,7 @@ export function TableHeader<T>(props: TableHeaderProps): ReactElement {
                 align: alignment,
                 sx: {
                     ...getPinnedColumnStyle({
-                        width: (fitToScreen && !enableColumnResizing) ? 'auto' : header.getSize(),
+                        width: fitToScreen ? 'auto' : header.getSize(),
                         isPinned,
                         pinnedPosition,
                         isLastLeftPinnedColumn: isPinned === 'left' && header.column.getIsLastColumn('left'),
