@@ -761,7 +761,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         const rowModel = table.getRowModel();
         return rowModel?.rows || [];
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [table, globalFilter, enableGlobalFilter, enableColumnFilter, enablePagination]);
+    }, [table, tableData, globalFilter, enableGlobalFilter, enableColumnFilter, enablePagination]);
     const rowVirtualizer = useVirtualizer({
         count: rows.length,
         getScrollElement: () => tableContainerRef.current,
