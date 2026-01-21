@@ -12,6 +12,7 @@ import {
     TableBody,
     Box,
     Paper,
+    useTheme,
 } from '@mui/material';
 import {
     getCoreRowModel,
@@ -154,7 +155,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     enableHover = true,
     enableStripes = false,
     tableProps = {},
-    fitToScreen = false,
+    fitToScreen = true,
     tableSize: initialTableSize = 'medium',
 
     // Sticky header/footer props
@@ -194,6 +195,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     const isServerFiltering = filterMode === 'server' || isServerMode;
     const isServerSorting = sortingMode === 'server' || isServerMode;
 
+    const theme = useTheme();
     const logger = useMemo(() => createLogger('DataTable', logging), [logging]);
 
     useEffect(() => {
@@ -720,6 +722,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         // Column resizing
         enableColumnResizing: enableColumnResizing,
         columnResizeMode: columnResizeMode,
+        columnResizeDirection: theme.direction,
         // Column pinning
         enableColumnPinning: enableColumnPinning,
         // Expanding
@@ -736,20 +739,20 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     });
 
     // Compute width after table is created so column resizing is safe and reflects changes
-    const tableWidth = useMemo(() => {
-        if (fitToScreen) {
-            return '100%';
-        }
-        if (enableColumnResizing) {
-            return table.getCenterTotalSize();
-        }
-        return '100%';
-    }, [fitToScreen, enableColumnResizing, table]);
-
-    const tableStyle = useMemo(() => ({
+    const allLeafColumns = table.getAllLeafColumns();
+    const visibleLeafColumns = table.getVisibleLeafColumns();
+    const hasExplicitSizing = allLeafColumns.some((column) => {
+        const { size, minSize, maxSize } = column.columnDef;
+        return size !== undefined || minSize !== undefined || maxSize !== undefined;
+    });
+    const useFixedLayout = fitToScreen || enableColumnResizing || hasExplicitSizing;
+    const tableTotalSize = table.getTotalSize();
+    const tableWidth = fitToScreen ? '100%' : (useFixedLayout ? tableTotalSize : '100%');
+    const tableStyle = {
         width: tableWidth,
-        minWidth: '100%',
-    }), [tableWidth]);
+        minWidth: fitToScreen ? tableTotalSize : undefined,
+        tableLayout: useFixedLayout ? 'fixed' : 'auto',
+    };
 
 
     // -------------------------------
@@ -1861,17 +1864,29 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                         stickyHeader={enableStickyHeaderOrFooter}
                         style={{
                             ...tableStyle,
-                            tableLayout: fitToScreen ? 'fixed' : 'auto',
                             ...tableProps?.style,
                         }}
                         {...mergeSlotProps(tableProps || {}, tableComponentSlotProps)}
                     >
+                        {useFixedLayout ? (
+                            <colgroup>
+                                {visibleLeafColumns.map((column) => (
+                                    <col
+                                        key={column.id}
+                                        style={{
+                                            width: column.getSize(),
+                                            minWidth: column.columnDef.minSize,
+                                            maxWidth: column.columnDef.maxSize,
+                                        }}
+                                    />
+                                ))}
+                            </colgroup>
+                        ) : null}
                         {/* Table Headers */}
                         <TableHeader
                             draggable={enableColumnDragging}
                             enableColumnResizing={enableColumnResizing}
                             enableStickyHeader={enableStickyHeaderOrFooter}
-                            fitToScreen={fitToScreen}
                             onColumnReorder={handleColumnReorder}
                             slots={slots}
                             slotProps={slotProps}

@@ -43,7 +43,7 @@ export function getPinnedColumnStyle(options: PinnedColumnStyleOptions) {
         ? {
             whiteSpace: 'normal' as const,
             wordBreak: 'break-word' as const,
-            overflow: 'visible' as const,
+            overflow: 'hidden' as const,
         }
         : {
             overflow: 'hidden' as const,
@@ -55,7 +55,7 @@ export function getPinnedColumnStyle(options: PinnedColumnStyleOptions) {
         // Width constraints - more strict for narrow columns
         width,
         ...(minWidth !== undefined && { minWidth }),
-        ...(maxWidth !== undefined ? { maxWidth } : { maxWidth: width }),
+        ...(maxWidth !== undefined && { maxWidth }),
         boxSizing: 'border-box',
         ...textWrappingStyles,
         // Position handling

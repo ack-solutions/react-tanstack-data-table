@@ -20,7 +20,6 @@ export interface TableHeaderProps extends TableHeadProps {
     draggable?: boolean;
     enableColumnResizing?: boolean;
     enableStickyHeader?: boolean;
-    fitToScreen?: boolean;
     onColumnReorder?: (draggedColumnId: string, targetColumnId: string) => void;
     // Enhanced customization props
     headerRowProps?: TableRowProps;
@@ -40,7 +39,6 @@ export function TableHeader<T>(props: TableHeaderProps): ReactElement {
         draggable = false,
         enableColumnResizing = false,
         enableStickyHeader = false,
-        fitToScreen = true,
         onColumnReorder,
         headerRowProps,
         headerCellProps,
@@ -85,6 +83,8 @@ export function TableHeader<T>(props: TableHeaderProps): ReactElement {
         const alignment = getColumnAlignment(header.column.columnDef);
         const enableSorting = header.column.getCanSort();
         const wrapText = header.column.columnDef.wrapText ?? false;
+        const minSize = header.column.columnDef.minSize;
+        const maxSize = header.column.columnDef.maxSize;
         const canResize = enableColumnResizing && header.column.getCanResize();
 
         const mergedHeaderCellProps = mergeSlotProps(
@@ -92,7 +92,9 @@ export function TableHeader<T>(props: TableHeaderProps): ReactElement {
                 align: alignment,
                 sx: {
                     ...getPinnedColumnStyle({
-                        width: fitToScreen ? 'auto' : header.getSize(),
+                        width: header.getSize(),
+                        minWidth: minSize !== undefined ? minSize : undefined,
+                        maxWidth: maxSize !== undefined ? maxSize : undefined,
                         isPinned,
                         pinnedPosition,
                         isLastLeftPinnedColumn: isPinned === 'left' && header.column.getIsLastColumn('left'),

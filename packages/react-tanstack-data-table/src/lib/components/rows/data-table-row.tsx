@@ -158,7 +158,7 @@ export function DataTableRow<T>(props: DataTableRowProps<T>): ReactElement {
                             align: alignment,
                             sx: {
                                 ...getPinnedColumnStyle({
-                                    width: cell.column.getSize() || 'auto',
+                                    width: cell.column.getSize(),
                                     minWidth: minSize !== undefined ? minSize : undefined,
                                     maxWidth: maxSize !== undefined ? maxSize : undefined,
                                     isPinned,

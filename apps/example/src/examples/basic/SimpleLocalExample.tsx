@@ -1,6 +1,8 @@
-import React from 'react';
-import { DataTable, ColumnDef } from '@ackplus/react-tanstack-data-table';
+import React, { useState } from 'react';
+import { DataTable, ColumnDef, MenuDropdown } from '@ackplus/react-tanstack-data-table';
 import { employees, Employee } from '../data';
+import { Button, Menu, MenuItem } from '@mui/material';
+import { MoreVertOutlined } from '@mui/icons-material';
 
 /**
  * Simple Local Data Example
@@ -52,6 +54,26 @@ export function SimpleLocalExample() {
         return status.charAt(0).toUpperCase() + status.slice(1);
       },
     },
+    {
+      accessorKey: 'actions',
+      header: 'Action',
+      enableSorting: false,
+      maxSize: 100,
+      cell: ({ getValue }) => {
+        return (
+          <MenuDropdown
+            anchor={() => (
+              <Button>
+                <MoreVertOutlined />
+              </Button>
+            )}
+          >
+            <MenuItem onClick={() => console.log('Edit')}>Edit</MenuItem>
+            <MenuItem onClick={() => console.log('Delete')}>Delete</MenuItem>
+          </MenuDropdown>
+        );
+      },
+    },
   ];
 
   return (
@@ -59,8 +81,12 @@ export function SimpleLocalExample() {
       columns={columns}
       data={employees}
       enableSorting
+      fitToScreen
+      enableColumnResizing
+      enableColumnDragging
       enableGlobalFilter
       enablePagination
+      enableColumnPinning
       enableRowSelection
       idKey="id"
     />

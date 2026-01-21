@@ -58,6 +58,8 @@ export function LoadingRows(props: LoadingRowsProps): ReactElement {
                         const isPinned = column.getIsPinned();
                         const pinnedPosition = isPinned ? column.getStart('left') : undefined;
                         const pinnedRightPosition = isPinned === 'right' ? column.getAfter('right') : undefined;
+                        const minSize = column.columnDef?.minSize;
+                        const maxSize = column.columnDef?.maxSize;
 
                         // Determine skeleton type based on column meta or content
                         const columnMeta = column.columnDef?.meta;
@@ -70,7 +72,9 @@ export function LoadingRows(props: LoadingRowsProps): ReactElement {
                             {
                                 sx: {
                                     ...getPinnedColumnStyle({
-                                        width: column.getSize() || 'auto',
+                                        width: column.getSize(),
+                                        minWidth: minSize !== undefined ? minSize : undefined,
+                                        maxWidth: maxSize !== undefined ? maxSize : undefined,
                                         isPinned,
                                         pinnedPosition,
                                         pinnedRightPosition,
