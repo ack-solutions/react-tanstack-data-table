@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { DataTable, ColumnDef, MenuDropdown } from '@ackplus/react-tanstack-data-table';
+import { DataTable, ColumnDef, MenuDropdown, DEFAULT_SELECTION_COLUMN_NAME } from '@ackplus/react-tanstack-data-table';
 import { employees, Employee } from '../data';
 import { Button, Menu, MenuItem } from '@mui/material';
 import { MoreVertOutlined } from '@mui/icons-material';
@@ -58,6 +58,8 @@ export function SimpleLocalExample() {
       accessorKey: 'actions',
       header: 'Action',
       enableSorting: false,
+      enableHiding: false,
+      enablePinning: false,
       maxSize: 100,
       cell: ({ getValue }) => {
         return (
@@ -81,15 +83,20 @@ export function SimpleLocalExample() {
       columns={columns}
       data={employees}
       enableSorting
-      fitToScreen
+      // fitToScreen={false}
       enableColumnResizing
       enableColumnDragging
       enableGlobalFilter
       enablePagination
       enableColumnPinning
       enableRowSelection
+      initialState={{
+        columnPinning: {
+          left: [DEFAULT_SELECTION_COLUMN_NAME],
+          right: ['actions'],
+        },
+      }}
       idKey="id"
     />
   );
 }
-

@@ -308,7 +308,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     // -------------------------------
     // Callback hooks (grouped together)
     // -------------------------------
-    const fetchData = useCallback(async (overrides: Partial<TableState> = {}) => {
+    const fetchData = useCallback(async (overrides: Partial<TableState> = {}, options?: { delay?: number }) => {
         if (!onFetchData) {
             if (logger.isLevelEnabled('debug')) {
                 logger.debug('onFetchData not provided, skipping fetch', { overrides, columnFilter, sorting, pagination });
@@ -329,7 +329,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         }
 
         try {
-            const result = await debouncedFetch(filters);
+            const result = await debouncedFetch(filters, options === undefined ? 0 : options.delay || 300);
 
             if (logger.isLevelEnabled('info')) {
                 logger.info('Fetch resolved', {
@@ -803,7 +803,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
             if (logger.isLevelEnabled('info')) {
                 logger.info('Initial data load triggered', { initialLoadData });
             }
-            fetchData();
+            fetchData({});
         } else if (logger.isLevelEnabled('debug')) {
             logger.debug('Skipping initial data load', {
                 initialLoadData,
@@ -1143,7 +1143,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                 const allState = table.getState();
 
                 onDataStateChange?.(allState);
-                onFetchData?.({});
+                fetchData?.({});
                 if (logger.isLevelEnabled('debug')) {
                     logger.info('Reloading data', allState);
                 }
@@ -1553,14 +1553,14 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                 }
             },
         },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }), [
         table,
         enhancedColumns,
         handleColumnFilterStateChange,
         idKey,
         onDataStateChange,
-        onFetchData,
+        fetchData,
         enableColumnPinning,
         enablePagination,
         // Export dependencies
