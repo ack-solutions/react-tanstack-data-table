@@ -713,7 +713,8 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         getCoreRowModel: getCoreRowModel(),
         ...(enableSorting ? { getSortedRowModel: getSortedRowModel() } : {}),
         ...(enableColumnFilter || enableGlobalFilter ? { getFilteredRowModel: getCombinedFilteredRowModel<T>() } : {}),
-        ...(enablePagination ? { getPaginationRowModel: getPaginationRowModel() } : {}),
+        // Only use getPaginationRowModel for client-side pagination
+        ...(enablePagination && !isServerPagination ? { getPaginationRowModel: getPaginationRowModel() } : {}),
         // Sorting
         enableSorting: enableSorting,
         manualSorting: isServerSorting,
@@ -760,11 +761,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     // -------------------------------
     // Note: globalFilter is needed in dependencies to trigger recalculation when filter changes
     // The table object is stable, so we need to depend on the filter state directly
-    const rows = useMemo(() => {
-        const rowModel = table.getRowModel();
-        return rowModel?.rows || [];
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [table, tableData, globalFilter, enableGlobalFilter, enableColumnFilter, enablePagination]);
+    const rows = table.getRowModel().rows;
     const rowVirtualizer = useVirtualizer({
         count: rows.length,
         getScrollElement: () => tableContainerRef.current,
