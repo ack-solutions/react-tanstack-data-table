@@ -94,8 +94,12 @@ export interface DataTableApi<T = any> {
 
     // Data Management
     data: {
+        // Refresh data with pagination reset
         refresh: (resetPagination?: boolean) => void;
+        // Reload data without all current states
         reload: () => void;
+        // Reset all data to initial state
+        resetAll: () => void;
 
         // Data CRUD operations
         getAllData: () => T[];

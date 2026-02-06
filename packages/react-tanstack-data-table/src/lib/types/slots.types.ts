@@ -70,6 +70,7 @@ export interface DataTableSlots<T = any> {
         enableReset?: boolean;
         enableTableSizeControl?: boolean;
         enableColumnPinning?: boolean;
+        enableRefresh?: boolean;
         extraFilter?: ReactNode;
         serverExport?: {
             fetchData: (page: number, pageSize: number, filters: TableFilters) => Promise<{ data: T[]; total: number }>;
@@ -210,8 +211,15 @@ export interface DataTableSlots<T = any> {
         onExportCancel?: () => void;
     }>>;
 
+    refreshButton?: SlotComponent<EnhancedSlotProps<BaseSlotProps<T>, ComponentProps<'button'> & {
+        loading?: boolean;
+        showSpinnerWhileLoading?: boolean;
+        onRefresh?: () => void;
+    }>>;
+
     // Icon slots with full SVG component props
     searchIcon?: SlotComponent<ComponentProps<'svg'> & { [key: string]: any }>;
+    refreshIcon?: SlotComponent<ComponentProps<'svg'> & { [key: string]: any }>;
     clearIcon?: SlotComponent<ComponentProps<'svg'> & { [key: string]: any }>;
     exportIcon?: SlotComponent<ComponentProps<'svg'> & { [key: string]: any }>;
     columnIcon?: SlotComponent<ComponentProps<'svg'> & { [key: string]: any }>;

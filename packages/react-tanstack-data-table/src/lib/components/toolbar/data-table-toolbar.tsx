@@ -16,6 +16,7 @@ import { TableExportControl } from './table-export-control';
 import { TableSearchControl } from './table-search-control';
 import { TableSizeControl } from './table-size-control';
 import { useDataTableContext } from '../../contexts/data-table-context';
+import { TableRefreshControl } from './table-refresh-control';
 import { getSlotComponent, mergeSlotProps, extractSlotProps } from '../../utils/slot-helpers';
 
 export interface DataTableToolbarProps extends ToolbarProps {
@@ -48,6 +49,7 @@ export function DataTableToolbar(props: DataTableToolbarProps = {}): ReactElemen
         enableColumnVisibility = true,
         enableExport = true,
         enableReset = true,
+        enableRefresh = false,
         enableColumnFilter = true,
         enableTableSizeControl = true,
         enableColumnPinning = true,
@@ -70,7 +72,8 @@ export function DataTableToolbar(props: DataTableToolbarProps = {}): ReactElemen
     const columnVisibilityControlSlotProps = extractSlotProps(slotProps, 'columnVisibilityControl');
     const resetButtonSlotProps = extractSlotProps(slotProps, 'resetButton');
     const exportButtonSlotProps = extractSlotProps(slotProps, 'exportButton');
-    
+    const refreshButtonSlotProps = extractSlotProps(slotProps, 'refreshButton');
+
     const ToolbarSlot = getSlotComponent(slots, 'toolbar', Toolbar);
     const TableSearchControlSlot = getSlotComponent(slots, 'searchInput', TableSearchControl);
     const TableSizeControlSlot = getSlotComponent(slots, 'tableSizeControl', TableSizeControl);
@@ -79,6 +82,7 @@ export function DataTableToolbar(props: DataTableToolbarProps = {}): ReactElemen
     const ColumnVisibilityControlSlot = getSlotComponent(slots, 'columnVisibilityControl', ColumnVisibilityControl);
     const ColumnResetControlSlot = getSlotComponent(slots, 'resetButton', ColumnResetControl);
     const TableExportControlSlot = getSlotComponent(slots, 'exportButton', TableExportControl);
+    const TableRefreshControlSlot = getSlotComponent(slots, 'refreshButton', TableRefreshControl);
 
     // Merge all props for maximum flexibility
     const mergedToolbarProps = mergeSlotProps(
@@ -207,6 +211,16 @@ export function DataTableToolbar(props: DataTableToolbarProps = {}): ReactElemen
                                     {},
                                     searchInputSlotProps,
                                     props.searchInputProps || {}
+                                )}
+                            />
+                        ) : null}
+
+                        {enableRefresh ? (
+                            <TableRefreshControlSlot 
+                                {...mergeSlotProps(
+                                    {},
+                                    refreshButtonSlotProps,
+                                    props.refreshButtonProps || {}
                                 )}
                             />
                         ) : null}

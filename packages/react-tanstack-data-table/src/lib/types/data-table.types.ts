@@ -116,6 +116,7 @@ export interface DataTableProps<T> {
     enableTableSizeControl?: boolean;
     enableExport?: boolean;
     enableReset?: boolean;
+    enableRefresh?: boolean;
 
     // Loading and empty states
     loading?: boolean;

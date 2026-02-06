@@ -170,6 +170,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     enableTableSizeControl = true,
     enableExport = false,
     enableReset = true,
+    enableRefresh = false,
 
     // Loading and empty states
     loading = false,
@@ -324,12 +325,15 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
             ...overrides,
         };
 
+        console.log('Fetching data', filters);
+
         if (logger.isLevelEnabled('info')) {
             logger.info('Requesting data', { filters });
         }
 
         try {
-            const result = await debouncedFetch(filters, options === undefined ? 0 : options.delay || 300);
+            const delay = options?.delay ?? 300; // respects 0
+            const result = await debouncedFetch(filters, delay);
 
             if (logger.isLevelEnabled('info')) {
                 logger.info('Fetch resolved', {
@@ -361,75 +365,22 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     ]);
 
 
-    const tableStateChange = useCallback((overrides: Partial<TableState> = {}) => {
-        if (!onDataStateChange) {
-            if (logger.isLevelEnabled('debug')) {
-                logger.debug('No onDataStateChange handler registered; skipping state update notification', { overrides });
-            }
-            return;
-        }
-
-        const currentState: Partial<TableState> = {
-            globalFilter,
-            columnFilter,
-            sorting,
-            pagination,
-            columnOrder,
-            columnPinning,
-            columnVisibility,
-            columnSizing,
-            ...overrides,
-        };
-
-        if (logger.isLevelEnabled('debug')) {
-            logger.debug('Emitting tableStateChange', currentState);
-        }
-
-        onDataStateChange?.(currentState);
-    }, [
-        onDataStateChange,
-        globalFilter,
-        columnFilter,
-        sorting,
-        pagination,
-        columnOrder,
-        columnPinning,
-        columnVisibility,
-        columnSizing,
-        logger,
-    ]);
-
-
     const handleSelectionStateChange = useCallback((updaterOrValue) => {
         setSelectionState((prevState) => {
-            const newSelectionState = typeof updaterOrValue === 'function'
-                ? updaterOrValue(prevState)
-                : updaterOrValue;
-            setTimeout(() => {
-                if (onSelectionChange) {
-                    onSelectionChange(newSelectionState);
-                }
-                if (onDataStateChange) {
-                    tableStateChange({ selectionState: newSelectionState });
-                }
-            }, 0);
-            return newSelectionState;
+            const next =
+                typeof updaterOrValue === 'function' ? updaterOrValue(prevState) : updaterOrValue;
+            onSelectionChange?.(next);
+            return next;
         });
-    }, [onSelectionChange, onDataStateChange, tableStateChange]);
+    }, [onSelectionChange]);
 
     const handleColumnFilterStateChange = useCallback((filterState: ColumnFilterState) => {
         if (!filterState || typeof filterState !== 'object') return;
 
         setColumnFilter(filterState);
-
-        if (onColumnFiltersChange) {
-            setTimeout(() => onColumnFiltersChange(filterState), 0);
-        }
-
-        if (onDataStateChange) {
-            setTimeout(() => tableStateChange({ columnFilter: filterState }), 0);
-        }
-    }, [onColumnFiltersChange, onDataStateChange, tableStateChange]);
+        onColumnFiltersChange?.(filterState);
+        return filterState;
+    }, [onColumnFiltersChange]);
 
 
     const resetPageToFirst = useCallback(() => {
@@ -445,43 +396,20 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         return newPagination;
     }, [pagination, logger, onPaginationChange]);
 
-    
+
     const handleSortingChange = useCallback((updaterOrValue: any) => {
-        let newSorting = typeof updaterOrValue === 'function'
-            ? updaterOrValue(sorting)
-            : updaterOrValue;
-        newSorting = newSorting.filter((sort: any) => sort.id);
-        setSorting(newSorting);
-        onSortingChange?.(newSorting);
 
-        if (logger.isLevelEnabled('debug')) {
-            logger.debug('Sorting change applied', {
-                sorting: newSorting,
-                serverMode: isServerMode,
-                serverSorting: isServerSorting,
-            });
-        }
-
-        if (isServerMode || isServerSorting) {
-            const pagination = resetPageToFirst();
-            if (logger.isLevelEnabled('debug')) {
-                logger.debug('Sorting change triggered server fetch', { pagination, sorting: newSorting });
+        setSorting((prev) => {
+            const next = typeof updaterOrValue === 'function' ? updaterOrValue(prev) : updaterOrValue;
+            const cleaned = next.filter((s: any) => s?.id);
+            onSortingChange?.(cleaned);
+            const nextPagination = resetPageToFirst();
+            if (isServerMode || isServerSorting) {
+                fetchData({ sorting: cleaned, pagination: nextPagination }, { delay: 0 });
             }
-            tableStateChange({ sorting: newSorting, pagination });
-            fetchData({
-                sorting: newSorting,
-                pagination,
-            });
-        } else if (onDataStateChange) {
-            const pagination = resetPageToFirst();
-            setTimeout(() => {
-                if (logger.isLevelEnabled('debug')) {
-                    logger.debug('Sorting change notified client state change', { pagination, sorting: newSorting });
-                }
-                tableStateChange({ sorting: newSorting, pagination });
-            }, 0);
-        }
-    }, [sorting, onSortingChange, logger, isServerMode, isServerSorting, onDataStateChange, resetPageToFirst, tableStateChange, fetchData]);
+            return cleaned;
+        });
+    }, [onSortingChange, isServerMode, isServerSorting, resetPageToFirst, fetchData]);
 
     const handleColumnOrderChange = useCallback((updatedColumnOrder: Updater<ColumnOrderState>) => {
         const newColumnOrder = typeof updatedColumnOrder === 'function'
@@ -493,144 +421,64 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         }
     }, [onColumnDragEnd, columnOrder]);
 
-    const handleColumnPinningChange = useCallback((updatedColumnPinning: Updater<ColumnPinningState>) => {
-        const newColumnPinning = typeof updatedColumnPinning === 'function'
-            ? updatedColumnPinning(columnPinning)
-            : updatedColumnPinning;
-        setColumnPinning(newColumnPinning);
-        if (onColumnPinningChange) {
-            onColumnPinningChange(newColumnPinning);
-        }
-    }, [onColumnPinningChange, columnPinning]);
+    const handleColumnPinningChange = useCallback(
+        (updater: Updater<ColumnPinningState>) => {
+            setColumnPinning((prev) => {
+                const next = typeof updater === "function" ? updater(prev) : updater;
+                // keep direct callback here (optional)
+                onColumnPinningChange?.(next);
+                return next;
+            });
+        },
+        [onColumnPinningChange]
+    );
 
     // Column visibility change handler - same pattern as column order
     const handleColumnVisibilityChange = useCallback((updater: any) => {
-        const newVisibility = typeof updater === 'function'
-            ? updater(columnVisibility)
-            : updater;
-        setColumnVisibility(newVisibility);
-
-        if (onColumnVisibilityChange) {
-            setTimeout(() => {
-                onColumnVisibilityChange(newVisibility);
-            }, 0);
-        }
-
-        if (onDataStateChange) {
-            setTimeout(() => {
-                tableStateChange({ columnVisibility: newVisibility });
-            }, 0);
-        }
-    }, [onColumnVisibilityChange, onDataStateChange, tableStateChange, columnVisibility]);
+        setColumnVisibility((prev) => {
+            const next = typeof updater === 'function' ? updater(prev) : updater;
+            onColumnVisibilityChange?.(next);
+            return next;
+        });
+    }, [onColumnVisibilityChange]);
 
     // Column sizing change handler - same pattern as column order
     const handleColumnSizingChange = useCallback((updater: any) => {
-        const newSizing = typeof updater === 'function'
-            ? updater(columnSizing)
-            : updater;
-        setColumnSizing(newSizing);
-
-        if (onColumnSizingChange) {
-            setTimeout(() => {
-                onColumnSizingChange(newSizing);
-            }, 0);
-        }
-
-        if (onDataStateChange) {
-            setTimeout(() => {
-                tableStateChange({ columnSizing: newSizing });
-            }, 0);
-        }
-    }, [onColumnSizingChange, onDataStateChange, tableStateChange, columnSizing]);
+        setColumnSizing((prev) => {
+            const next = typeof updater === 'function' ? updater(prev) : updater;
+            onColumnSizingChange?.(next);
+            return next;
+        });
+    }, [onColumnSizingChange]);
 
     const handlePaginationChange = useCallback((updater: any) => {
-        const newPagination = typeof updater === 'function' ? updater(pagination) : updater;
-        if (logger.isLevelEnabled('debug')) {
-            logger.debug('Pagination change requested', {
-                previous: pagination,
-                next: newPagination,
-                serverSide: isServerMode || isServerPagination,
-            });
-        }
-
-        // Update pagination state
-        setPagination(newPagination);
-        onPaginationChange?.(newPagination);
-
-        if (logger.isLevelEnabled('debug')) {
-            logger.debug('Pagination state updated', newPagination);
-        }
-
-        // Notify state change and fetch data if needed
-        if (isServerMode || isServerPagination) {
-            setTimeout(() => {
-                if (logger.isLevelEnabled('debug')) {
-                    logger.debug('Notifying server-side pagination change', newPagination);
-                }
-                tableStateChange({ pagination: newPagination });
-                fetchData({ pagination: newPagination });
-            }, 0);
-        } else if (onDataStateChange) {
-            setTimeout(() => {
-                if (logger.isLevelEnabled('debug')) {
-                    logger.debug('Notifying client-side pagination change', newPagination);
-                }
-                tableStateChange({ pagination: newPagination });
-            }, 0);
-        }
-    }, [
-        pagination,
-        isServerMode,
-        isServerPagination,
-        onDataStateChange,
-        fetchData,
-        tableStateChange,
-        logger,
-        onPaginationChange,
-    ]);
+        setPagination((prev) => {
+            const next = typeof updater === 'function' ? updater(prev) : updater;
+            onPaginationChange?.(next);
+            if (isServerMode || isServerPagination) {
+                fetchData({ pagination: next }, { delay: 0 });
+            }
+            return next;
+        });
+    }, [isServerMode, isServerPagination, fetchData, onPaginationChange]);
 
 
 
     const handleGlobalFilterChange = useCallback((updaterOrValue: any) => {
-        const newFilter = typeof updaterOrValue === 'function'
-            ? updaterOrValue(globalFilter)
-            : updaterOrValue;
-        setGlobalFilter(newFilter);
+        setGlobalFilter((prev) => {
+            const next = typeof updaterOrValue === 'function' ? updaterOrValue(prev) : updaterOrValue;
 
-        if (logger.isLevelEnabled('debug')) {
-            logger.debug('Global filter change applied', {
-                value: newFilter,
-                serverMode: isServerMode,
-                serverFiltering: isServerFiltering,
-            });
-        }
+            onGlobalFilterChange?.(next);
 
-        if (isServerMode || isServerFiltering) {
-            const pagination = resetPageToFirst();
-            setTimeout(() => {
-                if (logger.isLevelEnabled('debug')) {
-                    logger.debug('Global filter change triggering server fetch', {
-                        pagination,
-                        value: newFilter,
-                    });
-                }
-                tableStateChange({ globalFilter: newFilter, pagination });
-                fetchData({ globalFilter: newFilter, pagination });
-            }, 0);
-        } else if (onDataStateChange) {
-            const pagination = resetPageToFirst();
-            setTimeout(() => {
-                if (logger.isLevelEnabled('debug')) {
-                    logger.debug('Global filter change notifying client listeners', {
-                        pagination,
-                        value: newFilter,
-                    });
-                }
-                tableStateChange({ globalFilter: newFilter, pagination });
-            }, 0);
-        }
-        onGlobalFilterChange?.(newFilter);
-    }, [globalFilter, logger, isServerMode, isServerFiltering, onDataStateChange, onGlobalFilterChange, resetPageToFirst, tableStateChange, fetchData]);
+            if (isServerMode || isServerFiltering) {
+                const nextPagination = { pageIndex: 0, pageSize: pagination.pageSize };
+                setPagination(nextPagination);
+                fetchData({ globalFilter: next, pagination: nextPagination }, { delay: 0 });
+            }
+
+            return next;
+        });
+    }, [isServerMode, isServerFiltering, onGlobalFilterChange, fetchData, pagination.pageSize]);
 
     const onColumnFilterChangeHandler = useCallback((updater: any) => {
         const currentState = columnFilter;
@@ -648,24 +496,15 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
 
     const onColumnFilterApplyHandler = useCallback((appliedState: ColumnFilterState) => {
         const pagination = resetPageToFirst();
-
         if (isServerFiltering) {
-            tableStateChange({
-                columnFilter: appliedState,
-                pagination,
-            });
             fetchData({
                 columnFilter: appliedState,
                 pagination,
             });
-        } else if (onDataStateChange) {
-            setTimeout(() => tableStateChange({ columnFilter: appliedState, pagination }), 0);
         }
 
-        setTimeout(() => {
-            onColumnFiltersChange?.(appliedState);
-        }, 0);
-    }, [resetPageToFirst, isServerFiltering, onDataStateChange, tableStateChange, fetchData, onColumnFiltersChange]);
+        onColumnFiltersChange?.(appliedState);
+    }, [resetPageToFirst, isServerFiltering, fetchData, onColumnFiltersChange]);
 
     // -------------------------------
     // Table creation (after callbacks/memo)
@@ -825,501 +664,573 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     }, [enableColumnDragging, enhancedColumns, columnOrder.length]);
 
 
-    const dataTableApi = useMemo(() => ({
-        table: {
-            getTable: () => table,
-        },
-        // Column Management
-        columnVisibility: {
-            showColumn: (columnId: string) => {
-                table.getColumn(columnId)?.toggleVisibility(true);
-            },
-            hideColumn: (columnId: string) => {
-                table.getColumn(columnId)?.toggleVisibility(false);
-            },
-            toggleColumn: (columnId: string) => {
-                table.getColumn(columnId)?.toggleVisibility();
-            },
-            showAllColumns: () => {
-                table.toggleAllColumnsVisible(true);
-            },
-            hideAllColumns: () => {
-                table.toggleAllColumnsVisible(false);
-            },
-            resetColumnVisibility: () => {
-                const initialVisibility = initialStateConfig.columnVisibility || {};
-                table.setColumnVisibility(initialVisibility);
-                // Manually trigger handler to ensure callbacks are called
-                handleColumnVisibilityChange(initialVisibility);
-            },
-        },
+    const lastSentRef = useRef<string>("");
 
-        // Column Ordering
-        columnOrdering: {
-            setColumnOrder: (columnOrder: ColumnOrderState) => {
-                table.setColumnOrder(columnOrder);
-            },
-            moveColumn: (columnId: string, toIndex: number) => {
-                const currentOrder = table.getState().columnOrder || [];
-                const currentIndex = currentOrder.indexOf(columnId);
-                if (currentIndex === -1) return;
+    const emitTableState = useCallback(() => {
+        if (!onDataStateChange) return;
 
-                const newOrder = [...currentOrder];
-                newOrder.splice(currentIndex, 1);
-                newOrder.splice(toIndex, 0, columnId);
+        const live = table.getState();
 
-                table.setColumnOrder(newOrder);
-            },
-            resetColumnOrder: () => {
-                const initialOrder = enhancedColumns.map((col, index) => {
-                    if (col.id) return col.id;
-                    const anyCol = col as any;
-                    if (anyCol.accessorKey && typeof anyCol.accessorKey === 'string') {
-                        return anyCol.accessorKey;
-                    }
-                    return `column_${index}`;
-                });
-                table.setColumnOrder(initialOrder);
-                // Manually trigger handler to ensure callbacks are called
-                handleColumnOrderChange(initialOrder);
-            },
-        },
+        // only keep what you persist/store
+        const payload = {
+            sorting: live.sorting,
+            pagination: live.pagination,
+            globalFilter: live.globalFilter,
+            columnFilter: live.columnFilter,
+            columnVisibility: live.columnVisibility,
+            columnSizing: live.columnSizing,
+            columnOrder: live.columnOrder,
+            columnPinning: live.columnPinning,
+        };
 
-        // Column Pinning
-        columnPinning: {
-            pinColumnLeft: (columnId: string) => {
-                const currentPinning = table.getState().columnPinning;
-                const newPinning = { ...currentPinning };
+        const key = JSON.stringify(payload);
+        if (key === lastSentRef.current) return;
 
-                // Remove from right if exists
-                newPinning.right = (newPinning.right || []).filter(id => id !== columnId);
-                // Add to left if not exists
-                newPinning.left = [...(newPinning.left || []).filter(id => id !== columnId), columnId];
+        lastSentRef.current = key;
+        onDataStateChange(payload);
+    }, [onDataStateChange, table]);
 
-                table.setColumnPinning(newPinning);
-            },
-            pinColumnRight: (columnId: string) => {
-                const currentPinning = table.getState().columnPinning;
-                const newPinning = { ...currentPinning };
+    useEffect(() => {
+        emitTableState();
+    }, [
+        emitTableState,
+        sorting,
+        pagination,
+        globalFilter,
+        columnFilter,
+        columnVisibility,
+        columnSizing,
+        columnOrder,
+        columnPinning,
+    ]);
 
-                // Remove from left if exists
-                newPinning.left = (newPinning.left || []).filter(id => id !== columnId);
-                // Add to right if not exists - prepend to beginning (appears rightmost to leftmost)
-                // First column pinned appears rightmost, second appears to its left, etc.
-                newPinning.right = [columnId, ...(newPinning.right || []).filter(id => id !== columnId)];
 
-                table.setColumnPinning(newPinning);
-            },
-            unpinColumn: (columnId: string) => {
-                const currentPinning = table.getState().columnPinning;
-                const newPinning = {
-                    left: (currentPinning.left || []).filter(id => id !== columnId),
-                    right: (currentPinning.right || []).filter(id => id !== columnId),
-                };
+    const getResetState = useCallback((): Partial<TableState> => {
+        const resetSorting = initialStateConfig.sorting || [];
+        const resetGlobalFilter = initialStateConfig.globalFilter ?? '';
+        const resetColumnFilter =
+            initialStateConfig.columnFilter || { filters: [], logic: 'AND', pendingFilters: [], pendingLogic: 'AND' };
 
-                table.setColumnPinning(newPinning);
-            },
-            setPinning: (pinning: ColumnPinningState) => {
-                table.setColumnPinning(pinning);
-            },
-            resetColumnPinning: () => {
-                const initialPinning = initialStateConfig.columnPinning || { left: [], right: [] };
-                table.setColumnPinning(initialPinning);
-                // Manually trigger handler to ensure callbacks are called
-                handleColumnPinningChange(initialPinning);
-            },
-        },
+        const resetPagination = enablePagination
+            ? (initialStateConfig.pagination || { pageIndex: 0, pageSize: 10 })
+            : undefined;
 
-        // Column Resizing
-        columnResizing: {
-            resizeColumn: (columnId: string, width: number) => {
-                // Use table's setColumnSizing method
-                const currentSizing = table.getState().columnSizing;
-                table.setColumnSizing({
-                    ...currentSizing,
-                    [columnId]: width,
-                });
-            },
-            autoSizeColumn: (columnId: string) => {
-                // TanStack doesn't have built-in auto-size, so reset to default
-                table.getColumn(columnId)?.resetSize();
-            },
-            autoSizeAllColumns: () => {
-                const initialSizing = initialStateConfig.columnSizing || {};
-                table.setColumnSizing(initialSizing);
-                // Manually trigger handler to ensure callbacks are called
-                handleColumnSizingChange(initialSizing);
-            },
-            resetColumnSizing: () => {
-                const initialSizing = initialStateConfig.columnSizing || {};
-                table.setColumnSizing(initialSizing);
-                // Manually trigger handler to ensure callbacks are called
-                handleColumnSizingChange(initialSizing);
-            },
-        },
+        return {
+            sorting: resetSorting,
+            globalFilter: resetGlobalFilter,
+            columnFilter: resetColumnFilter,
+            ...(resetPagination ? { pagination: resetPagination } : {}),
+        };
+    }, [initialStateConfig, enablePagination]);
 
-        // Filtering
-        filtering: {
-            setGlobalFilter: (filter: string) => {
-                table.setGlobalFilter(filter);
-            },
-            clearGlobalFilter: () => {
-                table.setGlobalFilter('');
-            },
-            setColumnFilters: (filters: ColumnFilterState) => {
-                handleColumnFilterStateChange(filters);
-            },
-            addColumnFilter: (columnId: string, operator: string, value: any) => {
-                const newFilter = {
-                    id: `filter_${Date.now()}`,
-                    columnId,
-                    operator,
-                    value,
-                };
-                const columnFilter = table.getState().columnFilter;
+    const resetAllAndReload = useCallback(() => {
+        const resetState = getResetState();
 
-                const currentFilters = columnFilter.filters || [];
-                const newFilters = [...currentFilters, newFilter];
-                handleColumnFilterStateChange({
-                    filters: newFilters,
-                    logic: columnFilter.logic,
-                    pendingFilters: columnFilter.pendingFilters || [],
-                    pendingLogic: columnFilter.pendingLogic || 'AND',
-                });
-                if (logger.isLevelEnabled('debug')) {
-                    logger.debug(`Adding column filter ${columnId} ${operator} ${value}`, newFilters);
-                }
-            },
-            removeColumnFilter: (filterId: string) => {
-                const columnFilter = table.getState().columnFilter;
-                const currentFilters = columnFilter.filters || [];
-                const newFilters = currentFilters.filter((f: any) => f.id !== filterId);
-                handleColumnFilterStateChange({
-                    filters: newFilters,
-                    logic: columnFilter.logic,
-                    pendingFilters: columnFilter.pendingFilters || [],
-                    pendingLogic: columnFilter.pendingLogic || 'AND',
-                });
-                if (logger.isLevelEnabled('debug')) {
-                    logger.debug(`Removing column filter ${filterId}`, newFilters);
-                }
-            },
-            clearAllFilters: () => {
-                table.setGlobalFilter('');
-                handleColumnFilterStateChange({
-                    filters: [],
-                    logic: 'AND',
-                    pendingFilters: [],
-                    pendingLogic: 'AND',
-                });
-            },
-            resetFilters: () => {
-                handleColumnFilterStateChange({
-                    filters: [],
-                    logic: 'AND',
-                    pendingFilters: [],
-                    pendingLogic: 'AND',
-                });
-                if (logger.isLevelEnabled('debug')) {
-                    logger.debug('Resetting filters');
-                }
-            },
-        },
+        setSorting(resetState.sorting || []);
+        setGlobalFilter(resetState.globalFilter ?? '');
+        setColumnFilter(resetState.columnFilter as any);
 
-        // Sorting
-        sorting: {
-            setSorting: (sortingState: SortingState) => {
-                table.setSorting(sortingState);
-                if (logger.isLevelEnabled('debug')) {
-                    logger.debug(`Setting sorting`, sortingState);
-                }
-            },
-            sortColumn: (columnId: string, direction: 'asc' | 'desc' | false) => {
-                const column = table.getColumn(columnId);
-                if (!column) return;
+        if (resetState.pagination) setPagination(resetState.pagination);
 
-                if (direction === false) {
-                    column.clearSorting();
-                } else {
-                    column.toggleSorting(direction === 'desc');
-                }
-            },
-            clearSorting: () => {
-                table.setSorting([]);
-                // Manually trigger handler to ensure callbacks are called
-                handleSortingChange([]);
-            },
-            resetSorting: () => {
-                const initialSorting = initialStateConfig.sorting || [];
-                table.setSorting(initialSorting);
-                // Manually trigger handler to ensure callbacks are called
-                handleSortingChange(initialSorting);
-            },
-        },
+        setSelectionState(initialSelectionState);
+        setExpanded({});
 
-        // Pagination
-        pagination: {
-            goToPage: (pageIndex: number) => {
-                table.setPageIndex(pageIndex);
-                if (logger.isLevelEnabled('debug')) {
-                    logger.debug(`Going to page ${pageIndex}`);
-                }
-            },
-            nextPage: () => {
-                table.nextPage();
-                if (logger.isLevelEnabled('debug')) {
-                    logger.debug('Next page');
-                }
-            },
-            previousPage: () => {
-                table.previousPage();
-                if (logger.isLevelEnabled('debug')) {
-                    logger.debug('Previous page');
-                }
-            },
-            setPageSize: (pageSize: number) => {
-                table.setPageSize(pageSize);
-                if (logger.isLevelEnabled('debug')) {
-                    logger.debug(`Setting page size to ${pageSize}`);
-                }
-            },
-            goToFirstPage: () => {
-                table.setPageIndex(0);
-                if (logger.isLevelEnabled('debug')) {
-                    logger.debug('Going to first page');
-                }
-            },
-            goToLastPage: () => {
-                const pageCount = table.getPageCount();
-                if (pageCount > 0) {
-                    table.setPageIndex(pageCount - 1);
-                    if (logger.isLevelEnabled('debug')) {
-                        logger.debug(`Going to last page ${pageCount - 1}`);
-                    }
-                }
-            },
-            resetPagination: () => {
-                const initialPagination = initialStateConfig.pagination || { pageIndex: 0, pageSize: 10 };
-                table.setPagination(initialPagination);
-                // Manually trigger handler to ensure callbacks are called
-                handlePaginationChange(initialPagination);
-            },
-        },
+        // layout state
+        setColumnVisibility(initialStateConfig.columnVisibility || {});
+        setColumnSizing(initialStateConfig.columnSizing || {});
+        setColumnOrder(initialStateConfig.columnOrder || []);
+        setColumnPinning(initialStateConfig.columnPinning || { left: [], right: [] });
 
-        // Access via table methods: table.selectRow(), table.getIsRowSelected(), etc.
-        selection: {
-            selectRow: (rowId: string) => table.selectRow?.(rowId),
-            deselectRow: (rowId: string) => table.deselectRow?.(rowId),
-            toggleRowSelection: (rowId: string) => table.toggleRowSelected?.(rowId),
-            selectAll: () => table.selectAll?.(),
-            deselectAll: () => table.deselectAll?.(),
-            toggleSelectAll: () => table.toggleAllRowsSelected?.(),
-            getSelectionState: () => table.getSelectionState?.() || { ids: [], type: 'include' as const },
-            getSelectedRows: () => table.getSelectedRows(),
-            getSelectedCount: () => table.getSelectedCount(),
-            isRowSelected: (rowId) => table.getIsRowSelected(rowId) || false,
-        },
+        if (onFetchData) fetchData(resetState, { delay: 0 });
+    }, [getResetState, initialSelectionState, initialStateConfig, onFetchData, fetchData]);
 
-        // Data Management
-        data: {
-            refresh: (resetPagination = false) => {
-                const filters = table.getState();
-                const pagination = {
-                    pageIndex: resetPagination ? 0 : initialStateConfig.pagination?.pageIndex || 0,
-                    pageSize: filters.pagination?.pageSize || initialStateConfig.pagination?.pageSize || 10,
-                };
-                const allState = table.getState();
-                setPagination(pagination);
-                onDataStateChange?.({ ...allState, pagination });
-                fetchData?.({ pagination });
-                if (logger.isLevelEnabled('debug')) {
-                    logger.debug('Refreshing data using Ref', { pagination, allState });
-                }
-            },
-            reload: () => {
-                const allState = table.getState();
+    const dataTableApi = useMemo(() => {
+        // helpers (avoid repeating boilerplate)
+        const buildInitialOrder = () =>
+            enhancedColumns.map((col, index) => {
+                if ((col as any).id) return (col as any).id as string;
+                const anyCol = col as any;
+                if (anyCol.accessorKey && typeof anyCol.accessorKey === "string") return anyCol.accessorKey;
+                return `column_${index}`;
+            });
 
-                onDataStateChange?.(allState);
-                fetchData?.({});
-                if (logger.isLevelEnabled('debug')) {
-                    logger.info('Reloading data', allState);
-                }
+        const applyColumnOrder = (next: ColumnOrderState) => {
+            // handleColumnOrderChange supports both Updater<ColumnOrderState> and array in your impl
+            handleColumnOrderChange(next as any);
+        };
+
+        const applyPinning = (next: ColumnPinningState) => {
+            handleColumnPinningChange(next as any);
+        };
+
+        const applyVisibility = (next: Record<string, boolean>) => {
+            handleColumnVisibilityChange(next as any);
+        };
+
+        const applySizing = (next: Record<string, number>) => {
+            handleColumnSizingChange(next as any);
+        };
+
+        const applyPagination = (next: any) => {
+            handlePaginationChange(next);
+        };
+
+        const applySorting = (next: any) => {
+            handleSortingChange(next);
+        };
+
+        const applyGlobalFilter = (next: any) => {
+            handleGlobalFilterChange(next);
+        };
+
+        return {
+            table: {
+                getTable: () => table,
             },
-            // Data CRUD operations
-            getAllData: () => {
-                return table.getRowModel().rows?.map(row => row.original) || [];
+
+            // -------------------------------
+            // Column Management
+            // -------------------------------
+            columnVisibility: {
+                showColumn: (columnId: string) => {
+                    applyVisibility({ ...table.getState().columnVisibility, [columnId]: true });
+                },
+                hideColumn: (columnId: string) => {
+                    applyVisibility({ ...table.getState().columnVisibility, [columnId]: false });
+                },
+                toggleColumn: (columnId: string) => {
+                    const curr = table.getState().columnVisibility?.[columnId] ?? true;
+                    applyVisibility({ ...table.getState().columnVisibility, [columnId]: !curr });
+                },
+                showAllColumns: () => {
+                    // set all known columns true
+                    const all: Record<string, boolean> = {};
+                    table.getAllLeafColumns().forEach((c) => (all[c.id] = true));
+                    applyVisibility(all);
+                },
+                hideAllColumns: () => {
+                    const all: Record<string, boolean> = {};
+                    table.getAllLeafColumns().forEach((c) => (all[c.id] = false));
+                    applyVisibility(all);
+                },
+                resetColumnVisibility: () => {
+                    const initialVisibility = initialStateConfig.columnVisibility || {};
+                    applyVisibility(initialVisibility);
+                },
             },
-            getRowData: (rowId: string) => {
-                return table.getRowModel().rows?.find(row => String(row.original[idKey]) === rowId)?.original;
+
+            // -------------------------------
+            // Column Ordering
+            // -------------------------------
+            columnOrdering: {
+                setColumnOrder: (nextOrder: ColumnOrderState) => {
+                    applyColumnOrder(nextOrder);
+                },
+                moveColumn: (columnId: string, toIndex: number) => {
+                    const currentOrder =
+                        (table.getState().columnOrder?.length ? table.getState().columnOrder : buildInitialOrder()) || [];
+                    const fromIndex = currentOrder.indexOf(columnId);
+                    if (fromIndex === -1) return;
+
+                    const next = [...currentOrder];
+                    next.splice(fromIndex, 1);
+                    next.splice(toIndex, 0, columnId);
+
+                    applyColumnOrder(next);
+                },
+                resetColumnOrder: () => {
+                    applyColumnOrder(buildInitialOrder());
+                },
             },
-            getRowByIndex: (index: number) => {
-                return table.getRowModel().rows?.[index]?.original;
-            },
-            updateRow: (rowId: string, updates: Partial<T>) => {
-                const newData = table.getRowModel().rows?.map(row => String(row.original[idKey]) === rowId
-                    ? {
-                        ...row.original,
-                        ...updates,
-                    }
-                    : row.original);
-                setServerData?.(newData || []);
-                if (logger.isLevelEnabled('debug')) {
-                    logger.debug(`Updating row ${rowId}`, updates);
-                }
-            },
-            updateRowByIndex: (index: number, updates: Partial<T>) => {
-                const newData = table.getRowModel().rows?.map(row => row.original);
-                if (newData?.[index]) {
-                    newData[index] = {
-                        ...newData[index]!,
-                        ...updates,
+
+            // -------------------------------
+            // Column Pinning
+            // -------------------------------
+            columnPinning: {
+                pinColumnLeft: (columnId: string) => {
+                    const current = table.getState().columnPinning || { left: [], right: [] };
+                    const next: ColumnPinningState = {
+                        left: [...(current.left || []).filter((id) => id !== columnId), columnId],
+                        right: (current.right || []).filter((id) => id !== columnId),
                     };
+                    applyPinning(next);
+                },
+                pinColumnRight: (columnId: string) => {
+                    const current = table.getState().columnPinning || { left: [], right: [] };
+                    const next: ColumnPinningState = {
+                        left: (current.left || []).filter((id) => id !== columnId),
+                        // keep your "prepend" behavior
+                        right: [columnId, ...(current.right || []).filter((id) => id !== columnId)],
+                    };
+                    applyPinning(next);
+                },
+                unpinColumn: (columnId: string) => {
+                    const current = table.getState().columnPinning || { left: [], right: [] };
+                    const next: ColumnPinningState = {
+                        left: (current.left || []).filter((id) => id !== columnId),
+                        right: (current.right || []).filter((id) => id !== columnId),
+                    };
+                    applyPinning(next);
+                },
+                setPinning: (pinning: ColumnPinningState) => {
+                    applyPinning(pinning);
+                },
+                resetColumnPinning: () => {
+                    const initialPinning = initialStateConfig.columnPinning || { left: [], right: [] };
+                    applyPinning(initialPinning);
+                },
+            },
+
+            // -------------------------------
+            // Column Resizing
+            // -------------------------------
+            columnResizing: {
+                resizeColumn: (columnId: string, width: number) => {
+                    const currentSizing = table.getState().columnSizing || {};
+                    applySizing({ ...currentSizing, [columnId]: width });
+                },
+                autoSizeColumn: (columnId: string) => {
+                    // safe to call tanstack helper; it will feed into onColumnSizingChange if wired,
+                    // but since you're controlled, we still prefer to update through handler:
+                    const col = table.getColumn(columnId);
+                    if (!col) return;
+
+                    col.resetSize();
+                    // after resetSize, read state and emit via handler so controlled stays synced
+                    applySizing({ ...(table.getState().columnSizing || {}) });
+                },
+                autoSizeAllColumns: () => {
+                    const initialSizing = initialStateConfig.columnSizing || {};
+                    applySizing(initialSizing);
+                },
+                resetColumnSizing: () => {
+                    const initialSizing = initialStateConfig.columnSizing || {};
+                    applySizing(initialSizing);
+                },
+            },
+
+            // -------------------------------
+            // Filtering
+            // -------------------------------
+            filtering: {
+                setGlobalFilter: (filter: string) => {
+                    applyGlobalFilter(filter);
+                },
+                clearGlobalFilter: () => {
+                    applyGlobalFilter("");
+                },
+                setColumnFilters: (filters: ColumnFilterState) => {
+                    handleColumnFilterStateChange(filters);
+                },
+                addColumnFilter: (columnId: string, operator: string, value: any) => {
+                    const newFilter = {
+                        id: `filter_${Date.now()}`,
+                        columnId,
+                        operator,
+                        value,
+                    };
+
+                    const current = table.getState().columnFilter;
+                    const currentFilters = current?.filters || [];
+                    const nextFilters = [...currentFilters, newFilter];
+
+                    handleColumnFilterStateChange({
+                        filters: nextFilters,
+                        logic: current?.logic,
+                        pendingFilters: current?.pendingFilters || [],
+                        pendingLogic: current?.pendingLogic || "AND",
+                    });
+
+                    if (logger.isLevelEnabled("debug")) {
+                        logger.debug(`Adding column filter ${columnId} ${operator} ${value}`, nextFilters);
+                    }
+                },
+                removeColumnFilter: (filterId: string) => {
+                    const current = table.getState().columnFilter;
+                    const currentFilters = current?.filters || [];
+                    const nextFilters = currentFilters.filter((f: any) => f.id !== filterId);
+
+                    handleColumnFilterStateChange({
+                        filters: nextFilters,
+                        logic: current?.logic,
+                        pendingFilters: current?.pendingFilters || [],
+                        pendingLogic: current?.pendingLogic || "AND",
+                    });
+
+                    if (logger.isLevelEnabled("debug")) {
+                        logger.debug(`Removing column filter ${filterId}`, nextFilters);
+                    }
+                },
+                clearAllFilters: () => {
+                    applyGlobalFilter("");
+                    handleColumnFilterStateChange({
+                        filters: [],
+                        logic: "AND",
+                        pendingFilters: [],
+                        pendingLogic: "AND",
+                    });
+                },
+                resetFilters: () => {
+                    handleColumnFilterStateChange({
+                        filters: [],
+                        logic: "AND",
+                        pendingFilters: [],
+                        pendingLogic: "AND",
+                    });
+
+                    if (logger.isLevelEnabled("debug")) {
+                        logger.debug("Resetting filters");
+                    }
+                },
+            },
+
+            // -------------------------------
+            // Sorting
+            // -------------------------------
+            sorting: {
+                setSorting: (sortingState: SortingState) => {
+                    applySorting(sortingState);
+                    if (logger.isLevelEnabled("debug")) logger.debug("Setting sorting", sortingState);
+                },
+
+                // NOTE: toggleSorting is okay, but can become "one behind" in controlled server mode.
+                // So we implement deterministic sorting through handler.
+                sortColumn: (columnId: string, direction: "asc" | "desc" | false) => {
+                    const current = table.getState().sorting || [];
+                    const filtered = current.filter((s: any) => s.id !== columnId);
+
+                    if (direction === false) {
+                        applySorting(filtered);
+                        return;
+                    }
+
+                    applySorting([{ id: columnId, desc: direction === "desc" }, ...filtered]);
+                },
+
+                clearSorting: () => {
+                    applySorting([]);
+                },
+                resetSorting: () => {
+                    const initialSorting = initialStateConfig.sorting || [];
+                    applySorting(initialSorting);
+                },
+            },
+
+            // -------------------------------
+            // Pagination
+            // -------------------------------
+            pagination: {
+                goToPage: (pageIndex: number) => {
+                    applyPagination((prev: any) => ({ ...prev, pageIndex }));
+                    if (logger.isLevelEnabled("debug")) logger.debug(`Going to page ${pageIndex}`);
+                },
+                nextPage: () => {
+                    applyPagination((prev: any) => ({ ...prev, pageIndex: (prev?.pageIndex ?? 0) + 1 }));
+                    if (logger.isLevelEnabled("debug")) logger.debug("Next page");
+                },
+                previousPage: () => {
+                    applyPagination((prev: any) => ({ ...prev, pageIndex: Math.max(0, (prev?.pageIndex ?? 0) - 1) }));
+                    if (logger.isLevelEnabled("debug")) logger.debug("Previous page");
+                },
+                setPageSize: (pageSize: number) => {
+                    // usually want pageIndex reset
+                    applyPagination(() => ({ pageIndex: 0, pageSize }));
+                    if (logger.isLevelEnabled("debug")) logger.debug(`Setting page size to ${pageSize}`);
+                },
+                goToFirstPage: () => {
+                    applyPagination((prev: any) => ({ ...prev, pageIndex: 0 }));
+                    if (logger.isLevelEnabled("debug")) logger.debug("Going to first page");
+                },
+                goToLastPage: () => {
+                    // pageCount can be derived; keep safe fallback
+                    const pageCount = table.getPageCount?.() ?? 0;
+                    if (pageCount > 0) {
+                        applyPagination((prev: any) => ({ ...prev, pageIndex: pageCount - 1 }));
+                        if (logger.isLevelEnabled("debug")) logger.debug(`Going to last page ${pageCount - 1}`);
+                    }
+                },
+                resetPagination: () => {
+                    const initialPagination = initialStateConfig.pagination || { pageIndex: 0, pageSize: 10 };
+                    applyPagination(initialPagination);
+                },
+            },
+
+            // -------------------------------
+            // Selection
+            // -------------------------------
+            selection: {
+                selectRow: (rowId: string) => table.selectRow?.(rowId),
+                deselectRow: (rowId: string) => table.deselectRow?.(rowId),
+                toggleRowSelection: (rowId: string) => table.toggleRowSelected?.(rowId),
+                selectAll: () => table.selectAll?.(),
+                deselectAll: () => table.deselectAll?.(),
+                toggleSelectAll: () => table.toggleAllRowsSelected?.(),
+                getSelectionState: () => table.getSelectionState?.() || ({ ids: [], type: "include" } as const),
+                getSelectedRows: () => table.getSelectedRows(),
+                getSelectedCount: () => table.getSelectedCount(),
+                isRowSelected: (rowId: string) => table.getIsRowSelected(rowId) || false,
+            },
+
+            // -------------------------------
+            // Data Management (kept same, but ensure state changes go through handlers)
+            // -------------------------------
+            data: {
+                refresh: (resetPagination = false) => {
+                    const allState = table.getState();
+                    const current = allState.pagination;
+
+                    const nextPagination = {
+                        pageIndex: resetPagination ? 0 : current?.pageIndex ?? 0,
+                        pageSize: current?.pageSize ?? initialStateConfig.pagination?.pageSize ?? 10,
+                    };
+
+                    // must go through handler so server fetch triggers
+                    applyPagination(nextPagination);
+
+                    // emit persisted state (your emitTableState effect will also do it)
+                    onDataStateChange?.({ ...allState, pagination: nextPagination });
+
+                    fetchData?.({ pagination: nextPagination });
+
+                    if (logger.isLevelEnabled("debug")) {
+                        logger.debug("Refreshing data", { nextPagination, allState });
+                    }
+                },
+
+                reload: () => {
+                    const allState = table.getState();
+                    onDataStateChange?.(allState);
+                    fetchData?.();
+                    if (logger.isLevelEnabled("debug")) {
+                        logger.info("Reloading data", allState);
+                    }
+                },
+
+                resetAll: () => resetAllAndReload({ resetLayout: true }),
+
+                getAllData: () => table.getRowModel().rows?.map((row) => row.original) || [],
+                getRowData: (rowId: string) =>
+                    table.getRowModel().rows?.find((row) => String(row.original[idKey]) === rowId)?.original,
+                getRowByIndex: (index: number) => table.getRowModel().rows?.[index]?.original,
+
+                updateRow: (rowId: string, updates: Partial<T>) => {
+                    const newData = table.getRowModel().rows?.map((row) =>
+                        String(row.original[idKey]) === rowId ? { ...row.original, ...updates } : row.original
+                    );
+                    setServerData?.(newData || []);
+                    if (logger.isLevelEnabled("debug")) logger.debug(`Updating row ${rowId}`, updates);
+                },
+
+                updateRowByIndex: (index: number, updates: Partial<T>) => {
+                    const newData = table.getRowModel().rows?.map((row) => row.original) || [];
+                    if (newData[index]) {
+                        newData[index] = { ...newData[index]!, ...updates };
+                        setServerData(newData);
+                        if (logger.isLevelEnabled("debug")) logger.debug(`Updating row by index ${index}`, updates);
+                    }
+                },
+
+                insertRow: (newRow: T, index?: number) => {
+                    const newData = table.getRowModel().rows?.map((row) => row.original) || [];
+                    if (index !== undefined) newData.splice(index, 0, newRow);
+                    else newData.push(newRow);
+                    setServerData(newData || []);
+                    if (logger.isLevelEnabled("debug")) logger.debug("Inserting row", newRow);
+                },
+
+                deleteRow: (rowId: string) => {
+                    const newData = (table.getRowModel().rows || []).filter((row) => String(row.original[idKey]) !== rowId);
+                    setServerData?.(newData.map((r) => r.original) || []);
+                    if (logger.isLevelEnabled("debug")) logger.debug(`Deleting row ${rowId}`);
+                },
+
+                deleteRowByIndex: (index: number) => {
+                    const newData = (table.getRowModel().rows || []).map((row) => row.original);
+                    newData.splice(index, 1);
                     setServerData(newData);
-                    if (logger.isLevelEnabled('debug')) {
-                        logger.debug(`Updating row by index ${index}`, updates);
-                    }
-                }
-            },
-            insertRow: (newRow: T, index?: number) => {
-                const newData = table.getRowModel().rows?.map(row => row.original) || [];
-                if (index !== undefined) {
-                    newData.splice(index, 0, newRow);
-                } else {
-                    newData.push(newRow);
-                }
-                setServerData(newData || []);
-                if (logger.isLevelEnabled('debug')) {
-                    logger.debug(`Inserting row`, newRow);
-                }
-            },
-            deleteRow: (rowId: string) => {
-                const newData = (table.getRowModel().rows || [])?.filter(row => String(row.original[idKey]) !== rowId);
-                setServerData?.(newData?.map(row => row.original) || []);
-                if (logger.isLevelEnabled('debug')) {
-                    logger.debug(`Deleting row ${rowId}`);
-                }
-            },
-            deleteRowByIndex: (index: number) => {
-                const newData = (table.getRowModel().rows || [])?.map(row => row.original);
-                newData.splice(index, 1);
-                setServerData(newData);
-                if (logger.isLevelEnabled('debug')) {
-                    logger.debug(`Deleting row by index ${index}`);
-                }
-            },
-            deleteSelectedRows: () => {
-                const selectedRows = table.getSelectedRows?.() || [];
-                if (selectedRows.length === 0) return;
+                    if (logger.isLevelEnabled("debug")) logger.debug(`Deleting row by index ${index}`);
+                },
 
-                const selectedIds = new Set(selectedRows.map(row => String(row.original[idKey])));
-                const newData = (table.getRowModel().rows || [])?.filter(row => !selectedIds.has(String(row.original[idKey])));
+                deleteSelectedRows: () => {
+                    const selectedRows = table.getSelectedRows?.() || [];
+                    if (selectedRows.length === 0) return;
 
-                setServerData(newData?.map(row => row.original) || []);
-                table.deselectAll?.();
+                    const selectedIds = new Set(selectedRows.map((row) => String(row.original[idKey])));
+                    const newData = (table.getRowModel().rows || [])
+                        .filter((row) => !selectedIds.has(String(row.original[idKey])))
+                        .map((row) => row.original);
 
-                if (logger.isLevelEnabled('debug')) {
-                    logger.debug('Deleting selected rows');
-                }
-            },
-            replaceAllData: (newData: T[]) => {
-                setServerData?.(newData);
-            },
+                    setServerData(newData);
+                    table.deselectAll?.();
 
-            // Bulk operations
-            updateMultipleRows: (updates: Array<{ rowId: string; data: Partial<T> }>) => {
-                const updateMap = new Map(updates.map(u => [u.rowId, u.data]));
-                const newData = (table.getRowModel().rows || [])?.map(row => {
-                    const rowId = String(row.original[idKey]);
-                    const updateData = updateMap.get(rowId);
-                    return updateData ? {
-                        ...row.original,
-                        ...updateData,
-                    } : row.original;
-                });
-                setServerData(newData || []);
-            },
-            insertMultipleRows: (newRows: T[], startIndex?: number) => {
-                const newData = (table.getRowModel().rows || [])?.map(row => row.original);
-                if (startIndex !== undefined) {
-                    newData.splice(startIndex, 0, ...newRows);
-                } else {
-                    newData.push(...newRows);
-                }
-                setServerData?.(newData);
-            },
-            deleteMultipleRows: (rowIds: string[]) => {
-                const idsToDelete = new Set(rowIds);
-                const newData = (table.getRowModel().rows || [])?.filter(row => !idsToDelete.has(String(row.original[idKey])))?.map(row => row.original);
-                setServerData(newData);
-            },
+                    if (logger.isLevelEnabled("debug")) logger.debug("Deleting selected rows");
+                },
 
-            // Field-specific updates
-            updateField: (rowId: string, fieldName: keyof T, value: any) => {
-                const newData = (table.getRowModel().rows || [])?.map(row => String(row.original[idKey]) === rowId
-                    ? {
-                        ...row.original,
-                        [fieldName]: value,
-                    }
-                    : row.original);
-                setServerData?.(newData);
-            },
-            updateFieldByIndex: (index: number, fieldName: keyof T, value: any) => {
-                const newData = (table.getRowModel().rows || [])?.map(row => row.original);
-                if (newData[index]) {
-                    newData[index] = {
-                        ...newData[index],
-                        [fieldName]: value,
-                    };
+                replaceAllData: (newData: T[]) => setServerData?.(newData),
+
+                updateMultipleRows: (updates: Array<{ rowId: string; data: Partial<T> }>) => {
+                    const updateMap = new Map(updates.map((u) => [u.rowId, u.data]));
+                    const newData = (table.getRowModel().rows || []).map((row) => {
+                        const rowId = String(row.original[idKey]);
+                        const updateData = updateMap.get(rowId);
+                        return updateData ? { ...row.original, ...updateData } : row.original;
+                    });
+                    setServerData(newData || []);
+                },
+
+                insertMultipleRows: (newRows: T[], startIndex?: number) => {
+                    const newData = (table.getRowModel().rows || []).map((row) => row.original);
+                    if (startIndex !== undefined) newData.splice(startIndex, 0, ...newRows);
+                    else newData.push(...newRows);
                     setServerData?.(newData);
-                }
+                },
+
+                deleteMultipleRows: (rowIds: string[]) => {
+                    const idsToDelete = new Set(rowIds);
+                    const newData = (table.getRowModel().rows || [])
+                        .filter((row) => !idsToDelete.has(String(row.original[idKey])))
+                        .map((row) => row.original);
+                    setServerData(newData);
+                },
+
+                updateField: (rowId: string, fieldName: keyof T, value: any) => {
+                    const newData = (table.getRowModel().rows || []).map((row) =>
+                        String(row.original[idKey]) === rowId ? { ...row.original, [fieldName]: value } : row.original
+                    );
+                    setServerData?.(newData);
+                },
+
+                updateFieldByIndex: (index: number, fieldName: keyof T, value: any) => {
+                    const newData = (table.getRowModel().rows || []).map((row) => row.original);
+                    if (newData[index]) {
+                        newData[index] = { ...newData[index], [fieldName]: value };
+                        setServerData?.(newData);
+                    }
+                },
+
+                findRows: (predicate: (row: T) => boolean) =>
+                    (table.getRowModel().rows || []).filter((row) => predicate(row.original)).map((row) => row.original),
+
+                findRowIndex: (predicate: (row: T) => boolean) =>
+                    (table.getRowModel().rows || []).findIndex((row) => predicate(row.original)),
+
+                getDataCount: () => (table.getRowModel().rows || []).length || 0,
+                getFilteredDataCount: () => table.getFilteredRowModel().rows.length,
             },
 
-            // Data queries
-            findRows: (predicate: (row: T) => boolean) => {
-                return (table.getRowModel().rows || [])?.filter(row => predicate(row.original))?.map(row => row.original);
-            },
-            findRowIndex: (predicate: (row: T) => boolean) => {
-                return (table.getRowModel().rows || [])?.findIndex(row => predicate(row.original));
-            },
-            getDataCount: () => {
-                return (table.getRowModel().rows || [])?.length || 0;
-            },
-            getFilteredDataCount: () => {
-                return table.getFilteredRowModel().rows.length;
-            },
-        },
-
-        // Layout Management
-        layout: {
-            resetLayout: () => {
-                table.resetColumnSizing();
-                table.resetColumnVisibility();
-                table.resetSorting();
-                table.resetGlobalFilter();
-            },
-            resetAll: () => {
-                // Reset everything to initial state
-                table.resetColumnSizing();
-                table.resetColumnVisibility();
-                table.resetSorting();
-                table.resetGlobalFilter();
-                table.resetColumnOrder();
-                table.resetExpanded();
-                handleSelectionStateChange(initialSelectionState);
-                table.resetColumnPinning();
-
-                handleColumnFilterStateChange(initialStateConfig.columnFilter || { filters: [], logic: 'AND', pendingFilters: [], pendingLogic: 'AND' });
-
-                if (enablePagination) {
-                    table.setPagination(initialStateConfig.pagination || { pageIndex: 0, pageSize: 10 });
-                }
-
-                if (enableColumnPinning) {
-                    table.setColumnPinning(initialStateConfig.columnPinning || { left: [], right: [] });
-                }
-            },
-            saveLayout: () => {
-                return {
+            // -------------------------------
+            // Layout Management
+            // -------------------------------
+            layout: {
+                resetLayout: () => {
+                    // go through handlers so controlled state updates + emit works
+                    applySizing(initialStateConfig.columnSizing || {});
+                    applyVisibility(initialStateConfig.columnVisibility || {});
+                    applySorting(initialStateConfig.sorting || []);
+                    applyGlobalFilter(initialStateConfig.globalFilter ?? "");
+                },
+                resetAll: () => resetAllAndReload({ resetLayout: true }),
+                saveLayout: () => ({
                     columnVisibility: table.getState().columnVisibility,
                     columnSizing: table.getState().columnSizing,
                     columnOrder: table.getState().columnOrder,
@@ -1328,251 +1239,201 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                     pagination: table.getState().pagination,
                     globalFilter: table.getState().globalFilter,
                     columnFilter: table.getState().columnFilter,
-                };
+                }),
+                restoreLayout: (layout: Partial<TableState>) => {
+                    if (layout.columnVisibility) applyVisibility(layout.columnVisibility as any);
+                    if (layout.columnSizing) applySizing(layout.columnSizing as any);
+                    if (layout.columnOrder) applyColumnOrder(layout.columnOrder as any);
+                    if (layout.columnPinning) applyPinning(layout.columnPinning as any);
+                    if (layout.sorting) applySorting(layout.sorting as any);
+                    if (layout.pagination && enablePagination) applyPagination(layout.pagination as any);
+                    if (layout.globalFilter !== undefined) applyGlobalFilter(layout.globalFilter);
+                    if (layout.columnFilter) handleColumnFilterStateChange(layout.columnFilter as any);
+                },
             },
-            restoreLayout: (layout: Partial<TableState>) => {
-                if (layout.columnVisibility) {
-                    table.setColumnVisibility(layout.columnVisibility);
-                }
-                if (layout.columnSizing) {
-                    table.setColumnSizing(layout.columnSizing);
-                }
-                if (layout.columnOrder) {
-                    table.setColumnOrder(layout.columnOrder);
-                }
-                if (layout.columnPinning) {
-                    table.setColumnPinning(layout.columnPinning);
-                }
-                if (layout.sorting) {
-                    table.setSorting(layout.sorting);
-                }
-                if (layout.pagination && enablePagination) {
-                    table.setPagination(layout.pagination);
-                }
-                if (layout.globalFilter !== undefined) {
-                    table.setGlobalFilter(layout.globalFilter);
-                }
-                if (layout.columnFilter) {
-                    handleColumnFilterStateChange(layout.columnFilter);
-                }
-            },
-        },
 
-        // Table State
-        state: {
-            getTableState: () => {
-                return table.getState();
+            // -------------------------------
+            // Table State
+            // -------------------------------
+            state: {
+                getTableState: () => table.getState(),
+                getCurrentFilters: () => table.getState().columnFilter,
+                getCurrentSorting: () => table.getState().sorting,
+                getCurrentPagination: () => table.getState().pagination,
+                getCurrentSelection: () => table.getSelectionState?.(),
             },
-            getCurrentFilters: () => {
-                return table.getState().columnFilter;
-            },
-            getCurrentSorting: () => {
-                return table.getState().sorting;
-            },
-            getCurrentPagination: () => {
-                return table.getState().pagination;
-            },
-            // Backward compatibility: expose the raw selection array expected by older consumers
-            getCurrentSelection: () => {
-                return table.getSelectionState?.();
-            },
-        },
 
-        // Simplified Export
-        export: {
-            exportCSV: async (options: any = {}) => {
-                const { filename = exportFilename, } = options;
+            // -------------------------------
+            // Export (unchanged mostly)
+            // -------------------------------
+            export: {
+                exportCSV: async (options: any = {}) => {
+                    const { filename = exportFilename } = options;
 
-                try {
-                    // Create abort controller for this export
-                    const controller = new AbortController();
-                    setExportController?.(controller);
+                    try {
+                        const controller = new AbortController();
+                        setExportController?.(controller);
 
-                    if (dataMode === 'server' && onServerExport) {
-                        // Server export with selection data
+                        if (dataMode === "server" && onServerExport) {
+                            const currentFilters = {
+                                globalFilter: table.getState().globalFilter,
+                                columnFilter: table.getState().columnFilter,
+                                sorting: table.getState().sorting,
+                                pagination: table.getState().pagination,
+                            };
+
+                            if (logger.isLevelEnabled("debug")) logger.debug("Server export CSV", { currentFilters });
+
+                            await exportServerData(table, {
+                                format: "csv",
+                                filename,
+                                fetchData: (filters: any, selection: any) => onServerExport(filters, selection),
+                                currentFilters,
+                                selection: table.getSelectionState?.(),
+                                onProgress: onExportProgress,
+                                onComplete: onExportComplete,
+                                onError: onExportError,
+                            });
+                        } else {
+                            await exportClientData(table, {
+                                format: "csv",
+                                filename,
+                                onProgress: onExportProgress,
+                                onComplete: onExportComplete,
+                                onError: onExportError,
+                            });
+
+                            if (logger.isLevelEnabled("debug")) logger.debug("Client export CSV", filename);
+                        }
+                    } catch (error: any) {
+                        onExportError?.({ message: error.message || "Export failed", code: "EXPORT_ERROR" });
+                    } finally {
+                        setExportController?.(null);
+                    }
+                },
+
+                exportExcel: async (options: any = {}) => {
+                    const { filename = exportFilename } = options;
+
+                    try {
+                        const controller = new AbortController();
+                        setExportController?.(controller);
+
+                        if (dataMode === "server" && onServerExport) {
+                            const currentFilters = {
+                                globalFilter: table.getState().globalFilter,
+                                columnFilter: table.getState().columnFilter,
+                                sorting: table.getState().sorting,
+                                pagination: table.getState().pagination,
+                            };
+
+                            if (logger.isLevelEnabled("debug")) logger.debug("Server export Excel", { currentFilters });
+
+                            await exportServerData(table, {
+                                format: "excel",
+                                filename,
+                                fetchData: (filters: any, selection: any) => onServerExport(filters, selection),
+                                currentFilters,
+                                selection: table.getSelectionState?.(),
+                                onProgress: onExportProgress,
+                                onComplete: onExportComplete,
+                                onError: onExportError,
+                            });
+                        } else {
+                            await exportClientData(table, {
+                                format: "excel",
+                                filename,
+                                onProgress: onExportProgress,
+                                onComplete: onExportComplete,
+                                onError: onExportError,
+                            });
+
+                            if (logger.isLevelEnabled("debug")) logger.debug("Client export Excel", filename);
+                        }
+                    } catch (error: any) {
+                        onExportError?.({ message: error.message || "Export failed", code: "EXPORT_ERROR" });
+                        if (logger.isLevelEnabled("debug")) logger.debug("Server export Excel failed", error);
+                    } finally {
+                        setExportController?.(null);
+                    }
+                },
+
+                exportServerData: async (options: any) => {
+                    const { format, filename = exportFilename, fetchData: fetchFn = onServerExport } = options;
+
+                    if (!fetchFn) {
+                        onExportError?.({ message: "No server export function provided", code: "NO_SERVER_EXPORT" });
+                        if (logger.isLevelEnabled("debug")) logger.debug("Server export data failed", "No server export function provided");
+                        return;
+                    }
+
+                    try {
+                        const controller = new AbortController();
+                        setExportController?.(controller);
+
                         const currentFilters = {
                             globalFilter: table.getState().globalFilter,
                             columnFilter: table.getState().columnFilter,
                             sorting: table.getState().sorting,
                             pagination: table.getState().pagination,
                         };
-                        if (logger.isLevelEnabled('debug')) {
-                            logger.debug('Server export CSV', { currentFilters });
-                        }
+
+                        if (logger.isLevelEnabled("debug")) logger.debug("Server export data", { currentFilters });
+
                         await exportServerData(table, {
-                            format: 'csv',
+                            format,
                             filename,
-                            fetchData: (filters, selection) => onServerExport(filters, selection),
+                            fetchData: (filters: any, selection: any) => fetchFn(filters, selection),
                             currentFilters,
                             selection: table.getSelectionState?.(),
                             onProgress: onExportProgress,
                             onComplete: onExportComplete,
                             onError: onExportError,
                         });
-                    } else {
-                        // Client export - auto-detect selected rows if not specified
-                        await exportClientData(table, {
-                            format: 'csv',
-                            filename,
-                            onProgress: onExportProgress,
-                            onComplete: onExportComplete,
-                            onError: onExportError,
-                        });
-                        if (logger.isLevelEnabled('debug')) {
-                            logger.debug('Client export CSV', filename);
-                        }
+                    } catch (error: any) {
+                        onExportError?.({ message: error.message || "Export failed", code: "EXPORT_ERROR" });
+                        if (logger.isLevelEnabled("debug")) logger.debug("Server export data failed", error);
+                    } finally {
+                        setExportController?.(null);
                     }
-                } catch (error: any) {
-                    onExportError?.({
-                        message: error.message || 'Export failed',
-                        code: 'EXPORT_ERROR',
-                    });
-                } finally {
+                },
+
+                isExporting: () => isExporting || false,
+                cancelExport: () => {
+                    exportController?.abort();
                     setExportController?.(null);
-                }
+                    if (logger.isLevelEnabled("debug")) logger.debug("Export cancelled");
+                },
             },
-            exportExcel: async (options: any = {}) => {
-                const { filename = exportFilename } = options;
-
-                try {
-                    // Create abort controller for this export
-                    const controller = new AbortController();
-                    setExportController?.(controller);
-
-                    if (dataMode === 'server' && onServerExport) {
-                        // Server export with selection data
-                        const currentFilters = {
-                            globalFilter: table.getState().globalFilter,
-                            columnFilter: table.getState().columnFilter,
-                            sorting: table.getState().sorting,
-                            pagination: table.getState().pagination,
-                        };
-
-                        if (logger.isLevelEnabled('debug')) {
-                            logger.debug('Server export Excel', { currentFilters });
-                        }
-                        await exportServerData(table, {
-                            format: 'excel',
-                            filename,
-                            fetchData: (filters, selection) => onServerExport(filters, selection),
-                            currentFilters,
-                            selection: table.getSelectionState?.(),
-                            onProgress: onExportProgress,
-                            onComplete: onExportComplete,
-                            onError: onExportError,
-                        });
-                    } else {
-                        // Client export - auto-detect selected rows if not specified
-                        await exportClientData(table, {
-                            format: 'excel',
-                            filename,
-                            onProgress: onExportProgress,
-                            onComplete: onExportComplete,
-                            onError: onExportError,
-                        });
-                        if (logger.isLevelEnabled('debug')) {
-                            logger.debug('Client export Excel', filename);
-                        }
-                    }
-                } catch (error: any) {
-                    onExportError?.({
-                        message: error.message || 'Export failed',
-                        code: 'EXPORT_ERROR',
-                    });
-                    if (logger.isLevelEnabled('debug')) {
-                        logger.debug('Server export Excel failed', error);
-                    }
-                } finally {
-                    setExportController?.(null);
-                }
-            },
-            exportServerData: async (options) => {
-                const {
-                    format,
-                    filename = exportFilename,
-                    fetchData = onServerExport,
-                } = options;
-
-                if (!fetchData) {
-                    onExportError?.({
-                        message: 'No server export function provided',
-                        code: 'NO_SERVER_EXPORT',
-                    });
-                    if (logger.isLevelEnabled('debug')) {
-                        logger.debug('Server export data failed', 'No server export function provided');
-                    }
-                    return;
-                }
-
-                try {
-                    // Create abort controller for this export
-                    const controller = new AbortController();
-                    setExportController?.(controller);
-
-                    const currentFilters = {
-                        globalFilter: table.getState().globalFilter,
-                        columnFilter: table.getState().columnFilter,
-                        sorting: table.getState().sorting,
-                        pagination: table.getState().pagination,
-                    };
-                    if (logger.isLevelEnabled('debug')) {
-                        logger.debug('Server export data', { currentFilters });
-                    }
-                    await exportServerData(table, {
-                        format,
-                        filename,
-                        fetchData: (filters, selection) => fetchData(filters, selection),
-                        currentFilters,
-                        selection: table.getSelectionState?.(),
-                        onProgress: onExportProgress,
-                        onComplete: onExportComplete,
-                        onError: onExportError,
-                    });
-                } catch (error: any) {
-                    onExportError?.({
-                        message: error.message || 'Export failed',
-                        code: 'EXPORT_ERROR',
-                    });
-                    if (logger.isLevelEnabled('debug')) {
-                        logger.debug('Server export data failed', error);
-                    }
-                } finally {
-                    setExportController?.(null);
-                }
-            },
-            // Export state
-            isExporting: () => isExporting || false,
-            cancelExport: () => {
-                exportController?.abort();
-                setExportController?.(null);
-                if (logger.isLevelEnabled('debug')) {
-                    logger.debug('Export cancelled');
-                }
-            },
-        },
+        };
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }), [
+    }, [
         table,
         enhancedColumns,
+        handleColumnOrderChange,
+        handleColumnPinningChange,
+        handleColumnVisibilityChange,
+        handleColumnSizingChange,
+        handlePaginationChange,
+        handleSortingChange,
+        handleGlobalFilterChange,
         handleColumnFilterStateChange,
+        initialStateConfig,
+        enablePagination,
         idKey,
         onDataStateChange,
         fetchData,
-        enableColumnPinning,
-        enablePagination,
-        // Export dependencies
+        // export
         exportFilename,
         onExportProgress,
         onExportComplete,
         onExportError,
         onServerExport,
         exportController,
-        setExportController,
         isExporting,
         dataMode,
-        selectMode,
-        onSelectionChange,
-        // Note: custom selection removed from dependency array
+        logger,
+        resetAllAndReload,
     ]);
 
     internalApiRef.current = dataTableApi;
@@ -1818,7 +1679,15 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                         enableReset={enableReset}
                         enableTableSizeControl={enableTableSizeControl}
                         enableColumnPinning={enableColumnPinning}
+                        enableRefresh={enableRefresh}
                         {...toolbarSlotProps}
+                        refreshButtonProps={{
+                            loading: tableLoading, // disable while fetching
+                            showSpinnerWhileLoading: false,
+                            onRefresh: () => internalApiRef.current?.data?.refresh?.(true),
+                            ...toolbarSlotProps.refreshButtonProps,
+                        }}
+
                     />
                 ) : null}
 

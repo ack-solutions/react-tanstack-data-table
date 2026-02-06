@@ -390,6 +390,7 @@ export function ImprovedServerSideExample() {
         enableExport
         enableGlobalFilter
         enableSorting
+        enableRefresh
         enablePagination
         selectMode="page"
         initialState={{
@@ -404,6 +405,13 @@ export function ImprovedServerSideExample() {
         slotProps={{
           pagination: {
             rowsPerPageOptions: [10, 25, 50, 100],
+          },
+          toolbar: {
+            refreshButtonProps: {
+              loading: loading,
+              showSpinnerWhileLoading: false,
+              onRefresh: () => apiRef.current?.data?.resetAll?.(),
+            },
           },
         }}
         loading={loading}

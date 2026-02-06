@@ -162,7 +162,7 @@ export function validateSlotProps<T, K extends keyof DataTableSlots<T>>(
 /**
  * Helper to create slot props with proper typing
  */
-export function createSlotProps<T>(
+export function createSlotProps(
     table: any,
     additionalProps: Record<string, any> = {}
 ): Record<string, any> {
