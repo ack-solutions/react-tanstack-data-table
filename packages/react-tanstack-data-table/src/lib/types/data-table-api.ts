@@ -3,6 +3,14 @@ import { ColumnPinningState, SortingState, ColumnOrderState, TableState, Row, Ta
 import { ColumnFilterState } from './table.types';
 import { SelectionState } from '../features';
 
+export interface DataRefreshApiOptions {
+    resetPagination?: boolean;
+    force?: boolean;
+    reason?: string;
+}
+
+export type DataRefreshApiInput = boolean | DataRefreshApiOptions;
+
 export interface DataTableApi<T = any> {
     // Column Management
     columnVisibility: {
@@ -95,9 +103,9 @@ export interface DataTableApi<T = any> {
     // Data Management
     data: {
         // Refresh data with pagination reset
-        refresh: (resetPagination?: boolean) => void;
+        refresh: (options?: DataRefreshApiInput) => void;
         // Reload data without all current states
-        reload: () => void;
+        reload: (options?: DataRefreshApiOptions) => void;
         // Reset all data to initial state
         resetAll: () => void;
 

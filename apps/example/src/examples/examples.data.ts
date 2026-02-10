@@ -4,6 +4,7 @@ import {
   ProductsExample,
   ServerSideExample,
   SelectionExample,
+  ExternalDataControlExample,
   SlotsExample,
   ColumnFeaturesExample,
   ImprovedServerSideExample,
@@ -14,6 +15,7 @@ import simpleLocalCode from './basic/SimpleLocalExample.tsx?raw';
 import productsCode from './basic/ProductsExample.tsx?raw';
 import serverSideCode from './advanced/ServerSideExample.tsx?raw';
 import selectionCode from './advanced/SelectionExample.tsx?raw';
+import externalControlCode from './advanced/ExternalDataControlExample.tsx?raw';
 import slotsCode from './customization/SlotsExample.tsx?raw';
 import columnFeaturesCode from './customization/ColumnFeaturesExample.tsx?raw';
 import improvedServerCode from './ImprovedServerSideExample.tsx?raw';
@@ -67,6 +69,16 @@ export const exampleDefinitions: ExampleDefinition[] = [
     features: ['Server-side mode', 'API integration', 'Debounced search', 'Loading states', 'Dynamic pagination'],
     githubPath: 'apps/example/src/examples/advanced/ServerSideExample.tsx',
     code: serverSideCode,
+    category: 'advanced',
+  },
+  {
+    id: 'external-data-control',
+    title: 'External Data Control',
+    description: 'Control all fetching and row mutation outside DataTable while still using apiRef methods for refresh/update/insert/delete.',
+    component: ExternalDataControlExample,
+    features: ['External state', 'onDataStateChange', 'onRefreshData', 'onDataChange', 'apiRef row updates'],
+    githubPath: 'apps/example/src/examples/advanced/ExternalDataControlExample.tsx',
+    code: externalControlCode,
     category: 'advanced',
   },
   {

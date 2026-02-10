@@ -49,12 +49,10 @@ export interface TableFilters {
     };
 }
 
-export interface TableFiltersForFetch {
+export interface TableFiltersForFetch extends Partial<TableFilters> {
     search?: string;
     page?: number;
     pageSize?: number;
-    sorting?: SortingState;
-    columnFilter?: ColumnFilterState;
 }
 
 export interface ColumnFilterState {

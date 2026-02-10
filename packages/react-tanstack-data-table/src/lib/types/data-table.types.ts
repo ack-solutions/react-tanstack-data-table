@@ -13,6 +13,49 @@ import { DataTableLoggingOptions } from '../utils/logger';
 // Dynamic data management interfaces
 // TableFilters now imported from types folder
 
+export type DataRefreshReason = 'initial' | 'state-change' | 'refresh' | 'reload' | 'reset' | string;
+
+export interface DataFetchMeta {
+    reason?: DataRefreshReason;
+    force?: boolean;
+}
+
+export interface DataRefreshOptions extends DataFetchMeta {
+    resetPagination?: boolean;
+}
+
+export interface DataRefreshContext {
+    filters: Partial<TableFilters>;
+    state: Partial<TableState>;
+    options: Required<Pick<DataRefreshOptions, 'resetPagination' | 'force'>> & {
+        reason: string;
+    };
+}
+
+export type DataMutationAction =
+    | 'updateRow'
+    | 'updateRowByIndex'
+    | 'insertRow'
+    | 'deleteRow'
+    | 'deleteRowByIndex'
+    | 'deleteSelectedRows'
+    | 'replaceAllData'
+    | 'updateMultipleRows'
+    | 'insertMultipleRows'
+    | 'deleteMultipleRows'
+    | 'updateField'
+    | 'updateFieldByIndex';
+
+export interface DataMutationContext<T> {
+    action: DataMutationAction;
+    previousData: T[];
+    nextData: T[];
+    rowId?: string;
+    index?: number;
+    rowIds?: string[];
+    totalRow?: number;
+}
+
 export interface DataTableProps<T> {
     // Core data props
     // columns: DataTableColumn<T>[] | AccessorKeyColumnDef <T, string>[];
@@ -28,7 +71,9 @@ export interface DataTableProps<T> {
     initialState?: Partial<TableState>;
     initialLoadData?: boolean; // Initial load data (default: true)
     onDataStateChange?: (filters: Partial<TableState>) => void; // Callback when any filter/state changes
-    onFetchData?: (filters: Partial<TableFilters>) => Promise<{ data: T[]; total: number }>;
+    onFetchData?: (filters: Partial<TableFilters>, meta?: DataFetchMeta) => Promise<{ data: T[]; total: number }>;
+    onRefreshData?: (context: DataRefreshContext) => void | Promise<void>;
+    onDataChange?: (nextData: T[], context: DataMutationContext<T>) => void;
 
     // Simplified Export props
     exportFilename?: string;

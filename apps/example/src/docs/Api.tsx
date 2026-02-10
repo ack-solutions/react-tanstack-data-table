@@ -299,13 +299,13 @@ const apiGroups = [
     methods: [
       {
         name: 'data.refresh',
-        signature: '() => void',
-        description: 'Re-run onFetchData with the current filters—ideal for manual refresh buttons.',
+        signature: "(options?: boolean | { resetPagination?: boolean; force?: boolean; reason?: string }) => void",
+        description: 'Refresh data for both onFetchData mode and externally controlled mode (via onRefreshData).',
       },
       {
         name: 'data.reload',
-        signature: '() => void',
-        description: 'Reload data by calling onFetchData with empty filters.',
+        signature: "(options?: { resetPagination?: boolean; force?: boolean; reason?: string }) => void",
+        description: 'Reload data without resetting filters; can force a hard refresh with custom reason metadata.',
       },
       {
         name: 'data.getAllData',

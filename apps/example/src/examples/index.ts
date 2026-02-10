@@ -11,6 +11,7 @@ export { ProductsExample } from './basic/ProductsExample';
 // Advanced Examples
 export { ServerSideExample } from './advanced/ServerSideExample';
 export { SelectionExample } from './advanced/SelectionExample';
+export { ExternalDataControlExample } from './advanced/ExternalDataControlExample';
 
 // Customization Examples
 export { SlotsExample } from './customization/SlotsExample';

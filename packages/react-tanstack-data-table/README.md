@@ -129,7 +129,9 @@ function MyDataTable() {
 |------|------|---------|-------------|
 | `dataMode` | `'client' \| 'server'` | `'client'` | Data management mode |
 | `initialLoadData` | `boolean` | `true` | Load data on component mount |
-| `onFetchData` | `(filters) => Promise<{data, total}>` | - | Server-side data fetching |
+| `onFetchData` | `(filters, meta?) => Promise<{data, total}>` | - | Server-side data fetching with optional refresh metadata (`reason`, `force`) |
+| `onRefreshData` | `(context) => void \| Promise<void>` | - | External refresh handler for controlled data sources (React Query, SWR, etc.) |
+| `onDataChange` | `(nextData, context) => void` | - | Receives mutations from `apiRef.data.*` when data is controlled by props |
 | `onDataStateChange` | `(state) => void` | - | Called when table state changes |
 | `totalRow` | `number` | `0` | Total rows for server-side pagination |
 
@@ -533,6 +535,83 @@ function ServerSideTable() {
 }
 ```
 
+### React Query Controlled Data (No `onFetchData`)
+
+```tsx
+import { useMemo, useRef, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { DataTable, DataTableApi, TableState } from '@ackplus/react-tanstack-data-table';
+
+function ReactQueryTable() {
+  const apiRef = useRef<DataTableApi<User>>(null);
+  const queryClient = useQueryClient();
+  const [tableState, setTableState] = useState<Partial<TableState>>({
+    pagination: { pageIndex: 0, pageSize: 10 },
+    sorting: [],
+    globalFilter: '',
+  });
+
+  const queryKey = useMemo(() => ['users', tableState], [tableState]);
+
+  const usersQuery = useQuery({
+    queryKey,
+    queryFn: async () => {
+      const res = await fetch('/api/users/query', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(tableState),
+      });
+      return res.json() as Promise<{ data: User[]; total: number }>;
+    },
+    placeholderData: (prev) => prev,
+  });
+
+  const applyUserPatch = async (id: string, patch: Partial<User>) => {
+    const res = await fetch(`/api/users/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(patch),
+    });
+    const updated = (await res.json()) as User;
+    apiRef.current?.data.updateRow(String(updated.id), updated);
+  };
+
+  return (
+    <DataTable
+      ref={apiRef}
+      dataMode="server"
+      columns={columns}
+      data={usersQuery.data?.data ?? []}
+      totalRow={usersQuery.data?.total ?? 0}
+      loading={usersQuery.isFetching}
+      enablePagination
+      enableSorting
+      enableGlobalFilter
+      onDataStateChange={setTableState}
+      // Fetch-on-state-change stays outside DataTable
+      onRefreshData={({ options }) =>
+        queryClient.invalidateQueries({
+          queryKey: ['users'],
+          exact: false,
+          refetchType: options.force ? 'all' : 'active',
+        })
+      }
+      // Row mutation sync stays outside DataTable
+      onDataChange={(nextData) => {
+        queryClient.setQueryData(queryKey, (prev: any) => {
+          if (!prev) return prev;
+          return { ...prev, data: nextData };
+        });
+      }}
+    />
+  );
+}
+
+// Manual refresh
+apiRef.current?.data.refresh(); // normal refresh
+apiRef.current?.data.refresh({ force: true, reason: 'manual-hard-refresh' }); // hard refresh
+```
+
 ### Row Selection with Bulk Actions and Enhanced Slot System
 
 ```tsx
@@ -882,8 +961,8 @@ function MyComponent() {
 - `selection.isRowSelected(rowId)` - Check if row is selected
 
 **Data Management:**
-- `data.refresh()` - Refresh data
-- `data.reload()` - Reload data
+- `data.refresh(options?)` - Refresh data (`boolean` or `{ resetPagination?, force?, reason? }`)
+- `data.reload(options?)` - Reload data (`{ force?, reason?, resetPagination? }`)
 - `data.getAllData()` - Get all data
 - `data.getRowData(rowId)` - Get specific row data
 - `data.getRowByIndex(index)` - Get row by index

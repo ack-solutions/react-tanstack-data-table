@@ -41,7 +41,14 @@ import { TableHeader } from './components/headers';
 import { DataTablePagination } from './components/pagination';
 import { DataTableRow, LoadingRows, EmptyDataRow } from './components/rows';
 import { DataTableToolbar, BulkActionsToolbar } from './components/toolbar';
-import { DataTableProps } from './types/data-table.types';
+import {
+    DataFetchMeta,
+    DataMutationAction,
+    DataMutationContext,
+    DataRefreshContext,
+    DataRefreshOptions,
+    DataTableProps,
+} from './types/data-table.types';
 import { ColumnFilterState, TableFiltersForFetch, TableState } from './types';
 import { DataTableApi } from './types/data-table-api';
 import {
@@ -92,6 +99,8 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     dataMode = 'client',
     initialLoadData = true,
     onFetchData,
+    onRefreshData,
+    onDataChange,
     onDataStateChange,
 
     // Selection props
@@ -259,9 +268,20 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     const tableContainerRef = useRef<HTMLDivElement>(null);
     const internalApiRef = useRef<DataTableApi<T>>(null);
 
+    const isExternallyControlledData = useMemo(
+        () => !onFetchData && (!!onDataChange || !!onRefreshData),
+        [onFetchData, onDataChange, onRefreshData]
+    );
+
     const { debouncedFetch, isLoading: fetchLoading } = useDebouncedFetch(onFetchData);
-    const tableData = useMemo(() => serverData ? serverData : data, [serverData, data]);
-    const tableTotalRow = useMemo(() => serverData ? serverTotal : totalRow || data.length, [serverData, serverTotal, totalRow, data]);
+    const tableData = useMemo(() => {
+        if (isExternallyControlledData) return data;
+        return serverData !== null ? serverData : data;
+    }, [isExternallyControlledData, serverData, data]);
+    const tableTotalRow = useMemo(
+        () => (isExternallyControlledData ? (totalRow || data.length) : (serverData !== null ? serverTotal : totalRow || data.length)),
+        [isExternallyControlledData, serverData, serverTotal, totalRow, data]
+    );
     const tableLoading = useMemo(() => onFetchData ? (loading || fetchLoading) : loading, [onFetchData, loading, fetchLoading]);
 
 
@@ -309,7 +329,10 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     // -------------------------------
     // Callback hooks (grouped together)
     // -------------------------------
-    const fetchData = useCallback(async (overrides: Partial<TableState> = {}, options?: { delay?: number }) => {
+    const fetchData = useCallback(async (
+        overrides: Partial<TableState> = {},
+        options?: { delay?: number; meta?: DataFetchMeta }
+    ) => {
         if (!onFetchData) {
             if (logger.isLevelEnabled('debug')) {
                 logger.debug('onFetchData not provided, skipping fetch', { overrides, columnFilter, sorting, pagination });
@@ -317,7 +340,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
             return;
         }
 
-        const filters: TableFiltersForFetch = {
+        const filters: Partial<TableFiltersForFetch> = {
             globalFilter,
             pagination,
             columnFilter,
@@ -325,15 +348,20 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
             ...overrides,
         };
 
-        console.log('Fetching data', filters);
-
         if (logger.isLevelEnabled('info')) {
-            logger.info('Requesting data', { filters });
+            logger.info('Requesting data', {
+                filters,
+                reason: options?.meta?.reason,
+                force: options?.meta?.force,
+            });
         }
 
         try {
             const delay = options?.delay ?? 300; // respects 0
-            const result = await debouncedFetch(filters, delay);
+            const result = await debouncedFetch(filters, {
+                debounceDelay: delay,
+                meta: options?.meta,
+            });
 
             if (logger.isLevelEnabled('info')) {
                 logger.info('Fetch resolved', {
@@ -342,7 +370,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                 });
             }
 
-            if (result?.data && result?.total !== undefined) {
+            if (result && Array.isArray(result.data) && result.total !== undefined) {
                 setServerData(result.data);
                 setServerTotal(result.total);
             } else if (logger.isLevelEnabled('warn')) {
@@ -363,6 +391,25 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         debouncedFetch,
         logger,
     ]);
+
+    const normalizeRefreshOptions = useCallback((
+        options?: boolean | DataRefreshOptions,
+        fallbackReason: string = 'refresh'
+    ) => {
+        if (typeof options === 'boolean') {
+            return {
+                resetPagination: options,
+                force: false,
+                reason: fallbackReason,
+            };
+        }
+
+        return {
+            resetPagination: options?.resetPagination ?? false,
+            force: options?.force ?? false,
+            reason: options?.reason ?? fallbackReason,
+        };
+    }, []);
 
 
     const handleSelectionStateChange = useCallback((updaterOrValue) => {
@@ -635,11 +682,20 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     // Effects (after callbacks)
     // -------------------------------
     useEffect(() => {
+        if (!isExternallyControlledData || serverData === null) return;
+        setServerData(null);
+        setServerTotal(0);
+    }, [isExternallyControlledData, serverData]);
+
+    useEffect(() => {
         if (initialLoadData && onFetchData) {
             if (logger.isLevelEnabled('info')) {
                 logger.info('Initial data load triggered', { initialLoadData });
             }
-            fetchData({});
+            fetchData({}, {
+                delay: 0,
+                meta: { reason: 'initial' },
+            });
         } else if (logger.isLevelEnabled('debug')) {
             logger.debug('Skipping initial data load', {
                 initialLoadData,
@@ -723,6 +779,126 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         };
     }, [initialStateConfig, enablePagination]);
 
+    const applyDataMutation = useCallback((
+        action: DataMutationAction,
+        updater: (rows: T[]) => T[],
+        details: Partial<Omit<DataMutationContext<T>, 'action' | 'previousData' | 'nextData'>> = {}
+    ) => {
+        const previousData = [...tableData];
+        const nextData = updater(previousData);
+
+        if (nextData === previousData) return nextData;
+
+        const nextTotal = Math.max(0, tableTotalRow + (nextData.length - previousData.length));
+
+        if (!isExternallyControlledData) {
+            setServerData(nextData);
+            setServerTotal(nextTotal);
+        }
+        onDataChange?.(nextData, {
+            action,
+            previousData,
+            nextData,
+            totalRow: nextTotal,
+            ...details,
+        });
+
+        if (logger.isLevelEnabled('debug')) {
+            logger.debug('Applied data mutation', {
+                action,
+                previousCount: previousData.length,
+                nextCount: nextData.length,
+                totalRow: nextTotal,
+            });
+        }
+
+        return nextData;
+    }, [isExternallyControlledData, logger, onDataChange, tableData, tableTotalRow]);
+
+    const buildRefreshContext = useCallback((
+        options: ReturnType<typeof normalizeRefreshOptions>,
+        paginationOverride?: { pageIndex: number; pageSize: number }
+    ): DataRefreshContext => {
+        const state = table.getState();
+        const nextPagination = paginationOverride || state.pagination || pagination;
+
+        return {
+            filters: {
+                globalFilter,
+                pagination: nextPagination,
+                columnFilter,
+                sorting,
+            },
+            state: {
+                sorting,
+                pagination: nextPagination,
+                globalFilter,
+                columnFilter,
+                columnVisibility: state.columnVisibility,
+                columnSizing: state.columnSizing,
+                columnOrder: state.columnOrder,
+                columnPinning: state.columnPinning,
+            },
+            options,
+        };
+    }, [table, pagination, globalFilter, columnFilter, sorting]);
+
+    const triggerRefresh = useCallback(async (
+        options?: boolean | DataRefreshOptions,
+        fallbackReason: string = 'refresh'
+    ) => {
+        const normalizedOptions = normalizeRefreshOptions(options, fallbackReason);
+        const nextPagination = enablePagination
+            ? {
+                pageIndex: normalizedOptions.resetPagination ? 0 : pagination.pageIndex,
+                pageSize: pagination.pageSize,
+            }
+            : undefined;
+
+        const shouldUpdatePagination = !!nextPagination
+            && (nextPagination.pageIndex !== pagination.pageIndex || nextPagination.pageSize !== pagination.pageSize);
+
+        if (nextPagination && shouldUpdatePagination) {
+            setPagination(nextPagination);
+            onPaginationChange?.(nextPagination);
+        }
+
+        const refreshContext = buildRefreshContext(normalizedOptions, nextPagination);
+
+        if (onRefreshData) {
+            await onRefreshData(refreshContext);
+            return;
+        }
+
+        if (onFetchData) {
+            await fetchData(
+                nextPagination ? { pagination: nextPagination } : {},
+                {
+                    delay: 0,
+                    meta: {
+                        reason: normalizedOptions.reason,
+                        force: normalizedOptions.force,
+                    },
+                }
+            );
+            return;
+        }
+
+        if (logger.isLevelEnabled('debug')) {
+            logger.debug('Refresh skipped because no refresh handler is configured', refreshContext);
+        }
+    }, [
+        normalizeRefreshOptions,
+        enablePagination,
+        pagination,
+        onPaginationChange,
+        buildRefreshContext,
+        onRefreshData,
+        onFetchData,
+        fetchData,
+        logger,
+    ]);
+
     const resetAllAndReload = useCallback(() => {
         const resetState = getResetState();
 
@@ -730,7 +906,10 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         setGlobalFilter(resetState.globalFilter ?? '');
         setColumnFilter(resetState.columnFilter as any);
 
-        if (resetState.pagination) setPagination(resetState.pagination);
+        if (resetState.pagination) {
+            setPagination(resetState.pagination);
+            onPaginationChange?.(resetState.pagination);
+        }
 
         setSelectionState(initialSelectionState);
         setExpanded({});
@@ -741,8 +920,39 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         setColumnOrder(initialStateConfig.columnOrder || []);
         setColumnPinning(initialStateConfig.columnPinning || { left: [], right: [] });
 
-        if (onFetchData) fetchData(resetState, { delay: 0 });
-    }, [getResetState, initialSelectionState, initialStateConfig, onFetchData, fetchData]);
+        const resetOptions = normalizeRefreshOptions({
+            resetPagination: true,
+            force: true,
+            reason: 'reset',
+        }, 'reset');
+
+        const refreshContext = buildRefreshContext(resetOptions, resetState.pagination);
+
+        if (onRefreshData) {
+            void onRefreshData(refreshContext);
+            return;
+        }
+
+        if (onFetchData) {
+            void fetchData(resetState, {
+                delay: 0,
+                meta: {
+                    reason: resetOptions.reason,
+                    force: resetOptions.force,
+                },
+            });
+        }
+    }, [
+        getResetState,
+        initialSelectionState,
+        initialStateConfig,
+        onPaginationChange,
+        normalizeRefreshOptions,
+        buildRefreshContext,
+        onRefreshData,
+        onFetchData,
+        fetchData,
+    ]);
 
     const dataTableApi = useMemo(() => {
         // helpers (avoid repeating boilerplate)
@@ -781,6 +991,14 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
 
         const applyGlobalFilter = (next: any) => {
             handleGlobalFilterChange(next);
+        };
+
+        const getRowIndexById = (rowsToSearch: T[], rowId: string) =>
+            rowsToSearch.findIndex((row, index) => String(generateRowId(row, index, idKey)) === rowId);
+
+        const clampInsertIndex = (rowsToMutate: T[], insertIndex?: number) => {
+            if (insertIndex === undefined) return rowsToMutate.length;
+            return Math.max(0, Math.min(insertIndex, rowsToMutate.length));
         };
 
         return {
@@ -1075,146 +1293,147 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
             // Data Management (kept same, but ensure state changes go through handlers)
             // -------------------------------
             data: {
-                refresh: (resetPagination = false) => {
-                    const allState = table.getState();
-                    const current = allState.pagination;
-
-                    const nextPagination = {
-                        pageIndex: resetPagination ? 0 : current?.pageIndex ?? 0,
-                        pageSize: current?.pageSize ?? initialStateConfig.pagination?.pageSize ?? 10,
-                    };
-
-                    // must go through handler so server fetch triggers
-                    applyPagination(nextPagination);
-
-                    // emit persisted state (your emitTableState effect will also do it)
-                    onDataStateChange?.({ ...allState, pagination: nextPagination });
-
-                    fetchData?.({ pagination: nextPagination });
-
-                    if (logger.isLevelEnabled("debug")) {
-                        logger.debug("Refreshing data", { nextPagination, allState });
-                    }
+                refresh: (options?: boolean | DataRefreshOptions) => {
+                    void triggerRefresh(options, 'refresh');
                 },
 
-                reload: () => {
-                    const allState = table.getState();
-                    onDataStateChange?.(allState);
-                    fetchData?.();
-                    if (logger.isLevelEnabled("debug")) {
-                        logger.info("Reloading data", allState);
-                    }
+                reload: (options: DataRefreshOptions = {}) => {
+                    void triggerRefresh(
+                        {
+                            ...options,
+                            resetPagination: options.resetPagination ?? false,
+                            reason: options.reason ?? 'reload',
+                        },
+                        'reload'
+                    );
                 },
 
-                resetAll: () => resetAllAndReload({ resetLayout: true }),
+                resetAll: () => resetAllAndReload(),
 
-                getAllData: () => table.getRowModel().rows?.map((row) => row.original) || [],
-                getRowData: (rowId: string) =>
-                    table.getRowModel().rows?.find((row) => String(row.original[idKey]) === rowId)?.original,
-                getRowByIndex: (index: number) => table.getRowModel().rows?.[index]?.original,
+                getAllData: () => [...tableData],
+                getRowData: (rowId: string) => {
+                    const rowIndex = getRowIndexById(tableData, rowId);
+                    return rowIndex === -1 ? undefined : tableData[rowIndex];
+                },
+                getRowByIndex: (index: number) => tableData[index],
 
                 updateRow: (rowId: string, updates: Partial<T>) => {
-                    const newData = table.getRowModel().rows?.map((row) =>
-                        String(row.original[idKey]) === rowId ? { ...row.original, ...updates } : row.original
-                    );
-                    setServerData?.(newData || []);
-                    if (logger.isLevelEnabled("debug")) logger.debug(`Updating row ${rowId}`, updates);
+                    applyDataMutation('updateRow', (rowsToMutate) => {
+                        const rowIndex = getRowIndexById(rowsToMutate, rowId);
+                        if (rowIndex === -1) return rowsToMutate;
+                        const nextData = [...rowsToMutate];
+                        nextData[rowIndex] = { ...nextData[rowIndex], ...updates };
+                        return nextData;
+                    }, { rowId });
                 },
 
                 updateRowByIndex: (index: number, updates: Partial<T>) => {
-                    const newData = table.getRowModel().rows?.map((row) => row.original) || [];
-                    if (newData[index]) {
-                        newData[index] = { ...newData[index]!, ...updates };
-                        setServerData(newData);
-                        if (logger.isLevelEnabled("debug")) logger.debug(`Updating row by index ${index}`, updates);
-                    }
+                    applyDataMutation('updateRowByIndex', (rowsToMutate) => {
+                        if (!rowsToMutate[index]) return rowsToMutate;
+                        const nextData = [...rowsToMutate];
+                        nextData[index] = { ...nextData[index], ...updates };
+                        return nextData;
+                    }, { index });
                 },
 
                 insertRow: (newRow: T, index?: number) => {
-                    const newData = table.getRowModel().rows?.map((row) => row.original) || [];
-                    if (index !== undefined) newData.splice(index, 0, newRow);
-                    else newData.push(newRow);
-                    setServerData(newData || []);
-                    if (logger.isLevelEnabled("debug")) logger.debug("Inserting row", newRow);
+                    applyDataMutation('insertRow', (rowsToMutate) => {
+                        const nextData = [...rowsToMutate];
+                        nextData.splice(clampInsertIndex(nextData, index), 0, newRow);
+                        return nextData;
+                    }, { index });
                 },
 
                 deleteRow: (rowId: string) => {
-                    const newData = (table.getRowModel().rows || []).filter((row) => String(row.original[idKey]) !== rowId);
-                    setServerData?.(newData.map((r) => r.original) || []);
-                    if (logger.isLevelEnabled("debug")) logger.debug(`Deleting row ${rowId}`);
+                    applyDataMutation('deleteRow', (rowsToMutate) => {
+                        const rowIndex = getRowIndexById(rowsToMutate, rowId);
+                        if (rowIndex === -1) return rowsToMutate;
+                        const nextData = [...rowsToMutate];
+                        nextData.splice(rowIndex, 1);
+                        return nextData;
+                    }, { rowId });
                 },
 
                 deleteRowByIndex: (index: number) => {
-                    const newData = (table.getRowModel().rows || []).map((row) => row.original);
-                    newData.splice(index, 1);
-                    setServerData(newData);
-                    if (logger.isLevelEnabled("debug")) logger.debug(`Deleting row by index ${index}`);
+                    applyDataMutation('deleteRowByIndex', (rowsToMutate) => {
+                        if (index < 0 || index >= rowsToMutate.length) return rowsToMutate;
+                        const nextData = [...rowsToMutate];
+                        nextData.splice(index, 1);
+                        return nextData;
+                    }, { index });
                 },
 
                 deleteSelectedRows: () => {
                     const selectedRows = table.getSelectedRows?.() || [];
                     if (selectedRows.length === 0) return;
 
-                    const selectedIds = new Set(selectedRows.map((row) => String(row.original[idKey])));
-                    const newData = (table.getRowModel().rows || [])
-                        .filter((row) => !selectedIds.has(String(row.original[idKey])))
-                        .map((row) => row.original);
-
-                    setServerData(newData);
+                    const selectedIds = new Set(selectedRows.map((row) => String(row.id)));
+                    applyDataMutation(
+                        'deleteSelectedRows',
+                        (rowsToMutate) =>
+                            rowsToMutate.filter((row, index) => !selectedIds.has(String(generateRowId(row, index, idKey)))),
+                        { rowIds: Array.from(selectedIds) }
+                    );
                     table.deselectAll?.();
-
-                    if (logger.isLevelEnabled("debug")) logger.debug("Deleting selected rows");
                 },
 
-                replaceAllData: (newData: T[]) => setServerData?.(newData),
+                replaceAllData: (newData: T[]) => {
+                    applyDataMutation('replaceAllData', () => [...newData]);
+                },
 
                 updateMultipleRows: (updates: Array<{ rowId: string; data: Partial<T> }>) => {
-                    const updateMap = new Map(updates.map((u) => [u.rowId, u.data]));
-                    const newData = (table.getRowModel().rows || []).map((row) => {
-                        const rowId = String(row.original[idKey]);
-                        const updateData = updateMap.get(rowId);
-                        return updateData ? { ...row.original, ...updateData } : row.original;
-                    });
-                    setServerData(newData || []);
+                    const updateMap = new Map(updates.map((update) => [update.rowId, update.data]));
+                    applyDataMutation('updateMultipleRows', (rowsToMutate) =>
+                        rowsToMutate.map((row, index) => {
+                            const currentRowId = String(generateRowId(row, index, idKey));
+                            const updateData = updateMap.get(currentRowId);
+                            return updateData ? { ...row, ...updateData } : row;
+                        })
+                    );
                 },
 
                 insertMultipleRows: (newRows: T[], startIndex?: number) => {
-                    const newData = (table.getRowModel().rows || []).map((row) => row.original);
-                    if (startIndex !== undefined) newData.splice(startIndex, 0, ...newRows);
-                    else newData.push(...newRows);
-                    setServerData?.(newData);
+                    applyDataMutation('insertMultipleRows', (rowsToMutate) => {
+                        const nextData = [...rowsToMutate];
+                        nextData.splice(clampInsertIndex(nextData, startIndex), 0, ...newRows);
+                        return nextData;
+                    }, { index: startIndex });
                 },
 
                 deleteMultipleRows: (rowIds: string[]) => {
                     const idsToDelete = new Set(rowIds);
-                    const newData = (table.getRowModel().rows || [])
-                        .filter((row) => !idsToDelete.has(String(row.original[idKey])))
-                        .map((row) => row.original);
-                    setServerData(newData);
+                    applyDataMutation(
+                        'deleteMultipleRows',
+                        (rowsToMutate) =>
+                            rowsToMutate.filter((row, index) => !idsToDelete.has(String(generateRowId(row, index, idKey)))),
+                        { rowIds }
+                    );
                 },
 
                 updateField: (rowId: string, fieldName: keyof T, value: any) => {
-                    const newData = (table.getRowModel().rows || []).map((row) =>
-                        String(row.original[idKey]) === rowId ? { ...row.original, [fieldName]: value } : row.original
-                    );
-                    setServerData?.(newData);
+                    applyDataMutation('updateField', (rowsToMutate) => {
+                        const rowIndex = getRowIndexById(rowsToMutate, rowId);
+                        if (rowIndex === -1) return rowsToMutate;
+                        const nextData = [...rowsToMutate];
+                        nextData[rowIndex] = { ...nextData[rowIndex], [fieldName]: value };
+                        return nextData;
+                    }, { rowId });
                 },
 
                 updateFieldByIndex: (index: number, fieldName: keyof T, value: any) => {
-                    const newData = (table.getRowModel().rows || []).map((row) => row.original);
-                    if (newData[index]) {
-                        newData[index] = { ...newData[index], [fieldName]: value };
-                        setServerData?.(newData);
-                    }
+                    applyDataMutation('updateFieldByIndex', (rowsToMutate) => {
+                        if (!rowsToMutate[index]) return rowsToMutate;
+                        const nextData = [...rowsToMutate];
+                        nextData[index] = { ...nextData[index], [fieldName]: value };
+                        return nextData;
+                    }, { index });
                 },
 
-                findRows: (predicate: (row: T) => boolean) =>
-                    (table.getRowModel().rows || []).filter((row) => predicate(row.original)).map((row) => row.original),
+                findRows: (predicate: (row: T) => boolean) => tableData.filter(predicate),
 
-                findRowIndex: (predicate: (row: T) => boolean) =>
-                    (table.getRowModel().rows || []).findIndex((row) => predicate(row.original)),
+                findRowIndex: (predicate: (row: T) => boolean) => tableData.findIndex(predicate),
 
-                getDataCount: () => (table.getRowModel().rows || []).length || 0,
+                getDataCount: () => tableData.length,
                 getFilteredDataCount: () => table.getFilteredRowModel().rows.length,
             },
 
@@ -1229,7 +1448,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                     applySorting(initialStateConfig.sorting || []);
                     applyGlobalFilter(initialStateConfig.globalFilter ?? "");
                 },
-                resetAll: () => resetAllAndReload({ resetLayout: true }),
+                resetAll: () => resetAllAndReload(),
                 saveLayout: () => ({
                     columnVisibility: table.getState().columnVisibility,
                     columnSizing: table.getState().columnSizing,
@@ -1421,8 +1640,9 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         initialStateConfig,
         enablePagination,
         idKey,
-        onDataStateChange,
-        fetchData,
+        triggerRefresh,
+        applyDataMutation,
+        tableData,
         // export
         exportFilename,
         onExportProgress,

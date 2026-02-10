@@ -115,6 +115,36 @@ export function DataTablePropsPage() {
 />`}
             />
           </Box>
+
+          <Box sx={{ mt: 2, p: 2, backgroundColor: 'grey.50', borderRadius: 1 }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+              Insight: React Query Controlled Data
+            </Typography>
+            <CodeBlock
+              language="tsx"
+              code={`<DataTable
+  ref={apiRef}
+  dataMode="server"
+  columns={columns}
+  data={query.data?.rows ?? []}
+  totalRow={query.data?.total ?? 0}
+  loading={query.isFetching}
+  onDataStateChange={setTableState}
+  onRefreshData={({ options }) =>
+    queryClient.invalidateQueries({
+      queryKey: ['users'],
+      refetchType: options.force ? 'all' : 'active',
+    })
+  }
+  onDataChange={(nextRows) => {
+    queryClient.setQueryData(['users', tableState], (prev) => ({
+      ...prev,
+      rows: nextRows,
+    }));
+  }}
+/>`}
+            />
+          </Box>
         </AccordionDetails>
       </Accordion>
 

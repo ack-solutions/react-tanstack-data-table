@@ -66,9 +66,23 @@
         },
         {
           "name": "onFetchData",
-          "type": "(filters) => Promise<{ data, total }>",
+          "type": "(filters, meta?) => Promise<{ data, total }>",
           "defaultValue": "undefined",
-          "description": "Async callback invoked in server mode to retrieve rows using the current table state.",
+          "description": "Async callback invoked in server mode to retrieve rows using the current table state with optional metadata (reason/force).",
+          "possibleValues": []
+        },
+        {
+          "name": "onRefreshData",
+          "type": "(context) => void | Promise<void>",
+          "defaultValue": "undefined",
+          "description": "Use this when data is controlled by props (React Query/SWR). Called by apiRef.data.refresh/reload.",
+          "possibleValues": []
+        },
+        {
+          "name": "onDataChange",
+          "type": "(nextData, context) => void",
+          "defaultValue": "undefined",
+          "description": "Receives row updates from apiRef.data.* so external caches can stay in sync.",
           "possibleValues": []
         },
         {
