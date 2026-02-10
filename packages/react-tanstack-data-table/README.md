@@ -167,10 +167,10 @@ This allows for efficient handling of large datasets where you might select "all
 
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
-| `enablePagination` | `boolean` | `true` | Enable pagination |
+| `enablePagination` | `boolean` | `false` | Enable pagination |
 | `paginationMode` | `'client' \| 'server'` | `'client'` | Pagination mode |
 | `onPaginationChange` | `(pagination: PaginationState) => void` | - | Pagination change callback |
-| `initialState.pagination` | `{pageIndex: number, pageSize: number}` | `{pageIndex: 0, pageSize: 50}` | Initial pagination state |
+| `initialState.pagination` | `{pageIndex: number, pageSize: number}` | `{pageIndex: 0, pageSize: 10}` | Initial pagination state |
 
 ### Filtering & Search
 
@@ -208,7 +208,7 @@ This allows for efficient handling of large datasets where you might select "all
 
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
-| `enableExport` | `boolean` | `true` | Enable data export |
+| `enableExport` | `boolean` | `false` | Enable data export |
 | `exportFilename` | `string` | `'export'` | Default export filename |
 | `exportConcurrency` | `'ignoreIfRunning' \| 'cancelAndRestart' \| 'queue'` | `'cancelAndRestart'` | How export requests are handled while another export is running |
 | `exportChunkSize` | `number` | `1000` | Chunk size for server export pagination |
@@ -1009,7 +1009,7 @@ function MyComponent() {
 - `selection.deselectAll()` - Deselect all rows
 - `selection.toggleSelectAll()` - Toggle select all
 - `selection.getSelectionState()` - Get current selection state
-- `selection.getSelectedRows()` - Get selected rows
+- `selection.getSelectedRows()` - Get selected rows currently loaded in the table
 - `selection.getSelectedCount()` - Get selected count
 - `selection.isRowSelected(rowId)` - Check if row is selected
 

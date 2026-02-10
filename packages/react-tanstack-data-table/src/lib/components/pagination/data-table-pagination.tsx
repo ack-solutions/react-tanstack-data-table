@@ -1,6 +1,6 @@
 // data-table-pagination.tsx
 import { TablePagination, Box, TablePaginationProps, SxProps } from '@mui/material';
-import { memo, ReactNode } from 'react';
+import { memo, ReactNode, useEffect, useMemo } from 'react';
 
 import { useDataTableContext } from '../../contexts/data-table-context';
 import { mergeSlotProps } from '../../utils/slot-helpers';
@@ -33,6 +33,18 @@ export const DataTablePagination = memo((props: DataTablePaginationProps) => {
     } = props;
 
     const { table, tableSize } = useDataTableContext();
+    const pageSize = pagination?.pageSize || 1;
+    const maxPageIndex = Math.max(0, Math.ceil(totalRow / pageSize) - 1);
+    const safePageIndex = useMemo(
+        () => Math.min(Math.max(pagination?.pageIndex ?? 0, 0), maxPageIndex),
+        [maxPageIndex, pagination?.pageIndex]
+    );
+
+    useEffect(() => {
+        if ((pagination?.pageIndex ?? 0) !== safePageIndex) {
+            table?.setPageIndex(safePageIndex);
+        }
+    }, [pagination?.pageIndex, safePageIndex, table]);
 
     // Extract slot-specific props with enhanced merging
     // const paginationSlotProps = extractSlotProps(slotProps, 'pagination');
@@ -59,7 +71,7 @@ export const DataTablePagination = memo((props: DataTablePaginationProps) => {
             size: tableSize === 'small' ? 'small' : 'medium',
             count: totalRow,
             rowsPerPage: pagination?.pageSize,
-            page: pagination?.pageIndex,
+            page: safePageIndex,
             onPageChange: (_, page: number) => {
                 // Use TanStack Table's native pagination methods
                 table.setPageIndex(page);

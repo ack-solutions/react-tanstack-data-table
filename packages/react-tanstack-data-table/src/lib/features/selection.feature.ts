@@ -101,6 +101,15 @@ export const SelectionFeature: TableFeature<any> = {
 
     // Define the feature's table instance methods
     createTable: <TData extends RowData>(table: Table<TData>): void => {
+        const getRowsForSelection = () => {
+            // In client mode with pagination we can inspect all loaded rows.
+            // In manual/server pagination only the loaded slice exists locally.
+            if (table.options.manualPagination) {
+                return table.getRowModel().rows;
+            }
+            return table.getPrePaginationRowModel?.().rows || table.getRowModel().rows;
+        };
+
         table.setSelectionState = (updater) => {
             if (!table.options.enableAdvanceSelection) return;
             const safeUpdater: Updater<SelectionState> = (old) => {
@@ -284,17 +293,14 @@ export const SelectionFeature: TableFeature<any> = {
         table.getSelectedRowIds = () => {
             const state = table.getSelectionState();
             if (state.type === 'exclude') {
-                console.warn(
-                    '[SelectionFeature] getSelectedRowIds() is not accurate in exclude mode. Use getSelectionState() to interpret selection properly.'
-                );
-                return []; // Return empty to avoid misleading API
+                return table.getSelectedRows().map((row) => row.id);
             }
             return state.ids;
         };
 
         table.getSelectedRows = () => {
             const state = table.getSelectionState();
-            const allRows = table.getRowModel().rows;
+            const allRows = getRowsForSelection();
 
             if (state.type === 'exclude') {
                 // Return all rows except excluded ones

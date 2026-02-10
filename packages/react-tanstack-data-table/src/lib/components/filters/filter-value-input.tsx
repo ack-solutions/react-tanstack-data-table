@@ -100,8 +100,8 @@ export function FilterValueInput<T>(props: FilterValueInputProps<T>): ReactEleme
 
     // Select type with options
     if (options && options.length > 0) {
-        // Multi-select for 'in' operator
-        if (operator === 'in') {
+        // Multi-select for set operators
+        if (operator === 'in' || operator === 'notIn') {
             const currentValue = Array.isArray(filter.value) ? filter.value : [];
             
             return (

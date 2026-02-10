@@ -219,7 +219,11 @@ export function TableExportControl(props: TableExportControlProps = {}) {
                                 <ListItemText
                                     primary="Cancel Export"
                                     secondary="Stop current export job"
-                                    primaryTypographyProps={{ color: 'error.main' }}
+                                    slotProps={{
+                                        primary: {
+                                            color: 'error.main',
+                                        },
+                                    }}
                                 />
                             </MenuItem>
                         </>

@@ -106,6 +106,8 @@ export interface DataTableApi<T = any> {
         // Selection state getters
         getSelectionState: () => SelectionState; // Get selection state
         getSelectedCount: () => number; // Get total selected count
+        // Returns selected rows that are currently loaded in the table instance.
+        // For server/manual pagination, use getSelectionState() for full selection intent.
         getSelectedRows: () => Row<T>[]
         // Selection state checks
         isRowSelected: (rowId: string) => boolean;

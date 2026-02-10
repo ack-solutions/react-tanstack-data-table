@@ -36,10 +36,10 @@ export function MenuDropdown({
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const isOpen = useMemo(() => Boolean(anchorEl), [anchorEl]);
     const handleClick = useCallback(
-        (event: React.MouseEvent<HTMLButtonElement>) => {
+        (event: React.MouseEvent<HTMLElement>) => {
             event.preventDefault();
             event.stopPropagation();
-            setAnchorEl(event.currentTarget);
+            setAnchorEl(event.currentTarget as HTMLElement);
         },
         [],
     );
@@ -54,8 +54,14 @@ export function MenuDropdown({
             if (typeof anchor === 'function') {
                 node = anchor({ isOpen: isOpen });
             }
+            const existingOnClick = (node as ReactElement<any>).props?.onClick;
             return cloneElement(node as ReactElement<any>, {
-                onClick: handleClick,
+                onClick: (event: React.MouseEvent<HTMLElement>) => {
+                    existingOnClick?.(event);
+                    if (!event.defaultPrevented) {
+                        handleClick(event);
+                    }
+                },
             });
         }
         return <Button onClick={handleClick}>{label as any}</Button>;

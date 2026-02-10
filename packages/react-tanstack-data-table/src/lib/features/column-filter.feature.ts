@@ -379,9 +379,16 @@ function evaluateFilterCondition(columnValue: any, operator: string, filterValue
 
     // --- Date type logic ---
     if (type === 'date') {
-        const mCol = toMoment(columnValue);
-        const mFilter = toMoment(filterValue);
-        if (!mCol || !mFilter) return false;
+        if (operator === 'isEmpty') {
+            return columnValue === null || columnValue === undefined || columnValue === '';
+        }
+        if (operator === 'isNotEmpty') {
+            return columnValue !== null && columnValue !== undefined && columnValue !== '';
+        }
+
+        const mCol = columnValue ? toMoment(columnValue) : null;
+        const mFilter = filterValue ? toMoment(filterValue) : null;
+        if (!mCol || !mFilter || !mCol.isValid() || !mFilter.isValid()) return false;
         switch (operator) {
             case 'equals':
                 return mCol.isSame(mFilter, 'day');
@@ -391,10 +398,6 @@ function evaluateFilterCondition(columnValue: any, operator: string, filterValue
                 return mCol.isAfter(mFilter, 'day');
             case 'before':
                 return mCol.isBefore(mFilter, 'day');
-            case 'isEmpty':
-                return !columnValue;
-            case 'isNotEmpty':
-                return !!columnValue;
             default:
                 return true;
         }
@@ -417,11 +420,16 @@ function evaluateFilterCondition(columnValue: any, operator: string, filterValue
     // --- Select type logic (in, notIn, single select) ---
     if (type === 'select') {
         if (operator === 'in' || operator === 'notIn') {
-            if (Array.isArray(filterValue)) {
-                if (operator === 'in') return filterValue.includes(columnValue);
-                if (operator === 'notIn') return !filterValue.includes(columnValue);
+            const values = Array.isArray(filterValue)
+                ? filterValue
+                : [filterValue].filter((value) => value !== undefined && value !== null && value !== '');
+
+            if (values.length === 0) {
+                return operator === 'notIn';
             }
-            return false;
+
+            if (operator === 'in') return values.includes(columnValue);
+            if (operator === 'notIn') return !values.includes(columnValue);
         }
         if (operator === 'equals' || operator === 'notEquals') {
             return operator === 'equals'
@@ -431,6 +439,23 @@ function evaluateFilterCondition(columnValue: any, operator: string, filterValue
     }
 
     // --- Text/Number type logic ---
+    if (type === 'number') {
+        switch (operator) {
+            case 'equals':
+                return Number(columnValue) === Number(filterValue);
+            case 'notEquals':
+                return Number(columnValue) !== Number(filterValue);
+            case 'greaterThan':
+                return Number(columnValue) > Number(filterValue);
+            case 'greaterThanOrEqual':
+                return Number(columnValue) >= Number(filterValue);
+            case 'lessThan':
+                return Number(columnValue) < Number(filterValue);
+            case 'lessThanOrEqual':
+                return Number(columnValue) <= Number(filterValue);
+        }
+    }
+
     switch (operator) {
         case 'contains':
             return String(columnValue).toLowerCase().includes(String(filterValue).toLowerCase());
@@ -440,18 +465,14 @@ function evaluateFilterCondition(columnValue: any, operator: string, filterValue
             return String(columnValue).toLowerCase().startsWith(String(filterValue).toLowerCase());
         case 'endsWith':
             return String(columnValue).toLowerCase().endsWith(String(filterValue).toLowerCase());
+        case 'equals':
+            return columnValue === filterValue;
+        case 'notEquals':
+            return columnValue !== filterValue;
         case 'isEmpty':
             return columnValue === null || columnValue === undefined || columnValue === '';
         case 'isNotEmpty':
             return columnValue !== null && columnValue !== undefined && columnValue !== '';
-        case 'greaterThan':
-            return Number(columnValue) > Number(filterValue);
-        case 'greaterThanOrEqual':
-            return Number(columnValue) >= Number(filterValue);
-        case 'lessThan':
-            return Number(columnValue) < Number(filterValue);
-        case 'lessThanOrEqual':
-            return Number(columnValue) <= Number(filterValue);
         default:
             return true;
     }

@@ -736,13 +736,14 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         if (!onDataStateChange) return;
 
         const live = table.getState();
+        const liveColumnFilter = live.columnFilter;
 
         // only keep what you persist/store
         const payload = {
             sorting: live.sorting,
             pagination: live.pagination,
             globalFilter: live.globalFilter,
-            columnFilter: live.columnFilter,
+            columnFilter: liveColumnFilter,
             columnVisibility: live.columnVisibility,
             columnSizing: live.columnSizing,
             columnOrder: live.columnOrder,
@@ -774,8 +775,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     const getResetState = useCallback((): Partial<TableState> => {
         const resetSorting = initialStateConfig.sorting || [];
         const resetGlobalFilter = initialStateConfig.globalFilter ?? '';
-        const resetColumnFilter =
-            initialStateConfig.columnFilter || { filters: [], logic: 'AND', pendingFilters: [], pendingLogic: 'AND' };
+        const resetColumnFilter = initialStateConfig.columnFilter;
 
         const resetPagination = enablePagination
             ? (initialStateConfig.pagination || { pageIndex: 0, pageSize: 10 })
@@ -1474,15 +1474,31 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                 },
 
                 deleteSelectedRows: () => {
-                    const selectedRows = table.getSelectedRows?.() || [];
-                    if (selectedRows.length === 0) return;
+                    const currentSelection = table.getSelectionState?.() || selectionState;
+                    const selectedIds = new Set((currentSelection.ids || []).map((id) => String(id)));
+                    const loadedRowIds = tableData.map((row, index) => String(generateRowId(row, index, idKey)));
+                    const deletableRowIds = currentSelection.type === 'exclude'
+                        ? loadedRowIds.filter((rowId) => !selectedIds.has(rowId))
+                        : loadedRowIds.filter((rowId) => selectedIds.has(rowId));
 
-                    const selectedIds = new Set(selectedRows.map((row) => String(row.id)));
+                    if (deletableRowIds.length === 0) return;
+                    if (
+                        currentSelection.type === 'exclude'
+                        && table.getRowCount() > loadedRowIds.length
+                        && logger.isLevelEnabled('info')
+                    ) {
+                        logger.info('deleteSelectedRows in exclude mode removed currently loaded rows only', {
+                            removedRows: deletableRowIds.length,
+                            totalSelected: table.getSelectedCount?.(),
+                        });
+                    }
+
+                    const deletableRowIdSet = new Set(deletableRowIds);
                     applyDataMutation(
                         'deleteSelectedRows',
                         (rowsToMutate) =>
-                            rowsToMutate.filter((row, index) => !selectedIds.has(String(generateRowId(row, index, idKey)))),
-                        { rowIds: Array.from(selectedIds) }
+                            rowsToMutate.filter((row, index) => !deletableRowIdSet.has(String(generateRowId(row, index, idKey)))),
+                        { rowIds: deletableRowIds }
                     );
                     table.deselectAll?.();
                 },
@@ -1880,6 +1896,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         triggerRefresh,
         applyDataMutation,
         tableData,
+        selectionState,
         // export
         exportFilename,
         exportChunkSize,

@@ -17,6 +17,12 @@ interface useDebouncedFetchReturn<T extends Record<string, any>> {
     isLoading: boolean;
 }
 
+interface PendingRequest<T extends Record<string, any>> {
+    id: number;
+    resolve: (value: { data: T[]; total: number } | null) => void;
+    reject: (reason?: unknown) => void;
+}
+
 export function useDebouncedFetch<T extends Record<string, any>>(
     onFetchData: ((
         filters: Partial<TableFilters>,
@@ -25,6 +31,17 @@ export function useDebouncedFetch<T extends Record<string, any>>(
 ): useDebouncedFetchReturn<T> {
     const [isLoading, setIsLoading] = useState(false);
     const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const pendingRequestRef = useRef<PendingRequest<T> | null>(null);
+    const latestRequestIdRef = useRef(0);
+    const activeRequestCountRef = useRef(0);
+    const isMountedRef = useRef(true);
+
+    const resetLoadingIfIdle = useCallback(() => {
+        if (!isMountedRef.current) return;
+        if (!debounceTimer.current && !pendingRequestRef.current && activeRequestCountRef.current === 0) {
+            setIsLoading(false);
+        }
+    }, []);
 
     const debouncedFetch = useCallback(async (
         filters: Partial<TableFilters>,
@@ -36,37 +53,73 @@ export function useDebouncedFetch<T extends Record<string, any>>(
             ? { debounceDelay: optionsOrDelay }
             : optionsOrDelay;
         const debounceDelay = options.debounceDelay ?? DEFAULT_DEBOUNCE_DELAY;
+        const requestId = latestRequestIdRef.current + 1;
+        latestRequestIdRef.current = requestId;
 
-        // Create a unique key for the current fetch parameters
-        // const currentParams = JSON.stringify(filters);
-        // Clear existing timer
+        // Clear existing timer and resolve pending debounced request.
         if (debounceTimer.current) {
             clearTimeout(debounceTimer.current);
+            debounceTimer.current = null;
+        }
+        if (pendingRequestRef.current) {
+            pendingRequestRef.current.resolve(null);
+            pendingRequestRef.current = null;
         }
 
-        return new Promise<{ data: T[]; total: number } | null>((resolve) => {
+        setIsLoading(true);
+
+        return new Promise<{ data: T[]; total: number } | null>((resolve, reject) => {
+            pendingRequestRef.current = {
+                id: requestId,
+                resolve,
+                reject,
+            };
+
             debounceTimer.current = setTimeout(async () => {
-                setIsLoading(true);
+                const pendingRequest = pendingRequestRef.current;
+                if (!pendingRequest || pendingRequest.id !== requestId) {
+                    return;
+                }
+
+                pendingRequestRef.current = null;
+                debounceTimer.current = null;
+                activeRequestCountRef.current += 1;
+
                 try {
                     const result = await onFetchData(filters, options.meta);
-                    resolve(result);
+
+                    // Ignore stale responses if a newer request was queued.
+                    if (requestId === latestRequestIdRef.current) {
+                        resolve(result);
+                    } else {
+                        resolve(null);
+                    }
                 } catch (error) {
-                    // Handle fetch error silently or could be passed to onError callback
-                    console.error('Error fetching data:', error);
-                    resolve(null);
+                    if (requestId === latestRequestIdRef.current) {
+                        reject(error);
+                    } else {
+                        resolve(null);
+                    }
                 } finally {
-                    setIsLoading(false);
+                    activeRequestCountRef.current = Math.max(0, activeRequestCountRef.current - 1);
+                    resetLoadingIfIdle();
                 }
             }, debounceDelay);
         });
-    }, [onFetchData]);
+    }, [onFetchData, resetLoadingIfIdle]);
 
     // Cleanup timer on unmount
     useEffect(() => {
-        // Fetch data when dependencies change
+        isMountedRef.current = true;
         return () => {
+            isMountedRef.current = false;
             if (debounceTimer.current) {
                 clearTimeout(debounceTimer.current);
+                debounceTimer.current = null;
+            }
+            if (pendingRequestRef.current) {
+                pendingRequestRef.current.resolve(null);
+                pendingRequestRef.current = null;
             }
         };
     }, []);

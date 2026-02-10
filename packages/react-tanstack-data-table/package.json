@@ -42,7 +42,9 @@
     "src"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.build.json"
+    "build": "tsc -p tsconfig.build.json",
+    "lint": "tsc -p tsconfig.build.json --noEmit",
+    "test": "pnpm run build && node --test tests/column-filter.feature.test.cjs"
   },
   "dependencies": {
     "lodash": "^4.17.21",

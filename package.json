@@ -5,9 +5,9 @@
   "scripts": {
     "dev": "pnpm --filter example dev",
     "build": "pnpm -r build",
-    "lint": "pnpm -r lint --if-present",
-    "test": "pnpm -r test --if-present",
-    "format": "pnpm -r format --if-present",
+    "lint": "pnpm -r --if-present lint",
+    "test": "pnpm -r --if-present test",
+    "format": "pnpm -r --if-present format",
     "publish": "node scripts/publish.js"
   },
   "pnpm": {
