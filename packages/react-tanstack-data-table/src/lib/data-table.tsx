@@ -49,8 +49,8 @@ import {
     DataRefreshOptions,
     DataTableProps,
 } from './types/data-table.types';
-import { ColumnFilterState, TableFiltersForFetch, TableState } from './types';
-import { DataTableApi } from './types/data-table-api';
+import { ColumnFilterState, ExportPhase, ExportProgressPayload, ExportStateChange, TableFiltersForFetch, TableState } from './types';
+import { DataTableApi, DataTableExportApiOptions } from './types/data-table-api';
 import {
     createExpandingColumn,
     createSelectionColumn,
@@ -154,11 +154,16 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     sortingMode = 'client',
     onSortingChange,
     exportFilename = 'export',
+    exportConcurrency = 'cancelAndRestart',
+    exportChunkSize = 1000,
+    exportStrictTotalCheck = false,
+    exportSanitizeCSV = true,
     onExportProgress,
     onExportComplete,
     onExportError,
     onServerExport,
     onExportCancel,
+    onExportStateChange,
 
     // Styling props
     enableHover = true,
@@ -261,12 +266,17 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     const [serverData, setServerData] = useState<T[] | null>(null);
     const [serverTotal, setServerTotal] = useState(0);
     const [exportController, setExportController] = useState<AbortController | null>(null);
+    const [exportProgress, setExportProgress] = useState<ExportProgressPayload>({});
+    const [exportPhase, setExportPhase] = useState<ExportPhase | null>(null);
+    const [queuedExportCount, setQueuedExportCount] = useState(0);
 
     // -------------------------------
     // Ref hooks (grouped together)
     // -------------------------------
     const tableContainerRef = useRef<HTMLDivElement>(null);
     const internalApiRef = useRef<DataTableApi<T>>(null);
+    const exportControllerRef = useRef<AbortController | null>(null);
+    const exportQueueRef = useRef<Promise<void>>(Promise.resolve());
 
     const isExternallyControlledData = useMemo(
         () => !onFetchData && (!!onDataChange || !!onRefreshData),
@@ -954,6 +964,106 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         fetchData,
     ]);
 
+    const setExportControllerSafely = useCallback((
+        value: AbortController | null | ((current: AbortController | null) => AbortController | null)
+    ) => {
+        setExportController((current) => {
+            const next = typeof value === 'function' ? (value as any)(current) : value;
+            exportControllerRef.current = next;
+            return next;
+        });
+    }, []);
+
+    const handleExportProgressInternal = useCallback((progress: ExportProgressPayload) => {
+        setExportProgress(progress || {});
+        onExportProgress?.(progress);
+    }, [onExportProgress]);
+
+    const handleExportStateChangeInternal = useCallback((state: ExportStateChange) => {
+        setExportPhase(state.phase);
+        if (
+            state.processedRows !== undefined
+            || state.totalRows !== undefined
+            || state.percentage !== undefined
+        ) {
+            setExportProgress({
+                processedRows: state.processedRows,
+                totalRows: state.totalRows,
+                percentage: state.percentage,
+            });
+        }
+        onExportStateChange?.(state);
+    }, [onExportStateChange]);
+
+    const runExportWithPolicy = useCallback(
+        async (
+            options: {
+                format: 'csv' | 'excel';
+                filename: string;
+                mode: 'client' | 'server';
+                execute: (controller: AbortController) => Promise<void>;
+            }
+        ) => {
+            const { format, filename, mode, execute } = options;
+
+            const startExecution = async () => {
+                const controller = new AbortController();
+                setExportProgress({});
+                setExportControllerSafely(controller);
+                try {
+                    await execute(controller);
+                } finally {
+                    setExportControllerSafely((current) => (current === controller ? null : current));
+                }
+            };
+
+            if (exportConcurrency === 'queue') {
+                setQueuedExportCount((prev) => prev + 1);
+                const runQueued = async (): Promise<void> => {
+                    setQueuedExportCount((prev) => Math.max(0, prev - 1));
+                    await startExecution();
+                };
+                const queuedPromise = exportQueueRef.current
+                    .catch(() => undefined)
+                    .then(runQueued);
+                exportQueueRef.current = queuedPromise;
+                return queuedPromise;
+            }
+
+            const activeController = exportControllerRef.current;
+            if (activeController) {
+                if (exportConcurrency === 'ignoreIfRunning') {
+                    handleExportStateChangeInternal({
+                        phase: 'error',
+                        mode,
+                        format,
+                        filename,
+                        message: 'An export is already running',
+                        code: 'EXPORT_IN_PROGRESS',
+                        endedAt: Date.now(),
+                    });
+                    onExportError?.({
+                        message: 'An export is already running',
+                        code: 'EXPORT_IN_PROGRESS',
+                    });
+                    return;
+                }
+
+                if (exportConcurrency === 'cancelAndRestart') {
+                    activeController.abort();
+                }
+            }
+
+            await startExecution();
+        },
+        [
+            exportConcurrency,
+            handleExportStateChangeInternal,
+            onExportError,
+            setExportControllerSafely,
+        ]
+    );
+
     const dataTableApi = useMemo(() => {
         // helpers (avoid repeating boilerplate)
         const buildInitialOrder = () =>
@@ -1486,99 +1596,200 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
             // Export (unchanged mostly)
             // -------------------------------
             export: {
-                exportCSV: async (options: any = {}) => {
-                    const { filename = exportFilename } = options;
+                exportCSV: async (options: DataTableExportApiOptions = {}) => {
+                    const {
+                        filename = exportFilename,
+                        chunkSize = exportChunkSize,
+                        strictTotalCheck = exportStrictTotalCheck,
+                        sanitizeCSV = exportSanitizeCSV,
+                    } = options;
+                    const mode: 'client' | 'server' = dataMode === "server" && !!onServerExport ? 'server' : 'client';
 
-                    try {
-                        const controller = new AbortController();
-                        setExportController?.(controller);
-
-                        if (dataMode === "server" && onServerExport) {
-                            const currentFilters = {
-                                globalFilter: table.getState().globalFilter,
-                                columnFilter: table.getState().columnFilter,
-                                sorting: table.getState().sorting,
-                                pagination: table.getState().pagination,
+                    await runExportWithPolicy({
+                        format: 'csv',
+                        filename,
+                        mode,
+                        execute: async (controller) => {
+                            const toStateChange = (state: {
+                                phase: ExportPhase;
+                                processedRows?: number;
+                                totalRows?: number;
+                                percentage?: number;
+                                message?: string;
+                                code?: string;
+                            }) => {
+                                const isFinalPhase = state.phase === 'completed' || state.phase === 'cancelled' || state.phase === 'error';
+                                handleExportStateChangeInternal({
+                                    phase: state.phase,
+                                    mode,
+                                    format: 'csv',
+                                    filename,
+                                    processedRows: state.processedRows,
+                                    totalRows: state.totalRows,
+                                    percentage: state.percentage,
+                                    message: state.message,
+                                    code: state.code,
+                                    startedAt: state.phase === 'starting' ? Date.now() : undefined,
+                                    endedAt: isFinalPhase ? Date.now() : undefined,
+                                    queueLength: queuedExportCount,
+                                });
+                                if (state.phase === 'cancelled') {
+                                    onExportCancel?.();
+                                }
                             };
 
-                            if (logger.isLevelEnabled("debug")) logger.debug("Server export CSV", { currentFilters });
+                            if (mode === 'server' && onServerExport) {
+                                const currentFilters = {
+                                    globalFilter: table.getState().globalFilter,
+                                    columnFilter: table.getState().columnFilter,
+                                    sorting: table.getState().sorting,
+                                    pagination: table.getState().pagination,
+                                };
 
-                            await exportServerData(table, {
-                                format: "csv",
-                                filename,
-                                fetchData: (filters: any, selection: any) => onServerExport(filters, selection),
-                                currentFilters,
-                                selection: table.getSelectionState?.(),
-                                onProgress: onExportProgress,
-                                onComplete: onExportComplete,
-                                onError: onExportError,
-                            });
-                        } else {
+                                if (logger.isLevelEnabled("debug")) logger.debug("Server export CSV", { currentFilters });
+
+                                await exportServerData(table, {
+                                    format: "csv",
+                                    filename,
+                                    fetchData: (filters: any, selection: any, signal?: AbortSignal) =>
+                                        onServerExport(filters, selection, signal),
+                                    currentFilters,
+                                    selection: table.getSelectionState?.(),
+                                    onProgress: handleExportProgressInternal,
+                                    onComplete: onExportComplete,
+                                    onError: onExportError,
+                                    onStateChange: toStateChange,
+                                    signal: controller.signal,
+                                    chunkSize,
+                                    strictTotalCheck,
+                                    sanitizeCSV,
+                                });
+                                return;
+                            }
+
                             await exportClientData(table, {
                                 format: "csv",
                                 filename,
-                                onProgress: onExportProgress,
+                                onProgress: handleExportProgressInternal,
                                 onComplete: onExportComplete,
                                 onError: onExportError,
+                                onStateChange: toStateChange,
+                                signal: controller.signal,
+                                sanitizeCSV,
                             });
 
                             if (logger.isLevelEnabled("debug")) logger.debug("Client export CSV", filename);
                         }
-                    } catch (error: any) {
-                        onExportError?.({ message: error.message || "Export failed", code: "EXPORT_ERROR" });
-                    } finally {
-                        setExportController?.(null);
-                    }
+                    });
                 },
 
-                exportExcel: async (options: any = {}) => {
-                    const { filename = exportFilename } = options;
+                exportExcel: async (options: DataTableExportApiOptions = {}) => {
+                    const {
+                        filename = exportFilename,
+                        chunkSize = exportChunkSize,
+                        strictTotalCheck = exportStrictTotalCheck,
+                        sanitizeCSV = exportSanitizeCSV,
+                    } = options;
+                    const mode: 'client' | 'server' = dataMode === "server" && !!onServerExport ? 'server' : 'client';
 
-                    try {
-                        const controller = new AbortController();
-                        setExportController?.(controller);
-
-                        if (dataMode === "server" && onServerExport) {
-                            const currentFilters = {
-                                globalFilter: table.getState().globalFilter,
-                                columnFilter: table.getState().columnFilter,
-                                sorting: table.getState().sorting,
-                                pagination: table.getState().pagination,
+                    await runExportWithPolicy({
+                        format: 'excel',
+                        filename,
+                        mode,
+                        execute: async (controller) => {
+                            const toStateChange = (state: {
+                                phase: ExportPhase;
+                                processedRows?: number;
+                                totalRows?: number;
+                                percentage?: number;
+                                message?: string;
+                                code?: string;
+                            }) => {
+                                const isFinalPhase = state.phase === 'completed' || state.phase === 'cancelled' || state.phase === 'error';
+                                handleExportStateChangeInternal({
+                                    phase: state.phase,
+                                    mode,
+                                    format: 'excel',
+                                    filename,
+                                    processedRows: state.processedRows,
+                                    totalRows: state.totalRows,
+                                    percentage: state.percentage,
+                                    message: state.message,
+                                    code: state.code,
+                                    startedAt: state.phase === 'starting' ? Date.now() : undefined,
+                                    endedAt: isFinalPhase ? Date.now() : undefined,
+                                    queueLength: queuedExportCount,
+                                });
+                                if (state.phase === 'cancelled') {
+                                    onExportCancel?.();
+                                }
                             };
 
-                            if (logger.isLevelEnabled("debug")) logger.debug("Server export Excel", { currentFilters });
+                            if (mode === 'server' && onServerExport) {
+                                const currentFilters = {
+                                    globalFilter: table.getState().globalFilter,
+                                    columnFilter: table.getState().columnFilter,
+                                    sorting: table.getState().sorting,
+                                    pagination: table.getState().pagination,
+                                };
 
-                            await exportServerData(table, {
-                                format: "excel",
-                                filename,
-                                fetchData: (filters: any, selection: any) => onServerExport(filters, selection),
-                                currentFilters,
-                                selection: table.getSelectionState?.(),
-                                onProgress: onExportProgress,
-                                onComplete: onExportComplete,
-                                onError: onExportError,
-                            });
-                        } else {
+                                if (logger.isLevelEnabled("debug")) logger.debug("Server export Excel", { currentFilters });
+
+                                await exportServerData(table, {
+                                    format: "excel",
+                                    filename,
+                                    fetchData: (filters: any, selection: any, signal?: AbortSignal) =>
+                                        onServerExport(filters, selection, signal),
+                                    currentFilters,
+                                    selection: table.getSelectionState?.(),
+                                    onProgress: handleExportProgressInternal,
+                                    onComplete: onExportComplete,
+                                    onError: onExportError,
+                                    onStateChange: toStateChange,
+                                    signal: controller.signal,
+                                    chunkSize,
+                                    strictTotalCheck,
+                                    sanitizeCSV,
+                                });
+                                return;
+                            }
+
                             await exportClientData(table, {
                                 format: "excel",
                                 filename,
-                                onProgress: onExportProgress,
+                                onProgress: handleExportProgressInternal,
                                 onComplete: onExportComplete,
                                 onError: onExportError,
+                                onStateChange: toStateChange,
+                                signal: controller.signal,
+                                sanitizeCSV,
                             });
 
                             if (logger.isLevelEnabled("debug")) logger.debug("Client export Excel", filename);
                         }
-                    } catch (error: any) {
-                        onExportError?.({ message: error.message || "Export failed", code: "EXPORT_ERROR" });
-                        if (logger.isLevelEnabled("debug")) logger.debug("Server export Excel failed", error);
-                    } finally {
-                        setExportController?.(null);
-                    }
+                    });
                 },
 
-                exportServerData: async (options: any) => {
-                    const { format, filename = exportFilename, fetchData: fetchFn = onServerExport } = options;
+                exportServerData: async (options: {
+                    format: 'csv' | 'excel';
+                    filename?: string;
+                    fetchData?: (
+                        filters?: Partial<TableState>,
+                        selection?: SelectionState,
+                        signal?: AbortSignal
+                    ) => Promise<any>;
+                    chunkSize?: number;
+                    strictTotalCheck?: boolean;
+                    sanitizeCSV?: boolean;
+                }) => {
+                    const {
+                        format,
+                        filename = exportFilename,
+                        fetchData: fetchFn = onServerExport,
+                        chunkSize = exportChunkSize,
+                        strictTotalCheck = exportStrictTotalCheck,
+                        sanitizeCSV = exportSanitizeCSV,
+                    } = options;
 
                     if (!fetchFn) {
                         onExportError?.({ message: "No server export function provided", code: "NO_SERVER_EXPORT" });
@@ -1586,41 +1797,67 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                         return;
                     }
 
-                    try {
-                        const controller = new AbortController();
-                        setExportController?.(controller);
+                    await runExportWithPolicy({
+                        format,
+                        filename,
+                        mode: 'server',
+                        execute: async (controller) => {
+                            const currentFilters = {
+                                globalFilter: table.getState().globalFilter,
+                                columnFilter: table.getState().columnFilter,
+                                sorting: table.getState().sorting,
+                                pagination: table.getState().pagination,
+                            };
 
-                        const currentFilters = {
-                            globalFilter: table.getState().globalFilter,
-                            columnFilter: table.getState().columnFilter,
-                            sorting: table.getState().sorting,
-                            pagination: table.getState().pagination,
-                        };
+                            if (logger.isLevelEnabled("debug")) logger.debug("Server export data", { currentFilters });
 
-                        if (logger.isLevelEnabled("debug")) logger.debug("Server export data", { currentFilters });
-
-                        await exportServerData(table, {
-                            format,
-                            filename,
-                            fetchData: (filters: any, selection: any) => fetchFn(filters, selection),
-                            currentFilters,
-                            selection: table.getSelectionState?.(),
-                            onProgress: onExportProgress,
-                            onComplete: onExportComplete,
-                            onError: onExportError,
-                        });
-                    } catch (error: any) {
-                        onExportError?.({ message: error.message || "Export failed", code: "EXPORT_ERROR" });
-                        if (logger.isLevelEnabled("debug")) logger.debug("Server export data failed", error);
-                    } finally {
-                        setExportController?.(null);
-                    }
+                            await exportServerData(table, {
+                                format,
+                                filename,
+                                fetchData: (filters: any, selection: any, signal?: AbortSignal) =>
+                                    fetchFn(filters, selection, signal),
+                                currentFilters,
+                                selection: table.getSelectionState?.(),
+                                onProgress: handleExportProgressInternal,
+                                onComplete: onExportComplete,
+                                onError: onExportError,
+                                onStateChange: (state) => {
+                                    const isFinalPhase = state.phase === 'completed' || state.phase === 'cancelled' || state.phase === 'error';
+                                    handleExportStateChangeInternal({
+                                        phase: state.phase,
+                                        mode: 'server',
+                                        format,
+                                        filename,
+                                        processedRows: state.processedRows,
+                                        totalRows: state.totalRows,
+                                        percentage: state.percentage,
+                                        message: state.message,
+                                        code: state.code,
+                                        startedAt: state.phase === 'starting' ? Date.now() : undefined,
+                                        endedAt: isFinalPhase ? Date.now() : undefined,
+                                        queueLength: queuedExportCount,
+                                    });
+                                    if (state.phase === 'cancelled') {
+                                        onExportCancel?.();
+                                    }
+                                },
+                                signal: controller.signal,
+                                chunkSize,
+                                strictTotalCheck,
+                                sanitizeCSV,
+                            });
+                        }
+                    });
                 },
 
                 isExporting: () => isExporting || false,
                 cancelExport: () => {
-                    exportController?.abort();
-                    setExportController?.(null);
+                    const activeController = exportControllerRef.current;
+                    if (!activeController) {
+                        return;
+                    }
+                    activeController.abort();
+                    setExportControllerSafely((current) => (current === activeController ? null : current));
                     if (logger.isLevelEnabled("debug")) logger.debug("Export cancelled");
                 },
             },
@@ -1645,13 +1882,20 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         tableData,
         // export
         exportFilename,
-        onExportProgress,
+        exportChunkSize,
+        exportStrictTotalCheck,
+        exportSanitizeCSV,
         onExportComplete,
         onExportError,
+        onExportCancel,
         onServerExport,
-        exportController,
+        queuedExportCount,
         isExporting,
         dataMode,
+        handleExportProgressInternal,
+        handleExportStateChangeInternal,
+        runExportWithPolicy,
+        setExportControllerSafely,
         logger,
         resetAllAndReload,
     ]);
@@ -1791,14 +2035,12 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     // Export cancel callback
     // -------------------------------
     const handleCancelExport = useCallback(() => {
-        if (exportController) {
-            exportController.abort();
-            setExportController(null);
-            if (onExportCancel) {
-                onExportCancel();
-            }
+        const activeController = exportControllerRef.current;
+        if (activeController) {
+            activeController.abort();
+            setExportControllerSafely((current) => (current === activeController ? null : current));
         }
-    }, [exportController, onExportCancel]);
+    }, [setExportControllerSafely]);
 
     // -------------------------------
     // Slot components
@@ -1878,6 +2120,8 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
             slotProps={slotProps}
             isExporting={isExporting}
             exportController={exportController}
+            exportPhase={exportPhase}
+            exportProgress={exportProgress}
             onCancelExport={handleCancelExport}
             exportFilename={exportFilename}
             onExportProgress={onExportProgress}

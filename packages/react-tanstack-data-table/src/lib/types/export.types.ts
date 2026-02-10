@@ -6,6 +6,64 @@
 import { TableState } from './table.types';
 
 
+export type ExportFormat = 'csv' | 'excel';
+export type ExportConcurrencyMode = 'ignoreIfRunning' | 'cancelAndRestart' | 'queue';
+export type ExportPhase =
+    | 'starting'
+    | 'fetching'
+    | 'processing'
+    | 'downloading'
+    | 'completed'
+    | 'cancelled'
+    | 'error';
+
+export type ExportValueFormat = 'auto' | 'string' | 'number' | 'boolean' | 'json' | 'date';
+
+export interface ExportStateChange {
+    phase: ExportPhase;
+    mode: 'client' | 'server';
+    format: ExportFormat;
+    filename: string;
+    processedRows?: number;
+    totalRows?: number;
+    percentage?: number;
+    message?: string;
+    code?: string;
+    startedAt?: number;
+    endedAt?: number;
+    queueLength?: number;
+}
+
+export interface ExportProgressPayload {
+    processedRows?: number;
+    totalRows?: number;
+    percentage?: number;
+}
+
+export interface ServerExportDataResult<T = any> {
+    data: T[];
+    total: number;
+}
+
+export interface ServerExportBlobResult {
+    blob: Blob;
+    filename?: string;
+    mimeType?: string;
+    total?: number;
+}
+
+export interface ServerExportFileUrlResult {
+    fileUrl: string;
+    filename?: string;
+    mimeType?: string;
+    total?: number;
+}
+
+export type ServerExportResult<T = any> =
+    | ServerExportDataResult<T>
+    | ServerExportBlobResult
+    | ServerExportFileUrlResult;
+
 /**
  * Server export column configuration
  */
@@ -21,7 +79,7 @@ export interface ServerExportColumn<T = any> {
  */
 export interface ExportOptions {
     filename?: string;
-    format: 'csv' | 'excel';
+    format: ExportFormat;
     includeHeaders?: boolean;
     onlyVisibleColumns?: boolean;
     onlyFilteredData?: boolean;
@@ -37,11 +95,11 @@ export interface ExportOptions {
  * Export progress information
  */
 export interface ExportProgress {
-    processedRows: number;
-    totalRows: number;
-    percentage: number;
-    currentChunk: number;
-    totalChunks: number;
+    processedRows?: number;
+    totalRows?: number;
+    percentage?: number;
+    currentChunk?: number;
+    totalChunks?: number;
     estimatedTimeRemaining?: number;
 }
 
@@ -62,7 +120,7 @@ export interface ExportResult {
  */
 export interface ExportError {
     message: string;
-    code: 'CANCELLED' | 'MEMORY_ERROR' | 'PROCESSING_ERROR' | 'UNKNOWN';
+    code: 'CANCELLED' | 'MEMORY_ERROR' | 'PROCESSING_ERROR' | 'UNKNOWN' | 'EXPORT_IN_PROGRESS';
     details?: any;
 }
 
@@ -71,13 +129,16 @@ export interface ExportError {
  */
 export interface ExportConfig {
     enabled: boolean;
-    formats: ('csv' | 'excel')[];
+    formats: ExportFormat[];
     filename?: string;
     includeHeaders?: boolean;
     onlyVisibleColumns?: boolean;
     onlyFilteredData?: boolean;
     // New configuration for large datasets
     chunkSize?: number;
+    strictTotalCheck?: boolean;
+    sanitizeCSV?: boolean;
+    concurrency?: ExportConcurrencyMode;
     enableProgressTracking?: boolean;
     maxMemoryThreshold?: number; // MB
 }
@@ -124,10 +185,13 @@ export interface PinnedColumnStyleOptions {
 
 export interface SimpleExportOptions {
     filename?: string;
-    format: 'csv' | 'excel';
+    format: ExportFormat;
     includeHeaders?: boolean;
     onlyVisibleColumns?: boolean;
     onlySelectedRows?: boolean;
+    chunkSize?: number;
+    strictTotalCheck?: boolean;
+    sanitizeCSV?: boolean;
 }
 
 /**
@@ -141,7 +205,11 @@ export interface SelectionExportData {
 }
 
 export interface ServerExportOptions extends SimpleExportOptions {
-    fetchData: (filters?: Partial<TableState>, selection?: SelectionExportData) => Promise<{ data: any[]; total: number }>;
+    fetchData: (
+        filters?: Partial<TableState>,
+        selection?: SelectionExportData,
+        signal?: AbortSignal
+    ) => Promise<ServerExportResult<any>>;
     currentFilters?: any; // Current table filters/state
     pageSize?: number;
     selection?: SelectionExportData;
@@ -151,4 +219,5 @@ export interface ExportCallbacks {
     onProgress?: (progress: ExportProgress) => void;
     onComplete?: (result: ExportResult) => void;
     onError?: (error: ExportError) => void;
+    onStateChange?: (state: ExportStateChange) => void;
 }

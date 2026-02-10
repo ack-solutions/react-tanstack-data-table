@@ -2,7 +2,9 @@ import { Table } from '@tanstack/react-table';
 import React, { createContext, useContext, ReactNode, useMemo, RefObject, ReactElement } from 'react';
 
 import { ColumnFilterState, TableSize } from '../types';
+import { SelectionState } from '../features';
 import { DataTableApi } from '../types/data-table-api';
+import { ExportPhase, ExportProgressPayload, ServerExportResult } from '../types/export.types';
 
 
 /**
@@ -22,14 +24,20 @@ interface DataTableContextValue<T = any> {
     // Export state - managed by the DataTable component
     isExporting?: boolean;
     exportController?: AbortController | null;
+    exportPhase?: ExportPhase | null;
+    exportProgress?: ExportProgressPayload;
     onCancelExport?: () => void;
 
     // Export callbacks - passed from DataTable props
     exportFilename?: string;
-    onExportProgress?: (progress: { processedRows?: number; totalRows?: number; percentage?: number }) => void;
+    onExportProgress?: (progress: ExportProgressPayload) => void;
     onExportComplete?: (result: { success: boolean; filename: string; totalRows: number }) => void;
     onExportError?: (error: { message: string; code: string }) => void;
-    onServerExport?: (filters?: Partial<any>) => Promise<{ data: any[]; total: number }>;
+    onServerExport?: (
+        filters?: Partial<any>,
+        selection?: SelectionState,
+        signal?: AbortSignal
+    ) => Promise<ServerExportResult<any>>;
 }
 
 const DataTableContext = createContext<DataTableContextValue | null>(null);
@@ -51,6 +59,8 @@ export function DataTableProvider<T = any>({
     slotProps = {},
     isExporting,
     exportController,
+    exportPhase,
+    exportProgress,
     onCancelExport,
     exportFilename,
     onExportProgress,
@@ -70,6 +80,8 @@ export function DataTableProvider<T = any>({
         slotProps,
         isExporting,
         exportController,
+        exportPhase,
+        exportProgress,
         onCancelExport,
         exportFilename,
         onExportProgress,
@@ -88,6 +100,8 @@ export function DataTableProvider<T = any>({
         slotProps,
         isExporting,
         exportController,
+        exportPhase,
+        exportProgress,
         onCancelExport,
         exportFilename,
         onExportProgress,

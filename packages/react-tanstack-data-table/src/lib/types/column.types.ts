@@ -24,6 +24,25 @@ declare module '@tanstack/react-table' {
         align?: 'left' | 'center' | 'right';
         filterable?: boolean;
         hideInExport?: boolean;
+        exportHeader?: string | ((context: {
+            columnId: string;
+            defaultHeader: string;
+            columnDef: ColumnDefBase<TData, TValue>;
+        }) => string);
+        exportValue?: (context: {
+            value: any;
+            row: TData;
+            rowIndex: number;
+            columnId: string;
+            columnDef: ColumnDefBase<TData, TValue>;
+        }) => any;
+        exportFormat?: 'auto' | 'string' | 'number' | 'boolean' | 'json' | 'date' | ((context: {
+            value: any;
+            row: TData;
+            rowIndex: number;
+            columnId: string;
+            columnDef: ColumnDefBase<TData, TValue>;
+        }) => any);
         wrapText?: boolean; // If true, text will wrap; if false, text will truncate with ellipsis (default: false)
         editComponent?: React.ComponentType<{
             value: any;

@@ -9,6 +9,7 @@ import { DataTableSlots, PartialSlotProps } from './slots.types';
 import { DataTableSize } from '../utils/table-helpers';
 import { SelectionState, SelectMode } from '../features';
 import { DataTableLoggingOptions } from '../utils/logger';
+import { ExportConcurrencyMode, ExportProgressPayload, ExportStateChange, ServerExportResult } from './export.types';
 
 // Dynamic data management interfaces
 // TableFilters now imported from types folder
@@ -77,12 +78,21 @@ export interface DataTableProps<T> {
 
     // Simplified Export props
     exportFilename?: string;
-    onExportProgress?: (progress: { processedRows?: number; totalRows?: number; percentage?: number }) => void;
+    exportConcurrency?: ExportConcurrencyMode;
+    exportChunkSize?: number;
+    exportStrictTotalCheck?: boolean;
+    exportSanitizeCSV?: boolean;
+    onExportProgress?: (progress: ExportProgressPayload) => void;
     onExportComplete?: (result: { success: boolean; filename: string; totalRows: number }) => void;
     onExportError?: (error: { message: string; code: string }) => void;
+    onExportStateChange?: (state: ExportStateChange) => void;
 
     // Server export callback - receives current table state/filters and selection data
-    onServerExport?: (filters?: Partial<TableState>, selection?: SelectionState) => Promise<{ data: any[]; total: number }>;
+    onServerExport?: (
+        filters?: Partial<TableState>,
+        selection?: SelectionState,
+        signal?: AbortSignal
+    ) => Promise<ServerExportResult<any>>;
 
     // Export cancellation callback - called when export is cancelled
     onExportCancel?: () => void;

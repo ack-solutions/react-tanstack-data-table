@@ -84,9 +84,9 @@ export const exampleDefinitions: ExampleDefinition[] = [
   {
     id: 'improved-server-side',
     title: 'Enhanced Server-Side',
-    description: 'Production-ready server-side example with advanced filtering, status management, and department filters with optimized performance.',
+    description: 'Production-ready server-side example with advanced filtering plus robust export controls (chunked/streaming, cancel, progress, and concurrency policy).',
     component: ImprovedServerSideExample,
-    features: ['Advanced filtering', 'Status filters', 'Department filters', 'Custom controls', 'Performance optimized'],
+    features: ['Advanced filtering', 'Status filters', 'Department filters', 'Export progress', 'Streaming export', 'Concurrency policy'],
     githubPath: 'apps/example/src/examples/ImprovedServerSideExample.tsx',
     code: improvedServerCode,
     category: 'advanced',

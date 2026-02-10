@@ -10,6 +10,8 @@ import {
     Box,
     IconButtonProps,
     SxProps,
+    Divider,
+    LinearProgress,
 } from '@mui/material';
 
 import { MenuDropdown } from '../droupdown/menu-dropdown';
@@ -46,6 +48,9 @@ export function TableExportControl(props: TableExportControlProps = {}) {
         slots,
         slotProps,
         isExporting,
+        exportPhase,
+        exportProgress,
+        onCancelExport,
         // Export callbacks from context (DataTable props)
         exportFilename: contextExportFilename,
     } = useDataTableContext();
@@ -80,11 +85,18 @@ export function TableExportControl(props: TableExportControlProps = {}) {
         }
     };
 
+    const handleCancelExport = () => {
+        if (onCancelExport) {
+            onCancelExport();
+            return;
+        }
+        apiRef?.current?.export.cancelExport();
+    };
+
     // Merge all props for maximum flexibility
     const mergedIconButtonProps = mergeSlotProps(
         {
             size: 'small',
-            disabled: isExporting,
             sx: { flexShrink: 0 },
         },
         exportIconSlotProps,
@@ -97,6 +109,25 @@ export function TableExportControl(props: TableExportControlProps = {}) {
         },
         menuItemProps || {}
     );
+
+    const progressPercentage = typeof exportProgress?.percentage === 'number'
+        ? Math.max(0, Math.min(100, exportProgress.percentage))
+        : undefined;
+
+    const getPhaseLabel = () => {
+        switch (exportPhase) {
+            case 'fetching':
+                return 'Fetching rows from server...';
+            case 'processing':
+                return 'Preparing export file...';
+            case 'downloading':
+                return 'Downloading file...';
+            case 'starting':
+                return 'Starting export...';
+            default:
+                return 'Export in progress...';
+        }
+    };
 
     return (
         <MenuDropdown
@@ -162,15 +193,36 @@ export function TableExportControl(props: TableExportControlProps = {}) {
                     </MenuItem>
 
                     {isExporting && (
-                        <Box sx={{ p: 2, pt: 1 }}>
-                            <Typography
-                                variant="caption"
-                                color="text.secondary"
-                                sx={{ display: 'block', textAlign: 'center' }}
+                        <>
+                            <Box sx={{ px: 2, pb: 1 }}>
+                                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.75 }}>
+                                    {getPhaseLabel()}
+                                </Typography>
+                                <LinearProgress
+                                    variant={progressPercentage !== undefined ? 'determinate' : 'indeterminate'}
+                                    value={progressPercentage !== undefined ? progressPercentage : 0}
+                                />
+                                {(exportProgress?.processedRows !== undefined || exportProgress?.totalRows !== undefined) && (
+                                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.75 }}>
+                                        {`${exportProgress?.processedRows ?? 0}${exportProgress?.totalRows !== undefined ? ` / ${exportProgress.totalRows}` : ''}${progressPercentage !== undefined ? ` (${progressPercentage}%)` : ''}`}
+                                    </Typography>
+                                )}
+                            </Box>
+                            <Divider sx={{ my: 1 }} />
+                            <MenuItem
+                                onClick={() => {
+                                    handleCancelExport();
+                                    handleClose();
+                                }}
+                                {...mergedMenuItemProps}
                             >
-                                Export in progress...
-                            </Typography>
-                        </Box>
+                                <ListItemText
+                                    primary="Cancel Export"
+                                    secondary="Stop current export job"
+                                    primaryTypographyProps={{ color: 'error.main' }}
+                                />
+                            </MenuItem>
+                        </>
                     )}
                 </Box>
             )}

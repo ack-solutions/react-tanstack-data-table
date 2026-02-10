@@ -210,10 +210,15 @@ This allows for efficient handling of large datasets where you might select "all
 |------|------|---------|-------------|
 | `enableExport` | `boolean` | `true` | Enable data export |
 | `exportFilename` | `string` | `'export'` | Default export filename |
+| `exportConcurrency` | `'ignoreIfRunning' \| 'cancelAndRestart' \| 'queue'` | `'cancelAndRestart'` | How export requests are handled while another export is running |
+| `exportChunkSize` | `number` | `1000` | Chunk size for server export pagination |
+| `exportStrictTotalCheck` | `boolean` | `false` | Validate server export row count against reported total |
+| `exportSanitizeCSV` | `boolean` | `true` | Protect CSV against spreadsheet formula injection |
 | `onExportProgress` | `(progress: {processedRows?, totalRows?, percentage?}) => void` | - | Export progress callback |
 | `onExportComplete` | `(result: {success: boolean, filename: string, totalRows: number}) => void` | - | Export completion callback |
 | `onExportError` | `(error: {message: string, code: string}) => void` | - | Export error callback |
-| `onServerExport` | `(filters?: Partial<TableState>, selection?: SelectionState) => Promise<{data: any[], total: number}>` | - | Server-side export handler |
+| `onExportStateChange` | `(state: ExportStateChange) => void` | - | Export lifecycle callback (`starting`, `fetching`, `processing`, `downloading`, `completed`, `cancelled`, `error`) |
+| `onServerExport` | `(filters?: Partial<TableState>, selection?: SelectionState, signal?: AbortSignal) => Promise<ServerExportResult<any>>` | - | Server-side export handler (paged data or file URL/blob streaming) |
 | `onExportCancel` | `() => void` | - | Export cancellation callback |
 
 ### Expandable Rows (Enhanced Slot System)
@@ -540,7 +545,7 @@ function ServerSideTable() {
 ```tsx
 import { useMemo, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { DataTable, DataTableApi, TableState } from '@ackplus/react-tanstack-data-table';
+import { DataTable, DataTableApi, SelectionState, TableState } from '@ackplus/react-tanstack-data-table';
 
 function ReactQueryTable() {
   const apiRef = useRef<DataTableApi<User>>(null);
@@ -576,6 +581,20 @@ function ReactQueryTable() {
     apiRef.current?.data.updateRow(String(updated.id), updated);
   };
 
+  const handleServerExport = async (
+    filters?: Partial<TableState>,
+    selection?: SelectionState,
+    signal?: AbortSignal,
+  ) => {
+    const res = await fetch('/api/users/export', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ filters, selection }),
+      signal,
+    });
+    return res.json() as Promise<{ data: User[]; total: number }>;
+  };
+
   return (
     <DataTable
       ref={apiRef}
@@ -587,6 +606,7 @@ function ReactQueryTable() {
       enablePagination
       enableSorting
       enableGlobalFilter
+      onServerExport={handleServerExport}
       onDataStateChange={setTableState}
       // Fetch-on-state-change stays outside DataTable
       onRefreshData={({ options }) =>
@@ -817,6 +837,7 @@ function ManageableColumnsTable() {
 ```tsx
 function ExportableTable() {
   const [exportProgress, setExportProgress] = useState(null);
+  const [exportState, setExportState] = useState(null);
 
   const handleExportProgress = (progress) => {
     setExportProgress(progress);
@@ -832,12 +853,41 @@ function ExportableTable() {
       data={data}
       enableExport
       exportFilename="users-export"
+      exportConcurrency="queue"
+      exportChunkSize={500}
+      exportStrictTotalCheck
+      exportSanitizeCSV
       onExportProgress={handleExportProgress}
+      onExportStateChange={setExportState}
       onExportComplete={handleExportComplete}
       onExportError={(error) => console.error('Export failed:', error)}
     />
   );
 }
+```
+
+### Server Export with Streaming File Response
+
+```tsx
+const handleServerExport = async (filters, selection, signal) => {
+  const res = await fetch('/api/users/export-stream', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ filters, selection }),
+    signal,
+  });
+
+  // Option 1: backend returns generated file payload directly
+  const blob = await res.blob();
+  return {
+    blob,
+    filename: 'users-stream-export.csv',
+    mimeType: 'text/csv',
+  };
+
+  // Option 2: backend returns URL (alternative shape)
+  // return { fileUrl: signedDownloadUrl, filename: 'users-export.csv' };
+};
 ```
 
 ## 🎛️ API Reference
@@ -869,6 +919,9 @@ interface DataTableColumn<T> extends ColumnDef<T> {
   
   // Export
   hideInExport?: boolean;
+  exportHeader?: string | ((context) => string);
+  exportValue?: (context) => any;
+  exportFormat?: 'auto' | 'string' | 'number' | 'boolean' | 'json' | 'date' | ((context) => any);
 }
 ```
 
@@ -990,9 +1043,9 @@ function MyComponent() {
 - `layout.restoreLayout(layout)` - Restore saved layout
 
 **Export:**
-- `export.exportCSV(options?)` - Export to CSV
-- `export.exportExcel(options?)` - Export to Excel
-- `export.exportServerData(options)` - Server-side export
+- `export.exportCSV(options?)` - Export to CSV (`filename`, `chunkSize`, `strictTotalCheck`, `sanitizeCSV`)
+- `export.exportExcel(options?)` - Export to Excel (`filename`, `chunkSize`, `strictTotalCheck`)
+- `export.exportServerData(options)` - Server-side export (supports paged data, `blob`, or `fileUrl` responses)
 - `export.isExporting()` - Check if exporting
 - `export.cancelExport()` - Cancel export
 

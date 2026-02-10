@@ -2,6 +2,7 @@ import { ColumnPinningState, SortingState, ColumnOrderState, TableState, Row, Ta
 
 import { ColumnFilterState } from './table.types';
 import { SelectionState } from '../features';
+import { ServerExportResult } from './export.types';
 
 export interface DataRefreshApiOptions {
     resetPagination?: boolean;
@@ -10,6 +11,16 @@ export interface DataRefreshApiOptions {
 }
 
 export type DataRefreshApiInput = boolean | DataRefreshApiOptions;
+
+export interface DataTableExportApiOptions {
+    filename?: string;
+    onlyVisibleColumns?: boolean;
+    onlySelectedRows?: boolean;
+    includeHeaders?: boolean;
+    chunkSize?: number;
+    strictTotalCheck?: boolean;
+    sanitizeCSV?: boolean;
+}
 
 export interface DataTableApi<T = any> {
     // Column Management
@@ -156,24 +167,21 @@ export interface DataTableApi<T = any> {
 
     // Simplified Export
     export: {
-        exportCSV: (options?: {
-            filename?: string;
-            onlyVisibleColumns?: boolean;
-            onlySelectedRows?: boolean;
-            includeHeaders?: boolean;
-        }) => Promise<void>;
-        exportExcel: (options?: {
-            filename?: string;
-            onlyVisibleColumns?: boolean;
-            onlySelectedRows?: boolean;
-            includeHeaders?: boolean;
-        }) => Promise<void>;
+        exportCSV: (options?: DataTableExportApiOptions) => Promise<void>;
+        exportExcel: (options?: DataTableExportApiOptions) => Promise<void>;
         exportServerData: (options: {
             format: 'csv' | 'excel';
             filename?: string;
-            fetchData: (filters?: Partial<TableState>) => Promise<{ data: T[]; total: number }>;
+            fetchData: (
+                filters?: Partial<TableState>,
+                selection?: SelectionState,
+                signal?: AbortSignal
+            ) => Promise<ServerExportResult<T>>;
             pageSize?: number;
             includeHeaders?: boolean;
+            chunkSize?: number;
+            strictTotalCheck?: boolean;
+            sanitizeCSV?: boolean;
         }) => Promise<void>;
         isExporting: () => boolean;
         cancelExport: () => void;

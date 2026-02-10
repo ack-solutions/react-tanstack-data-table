@@ -14,7 +14,7 @@ import { TableProps, TableContainerProps, BoxProps, ToolbarProps, TableRowProps,
 import { Table, Row, Column } from '@tanstack/react-table';
 import { ComponentType, ReactNode, HTMLAttributes, ComponentProps } from 'react';
 
-import { DataTableColumn, TableFilters, ExportProgress, ExportResult, ExportError, ServerExportColumn } from './index';
+import { DataTableColumn, TableFilters, ExportProgress, ExportResult, ExportError, ServerExportColumn, ExportStateChange } from './index';
 import { DataTableSize } from '../utils/table-helpers';
 import { DataTablePaginationProps } from "../components/pagination";
 import { DataTableToolbarProps } from '../components/toolbar/data-table-toolbar';
@@ -83,6 +83,7 @@ export interface DataTableSlots<T = any> {
         onExportComplete?: (result: ExportResult) => void;
         onExportError?: (error: ExportError) => void;
         onExportCancel?: () => void;
+        onExportStateChange?: (state: ExportStateChange) => void;
     }>>;
 
     header?: SlotComponent<EnhancedSlotProps<BaseSlotProps<T>, TableHeadProps & {
@@ -209,6 +210,7 @@ export interface DataTableSlots<T = any> {
         onExportComplete?: (result: ExportResult) => void;
         onExportError?: (error: ExportError) => void;
         onExportCancel?: () => void;
+        onExportStateChange?: (state: ExportStateChange) => void;
     }>>;
 
     refreshButton?: SlotComponent<EnhancedSlotProps<BaseSlotProps<T>, ComponentProps<'button'> & {

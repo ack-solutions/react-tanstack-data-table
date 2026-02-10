@@ -15,6 +15,9 @@ import {
   Select,
   MenuItem,
   Grid,
+  FormControlLabel,
+  Switch,
+  LinearProgress,
 } from '@mui/material';
 import {
   DataTable,
@@ -23,6 +26,8 @@ import {
   TableFilters,
   SelectionState,
   DEFAULT_SELECTION_COLUMN_NAME,
+  ExportConcurrencyMode,
+  ExportStateChange,
 } from '@ackplus/react-tanstack-data-table';
 import { Employee, employees } from './data';
 // Extend the employee list to simulate larger dataset
@@ -44,9 +49,29 @@ export function ImprovedServerSideExample() {
   const [fetchCount, setFetchCount] = useState(0);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [departmentFilter, setDepartmentFilter] = useState<string>('all');
+  const [exportMode, setExportMode] = useState<'chunked' | 'streaming'>('chunked');
+  const [exportConcurrency, setExportConcurrency] = useState<ExportConcurrencyMode>('cancelAndRestart');
+  const [exportState, setExportState] = useState<ExportStateChange | null>(null);
 
   // API ref for programmatic control
   const apiRef = useRef<DataTableApi<Employee>>(null);
+
+  const waitWithSignal = useCallback((ms: number, signal?: AbortSignal) => {
+    return new Promise<void>((resolve, reject) => {
+      const timer = setTimeout(() => {
+        signal?.removeEventListener('abort', onAbort);
+        resolve();
+      }, ms);
+
+      const onAbort = () => {
+        clearTimeout(timer);
+        signal?.removeEventListener('abort', onAbort);
+        reject(new DOMException('Export aborted', 'AbortError'));
+      };
+
+      signal?.addEventListener('abort', onAbort, { once: true });
+    });
+  }, []);
 
   // Simulate server API call with proper filtering
   const handleFetchData = useCallback(
@@ -165,9 +190,9 @@ export function ImprovedServerSideExample() {
 
   // Handle server export
   const handleServerExport = useCallback(
-    async (filters: any, selection: SelectionState) => {
+    async (filters: any, selection?: SelectionState, signal?: AbortSignal) => {
       // Simulate export API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await waitWithSignal(1000, signal);
 
       let exportData = [...MOCK_EMPLOYEES];
 
@@ -192,19 +217,50 @@ export function ImprovedServerSideExample() {
       }
 
       // Apply selection filtering for export
-      if (selection.type === 'include' && selection.ids.length > 0) {
+      if (selection?.type === 'include' && selection.ids.length > 0) {
         exportData = exportData.filter((employee) => selection.ids.includes(employee.id.toString()));
-      } else if (selection.type === 'exclude' && selection.ids.length > 0) {
+      } else if (selection?.type === 'exclude' && selection.ids.length > 0) {
         exportData = exportData.filter((employee) => !selection.ids.includes(employee.id.toString()));
       }
 
+      if (exportMode === 'streaming') {
+        const csvHeaders = ['id', 'name', 'email', 'department', 'position', 'salary', 'status', 'joinDate', 'location'];
+        const csvRows = [
+          csvHeaders.join(','),
+          ...exportData.map((employee) =>
+            csvHeaders
+              .map((header) => {
+                const value = String((employee as any)[header] ?? '');
+                return value.includes(',') ? `"${value.replace(/"/g, '""')}"` : value;
+              })
+              .join(',')
+          ),
+        ];
+
+        return {
+          blob: new Blob([csvRows.join('\n')], { type: 'text/csv' }),
+          filename: 'employees-streaming-export.csv',
+          mimeType: 'text/csv',
+          total: exportData.length,
+        };
+      }
+
+      const pageIndex = filters?.pagination?.pageIndex || 0;
+      const pageSize = filters?.pagination?.pageSize || 1000;
+      const startIndex = pageIndex * pageSize;
+      const endIndex = startIndex + pageSize;
+
       return {
-        data: exportData,
+        data: exportData.slice(startIndex, endIndex),
         total: exportData.length,
       };
     },
-    [statusFilter, departmentFilter]
+    [statusFilter, departmentFilter, exportMode, waitWithSignal]
   );
+
+  const handleExportStateChange = useCallback((state: ExportStateChange) => {
+    setExportState(state);
+  }, []);
 
   // Define columns using ColumnDef
   const columns: ColumnDef<Employee>[] = [
@@ -327,6 +383,31 @@ export function ImprovedServerSideExample() {
               Clear All Filters
             </Button>
           </Grid>
+          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+            <FormControl fullWidth size="small">
+              <InputLabel>Export Concurrency</InputLabel>
+              <Select
+                value={exportConcurrency}
+                label="Export Concurrency"
+                onChange={(e) => setExportConcurrency(e.target.value as ExportConcurrencyMode)}
+              >
+                <MenuItem value="cancelAndRestart">Cancel & Restart</MenuItem>
+                <MenuItem value="queue">Queue</MenuItem>
+                <MenuItem value="ignoreIfRunning">Ignore If Running</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+            <FormControlLabel
+              control={(
+                <Switch
+                  checked={exportMode === 'streaming'}
+                  onChange={(event) => setExportMode(event.target.checked ? 'streaming' : 'chunked')}
+                />
+              )}
+              label={`Export Mode: ${exportMode === 'streaming' ? 'Streaming File' : 'Chunked Data'}`}
+            />
+          </Grid>
         </Grid>
       </Paper>
 
@@ -367,6 +448,33 @@ export function ImprovedServerSideExample() {
             </Typography>
           </CardContent>
         </Card>
+
+        <Card variant="outlined" sx={{ flex: 1 }}>
+          <CardContent sx={{ py: 2 }}>
+            <Typography variant="h6" sx={{ fontWeight: 700 }}>
+              {exportState?.phase || 'idle'}
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+              Export state
+            </Typography>
+            {typeof exportState?.percentage === 'number' ? (
+              <LinearProgress variant="determinate" value={exportState.percentage} />
+            ) : (
+              <LinearProgress variant={exportState?.phase && exportState.phase !== 'completed' ? 'indeterminate' : 'determinate'} value={0} />
+            )}
+            <Typography variant="caption" sx={{ mt: 0.75, display: 'block' }}>
+              {`${exportState?.processedRows ?? 0}${exportState?.totalRows !== undefined ? ` / ${exportState.totalRows}` : ''}${typeof exportState?.percentage === 'number' ? ` (${exportState.percentage}%)` : ''}`}
+            </Typography>
+            <Button
+              size="small"
+              color="error"
+              sx={{ mt: 1 }}
+              onClick={() => apiRef.current?.export.cancelExport()}
+            >
+              Cancel Export
+            </Button>
+          </CardContent>
+        </Card>
       </Stack>
 
       {/* Error Display */}
@@ -384,6 +492,11 @@ export function ImprovedServerSideExample() {
         onFetchData={handleFetchData}
         onSelectionChange={handleSelectionChange}
         onServerExport={handleServerExport}
+        exportConcurrency={exportConcurrency}
+        exportChunkSize={250}
+        exportStrictTotalCheck
+        exportSanitizeCSV
+        onExportStateChange={handleExportStateChange}
         enableRowSelection
         enableMultiRowSelection
         enableColumnVisibility
