@@ -45,7 +45,6 @@ import {
     DataFetchMeta,
     DataMutationAction,
     DataMutationContext,
-    DataRefreshContext,
     DataRefreshOptions,
     DataTableProps,
 } from './types/data-table.types';
@@ -98,10 +97,10 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     // Data management mode (MUI DataGrid style)
     dataMode = 'client',
     initialLoadData = true,
-    onFetchData,
-    onRefreshData,
-    onDataChange,
-    onDataStateChange,
+    onFetchData, // callback to fetch data from the server need to with response { data: T[], total: number }
+    onFetchStateChange, // callback to fetch data from the server no need to resonce , this for filter data 
+    onDataChange, // callback to change data
+    onDataStateChange, // callback to change data state
 
     // Selection props
     enableRowSelection = false,
@@ -153,6 +152,8 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     enableSorting = true,
     sortingMode = 'client',
     onSortingChange,
+
+    //export props
     exportFilename = 'export',
     exportConcurrency = 'cancelAndRestart',
     exportChunkSize = 1000,
@@ -279,8 +280,8 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     const exportQueueRef = useRef<Promise<void>>(Promise.resolve());
 
     const isExternallyControlledData = useMemo(
-        () => !onFetchData && (!!onDataChange || !!onRefreshData),
-        [onFetchData, onDataChange, onRefreshData]
+        () => !onFetchData && (!!onDataChange || !!onFetchStateChange),
+        [onFetchData, onDataChange, onFetchStateChange]
     );
 
     const { debouncedFetch, isLoading: fetchLoading } = useDebouncedFetch(onFetchData);
@@ -343,13 +344,6 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         overrides: Partial<TableState> = {},
         options?: { delay?: number; meta?: DataFetchMeta }
     ) => {
-        if (!onFetchData) {
-            if (logger.isLevelEnabled('debug')) {
-                logger.debug('onFetchData not provided, skipping fetch', { overrides, columnFilter, sorting, pagination });
-            }
-            return;
-        }
-
         const filters: Partial<TableFiltersForFetch> = {
             globalFilter,
             pagination,
@@ -357,6 +351,16 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
             sorting,
             ...overrides,
         };
+
+        if(onFetchStateChange) {
+            onFetchStateChange(filters, options?.meta);
+        }
+        if (!onFetchData) {
+            if (logger.isLevelEnabled('debug')) {
+                logger.debug('onFetchData not provided, skipping fetch', { overrides, columnFilter, sorting, pagination });
+            }
+            return;
+        }
 
         if (logger.isLevelEnabled('info')) {
             logger.info('Requesting data', {
@@ -400,6 +404,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         sorting,
         debouncedFetch,
         logger,
+        onFetchStateChange,
     ]);
 
     const normalizeRefreshOptions = useCallback((
@@ -698,7 +703,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
     }, [isExternallyControlledData, serverData]);
 
     useEffect(() => {
-        if (initialLoadData && onFetchData) {
+        if (initialLoadData && (onFetchData || onFetchStateChange)) {
             if (logger.isLevelEnabled('info')) {
                 logger.info('Initial data load triggered', { initialLoadData });
             }
@@ -825,34 +830,6 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         return nextData;
     }, [isExternallyControlledData, logger, onDataChange, tableData, tableTotalRow]);
 
-    const buildRefreshContext = useCallback((
-        options: ReturnType<typeof normalizeRefreshOptions>,
-        paginationOverride?: { pageIndex: number; pageSize: number }
-    ): DataRefreshContext => {
-        const state = table.getState();
-        const nextPagination = paginationOverride || state.pagination || pagination;
-
-        return {
-            filters: {
-                globalFilter,
-                pagination: nextPagination,
-                columnFilter,
-                sorting,
-            },
-            state: {
-                sorting,
-                pagination: nextPagination,
-                globalFilter,
-                columnFilter,
-                columnVisibility: state.columnVisibility,
-                columnSizing: state.columnSizing,
-                columnOrder: state.columnOrder,
-                columnPinning: state.columnPinning,
-            },
-            options,
-        };
-    }, [table, pagination, globalFilter, columnFilter, sorting]);
-
     const triggerRefresh = useCallback(async (
         options?: boolean | DataRefreshOptions,
         fallbackReason: string = 'refresh'
@@ -873,41 +850,18 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
             onPaginationChange?.(nextPagination);
         }
 
-        const refreshContext = buildRefreshContext(normalizedOptions, nextPagination);
-
-        if (onRefreshData) {
-            await onRefreshData(refreshContext);
-            return;
-        }
-
-        if (onFetchData) {
-            await fetchData(
-                nextPagination ? { pagination: nextPagination } : {},
-                {
-                    delay: 0,
-                    meta: {
-                        reason: normalizedOptions.reason,
-                        force: normalizedOptions.force,
-                    },
-                }
-            );
-            return;
-        }
-
-        if (logger.isLevelEnabled('debug')) {
-            logger.debug('Refresh skipped because no refresh handler is configured', refreshContext);
-        }
-    }, [
-        normalizeRefreshOptions,
-        enablePagination,
-        pagination,
-        onPaginationChange,
-        buildRefreshContext,
-        onRefreshData,
-        onFetchData,
-        fetchData,
-        logger,
-    ]);
+        await fetchData(
+            nextPagination ? { pagination: nextPagination } : {},
+            {
+                delay: 0,
+                meta: {
+                    reason: normalizedOptions.reason,
+                    force: normalizedOptions.force,
+                },
+            }
+        );
+        return;
+    }, [normalizeRefreshOptions, enablePagination, pagination, onPaginationChange, fetchData]);
 
     const resetAllAndReload = useCallback(() => {
         const resetState = getResetState();
@@ -936,33 +890,14 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
             reason: 'reset',
         }, 'reset');
 
-        const refreshContext = buildRefreshContext(resetOptions, resetState.pagination);
-
-        if (onRefreshData) {
-            void onRefreshData(refreshContext);
-            return;
-        }
-
-        if (onFetchData) {
-            void fetchData(resetState, {
-                delay: 0,
-                meta: {
-                    reason: resetOptions.reason,
-                    force: resetOptions.force,
-                },
-            });
-        }
-    }, [
-        getResetState,
-        initialSelectionState,
-        initialStateConfig,
-        onPaginationChange,
-        normalizeRefreshOptions,
-        buildRefreshContext,
-        onRefreshData,
-        onFetchData,
-        fetchData,
-    ]);
+        void fetchData(resetState, {
+            delay: 0,
+            meta: {
+                reason: resetOptions.reason,
+                force: resetOptions.force,
+            },
+        });
+    }, [getResetState, initialSelectionState, initialStateConfig, onPaginationChange, normalizeRefreshOptions, fetchData]);
 
     const setExportControllerSafely = useCallback((
         value: AbortController | null | ((current: AbortController | null) => AbortController | null)
