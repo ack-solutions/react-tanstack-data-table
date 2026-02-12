@@ -352,7 +352,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
             ...overrides,
         };
 
-        if(onFetchStateChange) {
+        if (onFetchStateChange) {
             onFetchStateChange(filters, options?.meta);
         }
         if (!onFetchData) {
@@ -436,15 +436,6 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         });
     }, [onSelectionChange]);
 
-    const handleColumnFilterStateChange = useCallback((filterState: ColumnFilterState) => {
-        if (!filterState || typeof filterState !== 'object') return;
-
-        setColumnFilter(filterState);
-        onColumnFiltersChange?.(filterState);
-        return filterState;
-    }, [onColumnFiltersChange]);
-
-
     const resetPageToFirst = useCallback(() => {
         if (logger.isLevelEnabled('info')) {
             logger.info('Resetting to first page due to state change', {
@@ -460,7 +451,6 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
 
 
     const handleSortingChange = useCallback((updaterOrValue: any) => {
-
         setSorting((prev) => {
             const next = typeof updaterOrValue === 'function' ? updaterOrValue(prev) : updaterOrValue;
             const cleaned = next.filter((s: any) => s?.id);
@@ -540,33 +530,22 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
 
             return next;
         });
-    }, [isServerMode, isServerFiltering, onGlobalFilterChange, fetchData, pagination.pageSize]);
+    }, [isServerMode, isServerFiltering, onGlobalFilterChange, fetchData, pagination?.pageSize]);
 
-    const onColumnFilterChangeHandler = useCallback((updater: any) => {
-        const currentState = columnFilter;
-        const newState = typeof updater === 'function'
-            ? updater(currentState)
-            : updater;
-        const legacyFilterState = {
-            filters: newState.filters,
-            logic: newState.logic,
-            pendingFilters: newState.pendingFilters,
-            pendingLogic: newState.pendingLogic
-        };
-        handleColumnFilterStateChange(legacyFilterState);
-    }, [columnFilter, handleColumnFilterStateChange]);
-
-    const onColumnFilterApplyHandler = useCallback((appliedState: ColumnFilterState) => {
-        const pagination = resetPageToFirst();
-        if (isServerFiltering) {
-            fetchData({
-                columnFilter: appliedState,
-                pagination,
-            });
-        }
-
-        onColumnFiltersChange?.(appliedState);
-    }, [resetPageToFirst, isServerFiltering, fetchData, onColumnFiltersChange]);
+    const handleColumnFilterChangeHandler = useCallback((updater: any, isApply = false) => {
+        setColumnFilter((prev) => {
+            const newState = typeof updater === 'function' ? updater(prev) : updater
+            if (isApply){
+                if (isServerMode || isServerFiltering) {
+                    const nextPagination = { pageIndex: 0, pageSize: pagination.pageSize };
+                    setPagination(nextPagination);
+                    fetchData({ columnFilter: newState, pagination: nextPagination }, { delay: 0 });
+                } 
+            }
+            onColumnFiltersChange?.(newState, isApply);
+            return newState;
+        });
+    }, [fetchData, isServerFiltering, isServerMode, onColumnFiltersChange, pagination.pageSize]);
 
     // -------------------------------
     // Table creation (after callbacks/memo)
@@ -597,8 +576,8 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         ...(enableRowSelection ? { onSelectionStateChange: handleSelectionStateChange } : {}),
         // Column filter
         enableAdvanceColumnFilter: enableColumnFilter,
-        onColumnFilterChange: onColumnFilterChangeHandler, // Handle column filters change
-        onColumnFilterApply: onColumnFilterApplyHandler, // Handle when filters are actually applied
+        onColumnFilterChange: handleColumnFilterChangeHandler, // Handle column filters change
+        onColumnFilterApply: (state: ColumnFilterState) => handleColumnFilterChangeHandler(state, true), // Handle when filters are actually applied
 
 
         ...(enableSorting ? { onSortingChange: handleSortingChange } : {}),
@@ -1182,8 +1161,8 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                 clearGlobalFilter: () => {
                     applyGlobalFilter("");
                 },
-                setColumnFilters: (filters: ColumnFilterState) => {
-                    handleColumnFilterStateChange(filters);
+                setColumnFilters: (filters: ColumnFilterState, isApply = false) => {
+                    handleColumnFilterChangeHandler(filters, isApply);
                 },
                 addColumnFilter: (columnId: string, operator: string, value: any) => {
                     const newFilter = {
@@ -1196,13 +1175,14 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                     const current = table.getState().columnFilter;
                     const currentFilters = current?.filters || [];
                     const nextFilters = [...currentFilters, newFilter];
+                    const nextPendingFilters = [...(current?.pendingFilters || []), newFilter];
 
-                    handleColumnFilterStateChange({
+                    handleColumnFilterChangeHandler({
                         filters: nextFilters,
                         logic: current?.logic,
-                        pendingFilters: current?.pendingFilters || [],
+                        pendingFilters: nextPendingFilters,
                         pendingLogic: current?.pendingLogic || "AND",
-                    });
+                    }, true);
 
                     if (logger.isLevelEnabled("debug")) {
                         logger.debug(`Adding column filter ${columnId} ${operator} ${value}`, nextFilters);
@@ -1211,14 +1191,15 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                 removeColumnFilter: (filterId: string) => {
                     const current = table.getState().columnFilter;
                     const currentFilters = current?.filters || [];
+                    const isApplied = current?.pendingFilters?.some((f: any) => f.id === filterId);
                     const nextFilters = currentFilters.filter((f: any) => f.id !== filterId);
-
-                    handleColumnFilterStateChange({
+                    const nextPendingFilters = current?.pendingFilters?.filter((f: any) => f.id !== filterId) || [];
+                    handleColumnFilterChangeHandler({
                         filters: nextFilters,
                         logic: current?.logic,
-                        pendingFilters: current?.pendingFilters || [],
+                        pendingFilters: nextPendingFilters,
                         pendingLogic: current?.pendingLogic || "AND",
-                    });
+                    }, isApplied);
 
                     if (logger.isLevelEnabled("debug")) {
                         logger.debug(`Removing column filter ${filterId}`, nextFilters);
@@ -1226,20 +1207,22 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                 },
                 clearAllFilters: () => {
                     applyGlobalFilter("");
-                    handleColumnFilterStateChange({
+                    const isApplied = table.getState().columnFilter?.filters?.length > 0;
+                    handleColumnFilterChangeHandler({
                         filters: [],
                         logic: "AND",
                         pendingFilters: [],
                         pendingLogic: "AND",
-                    });
+                    }, isApplied);
                 },
                 resetFilters: () => {
-                    handleColumnFilterStateChange({
+                    const isApplied = table.getState().columnFilter?.filters?.length > 0;
+                    handleColumnFilterChangeHandler({
                         filters: [],
                         logic: "AND",
                         pendingFilters: [],
                         pendingLogic: "AND",
-                    });
+                    }, isApplied);
 
                     if (logger.isLevelEnabled("debug")) {
                         logger.debug("Resetting filters");
@@ -1528,7 +1511,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                     if (layout.sorting) applySorting(layout.sorting as any);
                     if (layout.pagination && enablePagination) applyPagination(layout.pagination as any);
                     if (layout.globalFilter !== undefined) applyGlobalFilter(layout.globalFilter);
-                    if (layout.columnFilter) handleColumnFilterStateChange(layout.columnFilter as any);
+                    if (layout.columnFilter) handleColumnFilterChangeHandler(layout.columnFilter as any, layout.columnFilter?.filters?.length > 0);
                 },
             },
 
@@ -1813,7 +1796,6 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                 },
             },
         };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [
         table,
         enhancedColumns,
@@ -1824,7 +1806,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
         handlePaginationChange,
         handleSortingChange,
         handleGlobalFilterChange,
-        handleColumnFilterStateChange,
+        handleColumnFilterChangeHandler,
         initialStateConfig,
         enablePagination,
         idKey,
@@ -2067,7 +2049,7 @@ export const DataTable = forwardRef<DataTableApi<any>, DataTableProps<any>>(func
                 setTableSize(size);
             }}
             columnFilter={columnFilter}
-            onChangeColumnFilter={handleColumnFilterStateChange}
+            onChangeColumnFilter={handleColumnFilterChangeHandler}
             slots={slots}
             slotProps={slotProps}
             isExporting={isExporting}

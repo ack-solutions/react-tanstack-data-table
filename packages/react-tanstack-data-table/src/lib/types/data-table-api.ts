@@ -65,7 +65,7 @@ export interface DataTableApi<T = any> {
     filtering: {
         setGlobalFilter: (filter: string) => void;
         clearGlobalFilter: () => void;
-        setColumnFilters: (filters: ColumnFilterState) => void;
+        setColumnFilters: (filters: ColumnFilterState, isApply?: boolean) => void;
         addColumnFilter: (columnId: string, operator: string, value: any) => void;
         removeColumnFilter: (filterId: string) => void;
         clearAllFilters: () => void;

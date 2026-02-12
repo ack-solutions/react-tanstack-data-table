@@ -180,7 +180,7 @@ export interface DataTableProps<T> {
     skeletonRows?: number;
 
     // Column filters props
-    onColumnFiltersChange?: (filterState: ColumnFilterState) => void;
+    onColumnFiltersChange?: (filterState: ColumnFilterState, isApplied?: boolean) => void;
     onPaginationChange?: (pagination: PaginationState) => void;
     onGlobalFilterChange?: (globalFilter: string) => void;
     onColumnFilterChange?: (columnFilter: ColumnFilterState) => void;

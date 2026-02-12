@@ -175,9 +175,7 @@ export const SelectionFeature: TableFeature<any> = {
             if (!table.options.enableAdvanceSelection) return;
             const selectMode = table.options.selectMode || 'page';
 
-            const currentRows =
-                table.getPaginationRowModel?.()?.rows ||
-                table.getRowModel().rows;
+            const currentRows = table.getPaginationRowModel?.()?.rows || table.getRowModel().rows;
 
             if (selectMode === 'all') {
                 // In 'all' mode, use exclude type with empty list (select all)
