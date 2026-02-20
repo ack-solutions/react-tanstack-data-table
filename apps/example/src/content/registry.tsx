@@ -19,6 +19,7 @@ import { ExpansionPage } from '../docs/features/ExpansionPage';
 import { LayoutPage } from '../docs/features/LayoutPage';
 import { AccessibilityPage } from '../docs/features/AccessibilityPage';
 import { LocalizationPage } from '../docs/features/LocalizationPage';
+import { RealServerApiPage } from '../docs/RealServerApiPage';
 
 export const contentRegistry: Record<string, ComponentType> = {
   overview: Overview,
@@ -40,5 +41,6 @@ export const contentRegistry: Record<string, ComponentType> = {
   props: PropsSection,
   layout: LayoutPage,
   accessibility: AccessibilityPage,
-  localization: LocalizationPage
+  localization: LocalizationPage,
+  'real-api-debug': RealServerApiPage
 };

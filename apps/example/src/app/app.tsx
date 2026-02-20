@@ -1,4 +1,5 @@
 import { Box, Container, CssBaseline, Toolbar, useMediaQuery, useTheme } from '@mui/material';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { navigationTree } from '../content/navigation';
 import { contentRegistry } from '../content/registry';
 import { ThemeProvider } from '../theme/theme-provider';
@@ -6,6 +7,12 @@ import { AppHeader } from './components/AppHeader';
 import { NavigationDrawer } from './components/NavigationDrawer';
 import { useNavigation } from './hooks/useNavigation';
 import { useLogging } from './hooks/useLogging';
+
+const queryClient = new QueryClient({
+    defaultOptions: {
+        queries: { staleTime: 30_000 },
+    },
+});
 
 const DRAWER_WIDTH = 260;
 
@@ -28,8 +35,9 @@ export function App() {
   const ActiveComponent = contentRegistry[activeSection] ?? contentRegistry[itemIds[0]];
 
   return (
-    <ThemeProvider>
-      <Box sx={{ display: 'flex' }}>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider>
+        <Box sx={{ display: 'flex' }}>
         <CssBaseline />
 
         <AppHeader
@@ -66,6 +74,7 @@ export function App() {
         </Box>
       </Box>
     </ThemeProvider>
+    </QueryClientProvider>
   );
 }
 

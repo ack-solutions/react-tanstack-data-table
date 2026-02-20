@@ -94,9 +94,23 @@ export function DataTableToolbar(props: DataTableToolbarProps = {}): ReactElemen
         toolbarSlotProps
     );
 
+    // Omit child-slot props so they are not spread onto the Toolbar DOM element (React warning)
+    const TOOLBAR_CHILD_SLOT_KEYS = [
+        'refreshButtonProps',
+        'searchInputProps',
+        'tableSizeControlProps',
+        'columnFilterProps',
+        'columnPinningProps',
+        'columnVisibilityProps',
+        'resetButtonProps',
+        'exportButtonProps',
+    ] as const;
+    const toolbarDomProps = { ...mergedToolbarProps };
+    TOOLBAR_CHILD_SLOT_KEYS.forEach((key) => delete toolbarDomProps[key]);
+
     return (
         <ToolbarSlot
-            {...mergedToolbarProps}
+            {...toolbarDomProps}
         >
             <Box 
                 sx={{ 

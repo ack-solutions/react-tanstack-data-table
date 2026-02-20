@@ -51,6 +51,11 @@ export const navigationTree: NavNode[] = [
           { id: 'datatable-props', title: 'DataTable Props', type: 'item' },
           { id: 'api', title: 'API Methods', type: 'item' }
         ]
+      },
+      {
+        id: 'real-api-debug',
+        title: 'Real API (Debug)',
+        type: 'item'
       }
     ]
   }
