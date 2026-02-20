@@ -20,6 +20,10 @@
 
 // Main components - be specific to avoid conflicts
 export { DataTable } from './lib/data-table';
+export { DataTableView } from './lib/components/data-table-view';
+export type { DataTableViewProps } from './lib/components/data-table-view';
+export { useDataTableEngine } from './lib/hooks';
+export type { EngineResult } from './lib/hooks';
 
 // Other component exports
 export * from './lib/components/headers';

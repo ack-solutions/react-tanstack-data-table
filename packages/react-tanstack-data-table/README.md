@@ -131,7 +131,6 @@ function MyDataTable() {
 | `initialLoadData` | `boolean` | `true` | Load data on component mount |
 | `onFetchData` | `(filters, meta?) => Promise<{data, total}>` | - | Server-side data fetching with optional refresh metadata (`reason`, `force`) |
 | `onRefreshData` | `(context) => void \| Promise<void>` | - | External refresh handler for controlled data sources (React Query, SWR, etc.) |
-| `onDataChange` | `(nextData, context) => void` | - | Receives mutations from `apiRef.data.*` when data is controlled by props |
 | `onDataStateChange` | `(state) => void` | - | Called when table state changes |
 | `totalRow` | `number` | `0` | Total rows for server-side pagination |
 
@@ -616,13 +615,6 @@ function ReactQueryTable() {
           refetchType: options.force ? 'all' : 'active',
         })
       }
-      // Row mutation sync stays outside DataTable
-      onDataChange={(nextData) => {
-        queryClient.setQueryData(queryKey, (prev: any) => {
-          if (!prev) return prev;
-          return { ...prev, data: nextData };
-        });
-      }}
     />
   );
 }

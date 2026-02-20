@@ -328,18 +328,20 @@ export function RealServerApiExample() {
           dataMode="server"
           {...(fetchMode === 'onFetchStateChange'
             ? {
-                onFetchStateChange: handleFetchStateChange,
-                data: rows as RealApiUser[],
-                totalRow: total,
-                initialLoadData: true,
-              }
+              onFetchStateChange: handleFetchStateChange,
+              data: rows as RealApiUser[],
+              totalRow: total,
+              initialLoadData: true,
+            }
             : { onFetchData: handleFetchData })}
           enableRowSelection
           enableMultiRowSelection
           enableColumnVisibility
+          enableColumnFilter
           enableGlobalFilter
           enableSorting
           enablePagination
+          enableExport
           enableRefresh
           enableStickyHeaderOrFooter
           maxHeight={`calc(100svh - ${300}px)`}
@@ -361,11 +363,11 @@ export function RealServerApiExample() {
           dataMode="server"
           {...(fetchMode === 'onFetchStateChange'
             ? {
-                onFetchStateChange: handleFetchStateChange,
-                data: rows as FdaEventRow[],
-                totalRow: total,
-                initialLoadData: true,
-              }
+              onFetchStateChange: handleFetchStateChange,
+              data: rows as FdaEventRow[],
+              totalRow: total,
+              initialLoadData: true,
+            }
             : { onFetchData: handleFetchData })}
           enableRowSelection
           enableMultiRowSelection
@@ -373,7 +375,9 @@ export function RealServerApiExample() {
           enableGlobalFilter
           skeletonRows={15}
           enableSorting
+          enableColumnFilter
           enablePagination
+          enableExport
           enableRefresh
           enableStickyHeaderOrFooter
           maxHeight={`calc(100svh - ${300}px)`}

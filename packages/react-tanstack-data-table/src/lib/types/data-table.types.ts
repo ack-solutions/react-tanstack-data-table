@@ -75,7 +75,6 @@ export interface DataTableProps<T> {
     onFetchData?: (filters: Partial<TableFilters>, meta?: DataFetchMeta) => Promise<{ data: T[]; total: number }>;
     onFetchStateChange?: (filters: Partial<TableState>, meta?: DataFetchMeta) => void;
     onRefreshData?: (context: DataRefreshContext) => void | Promise<void>;
-    onDataChange?: (nextData: T[], context: DataMutationContext<T>) => void;
 
     // Simplified Export props
     exportFilename?: string;

@@ -161,7 +161,6 @@ export function TableExportControl(props: TableExportControlProps = {}) {
                     <MenuItem
                         onClick={() => {
                             handleExport('csv');
-                            handleClose();
                         }}
                         disabled={isExporting}
                         {...mergedMenuItemProps}
@@ -178,7 +177,6 @@ export function TableExportControl(props: TableExportControlProps = {}) {
                     <MenuItem
                         onClick={() => {
                             handleExport('excel');
-                            handleClose();
                         }}
                         disabled={isExporting}
                         {...mergedMenuItemProps}

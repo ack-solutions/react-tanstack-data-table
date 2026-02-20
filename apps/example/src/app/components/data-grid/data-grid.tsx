@@ -63,8 +63,12 @@ const DataGrid = forwardRef<DataTableApi<any>, DataGridProps<any>>(
                 {...props}
                 slotProps={{
                     pagination: { rowsPerPageOptions: [10, 25, 50, 100, 500] },
-                    toolbar: { sx: { minHeight: '48px !important' } },
                     ...props.slotProps,
+                    toolbar: { 
+                        sx: { minHeight: '48px !important' },
+                        ...props.slotProps?.toolbar,
+                    },
+                    
                 }}
             />
         );

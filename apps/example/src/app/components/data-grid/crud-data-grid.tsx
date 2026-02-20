@@ -236,11 +236,6 @@ function CrudDataGridInner<T>(
                     : undefined,
             });
             const obj = qb.toObject() as any;
-            console.log('[CrudGrid] setQueryObj', {
-                pagination: filters?.pagination,
-                skip: obj?.skip,
-                take: obj?.take,
-            });
             setQueryObj(obj);
         },
         [initialColumns, mappedFilters, mapQueryRef],
@@ -285,11 +280,6 @@ function CrudDataGridInner<T>(
 
     const handleFetchRequestGeneration = useCallback(
         (filters: Partial<TableFilters>) => {
-            console.log('[CrudGrid] onFetchStateChange', {
-                pageIndex: filters?.pagination?.pageIndex,
-                pageSize: filters?.pagination?.pageSize,
-                globalFilter: filters?.globalFilter ? '(set)' : '',
-            });
             setMappedFilters(filters);
             handleQueryObjectChange({ filters, isTrash });
         },
@@ -377,19 +367,21 @@ function CrudDataGridInner<T>(
             initialState={mergedInitialState}
             onRowClick={adaptedOnRowClick}
             onDataStateChange={handleTableStateChange}
+            {...props}
             slotProps={{
+                ...props.slotProps,
                 toolbar: {
                     refreshButtonProps: {
                         loading: isFetching,
                         showSpinnerWhileLoading: true,
                         onRefresh: () => {
-                            console.log('refetch64654');
                             refetch();
                         }
-                    }
+                    },
+                    ...props.slotProps?.toolbar,
                 }
             }}
-            {...props}
+            
         />
     );
 }
