@@ -44,15 +44,19 @@ export function TableRefreshControl(props: TableRefreshControlProps = {}): React
         props.iconButtonProps || {}
     );
 
+    // Wrap in span so when IconButton is disabled (loading), the tooltip still
+    // receives pointer events and closes on mouse leave (disabled elements don't fire them).
     return (
         <Tooltip title="Refresh data" {...props.tooltipProps}>
-            <IconButton {...mergedIconButtonProps}>
-                {props.loading && props.showSpinnerWhileLoading ? (
-                    <CircularProgress size={16} />
-                ) : (
-                    <RefreshIconSlot {...refreshIconSlotProps} />
-                )}
-            </IconButton>
+            <span style={{ display: 'inline-flex' }}>
+                <IconButton {...mergedIconButtonProps}>
+                    {props.loading && props.showSpinnerWhileLoading ? (
+                        <CircularProgress size={16} />
+                    ) : (
+                        <RefreshIconSlot {...refreshIconSlotProps} />
+                    )}
+                </IconButton>
+            </span>
         </Tooltip>
     );
 }

@@ -49,7 +49,7 @@ declare module '@tanstack/react-table' {
     }
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     interface Table<TData extends RowData> {
-        setColumnFilterState: (updater: Updater<ColumnFilterState>) => void;
+        setColumnFilterState: (updater: Updater<ColumnFilterState> | ColumnFilterState) => void;
 
         // Pending filter methods (for draft state)
         addPendingColumnFilter: (columnId: string, operator: string, value: any) => void;
@@ -60,6 +60,7 @@ declare module '@tanstack/react-table' {
 
         // Apply pending filters to active filters
         applyPendingColumnFilters: () => void;
+        resetColumnFilter: () => void;
 
         // Legacy methods (for backward compatibility)
         addColumnFilter: (columnId: string, operator: string, value: any) => void;
@@ -185,6 +186,19 @@ export const ColumnFilterFeature: TableFeature<any> = {
                 ...old,
                 pendingFilters: [],
             }));
+        };
+
+        table.resetColumnFilter = () => {
+            if (!table.options.enableAdvanceColumnFilter) return;
+            const newState: ColumnFilterState = {
+                pendingFilters: [],
+                pendingLogic: 'AND',
+                filters: [],
+                logic: 'AND',
+            };
+            table.setColumnFilterState(newState);
+            // Notify engine so it can reset pagination and refetch (server mode)
+            table.options.onColumnFilterApply?.(newState);
         };
 
         table.setPendingFilterLogic = (logic: 'AND' | 'OR') => {

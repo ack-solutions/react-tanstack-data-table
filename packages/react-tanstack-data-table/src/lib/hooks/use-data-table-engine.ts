@@ -425,7 +425,7 @@ export function useDataTableEngine<T extends Record<string, any>>(
             ...overrides,
         };
 
-        onFetchStateChangeRef.current?.(filters, options?.meta);
+        onFetchStateChangeRef.current?.(filters, options);
 
         const handler = onFetchDataRef.current;
         if (!handler) return;
@@ -628,7 +628,10 @@ export function useDataTableEngine<T extends Record<string, any>>(
         const delay = nextFetchDelayRef.current ?? 0;
         nextFetchDelayRef.current = 0; // reset after using
 
-        void fetchData({}, { delay, meta: { reason: "stateChange" } });
+        const timeoutId = setTimeout(() => {
+            void fetchData({}, { delay, meta: { reason: "stateChange" } });
+        }, 0);
+        return () => clearTimeout(timeoutId);
     }, [serverKey, fetchData]);
 
     // columnFilter apply handler stays explicit (button), but you can also auto-fetch on change if needed
@@ -862,22 +865,153 @@ export function useDataTableEngine<T extends Record<string, any>>(
         };
 
         // --- data
+        const getBaseData = () => {
+            const sData = serverDataRef.current;
+            return sData !== null ? sData : dataRef.current;
+        };
+        const getRowIndexById = (arr: T[], rowId: string) =>
+            arr.findIndex((row, i) => generateRowId(row, i, idKey) === rowId);
         api.data = {
             refresh: (options?: boolean | DataRefreshOptions) => void triggerRefresh(options, "refresh"),
             reload: (options: DataRefreshOptions = {}) => void triggerRefresh({ ...options, reason: options.reason ?? "reload" }, "reload"),
             resetAll: () => resetAllAndReload(),
-
-            getAllData: () => {
-                const sData = serverDataRef.current;
-                const base = sData !== null ? sData : dataRef.current;
-                return [...base];
+            getAllData: () => [...getBaseData()],
+            getRowData: (rowId: string) => {
+                const rows = tableRef.current.getRowModel().rows;
+                const row = rows.find((r: any) => r.id === rowId);
+                return row?.original as T | undefined;
             },
-            getDataCount: () => {
-                const sData = serverDataRef.current;
-                const base = sData !== null ? sData : dataRef.current;
-                return base.length;
-            },
+            getRowByIndex: (index: number) => tableRef.current.getRowModel().rows[index]?.original as T | undefined,
+            getDataCount: () => getBaseData().length,
             getFilteredDataCount: () => tableRef.current.getFilteredRowModel().rows.length,
+            updateRow: (rowId: string, updates: Partial<T>) => {
+                const base = getBaseData();
+                const idx = getRowIndexById(base, rowId);
+                if (idx === -1) return;
+                const next = [...base];
+                next[idx] = { ...next[idx], ...updates } as T;
+                setServerData(next);
+                setServerTotal(next.length);
+            },
+            updateRowByIndex: (index: number, updates: Partial<T>) => {
+                const base = getBaseData();
+                if (index < 0 || index >= base.length) return;
+                const next = [...base];
+                next[index] = { ...next[index], ...updates } as T;
+                setServerData(next);
+                setServerTotal(next.length);
+            },
+            insertRow: (newRow: T, index?: number) => {
+                const base = getBaseData();
+                const next = index == null ? [...base, newRow] : [...base.slice(0, index), newRow, ...base.slice(index)];
+                setServerData(next);
+                setServerTotal(next.length);
+            },
+            deleteRow: (rowId: string) => {
+                const base = getBaseData();
+                const idx = getRowIndexById(base, rowId);
+                if (idx === -1) return;
+                const next = base.filter((_, i) => i !== idx);
+                setServerData(next);
+                setServerTotal(next.length);
+            },
+            deleteRowByIndex: (index: number) => {
+                const base = getBaseData();
+                if (index < 0 || index >= base.length) return;
+                const next = base.filter((_, i) => i !== index);
+                setServerData(next);
+                setServerTotal(next.length);
+            },
+            deleteSelectedRows: () => {
+                const state = tableRef.current.getSelectionState?.();
+                if (!state || state.type !== "include" || !state.ids.length) return;
+                const base = getBaseData();
+                const ids = new Set(state.ids);
+                const next = base.filter((row, i) => !ids.has(generateRowId(row, i, idKey)));
+                setServerData(next);
+                setServerTotal(next.length);
+                tableRef.current.deselectAll?.();
+            },
+            replaceAllData: (newData: T[]) => {
+                setServerData(newData);
+                setServerTotal(newData.length);
+            },
+            updateMultipleRows: (updates: Array<{ rowId: string; data: Partial<T> }>) => {
+                const base = getBaseData();
+                const next = [...base];
+                for (const { rowId, data: u } of updates) {
+                    const idx = getRowIndexById(next, rowId);
+                    if (idx !== -1) next[idx] = { ...next[idx], ...u } as T;
+                }
+                setServerData(next);
+                setServerTotal(next.length);
+            },
+            insertMultipleRows: (newRows: T[], startIndex?: number) => {
+                const base = getBaseData();
+                const idx = startIndex ?? base.length;
+                const next = [...base.slice(0, idx), ...newRows, ...base.slice(idx)];
+                setServerData(next);
+                setServerTotal(next.length);
+            },
+            deleteMultipleRows: (rowIds: string[]) => {
+                const ids = new Set(rowIds);
+                const base = getBaseData();
+                const next = base.filter((row, i) => !ids.has(generateRowId(row, i, idKey)));
+                setServerData(next);
+                setServerTotal(next.length);
+            },
+            updateField: (rowId: string, fieldName: keyof T, value: any) => {
+                api.data.updateRow(rowId, { [fieldName]: value } as Partial<T>);
+            },
+            updateFieldByIndex: (index: number, fieldName: keyof T, value: any) => {
+                api.data.updateRowByIndex(index, { [fieldName]: value } as Partial<T>);
+            },
+            findRows: (predicate: (row: T) => boolean) => getBaseData().filter(predicate),
+            findRowIndex: (predicate: (row: T) => boolean) => getBaseData().findIndex(predicate),
+        } as any;
+
+        // --- layout (save/restore column visibility, order, sizing, pinning)
+        api.layout = {
+            saveLayout: () => {
+                const s = tableRef.current.getState();
+                return {
+                    columnVisibility: s.columnVisibility ?? {},
+                    columnOrder: s.columnOrder ?? [],
+                    columnSizing: s.columnSizing ?? {},
+                    columnPinning: s.columnPinning ?? { left: [], right: [] },
+                    pagination: s.pagination ?? { pageIndex: 0, pageSize: 10 },
+                    globalFilter: s.globalFilter ?? "",
+                    columnFilter: s.columnFilter ?? [],
+                };
+            },
+            restoreLayout: (layout: any) => {
+
+                if (layout.columnVisibility) dispatch({ type: "SET_COLUMN_VISIBILITY", payload: layout.columnVisibility });
+                if (layout.columnOrder) { dispatch({ type: "SET_COLUMN_ORDER", payload: layout.columnOrder }); onColumnDragEndRef.current?.(layout.columnOrder); }
+                if (layout.columnSizing) { dispatch({ type: "SET_COLUMN_SIZING", payload: layout.columnSizing }); onColumnSizingChangeRef.current?.(layout.columnSizing); }
+                if (layout.columnPinning) { dispatch({ type: "SET_COLUMN_PINNING", payload: layout.columnPinning }); onColumnPinningChangeRef.current?.(layout.columnPinning); }
+                if (layout.pagination && enablePagination) dispatch({ type: "SET_PAGINATION", payload: layout.pagination as any });
+                if (layout.globalFilter !== undefined) dispatch({ type: "SET_GLOBAL_FILTER_RESET_PAGE", payload: layout.globalFilter });
+                if (layout.columnFilter) dispatch({ type: "SET_COLUMN_FILTER", payload: layout.columnFilter as any });
+            },
+            resetLayout: () => {
+                const vis = initialStateConfig.columnVisibility || {};
+                const order = initialStateConfig.columnOrder || [];
+                const sizing = initialStateConfig.columnSizing || {};
+                const pinning = initialStateConfig.columnPinning || { left: [] as string[], right: [] as string[] };
+                dispatch({ type: "SET_COLUMN_VISIBILITY", payload: vis });
+                dispatch({ type: "SET_COLUMN_ORDER", payload: order });
+                dispatch({ type: "SET_COLUMN_SIZING", payload: sizing });
+                dispatch({ type: "SET_COLUMN_PINNING", payload: pinning });
+                dispatch({ type: "SET_GLOBAL_FILTER_RESET_PAGE", payload: "" });
+                dispatch({ type: "SET_COLUMN_FILTER", payload: initialStateConfig.columnFilter || [] });
+                dispatch({ type: "SET_SORTING_RESET_PAGE", payload: initialStateConfig.sorting || [] });
+                dispatch({ type: "SET_PAGINATION", payload: initialStateConfig.pagination || { pageIndex: 0, pageSize: 10 } });
+            },
+            resetAll: () => {
+                api.layout.resetLayout();
+                resetAllAndReload();
+            },
         } as any;
 
         // --- sorting/pagination/filtering - dispatch + callbacks + server fetch policies
@@ -887,6 +1021,12 @@ export function useDataTableEngine<T extends Record<string, any>>(
                 onSortingChangeRef.current?.(cleaned);
                 nextFetchDelayRef.current = 0;
                 dispatch({ type: "SET_SORTING_RESET_PAGE", payload: cleaned });
+            },
+            sortColumn: (columnId: string, direction: 'asc' | 'desc' | false) => {
+                const next: SortingState = direction === false ? [] : [{ id: columnId, desc: direction === 'desc' }];
+                onSortingChangeRef.current?.(next);
+                nextFetchDelayRef.current = 0;
+                dispatch({ type: "SET_SORTING_RESET_PAGE", payload: next });
             },
             clearSorting: () => {
                 onSortingChangeRef.current?.([]);
@@ -909,11 +1049,24 @@ export function useDataTableEngine<T extends Record<string, any>>(
                 nextFetchDelayRef.current = 0;
                 dispatch({ type: "SET_PAGINATION", payload: next });
             },
+            nextPage: () => {
+                const prev = uiRef.current.pagination;
+                api.pagination.goToPage(Math.min(prev.pageIndex + 1, Math.max(0, Math.ceil((tableTotalRow ?? 0) / prev.pageSize) - 1)));
+            },
+            previousPage: () => {
+                const prev = uiRef.current.pagination;
+                api.pagination.goToPage(Math.max(0, prev.pageIndex - 1));
+            },
             setPageSize: (pageSize: number) => {
                 const next = { pageIndex: 0, pageSize };
                 onPaginationChangeRef.current?.(next);
                 nextFetchDelayRef.current = 0;
                 dispatch({ type: "SET_PAGINATION", payload: next });
+            },
+            goToFirstPage: () => api.pagination.goToPage(0),
+            goToLastPage: () => {
+                const prev = uiRef.current.pagination;
+                api.pagination.goToPage(Math.max(0, Math.ceil((tableTotalRow ?? 0) / prev.pageSize) - 1));
             },
             resetPagination: () => {
                 const next = (initialStateConfig.pagination || { pageIndex: 0, pageSize: 10 }) as any;
@@ -935,11 +1088,24 @@ export function useDataTableEngine<T extends Record<string, any>>(
                 dispatch({ type: "SET_GLOBAL_FILTER_RESET_PAGE", payload: "" });
             },
             setColumnFilters: (filters: ColumnFilterState, isApply = false) => handleColumnFilterChangeHandler(filters, isApply),
+            addColumnFilter: (columnId: string, operator: string, value: any) => tableRef.current.addColumnFilter?.(columnId, operator, value),
+            removeColumnFilter: (filterId: string) => tableRef.current.removeColumnFilter?.(filterId),
+            clearAllFilters: () => tableRef.current.resetColumnFilter?.(),
+            resetFilters: () => {
+                const reset = (initialStateConfig.columnFilter ?? DEFAULT_INITIAL_STATE.columnFilter) as ColumnFilterState;
+                handleColumnFilterChangeHandler(reset, true);
+            },
         } as any;
 
         api.columnVisibility = {
             showColumn: (id: string) => dispatch({ type: "SET_COLUMN_VISIBILITY", payload: { ...uiRef.current.columnVisibility, [id]: true } }),
             hideColumn: (id: string) => dispatch({ type: "SET_COLUMN_VISIBILITY", payload: { ...uiRef.current.columnVisibility, [id]: false } }),
+            toggleColumn: (id: string) => dispatch({ type: "SET_COLUMN_VISIBILITY", payload: { ...uiRef.current.columnVisibility, [id]: !uiRef.current.columnVisibility[id] } }),
+            showAllColumns: () => dispatch({ type: "SET_COLUMN_VISIBILITY", payload: {} }),
+            hideAllColumns: () => {
+                const all = tableRef.current.getAllLeafColumns().reduce((acc, col) => ({ ...acc, [col.id]: false }), {} as Record<string, boolean>);
+                dispatch({ type: "SET_COLUMN_VISIBILITY", payload: all });
+            },
             resetColumnVisibility: () => dispatch({ type: "SET_COLUMN_VISIBILITY", payload: initialStateConfig.columnVisibility || {} }),
         } as any;
 
@@ -948,10 +1114,41 @@ export function useDataTableEngine<T extends Record<string, any>>(
                 dispatch({ type: "SET_COLUMN_ORDER", payload: next });
                 onColumnDragEndRef.current?.(next);
             },
+            moveColumn: (columnId: string, toIndex: number) => {
+                const order = uiRef.current.columnOrder.length ? uiRef.current.columnOrder : tableRef.current.getAllLeafColumns().map((c: any) => c.id);
+                const from = order.indexOf(columnId);
+                if (from === -1 || toIndex < 0 || toIndex >= order.length) return;
+                const next = [...order];
+                next.splice(from, 1);
+                next.splice(toIndex, 0, columnId);
+                dispatch({ type: "SET_COLUMN_ORDER", payload: next });
+                onColumnDragEndRef.current?.(next);
+            },
             resetColumnOrder: () => dispatch({ type: "SET_COLUMN_ORDER", payload: initialStateConfig.columnOrder || [] }),
         } as any;
 
         api.columnPinning = {
+            pinColumnLeft: (columnId: string) => {
+                const cur = uiRef.current.columnPinning;
+                const left = cur.left.includes(columnId) ? cur.left : [...cur.left.filter((id: string) => id !== columnId), columnId];
+                const right = cur.right.filter((id: string) => id !== columnId);
+                dispatch({ type: "SET_COLUMN_PINNING", payload: { left, right } });
+                onColumnPinningChangeRef.current?.({ left, right });
+            },
+            pinColumnRight: (columnId: string) => {
+                const cur = uiRef.current.columnPinning;
+                const left = cur.left.filter((id: string) => id !== columnId);
+                const right = cur.right.includes(columnId) ? cur.right : [...cur.right.filter((id: string) => id !== columnId), columnId];
+                dispatch({ type: "SET_COLUMN_PINNING", payload: { left, right } });
+                onColumnPinningChangeRef.current?.({ left, right });
+            },
+            unpinColumn: (columnId: string) => {
+                const cur = uiRef.current.columnPinning;
+                const left = cur.left.filter((id: string) => id !== columnId);
+                const right = cur.right.filter((id: string) => id !== columnId);
+                dispatch({ type: "SET_COLUMN_PINNING", payload: { left, right } });
+                onColumnPinningChangeRef.current?.({ left, right });
+            },
             setPinning: (next: ColumnPinningState) => {
                 dispatch({ type: "SET_COLUMN_PINNING", payload: next });
                 onColumnPinningChangeRef.current?.(next);
@@ -960,17 +1157,27 @@ export function useDataTableEngine<T extends Record<string, any>>(
         } as any;
 
         api.columnResizing = {
+            resizeColumn: (columnId: string, width: number) => {
+                const cur = uiRef.current.columnSizing;
+                dispatch({ type: "SET_COLUMN_SIZING", payload: { ...cur, [columnId]: width } });
+                onColumnSizingChangeRef.current?.({ ...cur, [columnId]: width });
+            },
+            autoSizeColumn: (columnId: string) => { void columnId; /* no-op: would require measure; use reset for default */ },
+            autoSizeAllColumns: () => { /* no-op */ },
             resetColumnSizing: () => dispatch({ type: "SET_COLUMN_SIZING", payload: initialStateConfig.columnSizing || {} }),
         } as any;
 
         api.selection = {
+            selectRow: (rowId: string) => tableRef.current.selectRow?.(rowId),
+            deselectRow: (rowId: string) => tableRef.current.deselectRow?.(rowId),
+            toggleRowSelection: (rowId: string) => tableRef.current.toggleRowSelected?.(rowId),
+            selectAll: () => tableRef.current.selectAll?.(),
+            deselectAll: () => tableRef.current.deselectAll?.(),
+            toggleSelectAll: () => tableRef.current.toggleAllRowsSelected?.(),
             getSelectionState: () => tableRef.current.getSelectionState?.() || ({ ids: [], type: "include" } as const),
             getSelectedRows: () => tableRef.current.getSelectedRows(),
             getSelectedCount: () => tableRef.current.getSelectedCount(),
             isRowSelected: (rowId: string) => tableRef.current.getIsRowSelected(rowId) || false,
-            // keep using your table extension methods if you have them:
-            selectAll: () => tableRef.current.selectAll?.(),
-            deselectAll: () => tableRef.current.deselectAll?.(),
         } as any;
 
         // --- export API (use your existing exportClientData/exportServerData)
@@ -1081,10 +1288,35 @@ export function useDataTableEngine<T extends Record<string, any>>(
                 });
             },
 
+            exportServerData: async (options: { format: 'csv' | 'excel'; filename?: string; fetchData: (filters?: Partial<any>, selection?: SelectionState, signal?: AbortSignal) => Promise<any>; pageSize?: number; includeHeaders?: boolean; chunkSize?: number; strictTotalCheck?: boolean; sanitizeCSV?: boolean }) => {
+                const { format, filename: fn = exportFilename, fetchData: customFetchData, chunkSize: cs = exportChunkSize, strictTotalCheck: st = exportStrictTotalCheck, sanitizeCSV: san = exportSanitizeCSV } = options;
+                await runExportWithPolicy({
+                    format,
+                    filename: fn,
+                    mode: "server",
+                    execute: async (controller) => {
+                        await exportServerData(tableRef.current, {
+                            format,
+                            filename: fn,
+                            fetchData: customFetchData,
+                            currentFilters: { globalFilter: tableRef.current.getState().globalFilter, columnFilter: tableRef.current.getState().columnFilter, sorting: tableRef.current.getState().sorting, pagination: tableRef.current.getState().pagination },
+                            selection: tableRef.current.getSelectionState?.(),
+                            onProgress: handleExportProgressInternal,
+                            onComplete: onExportCompleteRef.current,
+                            onError: onExportErrorRef.current,
+                            onStateChange: (s: any) => handleExportStateChangeInternal({ ...s, mode: "server", format, filename: fn, queueLength: queuedExportCount } as any),
+                            signal: controller.signal,
+                            chunkSize: cs,
+                            strictTotalCheck: st,
+                            sanitizeCSV: san,
+                        });
+                    },
+                });
+            },
             isExporting: () => exportControllerRef.current != null,
             cancelExport: () => handleCancelExport(),
         } as any;
-    }, [dataMode, exportChunkSize, exportFilename, exportSanitizeCSV, exportStrictTotalCheck, fetchData, handleCancelExport, handleColumnFilterChangeHandler, handleExportProgressInternal, handleExportStateChangeInternal, initialStateConfig, isServerMode, isServerPagination, isServerSorting, resetAllAndReload, resetPageToFirst, runExportWithPolicy, triggerRefresh, queuedExportCount, tableRef, uiRef, serverDataRef, dataRef, onSortingChangeRef, onPaginationChangeRef, onGlobalFilterChangeRef, onColumnDragEndRef, onColumnPinningChangeRef, onServerExportRef, onExportCompleteRef, onExportErrorRef]);
+    }, [dataMode, exportChunkSize, exportFilename, exportSanitizeCSV, exportStrictTotalCheck, fetchData, handleCancelExport, handleColumnFilterChangeHandler, handleExportProgressInternal, handleExportStateChangeInternal, initialStateConfig, isServerMode, isServerPagination, isServerSorting, resetAllAndReload, resetPageToFirst, runExportWithPolicy, triggerRefresh, queuedExportCount, tableTotalRow, idKey, tableRef, uiRef, serverDataRef, dataRef, onSortingChangeRef, onPaginationChangeRef, onGlobalFilterChangeRef, onColumnDragEndRef, onColumnPinningChangeRef, onColumnSizingChangeRef, onServerExportRef, onExportCompleteRef, onExportErrorRef]);
 
     // --- imperative handlers (used by TanStack callbacks above or view)
     const handleSortingChange = useCallback(

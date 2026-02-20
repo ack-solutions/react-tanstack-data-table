@@ -1,4 +1,4 @@
-import { FilterList } from '@mui/icons-material';
+import { FilterList } from "@mui/icons-material";
 import {
     Box,
     MenuItem,
@@ -11,242 +11,298 @@ import {
     IconButton,
     Divider,
     Badge,
-    IconButtonProps,
-    SxProps,
-} from '@mui/material';
-import React, { useMemo, useCallback, useEffect, ReactElement } from 'react';
+    type IconButtonProps,
+    type SxProps,
+} from "@mui/material";
+import React, {
+    useMemo,
+    useCallback,
+    useEffect,
+    useRef,
+    useState,
+    type ReactElement,
+} from "react";
 
-import { MenuDropdown } from '../droupdown/menu-dropdown';
-import { useDataTableContext } from '../../contexts/data-table-context';
-import {
-    AddIcon,
-    DeleteIcon,
-} from '../../icons';
-import { getColumnType, isColumnFilterable } from '../../utils/column-helpers';
-import { getSlotComponent, mergeSlotProps, extractSlotProps } from '../../utils/slot-helpers';
-import { FILTER_OPERATORS } from '../filters';
-import { FilterValueInput } from '../filters/filter-value-input';
-import { ColumnFilterRule } from '../../features';
+import { MenuDropdown } from "../droupdown/menu-dropdown";
+import { useDataTableContext } from "../../contexts/data-table-context";
+import { AddIcon, DeleteIcon } from "../../icons";
+import { getColumnType, isColumnFilterable } from "../../utils/column-helpers";
+import { getSlotComponent, mergeSlotProps, extractSlotProps } from "../../utils/slot-helpers";
+import { FILTER_OPERATORS } from "../filters";
+import { FilterValueInput } from "../filters/filter-value-input";
+import type { ColumnFilterRule } from "../../features";
 
 export interface ColumnFilterControlProps {
-    // Allow full customization of any prop
     title?: string;
     titleSx?: SxProps;
     menuSx?: SxProps;
+
     iconButtonProps?: IconButtonProps;
     badgeProps?: any;
+
     clearButtonProps?: any;
     applyButtonProps?: any;
     addButtonProps?: any;
+    deleteButtonProps?: any;
     logicSelectProps?: any;
+
     [key: string]: any;
+}
+
+/**
+ * Small helper component to sync MenuDropdown open state to parent state
+ * WITHOUT calling hooks inside render-prop callback.
+ */
+function OpenStateSync({
+    open,
+    onChange,
+}: {
+    open: boolean;
+    onChange: (open: boolean) => void;
+}) {
+    useEffect(() => onChange(open), [open, onChange]);
+    return null;
 }
 
 export function ColumnFilterControl(props: ColumnFilterControlProps = {}): ReactElement {
     const { table, slots, slotProps } = useDataTableContext();
-    
-    // Extract slot-specific props with enhanced merging
-    const iconSlotProps = extractSlotProps(slotProps, 'filterIcon');
-    
-    const FilterIconSlot = getSlotComponent(slots, 'filterIcon', FilterList);
 
-    // Use the custom feature state from the table - now using pending filters for UI
-    const filterState = table?.getColumnFilterState?.() || {
-        filters: [],
-        logic: 'AND',
-        pendingFilters: [],
-        pendingLogic: 'AND'
-    };
+    const iconSlotProps = extractSlotProps(slotProps, "filterIcon");
+    const FilterIconSlot = getSlotComponent(slots, "filterIcon", FilterList);
 
-    // Use pending filters for the UI (draft state)
-    const filters = filterState.pendingFilters;
-    const filterLogic = filterState.pendingLogic;
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const didAutoAddRef = useRef(false);
 
-    // Active filters are the actual applied filters
+    const filterState =
+        table?.getColumnFilterState?.() || ({
+            filters: [],
+            logic: "AND",
+            pendingFilters: [],
+            pendingLogic: "AND",
+        } as any);
+
+    const filters: ColumnFilterRule[] = filterState.pendingFilters || [];
+    const filterLogic: "AND" | "OR" = (filterState.pendingLogic || "AND") as any;
+
     const activeFiltersCount = table?.getActiveColumnFilters?.()?.length || 0;
 
     const filterableColumns = useMemo(() => {
-        return table?.getAllLeafColumns()
-            .filter(column => isColumnFilterable(column));
+        return table?.getAllLeafColumns().filter((column: any) => isColumnFilterable(column)) || [];
     }, [table]);
 
-    const addFilter = useCallback((columnId?: string, operator?: string) => {
-        // If no column specified, use empty (user will select)
-        // If column specified, get its appropriate default operator
-        let defaultOperator = operator || '';
+    const getOperatorsForColumn = useCallback(
+        (columnId: string) => {
+            const column = filterableColumns.find((col: any) => col.id === columnId);
+            const type = getColumnType(column as any);
+            return FILTER_OPERATORS[type as keyof typeof FILTER_OPERATORS] || FILTER_OPERATORS.text;
+        },
+        [filterableColumns]
+    );
 
-        if (columnId && !operator) {
-            const column = filterableColumns?.find(col => col.id === columnId);
-            const columnType = getColumnType(column as any);
-            const operators = FILTER_OPERATORS[columnType as keyof typeof FILTER_OPERATORS] || FILTER_OPERATORS.text;
-            defaultOperator = operators[0]?.value || 'contains';
-        }
+    const addFilter = useCallback(
+        (columnId?: string, operator?: string) => {
+            let defaultOperator = operator || "";
 
-        table?.addPendingColumnFilter?.(columnId || '', defaultOperator, '');
-    }, [table, filterableColumns]);
+            if (columnId && !operator) {
+                const column = filterableColumns.find((col: any) => col.id === columnId);
+                const columnType = getColumnType(column as any);
+                const operators =
+                    FILTER_OPERATORS[columnType as keyof typeof FILTER_OPERATORS] || FILTER_OPERATORS.text;
+                defaultOperator = operators[0]?.value || "contains";
+            }
 
-    const handleAddFilter = useCallback(() => {
-        addFilter();
-    }, [addFilter]);
+            table?.addPendingColumnFilter?.(columnId || "", defaultOperator, "");
+        },
+        [table, filterableColumns]
+    );
 
-    const updateFilter = useCallback((filterId: string, updates: Partial<ColumnFilterRule>) => {
-        table?.updatePendingColumnFilter?.(filterId, updates);
-    }, [table]);
+    const updateFilter = useCallback(
+        (filterId: string, updates: Partial<ColumnFilterRule>) => {
+            table?.updatePendingColumnFilter?.(filterId, updates);
+        },
+        [table]
+    );
 
-    const removeFilter = useCallback((filterId: string) => {
-        table?.removePendingColumnFilter?.(filterId);
-    }, [table]);
+    const removeFilter = useCallback(
+        (filterId: string) => {
+            table?.removePendingColumnFilter?.(filterId);
+        },
+        [table]
+    );
 
     const clearAllFilters = useCallback((closeDialog?: () => void) => {
-        // Clear all pending filters
-        table?.clearAllPendingColumnFilters?.();
-        // Immediately apply the clear (which will clear active filters too)
+        // Defer all work to avoid long-running click handler (prevents "[Violation] 'click' handler took Xms")
         setTimeout(() => {
-            table?.applyPendingColumnFilters?.();
-            // Close dialog if callback provided
-            if (closeDialog) {
-                closeDialog();
-            }
+            table?.resetColumnFilter?.();
+            // Prevent auto-add effect from adding a row when it sees empty state after clear
+            didAutoAddRef.current = true;
+            closeDialog?.();
         }, 0);
     }, [table]);
 
-    // Handle filter logic change (AND/OR)
-    const handleLogicChange = useCallback((newLogic: 'AND' | 'OR') => {
-        table?.setPendingFilterLogic?.(newLogic);
-    }, [table]);
+    const handleLogicChange = useCallback(
+        (newLogic: "AND" | "OR") => {
+            table?.setPendingFilterLogic?.(newLogic);
+        },
+        [table]
+    );
 
-    // Apply all pending filters
     const applyFilters = useCallback(() => {
         table?.applyPendingColumnFilters?.();
     }, [table]);
 
-    // Handle apply button click
-    const handleApplyFilters = useCallback((closeDialog: () => void) => {
-        applyFilters();
-        closeDialog();
-    }, [applyFilters]);
-
-    const getOperatorsForColumn = useCallback((columnId: string) => {
-        const column = filterableColumns?.find(col => col.id === columnId);
-        const type = getColumnType(column as any);
-        return FILTER_OPERATORS[type as keyof typeof FILTER_OPERATORS] || FILTER_OPERATORS.text;
-    }, [filterableColumns]);
-
-    // Handle column selection change
-    const handleColumnChange = useCallback((filterId: string, newColumnId: string, currentFilter: ColumnFilterRule) => {
-        const newColumn = filterableColumns?.find(col => col.id === newColumnId);
-        const columnType = getColumnType(newColumn as any);
-        const operators = FILTER_OPERATORS[columnType as keyof typeof FILTER_OPERATORS] || FILTER_OPERATORS.text;
-
-        // Only reset operator if current operator is not valid for new column type
-        const currentOperatorValid = operators.some(op => op.value === currentFilter.operator);
-        const newOperator = currentOperatorValid ? currentFilter.operator : operators[0]?.value || '';
-
-        updateFilter(filterId, {
-            columnId: newColumnId,
-            operator: newOperator,
-            // Keep the current value unless operator is empty/notEmpty
-            value: ['isEmpty', 'isNotEmpty'].includes(newOperator) ? '' : currentFilter.value,
-        });
-    }, [filterableColumns, updateFilter]);
-
-    // Handle operator selection change
-    const handleOperatorChange = useCallback((filterId: string, newOperator: string, currentFilter: ColumnFilterRule) => {
-        updateFilter(filterId, {
-            operator: newOperator,
-            // Only reset value if operator is empty/notEmpty, otherwise preserve it
-            value: ['isEmpty', 'isNotEmpty'].includes(newOperator) ? '' : currentFilter.value,
-        });
-    }, [updateFilter]);
-
-    // Handle filter value change
-    const handleFilterValueChange = useCallback((filterId: string, value: any) => {
-        updateFilter(filterId, { value });
-    }, [updateFilter]);
-
-    // Handle filter removal
-    const handleRemoveFilter = useCallback((filterId: string) => {
-        removeFilter(filterId);
-    }, [removeFilter]);
-
-    // Count pending filters that are ready to apply (have column, operator, and value OR are empty/notEmpty operators)
-    const pendingFiltersCount = filters.filter(f => {
-        if (!f.columnId || !f.operator) return false;
-        // For empty/notEmpty operators, no value is needed
-        if (['isEmpty', 'isNotEmpty'].includes(f.operator)) return true;
-        // For other operators, value is required
-        return f.value && f.value.toString().trim() !== '';
-    }).length;
-
-    // Check if we need to show "Clear Applied Filters" button
-    const hasAppliedFilters = activeFiltersCount > 0;
-
-    // Determine if there are pending changes that can be applied
-    const hasPendingChanges = pendingFiltersCount > 0 || (filters.length === 0 && hasAppliedFilters);
-
-    // Auto-add default filter when opening if no filters exist AND no applied filters
-    useEffect(() => {
-        if (filters.length === 0 && filterableColumns && filterableColumns?.length > 0 && activeFiltersCount === 0) {
-            const firstColumn = filterableColumns[0];
-            const columnType = getColumnType(firstColumn as any);
-            const operators = FILTER_OPERATORS[columnType as keyof typeof FILTER_OPERATORS] || FILTER_OPERATORS.text;
-            const defaultOperator = operators[0]?.value || 'contains';
-            // Add default filter with first column and its first operator
-            addFilter(firstColumn?.id, defaultOperator);
-        }
-    }, [filters.length, filterableColumns, addFilter, activeFiltersCount]);
-
-    // Merge all props for maximum flexibility
-    const mergedProps = mergeSlotProps(
-        {
-            // Default props
-            size: 'small',
-            sx: { flexShrink: 0 },
+    const handleApplyFilters = useCallback(
+        (closeDialog: () => void) => {
+            // Defer so click handler returns immediately (prevents "[Violation] 'click' handler took Xms")
+            setTimeout(() => {
+                applyFilters();
+                closeDialog();
+            }, 0);
         },
+        [applyFilters]
+    );
+
+    const handleColumnChange = useCallback(
+        (filterId: string, newColumnId: string, currentFilter: ColumnFilterRule) => {
+            const newColumn = filterableColumns.find((col: any) => col.id === newColumnId);
+            const columnType = getColumnType(newColumn as any);
+            const operators =
+                FILTER_OPERATORS[columnType as keyof typeof FILTER_OPERATORS] || FILTER_OPERATORS.text;
+
+            const currentOperatorValid = operators.some((op) => op.value === currentFilter.operator);
+            const newOperator = currentOperatorValid ? currentFilter.operator : operators[0]?.value || "";
+
+            updateFilter(filterId, {
+                columnId: newColumnId,
+                operator: newOperator,
+                value: ["isEmpty", "isNotEmpty"].includes(newOperator) ? "" : currentFilter.value,
+            });
+        },
+        [filterableColumns, updateFilter]
+    );
+
+    const handleOperatorChange = useCallback(
+        (filterId: string, newOperator: string, currentFilter: ColumnFilterRule) => {
+            updateFilter(filterId, {
+                operator: newOperator,
+                value: ["isEmpty", "isNotEmpty"].includes(newOperator) ? "" : currentFilter.value,
+            });
+        },
+        [updateFilter]
+    );
+
+    const handleFilterValueChange = useCallback(
+        (filterId: string, value: any) => {
+            updateFilter(filterId, { value });
+        },
+        [updateFilter]
+    );
+
+    const pendingReadyCount = useMemo(() => {
+        return filters.filter((f) => {
+            if (!f.columnId || !f.operator) return false;
+            if (["isEmpty", "isNotEmpty"].includes(f.operator)) return true;
+            return f.value != null && String(f.value).trim() !== "";
+        }).length;
+    }, [filters]);
+
+    const hasAppliedFilters = activeFiltersCount > 0;
+    const hasPendingChanges = pendingReadyCount > 0 || (filters.length === 0 && hasAppliedFilters);
+
+    // Auto-add only once per open. If menu opened with existing filters, mark as processed so
+    // "Clear All" doesn't cause a new row to be auto-added when state becomes empty.
+    useEffect(() => {
+        if (!isMenuOpen) {
+            didAutoAddRef.current = false;
+            return;
+        }
+        if (didAutoAddRef.current) return;
+        if (!filterableColumns.length) {
+            didAutoAddRef.current = true;
+            return;
+        }
+        if (filters.length > 0 || activeFiltersCount > 0) {
+            // Already have filters this session; mark processed so clear won't re-trigger auto-add
+            didAutoAddRef.current = true;
+            return;
+        }
+
+        const firstColumn = filterableColumns[0];
+        const columnType = getColumnType(firstColumn as any);
+        const operators =
+            FILTER_OPERATORS[columnType as keyof typeof FILTER_OPERATORS] || FILTER_OPERATORS.text;
+        const defaultOperator = operators[0]?.value || "contains";
+
+        didAutoAddRef.current = true;
+        addFilter(firstColumn.id, defaultOperator);
+    }, [isMenuOpen, filterableColumns, filters.length, activeFiltersCount, addFilter]);
+
+    // Merge props but do NOT spread non-icon props onto IconButton
+    const mergedProps = mergeSlotProps(
+        { size: "small", sx: { flexShrink: 0 } },
         slotProps?.columnFilterControl || {},
         props
     );
 
+    const {
+        badgeProps,
+        menuSx,
+        title,
+        titleSx,
+        logicSelectProps,
+        clearButtonProps,
+        applyButtonProps,
+        addButtonProps,
+        deleteButtonProps,
+        iconButtonProps,
+        ...iconButtonRestProps
+    } = mergedProps;
+
     return (
         <MenuDropdown
-            anchor={(
-                <Badge
-                    badgeContent={activeFiltersCount > 0 ? activeFiltersCount : 0}
-                    color="primary"
-                    invisible={activeFiltersCount === 0}
-                    {...mergedProps.badgeProps}
-                >
-                    <IconButton
-                        {...mergedProps}
+            anchor={({ isOpen }) => (
+                <Box sx={{ display: "inline-flex" }}>
+                    {/* sync dropdown open state to our local state */}
+                    <OpenStateSync open={isOpen} onChange={setIsMenuOpen} />
+
+                    <Badge
+                        badgeContent={activeFiltersCount > 0 ? activeFiltersCount : 0}
+                        color="primary"
+                        invisible={activeFiltersCount === 0}
+                        {...badgeProps}
                     >
-                        <FilterIconSlot
-                            {...iconSlotProps}
-                        />
-                    </IconButton>
-                </Badge>
+                        <IconButton
+                            {...(iconButtonRestProps as IconButtonProps)}
+                            {...(iconButtonProps as IconButtonProps)}
+                        >
+                            <FilterIconSlot {...iconSlotProps} />
+                        </IconButton>
+                    </Badge>
+                </Box>
             )}
         >
-            {({ handleClose }: { handleClose: () => void }) => (
+            {({ handleClose }: { handleClose: (event?: any) => void }) => (
                 <Box
                     sx={{
                         p: 2,
                         minWidth: 400,
                         maxWidth: 600,
-                        ...mergedProps.menuSx,
+                        ...(menuSx || {}),
                     }}
+                    onClick={(e) => e.stopPropagation()}
                 >
                     <Typography
                         variant="subtitle2"
                         sx={{
                             mb: 1,
-                            ...mergedProps.titleSx,
+                            ...(titleSx || {}),
                         }}
                     >
-                        {mergedProps.title || 'Column Filters'}
+                        {title || "Column Filters"}
                     </Typography>
+
                     <Divider sx={{ mb: 2 }} />
 
-                    {/* Filter Logic Selection */}
                     {filters.length > 1 && (
                         <Box sx={{ mb: 2 }}>
                             <FormControl size="small" sx={{ minWidth: 120 }}>
@@ -254,8 +310,8 @@ export function ColumnFilterControl(props: ColumnFilterControlProps = {}): React
                                 <Select
                                     value={filterLogic}
                                     label="Logic"
-                                    onChange={(e) => handleLogicChange(e.target.value as 'AND' | 'OR')}
-                                    {...mergedProps.logicSelectProps}
+                                    onChange={(e) => handleLogicChange(e.target.value as "AND" | "OR")}
+                                    {...logicSelectProps}
                                 >
                                     <MenuItem value="AND">AND</MenuItem>
                                     <MenuItem value="OR">OR</MenuItem>
@@ -264,26 +320,26 @@ export function ColumnFilterControl(props: ColumnFilterControlProps = {}): React
                         </Box>
                     )}
 
-                    {/* Filter Rules */}
                     <Stack spacing={2} sx={{ mb: 2 }}>
                         {filters.map((filter) => {
-                            const selectedColumn = filterableColumns?.find(col => col.id === filter.columnId);
+                            const selectedColumn = filterableColumns.find((col: any) => col.id === filter.columnId);
                             const operators = filter.columnId ? getOperatorsForColumn(filter.columnId) : [];
-                            const needsValue = !['isEmpty', 'isNotEmpty'].includes(filter.operator);
+                            const needsValue = !["isEmpty", "isNotEmpty"].includes(filter.operator);
 
                             return (
                                 <Stack key={filter.id} direction="row" spacing={1} alignItems="center">
-                                    {/* Column Selection */}
                                     <FormControl size="small" sx={{ minWidth: 120 }}>
                                         <InputLabel>Column</InputLabel>
                                         <Select
-                                            value={filter.columnId || ''}
+                                            value={filter.columnId || ""}
                                             label="Column"
-                                            onChange={(e) => handleColumnChange(filter.id, e.target.value, filter)}
+                                            onChange={(e) =>
+                                                handleColumnChange(filter.id, e.target.value as string, filter)
+                                            }
                                         >
-                                            {filterableColumns?.map(column => (
+                                            {filterableColumns.map((column: any) => (
                                                 <MenuItem key={column.id} value={column.id}>
-                                                    {typeof column.columnDef.header === 'string'
+                                                    {typeof column.columnDef.header === "string"
                                                         ? column.columnDef.header
                                                         : column.id}
                                                 </MenuItem>
@@ -291,16 +347,17 @@ export function ColumnFilterControl(props: ColumnFilterControlProps = {}): React
                                         </Select>
                                     </FormControl>
 
-                                    {/* Operator Selection */}
                                     <FormControl size="small" sx={{ minWidth: 120 }}>
                                         <InputLabel>Operator</InputLabel>
                                         <Select
-                                            value={filter.operator || ''}
+                                            value={filter.operator || ""}
                                             label="Operator"
-                                            onChange={(e) => handleOperatorChange(filter.id, e.target.value, filter)}
+                                            onChange={(e) =>
+                                                handleOperatorChange(filter.id, e.target.value as string, filter)
+                                            }
                                             disabled={!filter.columnId}
                                         >
-                                            {operators.map(op => (
+                                            {operators.map((op: any) => (
                                                 <MenuItem key={op.value} value={op.value}>
                                                     {op.label}
                                                 </MenuItem>
@@ -308,7 +365,6 @@ export function ColumnFilterControl(props: ColumnFilterControlProps = {}): React
                                         </Select>
                                     </FormControl>
 
-                                    {/* Value Input */}
                                     {needsValue && selectedColumn && (
                                         <FilterValueInput
                                             filter={filter}
@@ -317,52 +373,54 @@ export function ColumnFilterControl(props: ColumnFilterControlProps = {}): React
                                         />
                                     )}
 
-                                                                         {/* Remove Filter Button */}
-                                     <IconButton
-                                         size="small"
-                                         onClick={() => handleRemoveFilter(filter.id)}
-                                         color="error"
-                                         {...mergedProps.deleteButtonProps}
-                                     >
-                                         <DeleteIcon fontSize="small" />
-                                     </IconButton>
+                                    <IconButton
+                                        size="small"
+                                        onClick={() => removeFilter(filter.id)}
+                                        color="error"
+                                        {...deleteButtonProps}
+                                    >
+                                        <DeleteIcon fontSize="small" />
+                                    </IconButton>
                                 </Stack>
                             );
                         })}
                     </Stack>
 
-                                         {/* Add Filter Button */}
-                     <Button
-                         variant="outlined"
-                         size="small"
-                         startIcon={<AddIcon />}
-                         onClick={handleAddFilter}
-                         disabled={!filterableColumns || filterableColumns.length === 0}
-                         sx={{ mb: 2 }}
-                         {...mergedProps.addButtonProps}
-                     >
-                         Add Filter
-                     </Button>
+                    <Button
+                        variant="outlined"
+                        size="small"
+                        startIcon={<AddIcon />}
+                        onClick={() => addFilter()}
+                        disabled={filterableColumns.length === 0}
+                        sx={{ mb: 2 }}
+                        {...addButtonProps}
+                    >
+                        Add Filter
+                    </Button>
 
-                    {/* Action Buttons */}
                     <Stack direction="row" spacing={1} justifyContent="flex-end">
                         {hasAppliedFilters && (
                             <Button
                                 variant="outlined"
                                 size="small"
-                                onClick={() => clearAllFilters(handleClose)}
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    clearAllFilters(handleClose);
+                                }}
                                 color="error"
-                                {...mergedProps.clearButtonProps}
+                                {...clearButtonProps}
                             >
                                 Clear All
                             </Button>
                         )}
+
                         <Button
                             variant="contained"
                             size="small"
-                            onClick={() => handleApplyFilters(handleClose)}
+                            onClick={() => handleApplyFilters(() => handleClose?.())}
                             disabled={!hasPendingChanges}
-                            {...mergedProps.applyButtonProps}
+                            {...applyButtonProps}
                         >
                             Apply
                         </Button>

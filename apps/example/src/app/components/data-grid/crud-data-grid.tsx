@@ -280,8 +280,10 @@ function CrudDataGridInner<T>(
 
     const handleFetchRequestGeneration = useCallback(
         (filters: Partial<TableFilters>) => {
-            setMappedFilters(filters);
-            handleQueryObjectChange({ filters, isTrash });
+            setTimeout(() => {
+                setMappedFilters(filters);
+                handleQueryObjectChange({ filters, isTrash });
+            }, 0);
         },
         [handleQueryObjectChange, isTrash],
     );
@@ -317,7 +319,6 @@ function CrudDataGridInner<T>(
             ref={datatableRef}
             stateKey={stateKey}
             defaultHiddenColumns={defaultHiddenColumns}
-            // onFetchData={fetchData}
             onFetchStateChange={handleFetchRequestGeneration}
             initialLoadData
             dataMode="server"

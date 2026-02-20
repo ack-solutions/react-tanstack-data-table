@@ -18,6 +18,7 @@ export type DataRefreshReason = 'initial' | 'state-change' | 'refresh' | 'reload
 
 export interface DataFetchMeta {
     reason?: DataRefreshReason;
+    delay?: number;
     force?: boolean;
 }
 
@@ -73,7 +74,7 @@ export interface DataTableProps<T> {
     initialLoadData?: boolean; // Initial load data (default: true)
     onDataStateChange?: (filters: Partial<TableState>) => void; // Callback when any filter/state changes
     onFetchData?: (filters: Partial<TableFilters>, meta?: DataFetchMeta) => Promise<{ data: T[]; total: number }>;
-    onFetchStateChange?: (filters: Partial<TableState>, meta?: DataFetchMeta) => void;
+    onFetchStateChange?: (filters: Partial<TableState>, options?: DataFetchMeta) => void;
     onRefreshData?: (context: DataRefreshContext) => void | Promise<void>;
 
     // Simplified Export props
