@@ -134,7 +134,7 @@ type RowType = RealApiUser | FdaEventRow;
  */
 export function RealServerApiExample() {
   const [apiSource, setApiSource] = useState<ApiSource>('fda');
-  const [fetchMode, setFetchMode] = useState<FetchMode>('onFetchData');
+  const [fetchMode, setFetchMode] = useState<FetchMode>('onFetchStateChange');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fetchCount, setFetchCount] = useState(0);
@@ -326,14 +326,17 @@ export function RealServerApiExample() {
           ref={apiRef as React.RefObject<DataTableApi<RealApiUser>>}
           columns={dummyJsonColumns}
           dataMode="server"
-          {...(fetchMode === 'onFetchStateChange'
-            ? {
-              onFetchStateChange: handleFetchStateChange,
-              data: rows as RealApiUser[],
-              totalRow: total,
-              initialLoadData: true,
-            }
-            : { onFetchData: handleFetchData })}
+          onFetchStateChange={handleFetchStateChange}
+          data={rows as RealApiUser[]}
+          totalRow={total}
+          // // {...(fetchMode === 'onFetchStateChange'
+          // //   ? {
+          //     onFetchStateChange: handleFetchStateChange,
+          //     data: rows as RealApiUser[],
+          //     totalRow: total,
+          //     initialLoadData: true,
+          //   // }
+          //   // : { onFetchData: handleFetchData })}
           enableRowSelection
           enableMultiRowSelection
           enableColumnVisibility
@@ -361,14 +364,18 @@ export function RealServerApiExample() {
           ref={apiRef as React.RefObject<DataTableApi<FdaEventRow>>}
           columns={fdaColumns}
           dataMode="server"
-          {...(fetchMode === 'onFetchStateChange'
-            ? {
-              onFetchStateChange: handleFetchStateChange,
-              data: rows as FdaEventRow[],
-              totalRow: total,
-              initialLoadData: true,
-            }
-            : { onFetchData: handleFetchData })}
+          onFetchStateChange={handleFetchStateChange}
+          data={rows as FdaEventRow[]}
+          totalRow={total}
+          initialLoadData={true}
+          // {...(fetchMode === 'onFetchStateChange'
+          //   ? {
+          //     onFetchStateChange: handleFetchStateChange,
+          //     data: rows as FdaEventRow[],
+          //     totalRow: total,
+          //     initialLoadData: true,
+          //   }
+          // }
           enableRowSelection
           enableMultiRowSelection
           enableColumnVisibility

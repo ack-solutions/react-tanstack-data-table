@@ -508,6 +508,7 @@ export function useDataTableEngine<T extends Record<string, any>>(
                     const prev = uiRef.current.sorting;
                     const next = typeof updaterOrValue === "function" ? updaterOrValue(prev) : updaterOrValue;
                     const cleaned = (next || []).filter((s: any) => s?.id);
+                    console.log('onSortingChange', cleaned);
                     onSortingChangeRef.current?.(cleaned);
                     dispatch({ type: "SET_SORTING_RESET_PAGE", payload: cleaned });
                 },
@@ -537,11 +538,45 @@ export function useDataTableEngine<T extends Record<string, any>>(
             }
             : {}),
 
-        ...(enableExpanding ? { onExpandedChange: (u: any) => dispatch({ type: "SET_EXPANDED", payload: typeof u === "function" ? u(uiRef.current.expanded) : u }) } : {}),
-        ...(enableColumnDragging ? { onColumnOrderChange: (u: any) => dispatch({ type: "SET_COLUMN_ORDER", payload: typeof u === "function" ? u(uiRef.current.columnOrder) : u }) } : {}),
-        ...(enableColumnPinning ? { onColumnPinningChange: (u: any) => dispatch({ type: "SET_COLUMN_PINNING", payload: typeof u === "function" ? u(uiRef.current.columnPinning) : u }) } : {}),
-        ...(enableColumnVisibility ? { onColumnVisibilityChange: (u: any) => dispatch({ type: "SET_COLUMN_VISIBILITY", payload: typeof u === "function" ? u(uiRef.current.columnVisibility) : u }) } : {}),
-        ...(enableColumnResizing ? { onColumnSizingChange: (u: any) => dispatch({ type: "SET_COLUMN_SIZING", payload: typeof u === "function" ? u(uiRef.current.columnSizing) : u }) } : {}),
+        ...(enableExpanding ? { onExpandedChange: (u: any) => {
+            const prev = uiRef.current.expanded;
+            const next = typeof u === "function" ? u(prev) : u;
+            dispatch({ type: "SET_EXPANDED", payload: next });
+        } } : {}),
+
+        ...(enableColumnDragging ? {
+            onColumnOrderChange: (u: any) => {
+                const prev = uiRef.current.columnOrder;
+                const next = typeof u === "function" ? u(prev) : u;
+                onColumnDragEndRef.current?.(next);
+                dispatch({ type: "SET_COLUMN_ORDER", payload: next });
+            }
+        } : {}),
+        ...(enableColumnPinning ? {
+            onColumnPinningChange: (u: any) => {
+                const prev = uiRef.current.columnPinning;
+                const next = typeof u === "function" ? u(prev) : u;
+                onColumnPinningChangeRef.current?.(next);
+                dispatch({ type: "SET_COLUMN_PINNING", payload: next });
+            }
+        } : {}),
+        ...(enableColumnVisibility ? {
+            onColumnVisibilityChange: (u: any) => {
+                const prev = uiRef.current.columnVisibility;
+                const next = typeof u === "function" ? u(prev) : u;
+                onColumnVisibilityChangeRef.current?.(next);
+                dispatch({ type: "SET_COLUMN_VISIBILITY", payload: next });
+            }
+        } : {}),
+        ...(enableColumnResizing ? {
+            onColumnSizingChange: (u: any) => {
+                const prev = uiRef.current.columnSizing;
+                const next = typeof u === "function" ? u(prev) : u;
+                onColumnSizingChangeRef.current?.(next);
+                dispatch({ type: "SET_COLUMN_SIZING", payload: next });
+
+            }
+        } : {}),
 
         getCoreRowModel: getCoreRowModel(),
         ...(enableSorting ? { getSortedRowModel: getSortedRowModel() } : {}),
@@ -584,12 +619,15 @@ export function useDataTableEngine<T extends Record<string, any>>(
 
     // --- virtualization
     const rows = table.getRowModel().rows;
+
+    const shouldVirtualize = enableVirtualization && rows.length > 0;
+
     const rowVirtualizer = useVirtualizer({
         count: rows.length,
         getScrollElement: () => tableContainerRef.current,
         estimateSize: () => estimateRowHeight,
-        overscan: 10,
-        enabled: enableVirtualization && !enablePagination && rows.length > 0,
+        overscan: 8, // reduce a bit
+        enabled: shouldVirtualize,
     });
 
 
@@ -1316,7 +1354,7 @@ export function useDataTableEngine<T extends Record<string, any>>(
             isExporting: () => exportControllerRef.current != null,
             cancelExport: () => handleCancelExport(),
         } as any;
-    }, [dataMode, exportChunkSize, exportFilename, exportSanitizeCSV, exportStrictTotalCheck, fetchData, handleCancelExport, handleColumnFilterChangeHandler, handleExportProgressInternal, handleExportStateChangeInternal, initialStateConfig, isServerMode, isServerPagination, isServerSorting, resetAllAndReload, resetPageToFirst, runExportWithPolicy, triggerRefresh, queuedExportCount, tableTotalRow, idKey, tableRef, uiRef, serverDataRef, dataRef, onSortingChangeRef, onPaginationChangeRef, onGlobalFilterChangeRef, onColumnDragEndRef, onColumnPinningChangeRef, onColumnSizingChangeRef, onServerExportRef, onExportCompleteRef, onExportErrorRef]);
+    }, [dataMode, exportChunkSize, exportFilename, exportSanitizeCSV, exportStrictTotalCheck, fetchData, handleCancelExport, handleColumnFilterChangeHandler, handleExportProgressInternal, handleExportStateChangeInternal, initialStateConfig, isServerMode, isServerPagination, isServerSorting, resetAllAndReload, resetPageToFirst, runExportWithPolicy, triggerRefresh, queuedExportCount, tableTotalRow, idKey, tableRef, uiRef, serverDataRef, dataRef, onSortingChangeRef, onPaginationChangeRef, onGlobalFilterChangeRef, onColumnDragEndRef, onColumnPinningChangeRef, onColumnSizingChangeRef, onServerExportRef, onExportCompleteRef, onExportErrorRef, enablePagination]);
 
     // --- imperative handlers (used by TanStack callbacks above or view)
     const handleSortingChange = useCallback(

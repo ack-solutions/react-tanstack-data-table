@@ -1,17 +1,15 @@
 import React, { forwardRef, useCallback, useMemo, useRef, useImperativeHandle, useState, useEffect } from 'react';
 import { FormControlLabel, Switch } from '@mui/material';
-import { DataTableApi, DataTableProps, TableFilters, TableState } from '@ackplus/react-tanstack-data-table';
+import { DataTable, DataTableApi, DataTableProps, TableFilters, TableState } from '@ackplus/react-tanstack-data-table';
 
 import { useDataTableState } from './datatable-state-context';
 
-import DataGrid from './data-grid';
 import { useExportToasts } from './hooks/use-export-toasts';
 import { useCrudTableActions } from './hooks/use-crud-table-actions';
 
 import { buildQBFromTableState } from './ table-to-qb';
 import { UseQueryResult } from '@tanstack/react-query';
 import { useLatestRef } from './hooks/use-latest-ref';
-import { TableBulkActionMenu } from './comp/table-bulk-action-menu';
 import { TableActionMenu, TableActionMenuProps } from './comp/table-action-menu';
 import { TableAction } from './comp/table-action-menu';
 import { useConfirm } from './hooks/confirm-dialog-context';
@@ -138,15 +136,15 @@ function CrudDataGridInner<T>(
     });
 
     const showToasty = useCallback((message: string, type: 'success' | 'error' | 'warning' | 'info' | 'loading') => {
-        if(type === 'success') {
+        if (type === 'success') {
             console.log('message success', message);
-        } else if(type === 'error') {
+        } else if (type === 'error') {
             console.error('message', message);
-        } else if(type === 'warning') {
+        } else if (type === 'warning') {
             console.warn('message', message);
-        } else if(type === 'info') {
+        } else if (type === 'info') {
             console.info('message', message);
-        } else if(type === 'loading') {
+        } else if (type === 'loading') {
             console.log('message loading', message);
         }
     }, []);
@@ -311,49 +309,50 @@ function CrudDataGridInner<T>(
         setTotal(totalCount);
     }, [data, isSuccess]);
     return (
-        <DataGrid
-            idKey={idKey as keyof T}
+        <DataTable
+            ref={datatableRef}
+            idKey={idKey as string}
             data={rows}
             totalRow={total}
+            columns={columns}
             loading={isFetching}
-            ref={datatableRef}
-            stateKey={stateKey}
-            defaultHiddenColumns={defaultHiddenColumns}
-            onFetchStateChange={handleFetchRequestGeneration}
-            initialLoadData
             dataMode="server"
-            extraFilter={extraFilter}
-            maxHeight={maxHeight || `calc(100svh - ${280}px)`}
-            footerFilter={
-                hasSoftDelete ? (
-                    <FormControlLabel
-                        control={<Switch checked={isTrash} onChange={handleChangeSoftDelete} />}
-                        label="Show Deleted"
-                        slotProps={{ typography: { noWrap: true } }}
-                    />
-                ) : null
-            }
-            columns={columns as any}
-            enableBulkActions
-            bulkActions={(selectedState: any) => {
-                const ids: string[] = selectedState.ids;
-                const showOnlyTrashActions = hasSoftDelete && isTrash;
-
-                return (
-                    <TableBulkActionMenu
-                        permissionsKeys={permissionsKey}
-                        {...(showOnlyTrashActions
-                            ? {
-                                onRestore: () => crudActions.handleBulkRestore(ids),
-                                onDeleteForever: () => crudActions.handleBulkDeleteForever(ids),
-                            }
-                            : {
-                                onDelete: () => crudActions.handleBulkDelete(ids),
-                            })}
-                        actions={bulkActions?.(ids, { isTrash }) ?? []}
-                    />
-                );
+            stateKey={stateKey}
+            onFetchStateChange={handleFetchRequestGeneration}
+            onDataStateChange={(state)=>{
+                console.log('onDataStateChange', state);
+                handleTableStateChange(state);
             }}
+            onColumnVisibilityChange={() => {
+                console.log('onColumnVisibilityChange');
+            }}
+            onColumnDragEnd={() => {
+                console.log('onColumnDragEnd');
+            }}
+            onColumnPinningChange={() => {
+                console.log('onColumnPinningChange');
+            }}
+            onColumnSizingChange={() => {
+                console.log('onColumnSizingChange');
+            }}
+            onRowClick={adaptedOnRowClick}
+
+
+            defaultHiddenColumns={defaultHiddenColumns}
+            enableStickyHeaderOrFooter
+            enablePagination
+            enableRowSelection
+            enableRefresh
+            enableColumnDragging
+            enableGlobalFilter
+            enableColumnFilter
+            enableSorting
+            enableHover
+            enableColumnResizing
+            enableColumnPinning
+            enableBulkActions
+            enableStripes
+
             enableExport
             onExportProgress={onExportProgress}
             onExportComplete={onExportComplete}
@@ -361,28 +360,27 @@ function CrudDataGridInner<T>(
             onExportCancel={onCancelExport}
             onServerExport={handleServerExportData}
 
-            enablePagination
-            enableRowSelection
-            enableRefresh
-            enableStickyHeaderOrFooter
             initialState={mergedInitialState}
-            onRowClick={adaptedOnRowClick}
-            onDataStateChange={handleTableStateChange}
-            {...props}
-            slotProps={{
-                ...props.slotProps,
-                toolbar: {
-                    refreshButtonProps: {
-                        loading: isFetching,
-                        showSpinnerWhileLoading: true,
-                        onRefresh: () => {
-                            refetch();
+            // bulkActions={bulkActions}
+            maxHeight={maxHeight || `calc(100svh - ${320}px)`}
+            skeletonRows={10}
+            extraFilter={extraFilter}
+            footerFilter={
+                hasSoftDelete ? (
+                    <FormControlLabel
+                        control={
+                            <Switch
+                                checked={isTrash}
+                                onChange={handleChangeSoftDelete}
+                            />
                         }
-                    },
-                    ...props.slotProps?.toolbar,
-                }
-            }}
-            
+                        label="Show Deleted"
+                        slotProps={{ typography: { noWrap: true } }}
+                    />
+                ) : null
+            }
+            {...props}
+            slotProps={props.slotProps}
         />
     );
 }
