@@ -89,6 +89,7 @@ type EngineAction =
 
 
 function uiReducer(state: EngineUIState, action: EngineAction): EngineUIState {
+    console.log('uiReducer', action?.type, state);
     switch (action.type) {
         case "SET_SORTING_RESET_PAGE":
             return { ...state, sorting: action.payload, pagination: { pageIndex: 0, pageSize: state.pagination.pageSize } };
@@ -417,6 +418,7 @@ export function useDataTableEngine<T extends Record<string, any>>(
     const fetchData = useEvent(async (overrides: Partial<TableState> = {}, options?: { delay?: number; meta?: DataFetchMeta }) => {
         const s = uiRef.current;
 
+        console.log('fetchData', s, overrides, options);
         const filters: Partial<TableFiltersForFetch> = {
             globalFilter: s.globalFilter,
             pagination: s.pagination,
@@ -520,6 +522,7 @@ export function useDataTableEngine<T extends Record<string, any>>(
                 onPaginationChange: (updater: any) => {
                     const prev = uiRef.current.pagination;
                     const next = typeof updater === "function" ? updater(prev) : updater;
+                    console.log('onPaginationChange', next);
                     onPaginationChangeRef.current?.(next);
                     dispatch({ type: "SET_PAGINATION", payload: next });
                 },
@@ -667,6 +670,7 @@ export function useDataTableEngine<T extends Record<string, any>>(
         nextFetchDelayRef.current = 0; // reset after using
 
         const timeoutId = setTimeout(() => {
+            console.log('stateChange fetch', delay, serverKey);
             void fetchData({}, { delay, meta: { reason: "stateChange" } });
         }, 0);
         return () => clearTimeout(timeoutId);
