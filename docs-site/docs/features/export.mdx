@@ -1,0 +1,53 @@
+---
+title: Export (CSV & Excel)
+sidebar_label: Export
+---
+
+import LiveDemo from '@site/src/demo/LiveDemo';
+import { ExportDemo } from '@site/src/demo/demos';
+
+# Export
+
+Export to **CSV** or **Excel** from the toolbar menu, or imperatively via `apiRef`. Honours column
+visibility and per-column export options. Excel uses `xlsx`, which is **lazy-loaded** only when you
+export Excel — it isn't in your initial bundle. Server-side export streams in chunks with progress and
+cancellation.
+
+<LiveDemo>{() => <ExportDemo />}</LiveDemo>
+
+Open the export icon in the toolbar and choose CSV or Excel — a file downloads.
+
+```tsx
+<DataTable columns={columns} data={data} enableExport exportFilename="users" />
+
+// or imperatively
+apiRef.current?.export.exportCSV();
+apiRef.current?.export.exportExcel();
+```
+
+## Per-column export options
+
+Set these on a `ColumnDef`:
+
+| Option | Description |
+| --- | --- |
+| `hideInExport` | Exclude the column from exports. |
+| `exportHeader` | Override the export header (string or function). |
+| `exportValue` | Transform the exported value. |
+| `exportFormat` | `'auto' \| 'string' \| 'number' \| 'boolean' \| 'json' \| 'date'` or a function. |
+
+## Props
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `enableExport` | `boolean` | `false` | Show the toolbar export menu. |
+| `exportFilename` | `string` | `'export'` | Base filename. |
+| `exportChunkSize` | `number` | `1000` | Rows per chunk for server export. |
+| `exportConcurrency` | `'cancelAndRestart' \| 'queue' \| 'ignoreIfRunning'` | `'cancelAndRestart'` | Concurrent-export policy. |
+| `onServerExport` | `(filters, selection, signal) => Promise` | — | Server export data source. |
+| `onExportProgress` | `(progress) => void` | — | Export progress. |
+
+## Server-side export
+
+Provide `onServerExport` and the grid will page through your data in chunks (honouring filters and
+selection), build the file, and report progress — cancellable via `apiRef.current.export.cancelExport()`.

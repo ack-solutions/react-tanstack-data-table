@@ -1,0 +1,97 @@
+---
+title: Props reference
+sidebar_label: Props
+sidebar_position: 1
+---
+
+# `<DataTable>` props
+
+Every prop, grouped by area. Use the **search** (top right) to find a setting fast.
+
+## Data
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `columns` | `ColumnDef<T>[]` | — | TanStack column definitions (+ `align`, `type`, `wrapText`, export options). |
+| `data` | `T[]` | `[]` | Row data (client mode). |
+| `rowCount` | `number` | — | Total row count (server mode). |
+| `getRowId` | `(row, index) => string` | — | Stable row id; defaults to `row[idKey]`. |
+| `idKey` | `keyof T` | `'id'` | Shorthand row-id field. |
+| `dataMode` | `'client' \| 'server'` | `'client'` | Client-held or server-fetched. |
+| `onFetchData` | `(filters, meta) => Promise<{ data, total }>` | — | Server fetch handler. |
+| `initialState` | `Partial<TableState>` | — | Initial sorting/pagination/pinning/visibility/sizing. |
+| `onDataStateChange` | `(state) => void` | — | Any table-state change. |
+
+## Sorting / Filtering / Pagination
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `enableSorting` | `boolean` | `true` | Column sorting. |
+| `sortingMode` | `'client' \| 'server'` | `'client'` | Sort locally or on the server. |
+| `enableGlobalFilter` | `boolean` | `true` | Toolbar search. |
+| `enableColumnFilter` | `boolean` | `false` | Column-filter rule builder. |
+| `filterMode` | `'client' \| 'server'` | `'client'` | Filter locally or on the server. |
+| `enablePagination` | `boolean` | `false` | Pagination footer. |
+| `paginationMode` | `'client' \| 'server'` | `'client'` | Paginate locally or on the server. |
+
+## Selection
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `enableRowSelection` | `boolean \| (row) => boolean` | `false` | Selection checkbox column. |
+| `enableMultiRowSelection` | `boolean` | `true` | Allow multiple selection. |
+| `selectMode` | `'page' \| 'all'` | `'page'` | Select-all scope. |
+| `isRowSelectable` | `({ row, id }) => boolean` | — | Disable specific rows. |
+| `enableBulkActions` | `boolean` | `false` | Bulk-actions bar. |
+| `renderBulkActions` | `(selection) => ReactNode` | — | Custom bulk actions. |
+| `onSelectionChange` | `(selection) => void` | — | Selection changed. |
+
+## Columns
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `enableColumnResizing` | `boolean` | `false` | Drag to resize. |
+| `columnResizeMode` | `'onChange' \| 'onEnd'` | `'onChange'` | Live vs on-release. |
+| `enableColumnReordering` | `boolean` | `false` | Drag headers to reorder. |
+| `enableColumnPinning` | `boolean` | `false` | Sticky left/right. |
+| `enableColumnVisibility` | `boolean` | `true` | Show/hide from toolbar. |
+
+## Appearance & layout
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `density` | `'compact' \| 'standard' \| 'comfortable'` | `'standard'` | Row height + padding. |
+| `striped` | `boolean` | `false` | Alternate row background. |
+| `hover` | `boolean` | `true` | Highlight the hovered row. |
+| `fitToScreen` | `boolean` | `true` | Stretch columns to fill width. |
+| `stickyHeader` | `boolean` | — | Keep the header visible while scrolling. |
+| `maxHeight` | `string \| number` | `480` | Scroll-container max height. |
+| `enableVirtualization` | `boolean` | `false` | Render only visible rows. |
+| `estimatedRowHeight` | `number` | `52` | Virtualizer row-height estimate. |
+| `getRowClassName` | `({ row, index }) => string` | — | Conditional row class. |
+| `getCellClassName` | `({ row, columnId, value }) => string` | — | Conditional cell class. |
+
+## Toolbar
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `enableDensitySelector` | `boolean` | `false` | Density menu. |
+| `enableExport` | `boolean` | `false` | Export menu. |
+| `enableReset` | `boolean` | `false` | Reset button. |
+| `enableRefresh` | `boolean` | `false` | Refresh button. |
+| `extraFilter` | `ReactNode` | — | Custom toolbar content. |
+
+## States & customization
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `loading` | `boolean` | `false` | Show skeleton rows. |
+| `noRowsMessage` | `string \| ReactNode` | `'No rows'` | Empty-state message. |
+| `skeletonRows` | `number` | `5` | Skeleton row count. |
+| `slots` | `Partial<DataTableSlots>` | — | Replace any sub-component. |
+| `slotProps` | `PartialSlotProps` | — | Inject props/`sx` into parts. |
+| `apiRef` | `RefObject<DataTableApi<T>>` | — | Imperative handle. |
+| `sx` | `SxProps` | — | Root styles. |
+| `onRowClick` | `(event, row) => void` | — | Row click. |
+| `selectOnRowClick` | `boolean` | `false` | Toggle selection on row click. |
+| `logging` | `boolean \| DataTableLoggingOptions` | `false` | Debug logging. |

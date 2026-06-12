@@ -1,0 +1,79 @@
+---
+title: Server-side data
+sidebar_label: Server-side
+---
+
+# Server-side data
+
+For large datasets, let your backend handle sorting, filtering, and pagination. The grid manages state,
+debounces and de-duplicates requests, cancels stale ones, and shows loading skeletons.
+
+## Setup
+
+Set `dataMode="server"`, provide `onFetchData`, and pass `rowCount` (the server total).
+
+```tsx
+<DataTable
+  columns={columns}
+  dataMode="server"
+  rowCount={total}
+  enablePagination
+  enableSorting
+  enableGlobalFilter
+  onFetchData={async (filters, meta) => {
+    const res = await fetch(`/api/users?${toQuery(filters)}`, { signal: meta?.signal });
+    const json = await res.json();
+    return { data: json.rows, total: json.total };
+  }}
+/>
+```
+
+## The `onFetchData` handler
+
+```ts
+onFetchData: (filters, meta) => Promise<{ data: T[]; total: number }>
+```
+
+`filters` carries everything the server needs:
+
+| Field | Description |
+| --- | --- |
+| `pagination` | `{ pageIndex, pageSize }` |
+| `sorting` | `[{ id, desc }]` |
+| `globalFilter` | the search string |
+| `columnFilter` | applied column-filter rules + AND/OR logic |
+
+The grid calls `onFetchData` on mount (unless `initialLoadData={false}`) and whenever the relevant state
+changes. Rapid changes (typing in search) are **debounced**, and only the latest response is applied.
+
+## Granular server modes
+
+You don't have to move everything server-side at once. Opt in per concern:
+
+```tsx
+<DataTable
+  sortingMode="server"
+  filterMode="server"
+  paginationMode="server"
+  /* ...the rest stays client-side */
+/>
+```
+`dataMode="server"` is shorthand for all three.
+
+## Server-side export
+
+Provide `onServerExport(filters, selection, signal)`; the grid pages through your data in chunks
+(honouring filters and selection), builds the CSV/Excel file, reports progress, and supports
+cancellation. It also accepts a ready-made `{ blob }` or `{ fileUrl }` response if your server generates
+the file. See [Export](/features/export).
+
+## Imperative data API
+
+Refresh and mutate data through `apiRef.current.data`:
+
+```ts
+apiRef.current.data.refresh();            // re-run onFetchData
+apiRef.current.data.reload();             // reload keeping state
+apiRef.current.data.updateRow(id, patch); // optimistic local update
+apiRef.current.data.deleteSelectedRows();
+```

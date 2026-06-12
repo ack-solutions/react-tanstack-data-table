@@ -17,6 +17,8 @@ import { DataTablePropsPage } from '../docs/features/DataTablePropsPage';
 import { PinningPage } from '../docs/features/PinningPage';
 import { ExpansionPage } from '../docs/features/ExpansionPage';
 import { LayoutPage } from '../docs/features/LayoutPage';
+import { GridSpikePage } from '../docs/features/GridSpikePage';
+import { V2DemoPage } from '../docs/features/V2DemoPage';
 import { AccessibilityPage } from '../docs/features/AccessibilityPage';
 import { LocalizationPage } from '../docs/features/LocalizationPage';
 import { RealServerApiPage } from '../docs/RealServerApiPage';
@@ -40,6 +42,8 @@ export const contentRegistry: Record<string, ComponentType> = {
   api: ApiSection,
   props: PropsSection,
   layout: LayoutPage,
+  'v2-demo': V2DemoPage,
+  'grid-spike': GridSpikePage,
   accessibility: AccessibilityPage,
   localization: LocalizationPage,
   'real-api-debug': RealServerApiPage

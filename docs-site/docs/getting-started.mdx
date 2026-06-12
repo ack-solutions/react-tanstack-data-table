@@ -1,0 +1,63 @@
+---
+sidebar_position: 2
+title: Getting Started
+---
+
+import LiveDemo from '@site/src/demo/LiveDemo';
+import { BasicDemo } from '@site/src/demo/demos';
+
+# Getting Started
+
+## Installation
+
+```bash
+npm install @ackplus/mui-tanstack-data-grid
+```
+
+Peer dependencies (you most likely already have these):
+
+```bash
+npm install @mui/material @mui/icons-material \
+  @emotion/react @emotion/styled \
+  @tanstack/react-table @tanstack/react-virtual
+```
+
+## Your first grid
+
+Pass TanStack column definitions and your data, then opt into features with `enable*` props.
+
+```tsx
+import { DataTable } from '@ackplus/mui-tanstack-data-grid';
+import type { ColumnDef } from '@tanstack/react-table';
+
+interface User { id: number; name: string; email: string; role: string; }
+
+const columns: ColumnDef<User, any>[] = [
+  { id: 'name', header: 'Name', accessorKey: 'name' },
+  { id: 'email', header: 'Email', accessorKey: 'email' },
+  { id: 'role', header: 'Role', accessorKey: 'role' },
+];
+
+export function UsersGrid({ data }: { data: User[] }) {
+  return (
+    <DataTable
+      columns={columns}
+      data={data}
+      enableSorting
+      enableColumnResizing
+      enablePagination
+    />
+  );
+}
+```
+
+<LiveDemo>{() => <BasicDemo />}</LiveDemo>
+
+## Core concepts
+
+- **Columns** are standard TanStack [`ColumnDef`](https://tanstack.com/table/latest/docs/guide/column-defs)s, with a few extras
+  (`align`, `type`, `wrapText`, and export options).
+- **Data** is client-side via the `data` prop, or server-side via `dataMode="server"` + `onFetchData`.
+- **Features are opt-in** through `enable*` props — sorting, filtering, pagination, selection, pinning,
+  resizing, reordering, virtualization, export.
+- **Imperative control** via `apiRef`; or drop the UI and use the headless [`useDataTable()`](/api/use-data-table) hook.

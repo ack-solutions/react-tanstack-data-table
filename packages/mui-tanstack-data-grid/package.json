@@ -1,0 +1,74 @@
+{
+  "name": "@ackplus/mui-tanstack-data-grid",
+  "type": "commonjs",
+  "version": "1.0.0",
+  "description": "A lightweight, fully-featured React data grid built on TanStack Table and MUI — div/CSS-Grid rendering (no HTML table), themeable like a MUI component. Successor to @ackplus/react-tanstack-data-table.",
+  "keywords": [
+    "react",
+    "data-grid",
+    "data-table",
+    "tanstack",
+    "mui",
+    "material-ui",
+    "typescript",
+    "headless"
+  ],
+  "author": {
+    "name": "ACK Plus"
+  },
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ack-solutions/react-tanstack-data-table.git",
+    "directory": "packages/mui-tanstack-data-grid"
+  },
+  "homepage": "https://github.com/ack-solutions/react-tanstack-data-table#readme",
+  "bugs": {
+    "url": "https://github.com/ack-solutions/react-tanstack-data-table/issues"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "lint": "tsc -p tsconfig.build.json --noEmit",
+    "test": "pnpm run build && node --test tests/*.test.cjs"
+  },
+  "dependencies": {
+    "@tanstack/react-table": "^8.21.3",
+    "@tanstack/react-virtual": "^3.13.18",
+    "dayjs": "^1.11.13",
+    "xlsx": "^0.18.5"
+  },
+  "peerDependencies": {
+    "@emotion/react": ">=11.0.0",
+    "@emotion/styled": ">=11.0.0",
+    "@mui/icons-material": ">=5.0.0 || ^6.0.0 || ^7.0.0",
+    "@mui/material": ">=5.0.0 || ^6.0.0 || ^7.0.0",
+    "react": ">=18.0.0 || ^19.0.0",
+    "react-dom": ">=18.0.0 || ^19.0.0"
+  },
+  "devDependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.0",
+    "@mui/icons-material": "^7.1.1",
+    "@mui/material": "^7.1.1",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "typescript": "~5.8.3"
+  }
+}

@@ -1,0 +1,67 @@
+---
+sidebar_position: 3
+title: Theming
+---
+
+import LiveDemo from '@site/src/demo/LiveDemo';
+import { ThemingDemo } from '@site/src/demo/demos';
+
+# Theming
+
+The grid themes **like a MUI component**, and your MUI theme is the **single source of truth** — set
+colours once and the grid follows. The override surface mirrors MUI X DataGrid.
+
+## 1. Inherits your MUI theme
+
+Out of the box, colours, typography, spacing, radius, dark mode, and RTL all come from your app's
+`ThemeProvider`. No setup needed.
+
+## 2. Theme it like a MUI component
+
+Register `palette.tanstackDataGrid` and `components.MuiTanstackDataGrid` in `createTheme` — exactly like
+`MuiButton` or `MuiDataGrid`:
+
+```ts
+import { createTheme } from '@mui/material/styles';
+
+const theme = createTheme({
+  // colours once, in the palette (defaults derive from the base palette)
+  palette: {
+    tanstackDataGrid: { headerBg: '#eef2ff', headerColor: '#4338ca', borderColor: '#e0e7ff' },
+  },
+  components: {
+    MuiTanstackDataGrid: {
+      defaultProps: { density: 'compact', striped: true },
+      styleOverrides: {
+        header: { textTransform: 'uppercase', letterSpacing: '0.04em', fontSize: 11 },
+        cell:   { borderRight: '1px solid var(--dt-border-color)' },
+        row:    { '&:hover': { '--dt-row-bg': '#f5f3ff' } },
+      },
+    },
+  },
+});
+```
+
+The grid below is the same one, rendered under that theme:
+
+<LiveDemo>{() => <ThemingDemo />}</LiveDemo>
+
+## 3. Design tokens (CSS variables)
+
+Every visual is a `--dt-*` CSS variable whose default derives from your MUI theme. Override a token only
+to make the grid deviate from the rest of the app.
+
+| Token | Defaults from |
+| --- | --- |
+| `--dt-border-color` | `palette.divider` |
+| `--dt-header-bg` | `palette.background.default` / grey |
+| `--dt-header-color` | `palette.text.secondary` |
+| `--dt-row-bg-hover` | `palette.action.hover` |
+| `--dt-row-bg-selected` | `palette.action.selected` |
+| `--dt-row-height`, `--dt-cell-padding-x/y` | density preset |
+| `--dt-font-size`, `--dt-radius` | typography / `theme.shape` |
+
+## 4. Per-instance overrides
+
+Use the `density` prop, `sx` on the root, or `slotProps` on any part. Slots replace a part entirely. The
+MUI theme, tokens, and `sx` compose — you never manage colours twice.

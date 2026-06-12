@@ -22,7 +22,8 @@ export default defineConfig({
   resolve: {
     alias: {
       '@ackplus/react-tanstack-data-table': path.resolve(__dirname, '../../packages/react-tanstack-data-table/src/index.ts'
-      )
+      ),
+      '@ackplus/mui-tanstack-data-grid': path.resolve(__dirname, '../../packages/mui-tanstack-data-grid/src/index.ts')
     }
   },
   plugins: [react()]

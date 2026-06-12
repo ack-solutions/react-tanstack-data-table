@@ -1,0 +1,47 @@
+---
+title: Selection & bulk actions
+sidebar_label: Selection
+---
+
+import LiveDemo from '@site/src/demo/LiveDemo';
+import { SelectionDemo } from '@site/src/demo/demos';
+
+# Selection & bulk actions
+
+Single or multi-row selection with a checkbox column. `selectMode="all"` uses **include/exclude**
+semantics so *select all* works across server pages without loading every row. When rows are selected, a
+**bulk-actions bar** appears with your custom actions.
+
+<LiveDemo>{() => <SelectionDemo />}</LiveDemo>
+
+```tsx
+<DataTable
+  columns={columns}
+  data={data}
+  enableRowSelection
+  selectMode="page"            // "page" | "all"
+  enableBulkActions
+  renderBulkActions={(selection) => (
+    <Button onClick={() => deleteRows(selection)}>Delete</Button>
+  )}
+  onSelectionChange={(s) => console.log(s)}
+/>
+```
+
+## Props
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `enableRowSelection` | `boolean \| (row) => boolean` | `false` | Add a selection checkbox column. |
+| `enableMultiRowSelection` | `boolean` | `true` | Allow selecting multiple rows. |
+| `selectMode` | `'page' \| 'all'` | `'page'` | Select-all scope (include/exclude). |
+| `isRowSelectable` | `({ row, id }) => boolean` | — | Disable selection for specific rows. |
+| `enableBulkActions` | `boolean` | `false` | Show the bulk-actions bar. |
+| `renderBulkActions` | `(selection) => ReactNode` | — | Custom action buttons. |
+| `onSelectionChange` | `(selection) => void` | — | Selection changed. |
+
+## Selection state
+
+`onSelectionChange` and `apiRef.current.selection.getSelectionState()` return
+`{ ids, type: 'include' \| 'exclude' }`. In `exclude` mode (after *select all* in `selectMode="all"`),
+`ids` are the **deselected** rows — so the payload stays tiny even for millions of rows.

@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "example",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "example", "dev"],
+      "port": 4200
+    },
+    {
+      "name": "docs",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "docs-site", "run", "start", "--", "--port", "3200", "--no-open", "--host", "0.0.0.0"],
+      "port": 3200
+    }
+  ]
+}

@@ -9,7 +9,7 @@ export type NavNode = {
 export const navigationTree: NavNode[] = [
   {
     id: 'data-grid',
-    title: 'React tanStack Data Grid',
+    title: 'React TanStack Data Table (deprecated)',
     type: 'section',
     children: [
       { id: 'overview', title: 'Overview', type: 'item' },
@@ -57,6 +57,15 @@ export const navigationTree: NavNode[] = [
         title: 'Real API (Debug)',
         type: 'item'
       }
+    ]
+  },
+  {
+    id: 'dev-demos',
+    title: 'Dev Demos (v2 — WIP)',
+    type: 'section',
+    children: [
+      { id: 'v2-demo', title: 'v2 Grid Demo', type: 'item', badge: 'new' },
+      { id: 'grid-spike', title: 'Grid Spike (POC)', type: 'item', badge: 'beta' }
     ]
   }
 ];

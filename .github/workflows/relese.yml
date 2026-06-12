@@ -1,17 +1,38 @@
-name: Release from Tag
+name: Publish package (from tag)
+
+# Per-package publishing, driven by a git tag of the form "<package-dir>@<version>".
+#   mui-tanstack-data-grid@1.0.0   -> publishes packages/mui-tanstack-data-grid
+#   react-tanstack-data-table@1.1.22 -> publishes packages/react-tanstack-data-table
+# One tag publishes exactly one package. Requires the NPM_TOKEN repo secret.
 
 on:
   push:
     tags:
-      - 'v*'
+      - '*@*'
+
+permissions:
+  contents: write # needed to create the GitHub Release
 
 jobs:
-  release:
+  publish:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Parse tag -> package dir + version
+        id: tag
+        run: |
+          TAG="${GITHUB_REF#refs/tags/}"
+          PKG_DIR="${TAG%@*}"     # everything before the last '@'
+          VERSION="${TAG##*@}"    # everything after the last '@'
+          echo "Tag '$TAG' -> package 'packages/$PKG_DIR' version '$VERSION'"
+          if [ ! -f "packages/$PKG_DIR/package.json" ]; then
+            echo "::error::packages/$PKG_DIR/package.json not found for tag '$TAG'. Expected tag form '<package-dir>@<version>'."
+            exit 1
+          fi
+          echo "pkg_dir=$PKG_DIR" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4
@@ -28,33 +49,26 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Setup NPM Auth
-        run: echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > ~/.npmrc
+      - name: Set package version from tag
+        working-directory: packages/${{ steps.tag.outputs.pkg_dir }}
+        run: npm version "${{ steps.tag.outputs.version }}" --no-git-tag-version --allow-same-version
 
-      - name: Extract version from tag
-        id: version
-        run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+      - name: Build the package
+        run: pnpm --filter "./packages/${{ steps.tag.outputs.pkg_dir }}" run build
 
-      - name: Apply version bump
-        run: |
-          VERSION=${{ steps.version.outputs.version }}
-          echo "Applying version bump: $VERSION"
-          node tools/set-version.js "$VERSION"
-
-      - name: Preview version bumps
-        run: git diff
-
-      - name: Build all packages
-        run: pnpm run build
-
-      - name: Publish all packages
-        run: |
-          for dir in dist/packages/*; do
-            if [ -f "$dir/package.json" ]; then
-              cd $dir
-              npm publish --access public || echo "⚠️ Failed to publish $dir (maybe already published)"
-              cd -
-            fi
-          done
+      - name: Publish to npm
+        working-directory: packages/${{ steps.tag.outputs.pkg_dir }}
+        run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Create GitHub Release
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${GITHUB_REF#refs/tags/}"
+          gh release create "$TAG" \
+            --title "$TAG" \
+            --notes "Published \`${{ steps.tag.outputs.pkg_dir }}@${{ steps.tag.outputs.version }}\` to npm: https://www.npmjs.com/package/$(node -p "require('./packages/${{ steps.tag.outputs.pkg_dir }}/package.json').name")" \
+            --verify-tag

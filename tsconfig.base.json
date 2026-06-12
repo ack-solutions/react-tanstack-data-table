@@ -16,6 +16,9 @@
     "paths": {
       "@ackplus/react-tanstack-data-table": [
         "packages/react-tanstack-data-table/src/index.ts"
+      ],
+      "@ackplus/mui-tanstack-data-grid": [
+        "packages/mui-tanstack-data-grid/src/index.ts"
       ]
     }
   }

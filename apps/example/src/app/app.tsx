@@ -1,4 +1,4 @@
-import { Box, Container, CssBaseline, Toolbar, useMediaQuery, useTheme } from '@mui/material';
+import { Alert, Box, Container, CssBaseline, Toolbar, useMediaQuery, useTheme } from '@mui/material';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { navigationTree } from '../content/navigation';
 import { contentRegistry } from '../content/registry';
@@ -69,6 +69,12 @@ export function App() {
         >
           <Toolbar />
           <Container maxWidth={false}>
+            <Alert severity="warning" variant="outlined" sx={{ mb: 3 }}>
+              <strong>@ackplus/react-tanstack-data-table</strong> is <strong>deprecated</strong>. It is replaced by{' '}
+              <strong>@ackplus/mui-tanstack-data-grid</strong> — a rebuilt, lighter, fully-featured data grid (no HTML
+              <code>&lt;table&gt;</code>, themeable like a MUI component). A dedicated docs site is in progress; preview
+              the rebuilt grid under <strong>“Dev Demos → v2 Grid Demo”</strong>.
+            </Alert>
             {ActiveComponent ? <ActiveComponent /> : null}
           </Container>
         </Box>

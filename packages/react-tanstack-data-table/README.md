@@ -1,5 +1,11 @@
 # @ackplus/react-tanstack-data-table
 
+> ## ⚠️ Deprecated
+> This package is **deprecated** and no longer maintained. It has been replaced by
+> **[`@ackplus/mui-tanstack-data-grid`](https://www.npmjs.com/package/@ackplus/mui-tanstack-data-grid)** —
+> a rebuilt, lighter, fully-featured React data grid (rendered with `<div>` + CSS Grid instead of an HTML
+> `<table>`, and themeable like a MUI component). Please migrate; see the new package's docs and migration guide.
+
 A powerful, feature-rich, and highly customizable React data table component built with Material-UI (MUI) and TanStack Table. Perfect for building modern data-intensive applications with advanced table functionality.
 
 ## 🚀 Live Demo

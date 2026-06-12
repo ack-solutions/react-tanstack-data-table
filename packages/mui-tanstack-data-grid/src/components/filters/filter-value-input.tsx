@@ -1,0 +1,102 @@
+/**
+ * Per-column-type value input for the filter rule builder. Boolean → Any/True/
+ * False; select → single/multi; date → native date input (no heavy date-picker
+ * peer dep — the value is an ISO string `dayjs` parses); number/text → TextField.
+ */
+import { Box, Checkbox, FormControl, InputLabel, ListItemText, MenuItem, Select, TextField } from '@mui/material';
+import type { Column } from '@tanstack/react-table';
+import type { ReactElement } from 'react';
+
+import { getColumnOptions, getColumnType, getCustomFilterComponent } from '../../utils/column-helpers';
+import type { ColumnFilterRule } from '../../types/filter.types';
+
+export interface FilterValueInputProps<T> {
+    filter: ColumnFilterRule;
+    column: Column<T, any>;
+    onValueChange: (value: any) => void;
+}
+
+const sx = { flex: 1, minWidth: 150 };
+
+export function FilterValueInput<T>({ filter, column, onValueChange }: FilterValueInputProps<T>): ReactElement {
+    const columnType = getColumnType(column);
+    const Custom = getCustomFilterComponent(column);
+    const options = getColumnOptions(column);
+    const operator = filter.operator;
+
+    if (Custom) {
+        return (
+            <Box sx={sx}>
+                <Custom value={filter.value} onChange={onValueChange} filter={filter} column={column} />
+            </Box>
+        );
+    }
+
+    if (columnType === 'boolean') {
+        return (
+            <FormControl size="small" sx={sx}>
+                <InputLabel>Value</InputLabel>
+                <Select value={filter.value || 'any'} label="Value" onChange={(e) => onValueChange(e.target.value)}>
+                    <MenuItem value="any">Any</MenuItem>
+                    <MenuItem value="true">True</MenuItem>
+                    <MenuItem value="false">False</MenuItem>
+                </Select>
+            </FormControl>
+        );
+    }
+
+    if (options && options.length > 0) {
+        if (operator === 'in' || operator === 'notIn') {
+            const current = Array.isArray(filter.value) ? filter.value : [];
+            return (
+                <FormControl size="small" sx={sx}>
+                    <InputLabel>Values</InputLabel>
+                    <Select
+                        multiple
+                        value={current}
+                        label="Values"
+                        onChange={(e) => onValueChange(e.target.value)}
+                        renderValue={(selected) => (selected as string[]).join(', ')}
+                    >
+                        {options.map((o) => (
+                            <MenuItem key={String(o.value)} value={o.value}>
+                                <Checkbox checked={current.includes(o.value)} size="small" />
+                                <ListItemText primary={o.label} />
+                            </MenuItem>
+                        ))}
+                    </Select>
+                </FormControl>
+            );
+        }
+        return (
+            <FormControl size="small" sx={sx}>
+                <InputLabel>Value</InputLabel>
+                <Select value={filter.value ?? ''} label="Value" onChange={(e) => onValueChange(e.target.value)}>
+                    {options.map((o) => (
+                        <MenuItem key={String(o.value)} value={o.value}>{o.label}</MenuItem>
+                    ))}
+                </Select>
+            </FormControl>
+        );
+    }
+
+    if (columnType === 'date') {
+        return (
+            <TextField
+                size="small"
+                type="date"
+                label="Value"
+                InputLabelProps={{ shrink: true }}
+                value={filter.value ? String(filter.value).slice(0, 10) : ''}
+                onChange={(e) => onValueChange(e.target.value)}
+                sx={sx}
+            />
+        );
+    }
+
+    if (columnType === 'number') {
+        return <TextField size="small" type="number" label="Value" value={filter.value ?? ''} onChange={(e) => onValueChange(e.target.value)} sx={sx} />;
+    }
+
+    return <TextField size="small" label="Value" value={filter.value ?? ''} onChange={(e) => onValueChange(e.target.value)} sx={sx} />;
+}

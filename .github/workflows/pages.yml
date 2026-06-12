@@ -1,5 +1,10 @@
 name: Deploy Pages
 
+# Single GitHub Pages site serving BOTH:
+#   /react-tanstack-data-table/        -> apps/example (v1 demo)
+#   /react-tanstack-data-table/docs/   -> docs-site (Docusaurus docs)
+# They are built separately and assembled into one artifact (_site).
+
 on:
   push:
     branches: [main]
@@ -19,16 +24,46 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter example build --base=/react-tanstack-data-table/
+
+      - name: Install workspace deps
+        run: pnpm install --frozen-lockfile
+
+      # The docs site imports @ackplus/mui-tanstack-data-grid via a file: dependency,
+      # which resolves to its built dist/ — so build the package before the docs.
+      - name: Build data-grid package
+        run: pnpm --filter "./packages/mui-tanstack-data-grid" run build
+
+      # 1) Demo app -> served at the site root.
+      - name: Build example (demo)
+        run: pnpm --filter example build --base=/react-tanstack-data-table/
+
+      # 2) Docs -> served from the /docs/ subpath (DOCS_BASE_URL drives Docusaurus baseUrl).
+      - name: Install docs deps
+        run: npm --prefix docs-site ci
+      - name: Build docs
+        run: npm --prefix docs-site run build
+        env:
+          DOCS_BASE_URL: /react-tanstack-data-table/docs/
+
+      # 3) Assemble both into one artifact: demo at /, docs at /docs/.
+      - name: Assemble site
+        run: |
+          rm -rf _site
+          mkdir -p _site/docs
+          cp -r apps/example/dist/. _site/
+          cp -r docs-site/build/. _site/docs/
+          echo "=== _site top level ===" && ls -la _site
+          echo "=== _site/docs ===" && ls -la _site/docs | head
+
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: apps/example/dist
+          path: _site
 
   deploy:
     needs: build

@@ -1,0 +1,37 @@
+---
+title: Pagination
+---
+
+import LiveDemo from '@site/src/demo/LiveDemo';
+import { PaginationDemo } from '@site/src/demo/demos';
+
+# Pagination
+
+Client-side pagination out of the box, or server-side by providing `rowCount` and paginating in your
+fetch handler.
+
+<LiveDemo>{() => <PaginationDemo />}</LiveDemo>
+
+```tsx
+<DataTable
+  columns={columns}
+  data={data}
+  enablePagination
+  initialState={{ pagination: { pageIndex: 0, pageSize: 10 } }}
+  onPaginationChange={(p) => console.log(p)}
+/>
+```
+
+## Props
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `enablePagination` | `boolean` | `false` | Show the pagination footer. |
+| `paginationMode` | `'client' \| 'server'` | `'client'` | Paginate locally or on the server. |
+| `rowCount` | `number` | — | Server total row count (server mode). |
+| `onPaginationChange` | `(pagination) => void` | — | Page index/size changed. |
+
+## Server-side
+
+Set `paginationMode="server"` and pass `rowCount` (the server total). The grid sends the current page
+index/size to [`onFetchData`](/features/server-side) and renders just the returned page.

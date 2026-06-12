@@ -1,0 +1,33 @@
+---
+title: Sorting
+---
+
+import LiveDemo from '@site/src/demo/LiveDemo';
+import { SortingDemo } from '@site/src/demo/demos';
+
+# Sorting
+
+Click a header to sort ascending, click again for descending, and once more to clear. Hold **Shift** and
+click another header for multi-column sorting. Sorting runs client-side by default, or set
+`sortingMode="server"` to sort in your fetch handler.
+
+<LiveDemo>{() => <SortingDemo />}</LiveDemo>
+
+```tsx
+<DataTable columns={columns} data={data} enableSorting onSortingChange={(s) => console.log(s)} />
+```
+
+## Props
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `enableSorting` | `boolean` | `true` | Enable column sorting. |
+| `sortingMode` | `'client' \| 'server'` | `'client'` | Sort locally or defer to the server. |
+| `onSortingChange` | `(sorting) => void` | — | Called when the sort state changes. |
+
+Disable sorting on a single column with `enableSorting: false` in its `ColumnDef`.
+
+## Server-side
+
+With `sortingMode="server"` (or `dataMode="server"`), the grid stops sorting locally and passes the
+current `sorting` array to [`onFetchData`](/features/server-side) so the backend can sort.

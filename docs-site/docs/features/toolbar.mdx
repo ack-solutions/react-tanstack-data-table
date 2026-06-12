@@ -1,0 +1,38 @@
+---
+title: Toolbar
+---
+
+import LiveDemo from '@site/src/demo/LiveDemo';
+import { FullDemo } from '@site/src/demo/demos';
+
+# Toolbar
+
+The toolbar sits above the grid and surfaces controls. Each control is opt-in via a prop, so the toolbar
+only appears when you enable at least one.
+
+<LiveDemo>{() => <FullDemo />}</LiveDemo>
+
+## Controls
+
+| Prop | Control |
+| --- | --- |
+| `enableGlobalFilter` | Global search box |
+| `enableColumnFilter` | Column-filter rule builder (with active-count badge) |
+| `enableColumnVisibility` | Show/hide columns menu |
+| `enableDensitySelector` | Density menu (compact / standard / comfortable) |
+| `enableExport` | Export menu (CSV / Excel) |
+| `enableRefresh` | Refresh button (re-runs `onFetchData`) |
+| `enableReset` | Reset layout + filters |
+| `extraFilter` | Render any custom node in the toolbar |
+
+## Bulk-actions bar
+
+When `enableBulkActions` is set and rows are selected, a bulk-actions bar appears above the grid showing
+the selected count, a Clear action, and whatever you return from `renderBulkActions(selectionState)`. See
+[Selection](/features/selection).
+
+## Customising the toolbar
+
+Replace or restyle any toolbar part with `slots` / `slotProps`, or build your own toolbar entirely and
+drive the grid through [`apiRef`](/api/api-ref) (`apiRef.current.filtering.setGlobalFilter(…)`,
+`apiRef.current.export.exportCSV()`, etc.).

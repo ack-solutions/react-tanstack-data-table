@@ -1,0 +1,34 @@
+---
+title: useDataTable (headless)
+sidebar_label: useDataTable (headless)
+---
+
+# `useDataTable()` — headless
+
+The `<DataTable>` component is a thin layer over the headless engine. If you want to render your own DOM
+(or a non-MUI UI) while keeping all the logic — server fetch, sorting, filtering, selection, export, the
+`apiRef` — call `useDataTable()` directly.
+
+```tsx
+import { useDataTable } from '@ackplus/mui-tanstack-data-grid';
+
+function CustomGrid(props) {
+  const engine = useDataTable(props);
+  const { table, derived, state, actions, api } = engine;
+
+  // Render however you like using the TanStack `table` instance
+  return (
+    <div>
+      {table.getRowModel().rows.map((row) => (
+        <MyRow key={row.id} row={row} />
+      ))}
+    </div>
+  );
+}
+```
+
+It returns the TanStack `table` instance, derived data (`rows`, `tableTotalRow`, `tableLoading`,
+`density`, …), the UI `state`, imperative `actions`, and the same `api` exposed via `apiRef`.
+
+This is the ultimate escape hatch — the `<DataTable>` component, the toolbar, and every feature are built
+on exactly this.

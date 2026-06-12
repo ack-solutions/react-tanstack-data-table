@@ -1,0 +1,38 @@
+---
+slug: /
+sidebar_position: 1
+sidebar_label: Overview
+title: MUI TanStack Data Grid
+---
+
+import LiveDemo from '@site/src/demo/LiveDemo';
+import { FullDemo } from '@site/src/demo/demos';
+
+# MUI TanStack Data Grid
+
+A lightweight, fully-featured React **data grid** built on the headless **TanStack Table** engine and
+**MUI**. It renders with `<div>` + CSS Grid (no HTML `<table>`) and is themeable like a MUI component.
+
+<LiveDemo>{() => <FullDemo />}</LiveDemo>
+
+## Why this grid
+
+- **No HTML `<table>`** → reliable column sizing, smooth resize, and pixel-accurate pinning.
+- **Themeable like a MUI component** — inherits your MUI theme; override via `palette.tanstackDataGrid`,
+  `components.MuiTanstackDataGrid`, `--dt-*` tokens, or `sx`. Same surface as MUI X DataGrid.
+- **Everything included, free** — sorting, global + column filtering, pagination, selection + bulk
+  actions, pinning, reordering, resizing, row expansion, virtualization, CSV + lazy Excel export.
+- **Headless escape hatch** — drop the UI and use `useDataTable()` for full control.
+
+## Install
+
+```bash
+npm install @ackplus/mui-tanstack-data-grid
+```
+
+Then head to [Getting Started](/getting-started).
+
+:::info Successor to @ackplus/react-tanstack-data-table
+This package replaces the deprecated `@ackplus/react-tanstack-data-table`. See the
+[Migration guide](/migration).
+:::

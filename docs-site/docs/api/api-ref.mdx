@@ -1,0 +1,45 @@
+---
+title: apiRef
+sidebar_label: apiRef (imperative)
+---
+
+# `apiRef` — imperative control
+
+Pass a ref to get an imperative handle for everything the grid can do — useful for custom toolbars,
+external buttons, and programmatic control.
+
+```tsx
+import { useRef } from 'react';
+import { DataTable, type DataTableApi } from '@ackplus/mui-tanstack-data-grid';
+
+function MyGrid() {
+  const apiRef = useRef<DataTableApi<User>>(null);
+  return (
+    <>
+      <button onClick={() => apiRef.current?.export.exportCSV()}>Export</button>
+      <DataTable apiRef={apiRef} columns={columns} data={data} />
+    </>
+  );
+}
+```
+
+## Namespaces
+
+| Namespace | Methods (selection) |
+| --- | --- |
+| `data` | `refresh`, `reload`, `resetAll`, `getAllData`, `updateRow`, `insertRow`, `deleteRow`, `deleteSelectedRows`, `replaceAllData`, … |
+| `selection` | `selectRow`, `deselectRow`, `selectAll`, `deselectAll`, `getSelectionState`, `getSelectedRows`, `getSelectedCount`, `isRowSelected` |
+| `sorting` | `setSorting`, `sortColumn`, `clearSorting`, `resetSorting` |
+| `pagination` | `goToPage`, `nextPage`, `previousPage`, `setPageSize`, `goToFirstPage`, `goToLastPage` |
+| `filtering` | `setGlobalFilter`, `clearGlobalFilter`, `setColumnFilters`, `addColumnFilter`, `removeColumnFilter`, `clearAllFilters` |
+| `columnVisibility` | `showColumn`, `hideColumn`, `toggleColumn`, `showAllColumns`, `hideAllColumns` |
+| `columnPinning` | `pinColumnLeft`, `pinColumnRight`, `unpinColumn`, `setPinning` |
+| `columnOrdering` | `setColumnOrder`, `moveColumn`, `resetColumnOrder` |
+| `columnResizing` | `resizeColumn`, `resetColumnSizing` |
+| `layout` | `saveLayout`, `restoreLayout`, `resetLayout` |
+| `state` | `getTableState`, `getCurrentSorting`, `getCurrentPagination`, `getCurrentSelection`, `getGlobalFilter` |
+| `export` | `exportCSV`, `exportExcel`, `exportServerData`, `isExporting`, `cancelExport` |
+| `table` | `getTable()` — the raw TanStack `Table` instance |
+
+`saveLayout()` / `restoreLayout()` let you persist column order, sizing, pinning, and visibility (e.g. to
+`localStorage`).

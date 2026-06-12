@@ -1,0 +1,53 @@
+---
+sidebar_position: 10
+title: Migration (v1 → v2)
+sidebar_label: Migration
+---
+
+# Migration from `@ackplus/react-tanstack-data-table`
+
+This package is the successor to the deprecated **`@ackplus/react-tanstack-data-table`**. Same mental
+model and the same `apiRef`, but the grid now renders as `<div>` + CSS Grid (not an HTML `<table>`),
+theming is MUI-native + tokens, and some props are renamed. Old names keep working as **deprecated
+aliases**, so you can migrate gradually.
+
+## 1. Install
+
+```bash
+npm install @ackplus/mui-tanstack-data-grid
+npm uninstall @ackplus/react-tanstack-data-table
+```
+
+```diff
+- import { DataTable } from '@ackplus/react-tanstack-data-table';
++ import { DataTable } from '@ackplus/mui-tanstack-data-grid';
+```
+
+## 2. Prop renames
+
+| v1 | v2 | Notes |
+| --- | --- | --- |
+| `tableSize="small"` | `density="compact"` | small→compact, medium→standard |
+| `enableTableSizeControl` | `enableDensitySelector` | |
+| `enableStripes` | `striped` | |
+| `enableHover` | `hover` | |
+| `enableStickyHeaderOrFooter` | `stickyHeader` | + `stickyFooter` |
+| `enableColumnDragging` | `enableColumnReordering` | |
+| `onColumnDragEnd` | `onColumnOrderChange` | same payload |
+| `enableExpanding` | `enableRowExpansion` | |
+| `renderSubComponent` | `renderDetailPanel` | same signature |
+| `bulkActions` | `renderBulkActions` | same signature |
+| `totalRow` | `rowCount` | server total |
+| `estimateRowHeight` | `estimatedRowHeight` | |
+| `emptyMessage` | `noRowsMessage` | |
+| `tableProps` | `slotProps.grid` | typed, no more `any` |
+| `tableContainerProps` | `slotProps.scroller` | typed |
+
+## 3. Behaviour changes
+
+- The grid renders as `<div>`s with ARIA roles, not a `<table>`. CSS that targeted `table`/`td`/
+  `.MuiTable-*` should move to [tokens](/theming), `MuiTanstackDataGrid` style overrides, or `slotProps`.
+- Column `minSize`/`maxSize` are now respected, and resizing no longer redistributes neighbouring columns.
+- Density names changed (`small`/`medium` → `compact`/`standard`/`comfortable`).
+- Excel export lazy-loads `xlsx` on first use; the API is unchanged.
+- **`apiRef` is unchanged** — same namespaces and method names.

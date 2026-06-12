@@ -1,0 +1,306 @@
+/**
+ * GridView — the div/CSS-Grid presentation layer (no HTML <table>).
+ *
+ * Column widths are CSS variables (`--col-<id>-size`) so resize updates one
+ * variable instead of re-rendering every cell; pinned columns are sticky with
+ * offsets from the same numbers; rows are virtualized when enabled. Theming and
+ * density come from the `--dt-*` tokens applied to the root.
+ */
+import { ArrowDownwardOutlined, ArrowUpwardOutlined } from '@mui/icons-material';
+import { Box, Skeleton, TablePagination } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
+import { flexRender, type Column } from '@tanstack/react-table';
+import { useMemo, useState, type CSSProperties, type ReactNode } from 'react';
+
+import { useDataTableTokens } from '../../theme/use-data-table-tokens';
+import type { DataTableProps } from '../../types/data-table.types';
+import type { UseDataTableResult } from '../../core/use-data-table';
+import { GridRoot, GridScroller, GridHeader, GridHeaderRow, GridHeaderCell, GridBody, GridRow, GridCell, GridFooter, GridOverlay } from './styled';
+import { DataTableToolbar } from '../toolbar/data-table-toolbar';
+import { BulkActionsToolbar } from '../toolbar/bulk-actions-toolbar';
+
+export interface GridViewProps<T> extends DataTableProps<T> {
+    engine: UseDataTableResult<T>;
+}
+
+function getAlign(column: Column<any, unknown>): 'left' | 'center' | 'right' {
+    return (column.columnDef as any).align ?? 'left';
+}
+
+function getPinnedStyle(column: Column<any, unknown>): CSSProperties {
+    const pinned = column.getIsPinned();
+    if (!pinned) return {};
+    const isLastLeft = pinned === 'left' && column.getIsLastColumn('left');
+    const isFirstRight = pinned === 'right' && column.getIsFirstColumn('right');
+    return {
+        position: 'sticky',
+        left: pinned === 'left' ? column.getStart('left') : undefined,
+        right: pinned === 'right' ? column.getAfter('right') : undefined,
+        zIndex: 'var(--dt-z-pinned)' as unknown as number,
+        // Opaque base + row-tint overlay so scrolling content never bleeds through.
+        backgroundColor: 'var(--dt-pinned-bg)',
+        backgroundImage: 'linear-gradient(var(--dt-row-bg), var(--dt-row-bg))',
+        boxShadow: isLastLeft
+            ? '2px 0 4px -2px var(--dt-pinned-shadow)'
+            : isFirstRight
+                ? '-2px 0 4px -2px var(--dt-pinned-shadow)'
+                : undefined,
+    };
+}
+
+export function GridView<T extends Record<string, any>>(props: GridViewProps<T>): ReactNode {
+    const {
+        engine,
+        enableColumnResizing = false,
+        enableVirtualization = false,
+        enablePagination = false,
+        stickyHeader,
+        hover = true,
+        striped = false,
+        fitToScreen,
+        maxHeight = 480,
+        onRowClick,
+        loading,
+        skeletonRows = 5,
+        noRowsMessage,
+        emptyMessage,
+        enableGlobalFilter,
+        enableColumnFilter,
+        enableColumnVisibility,
+        enableExport,
+        enableDensitySelector,
+        enableReset,
+        enableRefresh,
+        extraFilter,
+        enableColumnReordering,
+        renderBulkActions,
+    } = props;
+
+    const showToolbar = !!(enableGlobalFilter || enableColumnFilter || enableColumnVisibility || enableExport || enableDensitySelector || enableReset || enableRefresh || extraFilter);
+
+    const theme = useTheme();
+    const { table, refs, derived, state, actions } = engine;
+    const [draggingId, setDraggingId] = useState<string | null>(null);
+    const [dragOverId, setDragOverId] = useState<string | null>(null);
+    const density = derived.density;
+    const tokens = useDataTableTokens(density);
+
+    const rows = derived.rows;
+    const rowVirtualizer = actions.renderRowModel.rowVirtualizer;
+    const isVirtual = enableVirtualization && !enablePagination && rows.length > 0;
+
+    // Publish column widths as CSS variables (recomputed only when sizing changes).
+    const columnSizeVars = useMemo(() => {
+        const vars: Record<string, string> = {};
+        for (const header of table.getFlatHeaders()) {
+            vars[`--col-${header.column.id}-size`] = `${header.getSize()}px`;
+        }
+        return vars;
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [table.getState().columnSizingInfo, table.getState().columnSizing, table.getState().columnVisibility, table.getState().columnOrder]);
+
+    const totalSize = table.getTotalSize();
+    const flexFor = (column: Column<any, unknown>): string =>
+        fitToScreen && !column.getIsPinned()
+            ? `1 1 var(--col-${column.id}-size)`
+            : `0 0 var(--col-${column.id}-size)`;
+
+    const scrollable = stickyHeader || enableVirtualization;
+    const emptyText = noRowsMessage ?? emptyMessage ?? 'No rows';
+
+    const renderHeader = () =>
+        table.getHeaderGroups().map((hg) => (
+            <GridHeaderRow key={hg.id} role="row">
+                {hg.headers.map((header) => {
+                    const column = header.column;
+                    const align = getAlign(column);
+                    const canSort = column.getCanSort();
+                    const canResize = enableColumnResizing && column.getCanResize();
+                    const canDrag = !!enableColumnReordering && !column.getIsPinned();
+                    const sorted = column.getIsSorted();
+                    const isDropTarget = dragOverId === column.id && draggingId !== null && draggingId !== column.id;
+                    return (
+                        <GridHeaderCell
+                            key={header.id}
+                            role="columnheader"
+                            aria-sort={sorted === 'asc' ? 'ascending' : sorted === 'desc' ? 'descending' : 'none'}
+                            onClick={canSort ? column.getToggleSortingHandler() : undefined}
+                            onDragOver={canDrag ? (e) => { e.preventDefault(); if (dragOverId !== column.id) setDragOverId(column.id); } : undefined}
+                            onDragLeave={canDrag ? () => setDragOverId((cur) => (cur === column.id ? null : cur)) : undefined}
+                            onDrop={canDrag ? (e) => {
+                                e.preventDefault();
+                                const dragged = e.dataTransfer.getData('text/plain');
+                                if (dragged && dragged !== column.id) actions.handleColumnReorder(dragged, column.id);
+                                setDragOverId(null);
+                                setDraggingId(null);
+                            } : undefined}
+                            style={{
+                                flex: flexFor(column),
+                                width: `var(--col-${column.id}-size)`,
+                                justifyContent: align === 'right' ? 'flex-end' : align === 'center' ? 'center' : 'flex-start',
+                                cursor: canSort ? 'pointer' : 'default',
+                                gap: 4,
+                                ...getPinnedStyle(column),
+                                ...(column.getIsPinned() ? { backgroundColor: 'var(--dt-header-bg)', backgroundImage: 'none' } : {}),
+                                ...(isDropTarget ? { boxShadow: 'inset 2px 0 0 0 var(--dt-resize-handle)' } : {}),
+                            }}
+                        >
+                            <Box
+                                component="span"
+                                draggable={canDrag || undefined}
+                                onDragStart={canDrag ? (e) => { e.dataTransfer.setData('text/plain', column.id); e.dataTransfer.effectAllowed = 'move'; setDraggingId(column.id); } : undefined}
+                                onDragEnd={canDrag ? () => { setDraggingId(null); setDragOverId(null); } : undefined}
+                                sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: canDrag ? 'grab' : undefined }}
+                            >
+                                {header.isPlaceholder ? null : flexRender(column.columnDef.header, header.getContext())}
+                            </Box>
+                            {sorted === 'asc' ? <ArrowUpwardOutlined sx={{ fontSize: 16 }} /> : null}
+                            {sorted === 'desc' ? <ArrowDownwardOutlined sx={{ fontSize: 16 }} /> : null}
+                            {canResize ? (
+                                <Box
+                                    onMouseDown={header.getResizeHandler()}
+                                    onTouchStart={header.getResizeHandler()}
+                                    onClick={(e) => e.stopPropagation()}
+                                    sx={{
+                                        position: 'absolute',
+                                        top: 0,
+                                        right: 0,
+                                        height: '100%',
+                                        width: '6px',
+                                        cursor: 'col-resize',
+                                        userSelect: 'none',
+                                        touchAction: 'none',
+                                        '&:hover': { background: 'var(--dt-resize-handle)' },
+                                        ...(column.getIsResizing() ? { background: 'var(--dt-resize-handle)' } : {}),
+                                    }}
+                                />
+                            ) : null}
+                        </GridHeaderCell>
+                    );
+                })}
+            </GridHeaderRow>
+        ));
+
+    const renderRow = (rowIndex: number) => {
+        const row = rows[rowIndex];
+        if (!row) return null;
+        const isOdd = rowIndex % 2 === 1;
+        return (
+            <GridRow
+                key={row.id}
+                role="row"
+                aria-selected={table.getIsRowSelected?.(row.id) || undefined}
+                onClick={onRowClick ? (e) => onRowClick(e as any, row) : undefined}
+                sx={{
+                    '--dt-row-bg': striped && isOdd ? theme.palette.action.hover : 'var(--dt-pinned-bg)',
+                    background: 'var(--dt-row-bg)',
+                    cursor: onRowClick ? 'pointer' : 'default',
+                    ...(hover ? { '&:hover': { '--dt-row-bg': 'var(--dt-row-bg-hover)' } } : {}),
+                }}
+            >
+                {row.getVisibleCells().map((cell) => {
+                    const column = cell.column;
+                    const align = getAlign(column);
+                    return (
+                        <GridCell
+                            key={cell.id}
+                            role="cell"
+                            style={{
+                                flex: flexFor(column),
+                                width: `var(--col-${column.id}-size)`,
+                                justifyContent: align === 'right' ? 'flex-end' : align === 'center' ? 'center' : 'flex-start',
+                                ...getPinnedStyle(column),
+                            }}
+                        >
+                            <Box component="span" sx={{ minWidth: 0, width: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: align }}>
+                                {flexRender(column.columnDef.cell, cell.getContext())}
+                            </Box>
+                        </GridCell>
+                    );
+                })}
+            </GridRow>
+        );
+    };
+
+    const renderBody = () => {
+        if (loading) {
+            return Array.from({ length: skeletonRows }).map((_, i) => (
+                <GridRow key={`sk-${i}`} role="row">
+                    {table.getVisibleLeafColumns().map((column) => (
+                        <GridCell key={column.id} role="cell" style={{ flex: flexFor(column), width: `var(--col-${column.id}-size)`, ...getPinnedStyle(column) }}>
+                            <Skeleton width="80%" />
+                        </GridCell>
+                    ))}
+                </GridRow>
+            ));
+        }
+        if (rows.length === 0) {
+            return <GridOverlay role="row">{emptyText}</GridOverlay>;
+        }
+        if (isVirtual) {
+            const virtualRows = rowVirtualizer.getVirtualItems();
+            const paddingTop = virtualRows.length ? virtualRows[0].start : 0;
+            const paddingBottom = virtualRows.length ? rowVirtualizer.getTotalSize() - virtualRows[virtualRows.length - 1].end : 0;
+            return (
+                <>
+                    {paddingTop > 0 ? <div style={{ height: paddingTop }} /> : null}
+                    {virtualRows.map((vr) => renderRow(vr.index))}
+                    {paddingBottom > 0 ? <div style={{ height: paddingBottom }} /> : null}
+                </>
+            );
+        }
+        return rows.map((_, i) => renderRow(i));
+    };
+
+    return (
+        <GridRoot style={tokens} className={props.className}>
+            {showToolbar ? (
+                <DataTableToolbar
+                    engine={engine}
+                    enableGlobalFilter={enableGlobalFilter}
+                    enableColumnFilter={enableColumnFilter}
+                    enableColumnVisibility={enableColumnVisibility}
+                    enableExport={enableExport}
+                    enableDensitySelector={enableDensitySelector}
+                    enableReset={enableReset}
+                    enableRefresh={enableRefresh}
+                    extraFilter={extraFilter}
+                />
+            ) : null}
+            {derived.isSomeRowsSelected ? (
+                <BulkActionsToolbar
+                    selectedCount={derived.selectedRowCount}
+                    selectionState={state.selectionState}
+                    onClear={() => engine.api.selection.deselectAll()}
+                    renderBulkActions={renderBulkActions}
+                />
+            ) : null}
+            <GridScroller
+                ref={refs.tableContainerRef}
+                role="table"
+                aria-rowcount={derived.tableTotalRow}
+                aria-colcount={table.getVisibleLeafColumns().length}
+                style={scrollable ? { maxHeight } : undefined}
+            >
+                <div style={{ ...columnSizeVars, width: fitToScreen ? '100%' : totalSize, minWidth: totalSize } as CSSProperties}>
+                    <GridHeader role="rowgroup">{renderHeader()}</GridHeader>
+                    <GridBody role="rowgroup">{renderBody()}</GridBody>
+                </div>
+            </GridScroller>
+
+            {enablePagination ? (
+                <GridFooter>
+                    <TablePagination
+                        component="div"
+                        count={derived.tableTotalRow}
+                        page={state.pagination.pageIndex}
+                        rowsPerPage={state.pagination.pageSize}
+                        onPageChange={(_, page) => engine.api.pagination.goToPage(page)}
+                        onRowsPerPageChange={(e) => engine.api.pagination.setPageSize(Number(e.target.value))}
+                        rowsPerPageOptions={[5, 10, 25, 50, 100]}
+                    />
+                </GridFooter>
+            ) : null}
+        </GridRoot>
+    );
+}

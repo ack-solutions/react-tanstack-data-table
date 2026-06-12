@@ -1,0 +1,43 @@
+---
+title: Columns — resize, reorder, pin, hide
+sidebar_label: Columns
+---
+
+import LiveDemo from '@site/src/demo/LiveDemo';
+import { ColumnsDemo } from '@site/src/demo/demos';
+
+# Columns
+
+Resize by dragging a column's edge, reorder by dragging a header, pin columns left/right (they stay put
+while scrolling), and show/hide columns from the toolbar. Pinned columns are excluded from reordering.
+
+<LiveDemo>{() => <ColumnsDemo />}</LiveDemo>
+
+```tsx
+<DataTable
+  columns={columns}
+  data={data}
+  enableColumnResizing
+  enableColumnReordering
+  enableColumnPinning
+  enableColumnVisibility
+  initialState={{ columnPinning: { left: ['name'] } }}
+/>
+```
+
+## Props
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `enableColumnResizing` | `boolean` | `false` | Drag column edges to resize. |
+| `columnResizeMode` | `'onChange' \| 'onEnd'` | `'onChange'` | Apply resize live or on release. |
+| `enableColumnReordering` | `boolean` | `false` | Drag headers to reorder. |
+| `onColumnOrderChange` | `(order) => void` | — | Columns reordered. |
+| `enableColumnPinning` | `boolean` | `false` | Sticky left/right columns. |
+| `enableColumnVisibility` | `boolean` | `true` | Show/hide from the toolbar. |
+
+## Column sizing
+
+Set `size`, `minSize`, and `maxSize` on a `ColumnDef`. Because the grid uses CSS Grid (not an HTML
+`<table>`), min/max are respected and resizing one column never shifts its neighbours. Use `fitToScreen`
+to stretch columns to fill the width while still honouring min/max.

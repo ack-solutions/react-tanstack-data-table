@@ -1,0 +1,51 @@
+---
+title: Filtering
+---
+
+import LiveDemo from '@site/src/demo/LiveDemo';
+import { FilteringDemo } from '@site/src/demo/demos';
+
+# Filtering
+
+Two complementary tools: a **global search** box, and an **advanced column-filter** rule builder with
+per-type operators and AND/OR logic. Give a column a `type` to get the right operators and value inputs.
+
+<LiveDemo>{() => <FilteringDemo />}</LiveDemo>
+
+Type in the search box, or open the filter icon to build a rule (e.g. *Status equals Active*).
+
+## Column types & operators
+
+Set `type` on a `ColumnDef` to drive the operators and value input:
+
+| `type` | Operators |
+| --- | --- |
+| `text` (default) | contains, startsWith, endsWith, equals, notEquals, isEmpty, isNotEmpty |
+| `number` | equals, notEquals, greaterThan, lessThan, greaterThanOrEqual, lessThanOrEqual, isEmpty, isNotEmpty |
+| `date` | equals, notEquals, after, before, isEmpty, isNotEmpty |
+| `boolean` | is |
+| `select` | equals, notEquals, in, notIn, isEmpty, isNotEmpty (uses `options`) |
+
+```tsx
+const columns = [
+  { id: 'status', header: 'Status', accessorKey: 'status',
+    type: 'select', options: [{ label: 'Active', value: 'active' }] },
+];
+
+<DataTable columns={columns} data={data} enableGlobalFilter enableColumnFilter />
+```
+
+## Props
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `enableGlobalFilter` | `boolean` | `true` | Toolbar global search box. |
+| `enableColumnFilter` | `boolean` | `false` | Advanced column-filter rule builder. |
+| `filterMode` | `'client' \| 'server'` | `'client'` | Filter locally or on the server. |
+| `onGlobalFilterChange` | `(value) => void` | — | Global search changed. |
+| `onColumnFilterChange` | `(state, isApplied) => void` | — | Column filters changed/applied. |
+
+## Server-side
+
+With `filterMode="server"`, the global filter and the applied column filters are passed to
+[`onFetchData`](/features/server-side) instead of filtering locally.
