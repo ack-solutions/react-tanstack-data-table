@@ -41,8 +41,7 @@ import {
     generateRowId,
     withIdsDeep,
     useDebouncedFetch,
-    exportClientData,
-    exportServerData,
+    runExport,
     createLogger,
 } from '../utils';
 
@@ -235,10 +234,21 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
         exportChunkSize = 1000,
         exportStrictTotalCheck = false,
         exportSanitizeCSV = true,
+        exportMode = 'client',
+        exportSink = 'auto',
+        exportInterPageDelayMs = 0,
+        exportFetchConcurrency = 1,
+        exportMaxClientRows,
+        exportTruncateXlsx = false,
+        exportPollIntervalMs = 2000,
+        exportRenameDownload = false,
+        exportProgressEvery = 2000,
         onExportProgress,
         onExportComplete,
         onExportError,
         onServerExport,
+        onExportStream,
+        onExportPoll,
         onExportCancel,
         onExportStateChange,
 
@@ -335,6 +345,8 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
     const onExportCancelRef = useLatestRef(onExportCancel);
     const onExportStateChangeRef = useLatestRef(onExportStateChange);
     const onServerExportRef = useLatestRef(onServerExport);
+    const onExportStreamRef = useLatestRef(onExportStream);
+    const onExportPollRef = useLatestRef(onExportPoll);
 
     const fetchHandler = useEvent((filters: any, opts: any) => onFetchDataRef.current?.(filters, opts));
     const { debouncedFetch, isLoading: fetchLoading } = useDebouncedFetch<T>(fetchHandler);
@@ -1132,103 +1144,77 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
             isRowSelected: (rowId) => tableRef.current.getIsRowSelected(rowId) || false,
         };
 
+        // Page rows for export via the grid's own data fetch (without disturbing the visible page).
+        const fetchPageForExport = async (pageIndex: number, pageSize: number): Promise<{ data: any[]; total?: number }> => {
+            const handler = onFetchDataRef.current;
+            if (!handler) throw new Error('Server-data export needs onFetchData, onExportStream, or onServerExport.');
+            const base = curateExportFilters(tableRef.current.getState());
+            const result = await handler({ ...base, pagination: { pageIndex, pageSize } } as any, { reason: 'export' } as any);
+            return { data: result?.data ?? [], total: result?.total };
+        };
+
+        // Build the request OPTIONS from current grid state; runExport resolves the descriptor.
+        const buildExportRequestOptions = (format: 'csv' | 'excel', options: DataTableExportApiOptions) => {
+            const state = tableRef.current.getState() as any;
+            return {
+                format,
+                filename: options.filename ?? exportFilename,
+                onlyVisibleColumns: options.onlyVisibleColumns ?? true,
+                onlySelectedRows: options.onlySelectedRows,
+                columns: options.columns,
+                scope: options.scope,
+                includeHeaders: options.includeHeaders,
+                sanitizeCSV: options.sanitizeCSV ?? exportSanitizeCSV,
+                delimiter: options.delimiter,
+                filters: curateExportFilters(state),
+                sorting: state.sorting,
+                selection: tableRef.current.getSelectionState?.(),
+            };
+        };
+
+        const runUnifiedExport = async (format: 'csv' | 'excel', options: DataTableExportApiOptions) => {
+            const fn = options.filename ?? exportFilename;
+            const mode = options.mode ?? exportMode;
+            await runExportWithPolicy({
+                format,
+                filename: fn,
+                mode: mode === 'client' ? 'client' : 'server',
+                execute: async (controller) => {
+                    await runExport(tableRef.current, {
+                        mode,
+                        dataMode,
+                        request: buildExportRequestOptions(format, options),
+                        sink: exportSink,
+                        chunkSize: options.chunkSize ?? exportChunkSize,
+                        interPageDelayMs: exportInterPageDelayMs,
+                        fetchConcurrency: exportFetchConcurrency,
+                        maxClientRows: exportMaxClientRows,
+                        truncateXlsx: exportTruncateXlsx,
+                        pollIntervalMs: exportPollIntervalMs,
+                        renameDownload: exportRenameDownload,
+                        progressEvery: exportProgressEvery,
+                        signal: controller.signal,
+                        fetchPage: fetchPageForExport,
+                        onExportStream: onExportStreamRef.current,
+                        onServerExport: onServerExportRef.current,
+                        onExportPoll: onExportPollRef.current,
+                        onProgress: handleExportProgressInternal,
+                        onStateChange: (s) => handleExportStateChangeInternal({ ...s, mode, format, filename: fn }),
+                        onComplete: onExportCompleteRef.current,
+                        onError: onExportErrorRef.current,
+                    });
+                },
+            });
+        };
+
         api.export = {
-            exportCSV: async (options: DataTableExportApiOptions = {}) => {
-                const fn = options.filename ?? exportFilename;
-                const mode: 'client' | 'server' = dataMode === 'server' && !!onServerExportRef.current ? 'server' : 'client';
-                await runExportWithPolicy({
-                    format: 'csv',
-                    filename: fn,
-                    mode,
-                    execute: async (controller) => {
-                        const common = {
-                            format: 'csv' as const,
-                            filename: fn,
-                            onProgress: handleExportProgressInternal,
-                            onComplete: onExportCompleteRef.current,
-                            onError: onExportErrorRef.current,
-                            onStateChange: (s: any) => handleExportStateChangeInternal({ ...s, mode, format: 'csv', filename: fn }),
-                            signal: controller.signal,
-                            sanitizeCSV: options.sanitizeCSV ?? exportSanitizeCSV,
-                        };
-                        if (mode === 'server' && onServerExportRef.current) {
-                            await exportServerData(tableRef.current, {
-                                ...common,
-                                fetchData: (filters: any, selection: any, signal?: AbortSignal) => onServerExportRef.current?.(filters, selection, signal),
-                                currentFilters: curateExportFilters(tableRef.current.getState()),
-                                selection: tableRef.current.getSelectionState?.(),
-                                chunkSize: options.chunkSize ?? exportChunkSize,
-                                strictTotalCheck: options.strictTotalCheck ?? exportStrictTotalCheck,
-                            });
-                            return;
-                        }
-                        await exportClientData(tableRef.current, common);
-                    },
-                });
-            },
-            exportExcel: async (options: DataTableExportApiOptions = {}) => {
-                const fn = options.filename ?? exportFilename;
-                const mode: 'client' | 'server' = dataMode === 'server' && !!onServerExportRef.current ? 'server' : 'client';
-                await runExportWithPolicy({
-                    format: 'excel',
-                    filename: fn,
-                    mode,
-                    execute: async (controller) => {
-                        const common = {
-                            format: 'excel' as const,
-                            filename: fn,
-                            onProgress: handleExportProgressInternal,
-                            onComplete: onExportCompleteRef.current,
-                            onError: onExportErrorRef.current,
-                            onStateChange: (s: any) => handleExportStateChangeInternal({ ...s, mode, format: 'excel', filename: fn }),
-                            signal: controller.signal,
-                            sanitizeCSV: options.sanitizeCSV ?? exportSanitizeCSV,
-                        };
-                        if (mode === 'server' && onServerExportRef.current) {
-                            await exportServerData(tableRef.current, {
-                                ...common,
-                                fetchData: (filters: any, selection: any, signal?: AbortSignal) => onServerExportRef.current?.(filters, selection, signal),
-                                currentFilters: curateExportFilters(tableRef.current.getState()),
-                                selection: tableRef.current.getSelectionState?.(),
-                                chunkSize: options.chunkSize ?? exportChunkSize,
-                                strictTotalCheck: options.strictTotalCheck ?? exportStrictTotalCheck,
-                            });
-                            return;
-                        }
-                        await exportClientData(tableRef.current, common);
-                    },
-                });
-            },
-            exportServerData: async (options) => {
-                const { format, filename: fn = exportFilename, fetchData: customFetchData } = options;
-                await runExportWithPolicy({
-                    format,
-                    filename: fn,
-                    mode: 'server',
-                    execute: async (controller) => {
-                        await exportServerData(tableRef.current, {
-                            format,
-                            filename: fn,
-                            fetchData: customFetchData,
-                            currentFilters: curateExportFilters(tableRef.current.getState()),
-                            selection: tableRef.current.getSelectionState?.(),
-                            onProgress: handleExportProgressInternal,
-                            onComplete: onExportCompleteRef.current,
-                            onError: onExportErrorRef.current,
-                            onStateChange: (s: any) => handleExportStateChangeInternal({ ...s, mode: 'server', format, filename: fn }),
-                            signal: controller.signal,
-                            chunkSize: options.chunkSize ?? exportChunkSize,
-                            strictTotalCheck: options.strictTotalCheck ?? exportStrictTotalCheck,
-                            sanitizeCSV: options.sanitizeCSV ?? exportSanitizeCSV,
-                        });
-                    },
-                });
-            },
+            exportCSV: (options: DataTableExportApiOptions = {}) => runUnifiedExport('csv', options),
+            exportExcel: (options: DataTableExportApiOptions = {}) => runUnifiedExport('excel', options),
             isExporting: () => exportControllerRef.current != null,
             cancelExport: () => handleCancelExport(),
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [dataMode, exportChunkSize, exportFilename, exportSanitizeCSV, exportStrictTotalCheck, fetchData, handleCancelExport, handleColumnFilterChangeHandler, handleExportProgressInternal, handleExportStateChangeInternal, initialStateConfig, resetAllAndReload, runExportWithPolicy, triggerRefresh, tableTotalRow, getRowId, tableRef, uiRef, serverDataRef, dataRef, enablePagination]);
+    }, [dataMode, exportChunkSize, exportFilename, exportSanitizeCSV, exportStrictTotalCheck, exportMode, exportSink, exportInterPageDelayMs, exportFetchConcurrency, exportMaxClientRows, exportTruncateXlsx, exportPollIntervalMs, exportRenameDownload, exportProgressEvery, fetchData, handleCancelExport, handleColumnFilterChangeHandler, handleExportProgressInternal, handleExportStateChangeInternal, initialStateConfig, resetAllAndReload, runExportWithPolicy, triggerRefresh, tableTotalRow, getRowId, tableRef, uiRef, serverDataRef, dataRef, enablePagination]);
 
     const handleColumnReorder = useCallback(
         (draggedId: string, targetId: string) => {

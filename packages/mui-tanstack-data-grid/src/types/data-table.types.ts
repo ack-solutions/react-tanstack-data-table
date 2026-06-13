@@ -18,6 +18,11 @@ import type {
     ExportConcurrencyMode,
     ExportProgressPayload,
     ExportStateChange,
+    ExportMode,
+    ExportSink,
+    ExportRequest,
+    ExportJobRef,
+    ExportJobStatus,
     ServerExportResult,
 } from './export.types';
 import type {
@@ -63,20 +68,43 @@ export interface DataTableProps<T> {
     onRefreshData?: (context: DataRefreshContext) => void | Promise<void>;
 
     // ── Export ────────────────────────────────────────────────────────────
+    /** Where export work happens. Default `'client'`; switch per call via the API too. */
+    exportMode?: ExportMode;
     exportFilename?: string;
     exportConcurrency?: ExportConcurrencyMode;
+    /** Rows per page when paging server data for export (default 1000). */
     exportChunkSize?: number;
     exportStrictTotalCheck?: boolean;
     exportSanitizeCSV?: boolean;
+    /** Client file sink: `'auto'` (stream where supported), `'stream'`, or `'blob'`. */
+    exportSink?: ExportSink;
+    /** Delay between paged fetches in ms. Default `0`. Raise for rate-limited APIs. */
+    exportInterPageDelayMs?: number;
+    /** Concurrent paged fetches when the total is known. Default `1` (sequential). */
+    exportFetchConcurrency?: number;
+    /** Max rows the client will build into a file before erroring (guard). */
+    exportMaxClientRows?: number;
+    /** Truncate XLSX at Excel's row cap instead of throwing. Default `false`. */
+    exportTruncateXlsx?: boolean;
+    /** Poll interval for `server-async` jobs in ms. Default `2000`. */
+    exportPollIntervalMs?: number;
+    /** Force a renamed download for `{ fileUrl }` (buffers — avoid for huge files). */
+    exportRenameDownload?: boolean;
+    /** Emit progress at most every N rows (kills the per-row render storm). Default `2000`. */
+    exportProgressEvery?: number;
     onExportProgress?: (progress: ExportProgressPayload) => void;
     onExportComplete?: (result: { success: boolean; filename: string; totalRows: number }) => void;
     onExportError?: (error: { message: string; code: string }) => void;
     onExportStateChange?: (state: ExportStateChange) => void;
-    onServerExport?: (
-        filters?: Partial<TableState>,
-        selection?: SelectionState,
-        signal?: AbortSignal,
-    ) => Promise<ServerExportResult<any>>;
+    /**
+     * `server-file` / `server-async`: the server builds the finished file from the
+     * {@link ExportRequest} and returns `{ blob }`, `{ fileUrl }`, or `{ jobId }`.
+     */
+    onServerExport?: (request: ExportRequest, signal?: AbortSignal) => Promise<ServerExportResult<T>>;
+    /** `server-data`: stream raw rows from the server; the client formats + writes them. */
+    onExportStream?: (request: ExportRequest, signal?: AbortSignal) => AsyncIterable<T[]> | Promise<AsyncIterable<T[]>>;
+    /** `server-async`: poll an export job until it is ready (or errors). */
+    onExportPoll?: (job: ExportJobRef, signal?: AbortSignal) => Promise<ExportJobStatus>;
     onExportCancel?: () => void;
 
     // ── Selection ─────────────────────────────────────────────────────────

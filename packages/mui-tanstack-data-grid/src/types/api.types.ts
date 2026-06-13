@@ -8,7 +8,7 @@ import type {
 
 import type { ColumnFilterState } from './filter.types';
 import type { SelectionState } from './selection.types';
-import type { ServerExportResult } from './export.types';
+import type { ServerExportResult, ExportMode, ExportScope } from './export.types';
 import type { TableState, TableFilters, PaginationModel } from './state.types';
 
 export interface DataRefreshApiOptions {
@@ -21,9 +21,16 @@ export type DataRefreshApiInput = boolean | DataRefreshApiOptions;
 
 export interface DataTableExportApiOptions {
     filename?: string;
+    /** Override the table's `exportMode` for this one export. */
+    mode?: ExportMode;
+    /** Force a scope; otherwise derived from selection + active filters. */
+    scope?: ExportScope;
+    /** Explicit column-id whitelist (in order); otherwise visible columns. */
+    columns?: string[];
     onlyVisibleColumns?: boolean;
     onlySelectedRows?: boolean;
     includeHeaders?: boolean;
+    delimiter?: string;
     chunkSize?: number;
     strictTotalCheck?: boolean;
     sanitizeCSV?: boolean;
@@ -158,22 +165,10 @@ export interface DataTableApi<T = any> {
     };
 
     export: {
+        /** Export to CSV using the active (or per-call) export mode. */
         exportCSV: (options?: DataTableExportApiOptions) => Promise<void>;
+        /** Export to XLSX (small/medium only — Excel caps at 1,048,576 rows). */
         exportExcel: (options?: DataTableExportApiOptions) => Promise<void>;
-        exportServerData: (options: {
-            format: 'csv' | 'excel';
-            filename?: string;
-            fetchData: (
-                filters?: Partial<TableFilters>,
-                selection?: SelectionState,
-                signal?: AbortSignal,
-            ) => Promise<ServerExportResult<T>>;
-            pageSize?: number;
-            includeHeaders?: boolean;
-            chunkSize?: number;
-            strictTotalCheck?: boolean;
-            sanitizeCSV?: boolean;
-        }) => Promise<void>;
         isExporting: () => boolean;
         cancelExport: () => void;
     };

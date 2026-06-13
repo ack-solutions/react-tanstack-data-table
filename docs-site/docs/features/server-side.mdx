@@ -5,75 +5,204 @@ sidebar_label: Server-side
 
 # Server-side data
 
-For large datasets, let your backend handle sorting, filtering, and pagination. The grid manages state,
-debounces and de-duplicates requests, cancels stale ones, and shows loading skeletons.
+For large datasets, let your backend handle sorting, filtering, and pagination — the grid sends the
+current state and renders whatever rows you give it back (it does **not** re-sort/filter/paginate server
+data on the client).
 
-## Setup
+There are **two ways** to wire this up. Pick whichever fits how your app already fetches data:
 
-Set `dataMode="server"`, provide `onFetchData`, and pass `rowCount` (the server total).
+| Approach | You provide | The grid… | Best when |
+| --- | --- | --- | --- |
+| **A. `onFetchData`** | a fetch callback | calls it (debounced, race-safe) and stores the result | the grid owns the data lifecycle |
+| **B. Controlled `data`** | `data` + `rowCount` + `onDataStateChange` | renders your `data`, tells you when to refetch | you already use React Query / SWR / Redux |
+
+Both require telling the grid the data is server-managed — either `dataMode="server"` (all three) or the
+[granular modes](#granular-server-modes).
+
+---
+
+## Approach A — `onFetchData` (grid-driven)
+
+Set `dataMode="server"` and provide `onFetchData`. The grid calls it on mount and whenever the
+server-delegated state changes, returning the page to render plus the grand total.
 
 ```tsx
 <DataTable
   columns={columns}
   dataMode="server"
-  rowCount={total}
   enablePagination
   enableSorting
   enableGlobalFilter
+  enableColumnFilter
   onFetchData={async (filters, meta) => {
-    const res = await fetch(`/api/users?${toQuery(filters)}`, { signal: meta?.signal });
+    const res = await fetch('/api/users', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(buildQuery(filters)),   // see "The request payload" below
+    });
     const json = await res.json();
-    return { data: json.rows, total: json.total };
+    return { data: json.rows, total: json.total };  // <- total drives the pager
   }}
 />
 ```
 
-## The `onFetchData` handler
+- **Debounced + race-safe.** Rapid changes (typing in search) collapse into one call (300 ms), and only
+  the **latest** response is applied — stale responses are dropped automatically. You don't need to
+  cancel requests yourself. *(There is no `signal` on `meta`; if you want hard cancellation, manage your
+  own `AbortController` keyed off `meta.reason`.)*
+- **No `rowCount` needed** in this mode — the `total` you return is authoritative.
+- `meta` tells you *why* the fetch fired: `{ reason: 'initial' | 'state-change' | 'refresh' | 'reload' | 'reset', force?, delay? }`.
+
+### The request payload (what `filters` contains)
+
+`filters` is everything the server needs to build the query. This is the shape you map to your API:
 
 ```ts
-onFetchData: (filters, meta) => Promise<{ data: T[]; total: number }>
+interface TableFilters {
+  pagination?: { pageIndex: number; pageSize: number };
+  sorting?: { id: string; desc: boolean }[];
+  globalFilter?: string;          // the toolbar search box
+  columnFilter?: {
+    filters: {
+      id: string;                 // rule id
+      columnId: string;           // which column
+      operator: string;           // 'contains' | 'equals' | 'greaterThan' | 'in' | … (per column type)
+      value: any;
+      columnType?: string;        // 'text' | 'number' | 'date' | 'select' | …
+    }[];
+    logic: 'AND' | 'OR';          // how the rules combine
+  };
+}
 ```
 
-`filters` carries everything the server needs:
+The advanced column filters arrive **already applied** (the `filters` array + `logic`); the
+`pendingFilters` the user is still editing are not sent. See [Filtering](/features/filtering) for the
+operators each column type exposes.
 
-| Field | Description |
-| --- | --- |
-| `pagination` | `{ pageIndex, pageSize }` |
-| `sorting` | `[{ id, desc }]` |
-| `globalFilter` | the search string |
-| `columnFilter` | applied column-filter rules + AND/OR logic |
+#### Mapping `filters` to your backend
 
-The grid calls `onFetchData` on mount (unless `initialLoadData={false}`) and whenever the relevant state
-changes. Rapid changes (typing in search) are **debounced**, and only the latest response is applied.
+A small translator keeps `onFetchData` clean — read each field and emit your query (REST params, a JSON
+body, GraphQL variables, SQL, …):
+
+```ts
+function buildQuery(filters: TableFilters) {
+  const { pageIndex = 0, pageSize = 25 } = filters.pagination ?? {};
+  return {
+    offset: pageIndex * pageSize,
+    limit: pageSize,
+    // sorting: [{ id, desc }] -> "name:asc,createdAt:desc"
+    sort: (filters.sorting ?? []).map((s) => `${s.id}:${s.desc ? 'desc' : 'asc'}`).join(','),
+    search: filters.globalFilter || undefined,
+    // advanced rules -> your own WHERE representation
+    where: {
+      op: filters.columnFilter?.logic ?? 'AND',                 // combine with AND / OR
+      rules: (filters.columnFilter?.filters ?? []).map((r) => ({
+        field: r.columnId,
+        operator: r.operator,                                   // map to your DB operator
+        value: r.value,
+      })),
+    },
+  };
+}
+```
+
+> **Keep the response to the current page.** In server mode the grid renders exactly the rows you return
+> (no client paging). Return `pageSize` rows and the true `total`.
+
+---
+
+## Approach B — controlled `data` (you fetch it yourself)
+
+You are **not** required to use `onFetchData`. If you already fetch data with React Query, SWR, Redux,
+etc., just feed the grid your rows via `data` + `rowCount`, mark the concerns as server-managed, and
+listen to **`onDataStateChange`** to know when to refetch.
+
+```tsx
+function UsersTable() {
+  const [params, setParams] = useState({ pageIndex: 0, pageSize: 25, sorting: [], columnFilter: undefined, globalFilter: '' });
+
+  // YOUR fetch — React Query, SWR, anything. The grid never calls it.
+  const { data, isLoading } = useQuery(['users', params], () => fetchUsers(buildQuery(params)));
+
+  return (
+    <DataTable
+      columns={columns}
+      dataMode="server"
+      data={data?.rows ?? []}      // <- you set the rows directly
+      rowCount={data?.total ?? 0}  // <- and the total
+      loading={isLoading}
+      enablePagination
+      enableSorting
+      enableGlobalFilter
+      enableColumnFilter
+      // Fires whenever sort / page / filter / column state changes -> refetch with the new state:
+      onDataStateChange={(state) => setParams((p) => ({ ...p, ...state }))}
+    />
+  );
+}
+```
+
+`onDataStateChange(state)` gives you the full snapshot — `sorting`, `pagination`, `globalFilter`,
+`columnFilter`, plus column visibility / sizing / order / pinning — so you refetch with the exact same
+fields documented above. The grid renders your `data` as-is and keeps the pager honest via `rowCount`.
+
+> Use `loading` to show the grid's skeletons while your own request is in flight.
+
+---
 
 ## Granular server modes
 
-You don't have to move everything server-side at once. Opt in per concern:
+You don't have to move everything server-side at once. Opt in per concern — the rest stays client-side
+(and the grid keeps sorting/filtering/paging *those* locally):
 
 ```tsx
 <DataTable
   sortingMode="server"
   filterMode="server"
   paginationMode="server"
-  /* ...the rest stays client-side */
+  /* anything left as 'client' is processed in the browser */
 />
 ```
-`dataMode="server"` is shorthand for all three.
 
-## Server-side export
+`dataMode="server"` is shorthand for all three. This works with **either** approach above — `onFetchData`
+fires (or `onDataStateChange` notifies) only for the concerns you delegated.
 
-Provide `onServerExport(filters, selection, signal)`; the grid pages through your data in chunks
-(honouring filters and selection), builds the CSV/Excel file, reports progress, and supports
-cancellation. It also accepts a ready-made `{ blob }` or `{ fileUrl }` response if your server generates
-the file. See [Export](/features/export).
+## The `onFetchData` contract, at a glance
+
+```ts
+onFetchData: (filters: TableFilters, meta: DataFetchMeta) => Promise<{ data: T[]; total: number }>
+```
+
+| Field | Description |
+| --- | --- |
+| `filters.pagination` | `{ pageIndex, pageSize }` |
+| `filters.sorting` | `[{ id, desc }]` |
+| `filters.globalFilter` | the search string |
+| `filters.columnFilter` | `{ filters: Rule[], logic: 'AND' \| 'OR' }` — applied advanced rules |
+| `meta.reason` | why it fired (`'initial'`, `'state-change'`, `'refresh'`, `'reload'`, `'reset'`) |
+
+The grid calls `onFetchData` on mount (unless `initialLoadData={false}`) and on every relevant change.
+`onFetchStateChange(filters, meta)` fires *just before* each fetch — handy for syncing the URL or logging.
+
+## Exporting server data
+
+Server data has its own [export modes](/features/export#the-four-export-modes), so the browser never has
+to hold or build a huge file:
+
+- **`client`** (default) reuses `onFetchData` to page through everything, then formats + writes on the client.
+- **`server-data`** streams rows from `onExportStream` (the client still formats).
+- **`server-file`** / **`server-async`** hand the whole `ExportRequest` (columns + selection + filters) to
+  your backend, which builds the file and returns `{ blob }`, `{ fileUrl }`, or a `{ jobId }` to poll.
+
+For 1M+ rows, prefer a server mode with CSV. See [Export](/features/export) for the full contract.
 
 ## Imperative data API
 
-Refresh and mutate data through `apiRef.current.data`:
+Refresh and mutate through `apiRef.current.data`:
 
 ```ts
-apiRef.current.data.refresh();            // re-run onFetchData
-apiRef.current.data.reload();             // reload keeping state
+apiRef.current.data.refresh();            // re-run the fetch (or fire onDataStateChange) with current state
+apiRef.current.data.reload();             // reload, keeping state
 apiRef.current.data.updateRow(id, patch); // optimistic local update
 apiRef.current.data.deleteSelectedRows();
 ```

@@ -8,10 +8,11 @@ import { ExportDemo } from '@site/src/demo/demos';
 
 # Export
 
-Export to **CSV** or **Excel** from the toolbar menu, or imperatively via `apiRef`. Honours column
-visibility and per-column export options. Excel uses `xlsx`, which is **lazy-loaded** only when you
-export Excel — it isn't in your initial bundle. Server-side export streams in chunks with progress and
-cancellation.
+Export the grid to **CSV** or **Excel** — from the toolbar menu or imperatively via `apiRef`. One
+descriptor (the **`ExportRequest`**) decides *which columns*, *which rows*, and *what formatting* an
+export covers; an **export mode** decides *where the file is built*. The default mode (`client`) needs
+no backend at all. For very large datasets (hundreds of thousands → millions of rows), switch to a
+**server mode** so the browser never has to hold or build the whole file.
 
 <LiveDemo>{() => <ExportDemo />}</LiveDemo>
 
@@ -20,34 +21,336 @@ Open the export icon in the toolbar and choose CSV or Excel — a file downloads
 ```tsx
 <DataTable columns={columns} data={data} enableExport exportFilename="users" />
 
-// or imperatively
+// …or imperatively
 apiRef.current?.export.exportCSV();
 apiRef.current?.export.exportExcel();
+apiRef.current?.export.exportCSV({ mode: 'server-file', onlySelectedRows: true });
+```
+
+## The four export modes
+
+Set `exportMode` (default `'client'`), or override per call with `exportCSV({ mode })`.
+
+| Mode | Who fetches rows | Who formats columns | Who builds the file | Client memory | Backend needed |
+| --- | --- | --- | --- | --- | --- |
+| **`client`** _(default)_ | client (in-memory, or pages `onFetchData`) | **client** | client (streams to disk where supported) | bounded | none |
+| **`server-data`** | server **streams** rows (`onExportStream`) | **client** | client (stream-writes) | bounded | streaming endpoint |
+| **`server-file`** | server | **server** | server → `{ blob }` / `{ fileUrl }` | ~0 | export endpoint |
+| **`server-async`** | server (job) | **server** | server job → `{ fileUrl }` | ~0 | job + storage |
+
+**Rule of thumb:** `client` up to ~100k rows; **CSV** + a **server mode** above that. Excel (XLSX) is
+capped by the format itself at **1,048,576 rows per sheet** — see [Limits](#format-policy--limits).
+
+## How columns, rows & formatting flow — the `ExportRequest`
+
+For **every** export the grid builds one descriptor from live state, so behaviour is identical no matter
+where the file is built:
+
+```ts
+interface ExportRequest {
+  format: 'csv' | 'excel';
+  filename: string;
+  columns: { id: string; header: string; format?: ValueFormat }[]; // visible, non-hideInExport, in display order
+  scope: 'all' | 'filtered' | 'selected';
+  selection?: SelectionState;   // include/exclude ids (when scope === 'selected')
+  filters?: unknown;            // current global + column filters
+  sorting?: unknown;            // current sort
+  includeHeaders?: boolean;
+  delimiter?: string;
+  sanitizeCSV?: boolean;
+}
+```
+
+- **`client` / `server-data`** keep formatting on the client — the server only supplies raw rows, the
+  grid applies your column transforms. The server receives just `filters` / `sorting` / `selection`.
+- **`server-file` / `server-async`** send the **whole** `ExportRequest` (including `columns` + headers +
+  `format` hints) so the server can produce exactly the visible columns, formatted, in order.
+
+### Choosing what to export
+
+Pass options to `exportCSV` / `exportExcel` (or set table-level defaults):
+
+| Option | Type | Default | Effect |
+| --- | --- | --- | --- |
+| `onlyVisibleColumns` | `boolean` | `true` | Export visible columns, else all leaf columns. |
+| `columns` | `string[]` | — | Explicit column-id whitelist, in the given order. |
+| `scope` | `'all' \| 'filtered' \| 'selected'` | _derived_ | Force a scope; otherwise inferred from selection + active filters. |
+| `onlySelectedRows` | `boolean` | `false` | Shortcut: export the current selection. |
+| `includeHeaders` | `boolean` | `true` | Write a header row. |
+| `delimiter` | `string` | `,` | CSV delimiter. |
+
+```tsx
+// Export only the selected rows, only the Name + Email columns:
+apiRef.current?.export.exportCSV({
+  onlySelectedRows: true,
+  columns: ['name', 'email'],
+  filename: 'selected-contacts',
+});
 ```
 
 ## Per-column export options
 
-Set these on a `ColumnDef`:
+Set these on any `ColumnDef` — they apply across **all** modes. For `client` / `server-data`,
+`exportValue` / `exportFormat` functions run client-side; for `server-file` / `server-async` the server
+formats, using the `header` + `format` hint carried in the request.
 
-| Option | Description |
+| Option | Type | Description |
+| --- | --- | --- |
+| `hideInExport` | `boolean` | Exclude the column from every export. |
+| `exportHeader` | `string \| (ctx) => string` | Override the column's export header. |
+| `exportValue` | `(ctx) => any` | Transform the raw value before formatting. |
+| `exportFormat` | `'auto' \| 'string' \| 'number' \| 'boolean' \| 'json' \| 'date' \| (ctx) => any` | Coerce/format the value. |
+
+```tsx
+const columns = [
+  { id: 'name', header: 'Name', accessorKey: 'name' },
+  { id: 'createdAt', header: 'Created', accessorKey: 'createdAt',
+    exportHeader: 'Created (ISO)', exportFormat: 'date' },
+  { id: 'actions', header: '', cell: ActionsCell, hideInExport: true },
+];
+```
+
+---
+
+## Mode 1 — `client` (default)
+
+The browser fetches the rows (already in memory for client data, or pages your `onFetchData` for server
+data), formats them with your column defs, and writes the file. CSV is written **incrementally**:
+
+- **Chromium (secure context):** with `exportSink: 'auto'` (default) the file streams straight to disk
+  via the File System Access API — near-constant memory. The save dialog opens on click.
+- **Everywhere else:** falls back to an in-memory Blob (bounded by total file size — fine to hundreds of
+  MB). Set `exportSink: 'blob'` to always use this path (silent auto-download, no save dialog).
+
+Formatting runs on the main thread with **cooperative yields** (the UI keeps responding) and progress is
+throttled to every `exportProgressEvery` rows — not per row. There is no Web Worker by default, because
+`exportValue` / `exportFormat` can be functions, which can't cross a Worker boundary. For genuinely huge
+exports, prefer a server mode.
+
+```tsx
+<DataTable
+  columns={columns}
+  data={data}
+  enableExport
+  exportMode="client"          // default
+  exportSink="auto"            // 'auto' | 'stream' | 'blob'
+  exportInterPageDelayMs={0}    // server data: delay between pages (raise for rate limits)
+  exportFetchConcurrency={6}    // server data: pages in flight at once
+/>
+```
+
+> **Paging server data in `client` mode:** the grid reuses `onFetchData` to page through everything
+> (without disturbing the visible page). The old hard-coded 100 ms inter-page delay is gone — it defaults
+> to `0` and is configurable via `exportInterPageDelayMs`.
+
+---
+
+## Mode 2 — `server-data` (server streams rows, client formats)
+
+The server streams the raw filtered/sorted rows; the client formats them and stream-writes the file.
+Provide **`onExportStream`**, returning an `AsyncIterable<TData[]>` (batches of rows):
+
+```tsx
+<DataTable
+  columns={columns}
+  dataMode="server"
+  enableExport
+  exportMode="server-data"
+  onExportStream={async function* (request, signal) {
+    const res = await fetch('/api/users/export-stream', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ filters: request.filters, sorting: request.sorting, selection: request.selection }),
+      signal,
+    });
+    // Server responds with NDJSON (one JSON row per line), flushed as it reads the DB cursor.
+    const reader = res.body!.getReader();
+    const decoder = new TextDecoder();
+    let buf = '';
+    let batch: User[] = [];
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, { stream: true });
+      let nl: number;
+      while ((nl = buf.indexOf('\n')) >= 0) {
+        const line = buf.slice(0, nl); buf = buf.slice(nl + 1);
+        if (line.trim()) batch.push(JSON.parse(line));
+        if (batch.length >= 1000) { yield batch; batch = []; }
+      }
+    }
+    if (batch.length) yield batch;
+  }}
+/>
+```
+
+```js
+// Server (Node/Express) — stream a keyset cursor as NDJSON, O(1) memory:
+app.post('/api/users/export-stream', async (req, res) => {
+  res.setHeader('content-type', 'application/x-ndjson');
+  for await (const row of streamUsersByKeyset(req.body)) res.write(JSON.stringify(row) + '\n');
+  res.end();
+});
+```
+
+---
+
+## Mode 3 — `server-file` (server builds the file)
+
+The server formats and builds the finished file from the full `ExportRequest` (so it knows the visible
+columns, headers, order, selection, filters, and sort). Provide **`onServerExport`**, returning
+`{ blob }` or `{ fileUrl }`:
+
+```tsx
+<DataTable
+  columns={columns}
+  dataMode="server"
+  enableExport
+  exportMode="server-file"
+  onServerExport={async (request, signal) => {
+    const res = await fetch('/api/users/export', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(request),   // columns + headers + scope + selection + filters + sort + format
+      signal,
+    });
+    const { url } = await res.json();
+    return { fileUrl: url };           // or: return { blob: await res.blob() }
+  }}
+/>
+```
+
+`{ fileUrl }` is downloaded via native `<a download>` navigation — the browser's download manager
+streams it to disk **outside JS** (O(1) memory). Two common server shapes:
+
+- **Stream the response** — the endpoint sets `Content-Disposition: attachment` and streams the CSV with
+  chunked transfer encoding; return its URL.
+- **Generate to storage** — write the file to S3/GCS, return a short-lived **presigned URL**.
+
+> The lib does **not** `fetch().blob()` a `fileUrl` (that would buffer the whole file). It navigates to
+> it. Set `exportRenameDownload` only if you must force the saved filename across origins (that path
+> buffers — unsuitable for huge files).
+
+---
+
+## Mode 4 — `server-async` (job + poll)
+
+For exports that take minutes (millions of rows), no HTTP request should stay open. The server enqueues a
+job and returns `{ jobId }`; the client polls until a `{ fileUrl }` is ready. Provide **`onServerExport`**
+(returns the job) and **`onExportPoll`** (returns status):
+
+```tsx
+<DataTable
+  columns={columns}
+  dataMode="server"
+  enableExport
+  exportMode="server-async"
+  exportPollIntervalMs={2000}
+  onServerExport={async (request) => {
+    const { jobId, statusUrl } = await api.post('/api/exports', request);
+    return { jobId, statusUrl };
+  }}
+  onExportPoll={async (job, signal) => {
+    const s = await api.get(job.statusUrl ?? `/api/exports/${job.jobId}`, { signal });
+    return {
+      status: s.state,            // 'pending' | 'processing' | 'ready' | 'error'
+      fileUrl: s.url,             // present when status === 'ready'
+      percentage: s.pct,
+      totalRows: s.total,
+      message: s.error,
+    };
+  }}
+/>
+```
+
+The grid surfaces job progress through the normal lifecycle (`waiting` phase + `percentage`) and supports
+cancellation via `apiRef.current.export.cancelExport()`.
+
+---
+
+## Progress, lifecycle & cancellation
+
+Every mode drives the same lifecycle. Subscribe via callbacks:
+
+```tsx
+<DataTable
+  enableExport
+  onExportStateChange={(s) => setPhase(s.phase)}   // see phases below
+  onExportProgress={({ processedRows, totalRows, percentage }) => setPct(percentage)}
+  onExportComplete={({ filename, totalRows }) => toast(`Saved ${filename} (${totalRows} rows)`)}
+  onExportError={({ message }) => toast.error(message)}
+  onExportCancel={() => toast('Export cancelled')}
+/>
+```
+
+| `ExportPhase` | Meaning |
 | --- | --- |
-| `hideInExport` | Exclude the column from exports. |
-| `exportHeader` | Override the export header (string or function). |
-| `exportValue` | Transform the exported value. |
-| `exportFormat` | `'auto' \| 'string' \| 'number' \| 'boolean' \| 'json' \| 'date'` or a function. |
+| `starting` | Export began. |
+| `fetching` | Pulling rows (client / server-data). |
+| `processing` | Formatting / server is building the file. |
+| `waiting` | Async server job is running (`server-async`). |
+| `downloading` | Writing / downloading the file. |
+| `completed` / `cancelled` / `error` | Terminal states. |
 
-## Props
+```tsx
+apiRef.current?.export.cancelExport();   // abort the running export
+apiRef.current?.export.isExporting();    // boolean
+```
+
+`exportConcurrency` controls what happens if an export starts while one is running:
+`'cancelAndRestart'` (default), `'queue'`, or `'ignoreIfRunning'`.
+
+## Format policy & limits
+
+- **Prefer CSV for large exports.** CSV has no row limit and streams trivially.
+- **Excel (XLSX) caps at 1,048,576 rows per sheet.** Beyond it, `exportExcel` throws (set
+  `exportTruncateXlsx` to cap-and-truncate instead). XLSX is built whole in memory (it can't stream
+  line-by-line), and `xlsx` is **lazy-loaded** only when you export Excel — it's not in your initial
+  bundle. Use a server mode for large Excel.
+- **CSV-injection sanitization is on by default** (`exportSanitizeCSV`) — leading `=`, `+`, `-`, `@`,
+  TAB, and CR are neutralized so spreadsheets don't execute cell content as a formula.
+
+## Caveats
+
+- **File System Access streaming is Chromium-only.** Firefox/Safari fall back to the in-memory Blob path,
+  which is bounded by device RAM — not a reliable 1M+ path. Use a server mode for guaranteed scale.
+- **iOS Safari ignores the `download` attribute** — client-generated blobs open inline. For a guaranteed
+  save on iOS, deliver via a server URL with `Content-Disposition: attachment` (a server mode).
+- **Validate `fileUrl` server-side.** The lib only follows `http(s)` / `blob` URLs, but you should still
+  ensure your endpoint returns trusted URLs (no open-redirect / SSRF).
+
+## Props reference
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
 | `enableExport` | `boolean` | `false` | Show the toolbar export menu. |
+| `exportMode` | `'client' \| 'server-data' \| 'server-file' \| 'server-async'` | `'client'` | Where the file is built. |
 | `exportFilename` | `string` | `'export'` | Base filename. |
-| `exportChunkSize` | `number` | `1000` | Rows per chunk for server export. |
+| `exportSink` | `'auto' \| 'stream' \| 'blob'` | `'auto'` | Client file sink. |
+| `exportChunkSize` | `number` | `1000` | Rows per page when paging server data. |
+| `exportInterPageDelayMs` | `number` | `0` | Delay between paged fetches. |
+| `exportFetchConcurrency` | `number` | `1` | Concurrent paged fetches (known total). |
+| `exportMaxClientRows` | `number` | `1000000` | Guard for client-built files. |
+| `exportTruncateXlsx` | `boolean` | `false` | Truncate XLSX at the row cap instead of throwing. |
+| `exportPollIntervalMs` | `number` | `2000` | Poll interval for `server-async`. |
+| `exportRenameDownload` | `boolean` | `false` | Force a renamed (buffered) `fileUrl` download. |
+| `exportProgressEvery` | `number` | `2000` | Emit progress at most every N rows. |
 | `exportConcurrency` | `'cancelAndRestart' \| 'queue' \| 'ignoreIfRunning'` | `'cancelAndRestart'` | Concurrent-export policy. |
-| `onServerExport` | `(filters, selection, signal) => Promise` | — | Server export data source. |
-| `onExportProgress` | `(progress) => void` | — | Export progress. |
+| `exportSanitizeCSV` | `boolean` | `true` | Neutralize CSV formula injection. |
+| `onServerExport` | `(request, signal) => Promise` | — | `server-file` / `server-async` builder. |
+| `onExportStream` | `(request, signal) => AsyncIterable` | — | `server-data` row source. |
+| `onExportPoll` | `(job, signal) => Promise` | — | `server-async` poll. |
+| `onExportProgress` / `onExportComplete` / `onExportError` / `onExportStateChange` / `onExportCancel` | callbacks | — | Lifecycle. |
 
-## Server-side export
+## API
 
-Provide `onServerExport` and the grid will page through your data in chunks (honouring filters and
-selection), build the file, and report progress — cancellable via `apiRef.current.export.cancelExport()`.
+```ts
+// options: { mode, scope, columns, onlyVisibleColumns, onlySelectedRows, filename, delimiter, includeHeaders, chunkSize, sanitizeCSV }
+apiRef.current.export.exportCSV(options?);
+apiRef.current.export.exportExcel(options?);
+apiRef.current.export.isExporting();      // boolean
+apiRef.current.export.cancelExport();
+```
+
+See [Server-side data](/features/server-side) for the `onFetchData` contract that `client` and
+`server-data` modes reuse for paging.
