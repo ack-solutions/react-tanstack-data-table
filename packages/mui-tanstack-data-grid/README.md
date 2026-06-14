@@ -70,6 +70,7 @@ import { Search } from '@mui/icons-material';         // ❌ pulls the whole bar
 
 The barrel can't be tree-shaken in the CommonJS build, so it would force every consumer to bundle the
 full icon set. Expose icons as [`slots`](https://ack-solutions.github.io/react-tanstack-data-table/docs/features/toolbar#custom-icons)
-so consumers can swap in their own. There is no ESLint guard for this yet — it's enforced by convention.
+so consumers can swap in their own. The repo has no ESLint config, so the rule is enforced by a test —
+`tests/no-barrel-icons.test.cjs` fails the build if a bare `@mui/icons-material` import reappears.
 
 Plan & parity tracking: see [`/rebuild`](../../rebuild/PLAN.md).
