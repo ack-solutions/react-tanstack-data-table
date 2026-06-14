@@ -3,7 +3,9 @@
  * engine's ColumnFilterFeature: add/remove rules, per-type operators + value
  * inputs, AND/OR logic, pending → Apply. The badge shows the active filter count.
  */
-import { AddOutlined, CloseOutlined, FilterListOutlined } from '@mui/icons-material';
+import AddOutlined from '@mui/icons-material/AddOutlined';
+import CloseOutlined from '@mui/icons-material/CloseOutlined';
+import FilterListOutlined from '@mui/icons-material/FilterListOutlined';
 import {
     Badge,
     Box,
@@ -23,6 +25,7 @@ import { useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
 
 import { getColumnType, isColumnFilterable } from '../../utils/column-helpers';
 import type { ColumnFilterRule } from '../../types/filter.types';
+import type { DataTableSlots } from '../../types/slots.types';
 import type { UseDataTableResult } from '../../core/use-data-table';
 import { FILTER_OPERATORS } from '../filters/operators';
 import { FilterValueInput } from '../filters/filter-value-input';
@@ -30,12 +33,16 @@ import { FilterValueInput } from '../filters/filter-value-input';
 export interface ColumnFilterControlProps<T> {
     engine: UseDataTableResult<T>;
     title?: string;
+    slots?: Partial<DataTableSlots>;
 }
 
 const NO_VALUE_OPS = ['isEmpty', 'isNotEmpty'];
 
-export function ColumnFilterControl<T extends Record<string, any>>({ engine, title = 'Column Filters' }: ColumnFilterControlProps<T>): ReactElement {
+export function ColumnFilterControl<T extends Record<string, any>>({ engine, title = 'Column Filters', slots }: ColumnFilterControlProps<T>): ReactElement {
     const table = engine.table as any;
+    const FilterIcon = slots?.filterIcon ?? FilterListOutlined;
+    const AddFilterIcon = slots?.addFilterIcon ?? AddOutlined;
+    const ClearIcon = slots?.clearIcon ?? CloseOutlined;
     const [anchor, setAnchor] = useState<HTMLElement | null>(null);
     const open = !!anchor;
     const didAutoAdd = useRef(false);
@@ -108,7 +115,7 @@ export function ColumnFilterControl<T extends Record<string, any>>({ engine, tit
             <Tooltip title="Filters">
                 <Badge badgeContent={activeCount} color="primary" invisible={activeCount === 0}>
                     <IconButton size="small" onClick={(e) => setAnchor(e.currentTarget)}>
-                        <FilterListOutlined fontSize="small" />
+                        <FilterIcon fontSize="small" />
                     </IconButton>
                 </Badge>
             </Tooltip>
@@ -167,14 +174,14 @@ export function ColumnFilterControl<T extends Record<string, any>>({ engine, tit
                                     ) : null}
 
                                     <IconButton size="small" color="error" onClick={() => table.removePendingColumnFilter?.(filter.id)}>
-                                        <CloseOutlined fontSize="small" />
+                                        <ClearIcon fontSize="small" />
                                     </IconButton>
                                 </Stack>
                             );
                         })}
                     </Stack>
 
-                    <Button variant="outlined" size="small" startIcon={<AddOutlined />} onClick={() => addFilter()} disabled={!filterableColumns.length} sx={{ mb: 2 }}>
+                    <Button variant="outlined" size="small" startIcon={<AddFilterIcon />} onClick={() => addFilter()} disabled={!filterableColumns.length} sx={{ mb: 2 }}>
                         Add filter
                     </Button>
 

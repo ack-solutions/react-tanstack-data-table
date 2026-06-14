@@ -6,7 +6,8 @@
  * offsets from the same numbers; rows are virtualized when enabled. Theming and
  * density come from the `--dt-*` tokens applied to the root.
  */
-import { ArrowDownwardOutlined, ArrowUpwardOutlined } from '@mui/icons-material';
+import ArrowDownwardOutlined from '@mui/icons-material/ArrowDownwardOutlined';
+import ArrowUpwardOutlined from '@mui/icons-material/ArrowUpwardOutlined';
 import { Box, Skeleton, TablePagination } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { flexRender, type Column } from '@tanstack/react-table';
@@ -74,9 +75,13 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
         extraFilter,
         enableColumnReordering,
         renderBulkActions,
+        slots,
     } = props;
 
     const showToolbar = !!(enableGlobalFilter || enableColumnFilter || enableColumnVisibility || enableExport || enableDensitySelector || enableReset || enableRefresh || extraFilter);
+
+    const SortAscIcon = slots?.sortIconAsc ?? ArrowUpwardOutlined;
+    const SortDescIcon = slots?.sortIconDesc ?? ArrowDownwardOutlined;
 
     const theme = useTheme();
     const { table, refs, derived, state, actions } = engine;
@@ -154,8 +159,17 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
                             >
                                 {header.isPlaceholder ? null : flexRender(column.columnDef.header, header.getContext())}
                             </Box>
-                            {sorted === 'asc' ? <ArrowUpwardOutlined sx={{ fontSize: 16 }} /> : null}
-                            {sorted === 'desc' ? <ArrowDownwardOutlined sx={{ fontSize: 16 }} /> : null}
+                            {sorted ? (
+                                // Size via CSS on the child icon (not props) so MUI *and* custom
+                                // non-MUI icons (lucide/SVG) both render at 16px without receiving an `sx` prop.
+                                <Box
+                                    component="span"
+                                    aria-hidden
+                                    sx={{ display: 'inline-flex', alignItems: 'center', '& > svg': { fontSize: 16, width: 16, height: 16 } }}
+                                >
+                                    {sorted === 'asc' ? <SortAscIcon /> : <SortDescIcon />}
+                                </Box>
+                            ) : null}
                             {canResize ? (
                                 <Box
                                     onMouseDown={header.getResizeHandler()}
@@ -265,6 +279,7 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
                     enableReset={enableReset}
                     enableRefresh={enableRefresh}
                     extraFilter={extraFilter}
+                    slots={slots}
                 />
             ) : null}
             {derived.isSomeRowsSelected ? (

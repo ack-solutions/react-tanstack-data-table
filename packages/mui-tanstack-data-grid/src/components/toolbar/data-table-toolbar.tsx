@@ -3,14 +3,12 @@
  * visibility, density, export (CSV/Excel), refresh, reset. Each control drives
  * the headless engine through `engine.api` / `engine.actions`.
  */
-import {
-    DensitySmallOutlined,
-    FileDownloadOutlined,
-    RefreshOutlined,
-    RestartAltOutlined,
-    SearchOutlined,
-    ViewColumnOutlined,
-} from '@mui/icons-material';
+import DensitySmallOutlined from '@mui/icons-material/DensitySmallOutlined';
+import FileDownloadOutlined from '@mui/icons-material/FileDownloadOutlined';
+import RefreshOutlined from '@mui/icons-material/RefreshOutlined';
+import RestartAltOutlined from '@mui/icons-material/RestartAltOutlined';
+import SearchOutlined from '@mui/icons-material/SearchOutlined';
+import ViewColumnOutlined from '@mui/icons-material/ViewColumnOutlined';
 import {
     Box,
     Checkbox,
@@ -28,6 +26,7 @@ import {
 import { useState, type ReactNode } from 'react';
 
 import type { DataTableDensity } from '../../theme/tokens';
+import type { DataTableSlots } from '../../types/slots.types';
 import type { UseDataTableResult } from '../../core/use-data-table';
 import { ColumnFilterControl } from './column-filter-control';
 
@@ -42,6 +41,7 @@ export interface DataTableToolbarProps<T> {
     enableRefresh?: boolean;
     extraFilter?: ReactNode;
     searchPlaceholder?: string;
+    slots?: Partial<DataTableSlots>;
 }
 
 const DENSITY_LABEL: Record<DataTableDensity, string> = {
@@ -67,7 +67,15 @@ export function DataTableToolbar<T extends Record<string, any>>(props: DataTable
         enableRefresh,
         extraFilter,
         searchPlaceholder = 'Search…',
+        slots,
     } = props;
+
+    const SearchIcon = slots?.searchIcon ?? SearchOutlined;
+    const DensityIcon = slots?.densityIcon ?? DensitySmallOutlined;
+    const ColumnsIcon = slots?.columnsIcon ?? ViewColumnOutlined;
+    const ExportIcon = slots?.exportIcon ?? FileDownloadOutlined;
+    const RefreshIcon = slots?.refreshIcon ?? RefreshOutlined;
+    const ResetIcon = slots?.resetIcon ?? RestartAltOutlined;
 
     const { table, api, state, derived, actions } = engine;
     const [search, setSearch] = useState(state.globalFilter || '');
@@ -92,7 +100,7 @@ export function DataTableToolbar<T extends Record<string, any>>(props: DataTable
                     InputProps={{
                         startAdornment: (
                             <InputAdornment position="start">
-                                <SearchOutlined fontSize="small" />
+                                <SearchIcon fontSize="small" />
                             </InputAdornment>
                         ),
                     }}
@@ -103,13 +111,13 @@ export function DataTableToolbar<T extends Record<string, any>>(props: DataTable
 
             <Box sx={{ flex: 1 }} />
 
-            {enableColumnFilter ? <ColumnFilterControl engine={engine} /> : null}
+            {enableColumnFilter ? <ColumnFilterControl engine={engine} slots={slots} /> : null}
 
             {enableDensitySelector ? (
                 <>
                     <Tooltip title="Density">
                         <IconButton size="small" onClick={(e) => setDensityAnchor(e.currentTarget)}>
-                            <DensitySmallOutlined fontSize="small" />
+                            <DensityIcon fontSize="small" />
                         </IconButton>
                     </Tooltip>
                     <Menu anchorEl={densityAnchor} open={!!densityAnchor} onClose={() => setDensityAnchor(null)}>
@@ -133,7 +141,7 @@ export function DataTableToolbar<T extends Record<string, any>>(props: DataTable
                 <>
                     <Tooltip title="Columns">
                         <IconButton size="small" onClick={(e) => setColAnchor(e.currentTarget)}>
-                            <ViewColumnOutlined fontSize="small" />
+                            <ColumnsIcon fontSize="small" />
                         </IconButton>
                     </Tooltip>
                     <Menu anchorEl={colAnchor} open={!!colAnchor} onClose={() => setColAnchor(null)}>
@@ -154,16 +162,16 @@ export function DataTableToolbar<T extends Record<string, any>>(props: DataTable
                 <>
                     <Tooltip title="Export">
                         <IconButton size="small" onClick={(e) => setExportAnchor(e.currentTarget)}>
-                            <FileDownloadOutlined fontSize="small" />
+                            <ExportIcon fontSize="small" />
                         </IconButton>
                     </Tooltip>
                     <Menu anchorEl={exportAnchor} open={!!exportAnchor} onClose={() => setExportAnchor(null)}>
                         <MenuItem onClick={() => { void api.export.exportCSV(); setExportAnchor(null); }}>
-                            <ListItemIcon><FileDownloadOutlined fontSize="small" /></ListItemIcon>
+                            <ListItemIcon><ExportIcon fontSize="small" /></ListItemIcon>
                             <ListItemText primary="Export CSV" />
                         </MenuItem>
                         <MenuItem onClick={() => { void api.export.exportExcel(); setExportAnchor(null); }}>
-                            <ListItemIcon><FileDownloadOutlined fontSize="small" /></ListItemIcon>
+                            <ListItemIcon><ExportIcon fontSize="small" /></ListItemIcon>
                             <ListItemText primary="Export Excel" />
                         </MenuItem>
                     </Menu>
@@ -173,7 +181,7 @@ export function DataTableToolbar<T extends Record<string, any>>(props: DataTable
             {enableRefresh ? (
                 <Tooltip title="Refresh">
                     <IconButton size="small" onClick={() => api.data.refresh()}>
-                        <RefreshOutlined fontSize="small" />
+                        <RefreshIcon fontSize="small" />
                     </IconButton>
                 </Tooltip>
             ) : null}
@@ -181,7 +189,7 @@ export function DataTableToolbar<T extends Record<string, any>>(props: DataTable
             {enableReset ? (
                 <Tooltip title="Reset">
                     <IconButton size="small" onClick={() => api.layout.resetAll()}>
-                        <RestartAltOutlined fontSize="small" />
+                        <ResetIcon fontSize="small" />
                     </IconButton>
                 </Tooltip>
             ) : null}

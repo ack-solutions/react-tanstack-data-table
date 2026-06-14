@@ -370,9 +370,11 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
         let cols = [...columns];
         if (enableExpanding) {
             cols = [
-                createExpandingColumn<T>(
-                    slotProps?.expandColumn && typeof slotProps.expandColumn === 'object' ? slotProps.expandColumn : {},
-                ),
+                createExpandingColumn<T>({
+                    ...(slotProps?.expandColumn && typeof slotProps.expandColumn === 'object' ? slotProps.expandColumn : {}),
+                    expandIcon: slots?.expandIcon,
+                    collapseIcon: slots?.collapseIcon,
+                }),
                 ...cols,
             ];
         }
@@ -388,7 +390,7 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
             ];
         }
         return withIdsDeep(cols);
-    }, [columns, enableExpanding, enableRowSelection, enableMultiRowSelection, slotProps?.expandColumn, slotProps?.selectionColumn]);
+    }, [columns, enableExpanding, enableRowSelection, enableMultiRowSelection, slotProps?.expandColumn, slotProps?.selectionColumn, slots?.expandIcon, slots?.collapseIcon]);
 
     const fetchData = useEvent(
         async (overrides: Partial<TableState> = {}, options?: { delay?: number; meta?: DataFetchMeta }) => {

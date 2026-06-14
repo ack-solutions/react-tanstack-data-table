@@ -34,9 +34,22 @@ export interface DataTableSlots {
     refreshButton?: ComponentType<any>;
     exportButton?: ComponentType<any>;
     bulkActionsToolbar?: ComponentType<any>;
-    // Icons (subset — extended across phases)
-    sortIconAsc?: ComponentType<any>;
-    sortIconDesc?: ComponentType<any>;
+    // Icons — inject your own icon set (e.g. lucide) without replacing whole
+    // controls. Each defaults to the matching per-path MUI `*Outlined` icon, so
+    // the grid never bundles the full `@mui/icons-material` barrel.
+    sortIconAsc?: ComponentType<any>;        // ArrowUpwardOutlined   (sorted ascending)
+    sortIconDesc?: ComponentType<any>;       // ArrowDownwardOutlined (sorted descending)
+    searchIcon?: ComponentType<any>;         // SearchOutlined        (global search adornment)
+    filterIcon?: ComponentType<any>;         // FilterListOutlined    (column-filter button)
+    addFilterIcon?: ComponentType<any>;      // AddOutlined           ("Add filter")
+    clearIcon?: ComponentType<any>;          // CloseOutlined         (remove a filter rule)
+    columnsIcon?: ComponentType<any>;        // ViewColumnOutlined    (column visibility)
+    densityIcon?: ComponentType<any>;        // DensitySmallOutlined  (density selector)
+    exportIcon?: ComponentType<any>;         // FileDownloadOutlined  (export button + menu)
+    refreshIcon?: ComponentType<any>;        // RefreshOutlined       (refresh button)
+    resetIcon?: ComponentType<any>;          // RestartAltOutlined    (reset button)
+    expandIcon?: ComponentType<any>;         // KeyboardArrowDownOutlined (collapsed row)
+    collapseIcon?: ComponentType<any>;       // KeyboardArrowUpOutlined   (expanded row)
 
     [slot: string]: ComponentType<any> | undefined;
 }

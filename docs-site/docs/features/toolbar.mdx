@@ -36,3 +36,48 @@ the selected count, a Clear action, and whatever you return from `renderBulkActi
 Replace or restyle any toolbar part with `slots` / `slotProps`, or build your own toolbar entirely and
 drive the grid through [`apiRef`](/api/api-ref) (`apiRef.current.filtering.setGlobalFilter(…)`,
 `apiRef.current.export.exportCSV()`, etc.).
+
+### Custom icons
+
+The grid imports every icon **per-path** (e.g. `@mui/icons-material/SearchOutlined`), so a bundler only
+ships the ~13 icons it actually uses — never the full `@mui/icons-material` barrel. You don't need an
+alias or a shim to keep your bundle small.
+
+To use **your own** icon set (lucide, a custom SVG component, a different MUI variant…), pass it through
+the matching `slots` key. Each one defaults to the MUI `*Outlined` icon, so override only what you want:
+
+```tsx
+import { RefreshCw, Search, Filter } from 'lucide-react';
+
+<DataTable
+  columns={columns}
+  data={rows}
+  enableGlobalFilter
+  enableColumnFilter
+  enableRefresh
+  slots={{
+    searchIcon: Search,
+    filterIcon: Filter,
+    refreshIcon: RefreshCw,
+  }}
+/>;
+```
+
+Any component that renders an icon works. The grid sizes its icons with MUI's `fontSize="small"` (and CSS
+for the sort indicators), so **MUI icons inherit the right size automatically**. A non-MUI icon (lucide, a
+plain SVG) renders fine too, but it won't read MUI's `fontSize` — size it yourself, e.g. wrap it
+(`(props) => <Search size={18} {...props} />`) or set its own size prop, if you need it to match exactly.
+
+| Slot | Replaces | Default |
+| --- | --- | --- |
+| `searchIcon` | global search adornment | `SearchOutlined` |
+| `filterIcon` | column-filter button | `FilterListOutlined` |
+| `addFilterIcon` | "Add filter" button | `AddOutlined` |
+| `clearIcon` | remove a filter rule | `CloseOutlined` |
+| `columnsIcon` | column-visibility button | `ViewColumnOutlined` |
+| `densityIcon` | density selector | `DensitySmallOutlined` |
+| `exportIcon` | export button + menu items | `FileDownloadOutlined` |
+| `refreshIcon` | refresh button | `RefreshOutlined` |
+| `resetIcon` | reset button | `RestartAltOutlined` |
+| `sortIconAsc` / `sortIconDesc` | header sort indicators | `ArrowUpwardOutlined` / `ArrowDownwardOutlined` |
+| `expandIcon` / `collapseIcon` | row expand/collapse | `KeyboardArrowDownOutlined` / `KeyboardArrowUpOutlined` |
