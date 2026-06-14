@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { matchesCustomColumnFilters } = require('../dist/features/column-filter.feature.js');
+const { matchesCustomColumnFilters } = require('../dist/cjs/features/column-filter.feature.js');
 
 function createMockRow(original, columnTypes = {}) {
     const cells = Object.keys(original).map((key) => ({

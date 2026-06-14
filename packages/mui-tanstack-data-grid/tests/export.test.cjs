@@ -4,9 +4,9 @@ const test = require('node:test');
 const assert = require('node:assert');
 
 // Require the specific compiled modules (no React/MUI/DOM pulled in).
-const { sanitizeCSVCellValue, resolveExportHeader } = require('../dist/utils/export/format.js');
-const { csvHeaderLine, csvRowLine, recordsToCSV, MAX_XLSX_ROWS } = require('../dist/utils/export/serialize.js');
-const { buildExportRequest } = require('../dist/utils/export/request.js');
+const { sanitizeCSVCellValue, resolveExportHeader } = require('../dist/cjs/utils/export/format.js');
+const { csvHeaderLine, csvRowLine, recordsToCSV, MAX_XLSX_ROWS } = require('../dist/cjs/utils/export/serialize.js');
+const { buildExportRequest } = require('../dist/cjs/utils/export/request.js');
 
 test('sanitizeCSVCellValue defuses every formula-injection lead, including TAB and CR', () => {
     assert.strictEqual(sanitizeCSVCellValue('=SUM(A1)'), "'=SUM(A1)");

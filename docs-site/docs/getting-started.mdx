@@ -22,6 +22,32 @@ npm install @mui/material @mui/icons-material \
   @tanstack/react-table @tanstack/react-virtual
 ```
 
+## Bundle size & module formats
+
+The package ships **both ESM and CommonJS** and is built for tree-shaking, so you ship only what you
+actually import:
+
+- **ESM (`import`) and CJS (`require`)** are wired through the `exports` map — works in Vite, webpack,
+  Rollup, esbuild, Next.js, and plain Node. Bundlers pick the ESM build; `require()` and older
+  toolchains get the CommonJS build.
+- **`"sideEffects": false`** — bundlers drop every feature you don't reference. Importing a single helper
+  pulls ~200 bytes, not the whole grid.
+- **Per-path MUI icons** — the grid imports each icon from `@mui/icons-material/<IconName>` (never the
+  barrel), so you bundle the ~13 icons it uses, not the full ~2,100-icon set.
+- **TypeScript types** are included (`exports.types`).
+
+```ts
+import { DataTable } from '@ackplus/mui-tanstack-data-grid';      // ESM (bundlers)
+const { DataTable } = require('@ackplus/mui-tanstack-data-grid'); // CommonJS (Node)
+```
+
+:::tip Removing an icon shim/alias?
+If you previously aliased `@mui/icons-material` to a small shim to keep your bundle down, you can delete
+that alias — since v1.2.0 the grid no longer imports the icon barrel, and since v1.3.0 the ESM build lets
+your bundler tree-shake unused grid code too. Want your own icons? See
+[Custom icons](/features/toolbar#custom-icons).
+:::
+
 ## Your first grid
 
 Pass TanStack column definitions and your data, then opt into features with `enable*` props.

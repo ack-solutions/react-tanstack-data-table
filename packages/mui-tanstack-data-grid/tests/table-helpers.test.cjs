@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { generateRowId, formatCellValue } = require('../dist/utils/table-helpers.js');
+const { generateRowId, formatCellValue } = require('../dist/cjs/utils/table-helpers.js');
 
 test('generateRowId honours id=0 and guards empty/missing ids', () => {
     assert.equal(generateRowId({ id: 0 }, 5, 'id'), '0'); // numeric 0 must not fall back
