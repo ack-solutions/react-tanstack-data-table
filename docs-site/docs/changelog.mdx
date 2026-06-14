@@ -1,0 +1,97 @@
+---
+title: Changelog
+sidebar_label: Changelog
+sidebar_position: 99
+---
+
+# Changelog
+
+All notable changes to **`@ackplus/mui-tanstack-data-grid`**. This project follows
+[Semantic Versioning](https://semver.org/) and the [Keep a Changelog](https://keepachangelog.com/)
+format: each release groups changes as **Added** (new features), **Changed** (behaviour/build), **Fixed**
+(bug fixes), and **Docs**.
+
+> Upgrading is safe within a major version — `1.x` releases are backward compatible. Install a specific
+> version with `npm install @ackplus/mui-tanstack-data-grid@<version>`.
+
+---
+
+## [1.3.0](https://www.npmjs.com/package/@ackplus/mui-tanstack-data-grid/v/1.3.0) — 2026-06-14
+
+Dual-format build so bundlers tree-shake unused grid code (not just icons).
+
+### Added
+- **Dual ESM + CommonJS output.** `import` resolves to the ESM build, `require()` to the CommonJS build,
+  via the package `exports` map. Works in Vite, webpack, Rollup, esbuild, Next.js, and plain Node.
+- **`"sideEffects": false`** — bundlers drop any feature you don't import (importing a single helper now
+  pulls ~200 bytes instead of the whole grid).
+- TypeScript declarations shipped under `dist/types`.
+
+### Changed
+- Build split into separate CJS / ESM / types passes; ESM relative imports are emitted fully-specified
+  (`./x.js`) so strict resolvers (webpack, Rspack, Next.js, Node native ESM) resolve them.
+
+### Docs
+- New **Bundle size & module formats** section in [Getting Started](/getting-started); build + module
+  notes added to the package README.
+
+---
+
+## [1.2.0](https://www.npmjs.com/package/@ackplus/mui-tanstack-data-grid/v/1.2.0) — 2026-06-14
+
+Smaller bundles and customizable icons.
+
+### Fixed
+- **Icons are imported per-path** (`@mui/icons-material/Search`) instead of from the barrel. Consumers no
+  longer bundle the full ~2,100-icon set — no alias or shim needed. *(A build test now guards against this
+  regressing.)*
+
+### Added
+- **Per-icon `slots`** so you can supply your own icon set (lucide, custom SVGs, a different MUI variant):
+  `searchIcon`, `filterIcon`, `addFilterIcon`, `clearIcon`, `columnsIcon`, `densityIcon`, `exportIcon`,
+  `refreshIcon`, `resetIcon`, `expandIcon`, `collapseIcon`, plus the now-wired `sortIconAsc` /
+  `sortIconDesc`. Each defaults to the matching MUI icon.
+- Sort indicators are sized via CSS, so a custom non-MUI icon renders without React unknown-prop warnings.
+
+### Docs
+- New [**Custom icons**](/features/toolbar#custom-icons) section in Toolbar.
+
+---
+
+## [1.1.0](https://www.npmjs.com/package/@ackplus/mui-tanstack-data-grid/v/1.1.0) — 2026-06-13
+
+First public release on npm. Large-data export overhaul.
+
+### Added
+- **Four export modes** — `client` (default), `server-data`, `server-file`, and `server-async` — sharing
+  one `ExportRequest` descriptor that carries the chosen columns, scope (all / filtered / selected),
+  selection, filters, and sorting.
+- **Streaming export** (File System Access API with a blob fallback), line-by-line CSV, lazy-loaded XLSX
+  with the Excel row cap, native `<a download>` for file URLs, CSV-injection sanitizing, and cancellation.
+
+### Docs
+- Rewrote **Export** and **Server-side** docs: both server data approaches (`onFetchData` vs controlled
+  `data` + `rowCount` + `onDataStateChange`) and the exact filter payload shape for mapping to your API.
+
+---
+
+## [1.0.1](https://www.npmjs.com/package/@ackplus/mui-tanstack-data-grid/v/1.0.1) — 2026-06-13
+
+- Republish of `1.0.0` during npm publishing setup — no functional changes.
+
+---
+
+## [1.0.0](https://www.npmjs.com/package/@ackplus/mui-tanstack-data-grid/v/1.0.0) — 2026-06-13
+
+Initial release of the rebuilt grid — successor to the now-deprecated
+**`@ackplus/react-tanstack-data-table`**.
+
+### Added
+- **`<div>` / CSS-Grid rendering** (no HTML `<table>`) for reliable column sizing, resize, and pinning.
+- **Themeable like a MUI component** — inherits your MUI theme; override via
+  `components.MuiTanstackDataGrid`, `--dt-*` CSS variables, or `sx`.
+- Sorting, global + column filtering, pagination, row selection + bulk actions, column
+  pinning / reordering / resizing, row expansion, and virtualization.
+- CSV + lazy Excel export.
+- Server-side data support, a `useDataTable()` headless hook, and `slots` / `slotProps` for overriding
+  any part.

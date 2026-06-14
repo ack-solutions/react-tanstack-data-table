@@ -26,6 +26,7 @@ const sidebars: SidebarsConfig = {
             items: ['api/props', 'api/api-ref', 'api/use-data-table'],
         },
         'migration',
+        'changelog',
     ],
 };
 
