@@ -88,6 +88,14 @@ export const GridCell = styled('div', { name: 'MuiTanstackDataGrid', slot: 'Cell
     paddingInline: 'var(--dt-cell-padding-x)',
 }) as unknown as DivSlot;
 
+export const GridDetailPanel = styled('div', { name: 'MuiTanstackDataGrid', slot: 'DetailPanel' })({
+    boxSizing: 'border-box',
+    width: '100%',
+    padding: 'var(--dt-cell-padding-y) var(--dt-cell-padding-x)',
+    background: 'var(--dt-pinned-bg)',
+    borderBottom: '1px solid var(--dt-border-color)',
+}) as unknown as DivSlot;
+
 export const GridFooter = styled('div', { name: 'MuiTanstackDataGrid', slot: 'Footer' })({
     borderTop: '1px solid var(--dt-border-color)',
 }) as unknown as DivSlot;

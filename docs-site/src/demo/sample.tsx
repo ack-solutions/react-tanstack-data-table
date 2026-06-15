@@ -39,6 +39,7 @@ export const columns: ColumnDef<User, any>[] = [
             return <Chip size="small" label={v} color={v === 'active' ? 'success' : 'default'} variant={v === 'active' ? 'filled' : 'outlined'} />;
         },
     } as ColumnDef<User, any>,
+    { id: 'actions', header: 'Actions', size: 100, enableSorting: false, enableResizing: false, cell: () => <Chip size="small" label="View" variant="outlined" clickable /> },
 ];
 
 const ROLES = ['Admin', 'Editor', 'Viewer'];

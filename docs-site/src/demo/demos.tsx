@@ -59,6 +59,37 @@ export function ExportDemo() {
     return <DataTable columns={columns} data={users} enableExport exportFilename="users" enablePagination initialState={page5} />;
 }
 
+export function PinningDemo() {
+    return (
+        <DataTable
+            columns={columns}
+            data={users}
+            enableColumnPinning
+            enableColumnVisibility
+            enableRowSelection
+            enablePagination
+            initialState={{ pagination: { pageIndex: 0, pageSize: 5 }, columnPinning: { left: ['_selection', 'name'], right: ['actions'] } }}
+        />
+    );
+}
+
+export function ExpansionDemo() {
+    return (
+        <DataTable
+            columns={columns}
+            data={users}
+            enableRowExpansion
+            enablePagination
+            initialState={page5}
+            renderDetailPanel={(row) => (
+                <div style={{ padding: 8, fontSize: 14 }}>
+                    <strong>{row.original.name}</strong> — {row.original.email} · {row.original.role} · {row.original.status}
+                </div>
+            )}
+        />
+    );
+}
+
 const brandedTheme = createTheme({
     palette: { tanstackDataGrid: { headerBg: '#eef2ff', headerColor: '#4338ca', borderColor: '#e0e7ff' } },
     components: {
@@ -92,6 +123,7 @@ export function FullDemo() {
             enableColumnVisibility
             enableRowSelection
             enableBulkActions
+            enableRowExpansion
             enableGlobalFilter
             enableColumnFilter
             enableExport
@@ -100,7 +132,12 @@ export function FullDemo() {
             enablePagination
             stickyHeader
             maxHeight={420}
-            initialState={{ pagination: { pageIndex: 0, pageSize: 8 }, columnPinning: { left: ['name'] } }}
+            initialState={{ pagination: { pageIndex: 0, pageSize: 8 }, columnPinning: { left: ['_selection', '_expanding', 'name'], right: ['actions'] } }}
+            renderDetailPanel={(row) => (
+                <div style={{ padding: 8, fontSize: 14 }}>
+                    <strong>{row.original.name}</strong> — {row.original.email} · {row.original.role} · {row.original.status}
+                </div>
+            )}
             renderBulkActions={(s) => (
                 <Button size="small" variant="contained" color="inherit" onClick={() => window.alert(`Delete ${s.ids.length} row(s)`)}>
                     Delete

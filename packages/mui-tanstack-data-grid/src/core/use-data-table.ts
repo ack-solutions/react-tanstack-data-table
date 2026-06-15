@@ -11,6 +11,7 @@
  */
 import {
     getCoreRowModel,
+    getExpandedRowModel,
     getPaginationRowModel,
     getSortedRowModel,
     useReactTable,
@@ -35,6 +36,7 @@ import type { DataTableDensity } from '../theme/tokens';
 import type { ExportPhase, ExportProgressPayload, ExportStateChange } from '../types/export.types';
 
 import { ColumnFilterFeature, getCombinedFilteredRowModel, SelectionFeature } from '../features';
+import { DEFAULT_SELECTION_COLUMN_ID, DEFAULT_EXPAND_COLUMN_ID } from '../types/column.types';
 import {
     createExpandingColumn,
     createSelectionColumn,
@@ -289,6 +291,18 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
 
     const initialStateConfig = useMemo(() => ({ ...DEFAULT_INITIAL_STATE, ...initialState }), [initialState]);
 
+    // When pinning is enabled and the caller hasn't specified columnPinning, pin
+    // the special columns (selection, expander) to the left by default so the
+    // checkbox/expander stay visible while scrolling horizontally.
+    const initialColumnPinning = useMemo(() => {
+        if (initialState?.columnPinning) return initialState.columnPinning;
+        if (!enableColumnPinning) return DEFAULT_INITIAL_STATE.columnPinning;
+        const left: string[] = [];
+        if (enableRowSelection) left.push(DEFAULT_SELECTION_COLUMN_ID);
+        if (enableExpanding) left.push(DEFAULT_EXPAND_COLUMN_ID);
+        return { left, right: [] };
+    }, [initialState, enableColumnPinning, enableRowSelection, enableExpanding]);
+
     const initialUIState: EngineUIState = useMemo(
         () => ({
             sorting: initialStateConfig.sorting ?? DEFAULT_INITIAL_STATE.sorting,
@@ -299,11 +313,11 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
             expanded: initialStateConfig.expanded ?? {},
             density: initialDensity,
             columnOrder: initialStateConfig.columnOrder ?? DEFAULT_INITIAL_STATE.columnOrder,
-            columnPinning: initialStateConfig.columnPinning ?? DEFAULT_INITIAL_STATE.columnPinning,
+            columnPinning: initialColumnPinning,
             columnVisibility: initialStateConfig.columnVisibility ?? DEFAULT_INITIAL_STATE.columnVisibility,
             columnSizing: initialStateConfig.columnSizing ?? DEFAULT_INITIAL_STATE.columnSizing,
         }),
-        [initialStateConfig, initialDensity],
+        [initialStateConfig, initialDensity, initialColumnPinning],
     );
 
     const [ui, dispatch] = useReducer(uiReducer, initialUIState);
@@ -562,6 +576,7 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
         ...(enableSorting ? { getSortedRowModel: getSortedRowModel() } : {}),
         ...(enableColumnFilter || enableGlobalFilter ? { getFilteredRowModel: getCombinedFilteredRowModel<T>() } : {}),
         ...(enablePagination && !isServerPagination ? { getPaginationRowModel: getPaginationRowModel() } : {}),
+        ...(enableExpanding ? { getExpandedRowModel: getExpandedRowModel() } : {}),
 
         enableSorting,
         manualSorting: isServerSorting,
@@ -572,7 +587,9 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
         columnResizeDirection: theme.direction,
 
         enableColumnPinning,
-        ...(enableExpanding ? { getRowCanExpand: getRowCanExpand as any } : {}),
+        // Detail-panel expansion: default every row to expandable so the toggle
+        // works on flat data; callers can gate it via getRowCanExpand.
+        ...(enableExpanding ? { getRowCanExpand: (getRowCanExpand ?? (() => true)) as any } : {}),
 
         manualPagination: isServerPagination,
         autoResetPageIndex: false,
@@ -708,7 +725,7 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
             columnVisibility: initialStateConfig.columnVisibility || {},
             columnSizing: initialStateConfig.columnSizing || {},
             columnOrder: initialStateConfig.columnOrder || [],
-            columnPinning: initialStateConfig.columnPinning || { left: [], right: [] },
+            columnPinning: initialColumnPinning,
         };
     }, [enablePagination, initialStateConfig, uiRef]);
 
@@ -964,7 +981,7 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
                 dispatch({ type: 'SET_COLUMN_VISIBILITY', payload: initialStateConfig.columnVisibility || {} });
                 dispatch({ type: 'SET_COLUMN_ORDER', payload: initialStateConfig.columnOrder || [] });
                 dispatch({ type: 'SET_COLUMN_SIZING', payload: initialStateConfig.columnSizing || {} });
-                dispatch({ type: 'SET_COLUMN_PINNING', payload: initialStateConfig.columnPinning || { left: [], right: [] } });
+                dispatch({ type: 'SET_COLUMN_PINNING', payload: initialColumnPinning });
                 dispatch({ type: 'SET_GLOBAL_FILTER_RESET_PAGE', payload: '' });
                 dispatch({ type: 'SET_COLUMN_FILTER', payload: (initialStateConfig.columnFilter || DEFAULT_INITIAL_STATE.columnFilter) as ColumnFilterState });
                 dispatch({ type: 'SET_SORTING_RESET_PAGE', payload: initialStateConfig.sorting || [] });
@@ -1119,7 +1136,7 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
                 dispatch({ type: 'SET_COLUMN_PINNING', payload: next });
                 onColumnPinningChangeRef.current?.(next);
             },
-            resetColumnPinning: () => dispatch({ type: 'SET_COLUMN_PINNING', payload: initialStateConfig.columnPinning || { left: [], right: [] } }),
+            resetColumnPinning: () => dispatch({ type: 'SET_COLUMN_PINNING', payload: initialColumnPinning }),
         };
 
         api.columnResizing = {

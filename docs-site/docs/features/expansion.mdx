@@ -1,0 +1,78 @@
+---
+title: Row expansion
+---
+
+import LiveDemo from '@site/src/demo/LiveDemo';
+import { ExpansionDemo } from '@site/src/demo/demos';
+
+# Row expansion (detail panels)
+
+Give each row an expandable detail panel. Set `enableRowExpansion` to add an expand/collapse toggle
+column, and return the panel content from `renderDetailPanel`.
+
+<LiveDemo>{() => <ExpansionDemo />}</LiveDemo>
+
+## Basic usage
+
+```tsx
+<DataTable
+  columns={columns}
+  data={rows}
+  enableRowExpansion
+  renderDetailPanel={(row) => (
+    <Box sx={{ p: 2 }}>
+      <Typography variant="subtitle2">{row.original.name}</Typography>
+      <Typography variant="body2" color="text.secondary">{row.original.email}</Typography>
+    </Box>
+  )}
+/>
+```
+
+`renderDetailPanel` receives the TanStack [`Row`](https://tanstack.com/table/latest/docs/api/core/row),
+so `row.original` is your data object. The panel renders as a full-width row directly beneath its parent.
+
+## Which rows can expand
+
+By default **every row** is expandable. To allow it only for some rows, pass `getRowCanExpand` — rows
+where it returns `false` render no toggle:
+
+```tsx
+<DataTable
+  enableRowExpansion
+  getRowCanExpand={(row) => row.original.hasDetails}
+  renderDetailPanel={(row) => /* … */}
+/>
+```
+
+## Custom toggle icons
+
+The expander column uses MUI chevrons by default. Swap them via [`slots`](/features/toolbar#custom-icons):
+
+```tsx
+<DataTable
+  enableRowExpansion
+  slots={{ expandIcon: ChevronRight, collapseIcon: ExpandMore }}
+  renderDetailPanel={/* … */}
+/>
+```
+
+## Imperative control
+
+The expander column toggles a row for you. For programmatic control (e.g. expand all), reach the
+underlying TanStack table via [`apiRef`](/api/api-ref):
+
+```tsx
+apiRef.current?.table.getTable().toggleAllRowsExpanded(true);   // expand all
+apiRef.current?.table.getTable().toggleAllRowsExpanded(false);  // collapse all
+```
+
+## Props
+
+| Prop | Type | Description |
+| --- | --- | --- |
+| `enableRowExpansion` | `boolean` | Adds the expand/collapse toggle column |
+| `renderDetailPanel` | `(row) => ReactNode` | Content rendered beneath an expanded row |
+| `getRowCanExpand` | `(row) => boolean` | Which rows can expand (default: all) |
+
+> Pin the expander column to keep the toggle visible while scrolling — it's pinned left by default when
+> [pinning](/features/pinning) is enabled (id `_expanding`).

@@ -29,7 +29,7 @@ export const createSelectionColumn = <T>(
     enableResizing: false,
     enableSorting: false,
     enableHiding: false,
-    enablePinning: false,
+    enablePinning: true,
     hideInExport: true,
     header: ({ table }) => {
         if (!config.multiSelect) return null;

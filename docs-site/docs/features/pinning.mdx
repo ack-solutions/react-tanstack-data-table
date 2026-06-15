@@ -1,0 +1,78 @@
+---
+title: Column pinning
+---
+
+import LiveDemo from '@site/src/demo/LiveDemo';
+import { PinningDemo } from '@site/src/demo/demos';
+
+# Column pinning
+
+Pinned columns stick to the left or right edge while the rest of the grid scrolls horizontally. Turn it
+on with `enableColumnPinning`.
+
+<LiveDemo>{() => <PinningDemo />}</LiveDemo>
+
+> Open the **Columns** menu in the toolbar (the ⊞ icon) — each column has **pin-left** / **pin-right**
+> toggles next to its visibility checkbox. Click an active side again to unpin.
+
+## Enable it
+
+```tsx
+<DataTable
+  columns={columns}
+  data={rows}
+  enableColumnPinning
+  enableColumnVisibility   // surfaces the per-column pin toggles in the Columns menu
+/>
+```
+
+`enableColumnVisibility` isn't required, but it's what renders the toolbar's pin UI. Without it you can
+still pin via `initialState` or the [`apiRef`](#imperative-control).
+
+## Default pinned columns
+
+When `enableColumnPinning` is on, the built-in **selection** (`_selection`) and **expander**
+(`_expanding`) columns are **pinned left automatically**, so the checkbox and expand toggle stay visible
+while scrolling. Override the defaults by passing your own `initialState.columnPinning`:
+
+```tsx
+<DataTable
+  columns={columns}
+  data={rows}
+  enableColumnPinning
+  enableRowSelection
+  initialState={{
+    columnPinning: {
+      left: ['_selection', 'name'],  // checkbox + name stuck left
+      right: ['actions'],            // actions stuck right
+    },
+  }}
+/>
+```
+
+Pin the built-in columns by their ids: `_selection` (checkbox) and `_expanding` (expander). Pin your own
+columns by their `id`. Array order = pin order from the edge inwards.
+
+## Imperative control
+
+Drive pinning from your own UI through [`apiRef`](/api/api-ref):
+
+```tsx
+apiRef.current?.columnPinning.pinColumnLeft('name');
+apiRef.current?.columnPinning.pinColumnRight('actions');
+apiRef.current?.columnPinning.unpinColumn('name');
+apiRef.current?.columnPinning.resetColumnPinning();   // back to the initial/default pinning
+```
+
+Listen for changes with the `onColumnPinningChange` prop.
+
+## Props
+
+| Prop | Type | Description |
+| --- | --- | --- |
+| `enableColumnPinning` | `boolean` | Enable pinning + the toolbar pin toggles |
+| `initialState.columnPinning` | `{ left?: string[]; right?: string[] }` | Initial (and reset) pinned columns |
+| `onColumnPinningChange` | `(state) => void` | Fires when pinning changes |
+
+> The detail-panel row from [row expansion](/features/expansion) always spans the full width and is not
+> affected by pinning.

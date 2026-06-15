@@ -4,6 +4,8 @@
  * (CSV/Excel), refresh, reset, plus a caller `extraFilter` slot on the right.
  * Each control drives the headless engine through `engine.api` / `engine.actions`.
  */
+import AlignHorizontalLeftOutlined from '@mui/icons-material/AlignHorizontalLeftOutlined';
+import AlignHorizontalRightOutlined from '@mui/icons-material/AlignHorizontalRightOutlined';
 import CheckOutlined from '@mui/icons-material/CheckOutlined';
 import ClearOutlined from '@mui/icons-material/ClearOutlined';
 import DensityLargeOutlined from '@mui/icons-material/DensityLargeOutlined';
@@ -42,6 +44,7 @@ export interface DataTableToolbarProps<T> {
     enableGlobalFilter?: boolean;
     enableColumnFilter?: boolean;
     enableColumnVisibility?: boolean;
+    enableColumnPinning?: boolean;
     enableExport?: boolean;
     enableDensitySelector?: boolean;
     enableReset?: boolean;
@@ -136,6 +139,7 @@ export function DataTableToolbar<T extends Record<string, any>>(props: DataTable
         enableGlobalFilter,
         enableColumnFilter,
         enableColumnVisibility,
+        enableColumnPinning,
         enableExport,
         enableDensitySelector,
         enableReset,
@@ -184,7 +188,7 @@ export function DataTableToolbar<T extends Record<string, any>>(props: DataTable
 
             {enableColumnFilter ? <ColumnFilterControl engine={engine} slots={slots} /> : null}
 
-            {enableColumnVisibility ? (
+            {enableColumnVisibility || enableColumnPinning ? (
                 <>
                     <Tooltip title="Columns">
                         <IconButton size="small" onClick={(e) => setColAnchor(e.currentTarget)}>
@@ -192,16 +196,53 @@ export function DataTableToolbar<T extends Record<string, any>>(props: DataTable
                         </IconButton>
                     </Tooltip>
                     <Menu anchorEl={colAnchor} open={!!colAnchor} onClose={() => setColAnchor(null)} slotProps={menuSlotProps}>
-                        <ListSubheader sx={{ lineHeight: '32px', bgcolor: 'transparent' }}>Toggle columns</ListSubheader>
+                        <ListSubheader sx={{ lineHeight: '32px', bgcolor: 'transparent' }}>Columns</ListSubheader>
                         {table
                             .getAllLeafColumns()
-                            .filter((col) => col.getCanHide())
-                            .map((col) => (
-                                <MenuItem key={col.id} dense onClick={() => api.columnVisibility.toggleColumn(col.id)}>
-                                    <Checkbox edge="start" size="small" checked={col.getIsVisible()} disableRipple sx={{ p: 0.5, mr: 0.5 }} />
-                                    <ListItemText primary={columnLabel(col)} />
-                                </MenuItem>
-                            ))}
+                            // Skip the built-in selection/expander columns (ids start with "_").
+                            .filter((col) => !col.id.startsWith('_')
+                                && ((enableColumnVisibility && col.getCanHide()) || (enableColumnPinning && col.getCanPin())))
+                            .map((col) => {
+                                const canHide = !!enableColumnVisibility && col.getCanHide();
+                                const canPin = !!enableColumnPinning && col.getCanPin();
+                                const pinned = col.getIsPinned();
+                                return (
+                                    <MenuItem
+                                        key={col.id}
+                                        dense
+                                        disableRipple
+                                        onClick={canHide ? () => api.columnVisibility.toggleColumn(col.id) : undefined}
+                                        sx={{ gap: 0.5 }}
+                                    >
+                                        {canHide ? (
+                                            <Checkbox edge="start" size="small" checked={col.getIsVisible()} disableRipple sx={{ p: 0.5, mr: 0.5 }} />
+                                        ) : null}
+                                        <ListItemText primary={columnLabel(col)} sx={{ mr: 2 }} />
+                                        {canPin ? (
+                                            <Box sx={{ display: 'inline-flex' }} onClick={(e) => e.stopPropagation()}>
+                                                <Tooltip title={pinned === 'left' ? 'Unpin' : 'Pin left'}>
+                                                    <IconButton
+                                                        size="small"
+                                                        color={pinned === 'left' ? 'primary' : 'default'}
+                                                        onClick={() => (pinned === 'left' ? api.columnPinning.unpinColumn(col.id) : api.columnPinning.pinColumnLeft(col.id))}
+                                                    >
+                                                        <AlignHorizontalLeftOutlined fontSize="small" />
+                                                    </IconButton>
+                                                </Tooltip>
+                                                <Tooltip title={pinned === 'right' ? 'Unpin' : 'Pin right'}>
+                                                    <IconButton
+                                                        size="small"
+                                                        color={pinned === 'right' ? 'primary' : 'default'}
+                                                        onClick={() => (pinned === 'right' ? api.columnPinning.unpinColumn(col.id) : api.columnPinning.pinColumnRight(col.id))}
+                                                    >
+                                                        <AlignHorizontalRightOutlined fontSize="small" />
+                                                    </IconButton>
+                                                </Tooltip>
+                                            </Box>
+                                        ) : null}
+                                    </MenuItem>
+                                );
+                            })}
                     </Menu>
                 </>
             ) : null}

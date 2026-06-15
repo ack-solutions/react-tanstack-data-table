@@ -10,12 +10,12 @@ import ArrowDownwardOutlined from '@mui/icons-material/ArrowDownwardOutlined';
 import ArrowUpwardOutlined from '@mui/icons-material/ArrowUpwardOutlined';
 import { Box, Skeleton, TablePagination } from '@mui/material';
 import { flexRender, type Column } from '@tanstack/react-table';
-import { useMemo, useState, type CSSProperties, type ReactNode } from 'react';
+import { Fragment, useMemo, useState, type CSSProperties, type ReactNode } from 'react';
 
 import { useDataTableTokens } from '../../theme/use-data-table-tokens';
 import type { DataTableProps } from '../../types/data-table.types';
 import type { UseDataTableResult } from '../../core/use-data-table';
-import { GridRoot, GridScroller, GridHeader, GridHeaderRow, GridHeaderCell, GridBody, GridRow, GridCell, GridFooter, GridOverlay } from './styled';
+import { GridRoot, GridScroller, GridHeader, GridHeaderRow, GridHeaderCell, GridBody, GridRow, GridCell, GridDetailPanel, GridFooter, GridOverlay } from './styled';
 import { DataTableToolbar } from '../toolbar/data-table-toolbar';
 import { BulkActionsToolbar } from '../toolbar/bulk-actions-toolbar';
 
@@ -67,6 +67,7 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
         enableGlobalFilter,
         enableColumnFilter,
         enableColumnVisibility,
+        enableColumnPinning,
         enableExport,
         enableDensitySelector,
         enableReset,
@@ -74,10 +75,11 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
         extraFilter,
         enableColumnReordering,
         renderBulkActions,
+        renderDetailPanel,
         slots,
     } = props;
 
-    const showToolbar = !!(enableGlobalFilter || enableColumnFilter || enableColumnVisibility || enableExport || enableDensitySelector || enableReset || enableRefresh || extraFilter);
+    const showToolbar = !!(enableGlobalFilter || enableColumnFilter || enableColumnVisibility || enableColumnPinning || enableExport || enableDensitySelector || enableReset || enableRefresh || extraFilter);
 
     const SortAscIcon = slots?.sortIconAsc ?? ArrowUpwardOutlined;
     const SortDescIcon = slots?.sortIconDesc ?? ArrowDownwardOutlined;
@@ -200,9 +202,10 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
         if (!row) return null;
         const isOdd = rowIndex % 2 === 1;
         const isSelected = table.getIsRowSelected?.(row.id) ?? false;
+        const isExpanded = !!renderDetailPanel && (row.getIsExpanded?.() ?? false);
         return (
+            <Fragment key={row.id}>
             <GridRow
-                key={row.id}
                 role="row"
                 aria-selected={isSelected || undefined}
                 onClick={onRowClick ? (e) => onRowClick(e as any, row) : undefined}
@@ -238,6 +241,10 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
                     );
                 })}
             </GridRow>
+            {isExpanded ? (
+                <GridDetailPanel role="row">{renderDetailPanel!(row)}</GridDetailPanel>
+            ) : null}
+            </Fragment>
         );
     };
 
@@ -279,6 +286,7 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
                     enableGlobalFilter={enableGlobalFilter}
                     enableColumnFilter={enableColumnFilter}
                     enableColumnVisibility={enableColumnVisibility}
+                    enableColumnPinning={enableColumnPinning}
                     enableExport={enableExport}
                     enableDensitySelector={enableDensitySelector}
                     enableReset={enableReset}

@@ -143,6 +143,15 @@ export function V2DemoPage() {
                     enableRowSelection
                     enableBulkActions
                     enableColumnReordering
+                    enableRowExpansion
+                    renderDetailPanel={(row) => (
+                        <Box sx={{ px: 2, py: 1 }}>
+                            <Typography variant="subtitle2" gutterBottom>{row.original.name}</Typography>
+                            <Typography variant="body2" color="text.secondary">
+                                {row.original.email} · {row.original.company} · {row.original.city}, {row.original.country} · Age {row.original.age}
+                            </Typography>
+                        </Box>
+                    )}
                     renderBulkActions={(s) => (
                         <Button size="small" variant="contained" color="inherit"
                             onClick={() => window.alert(`Delete ${s.type === 'exclude' ? 'all except ' + s.ids.length : s.ids.length} row(s)`)}>
@@ -163,7 +172,7 @@ export function V2DemoPage() {
                     onRowClick={(_, row) => console.log('row click', row.original.name)}
                     initialState={{
                         pagination: { pageIndex: 0, pageSize: 10 },
-                        columnPinning: { left: ['_selection', 'name'], right: ['actions'] },
+                        columnPinning: { left: ['_selection', '_expanding', 'name'], right: ['actions'] },
                     }}
                     slotProps={{ selectionColumn: { enablePinning: true } }}
                 />
