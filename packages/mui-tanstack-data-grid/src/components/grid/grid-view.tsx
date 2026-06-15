@@ -9,7 +9,6 @@
 import ArrowDownwardOutlined from '@mui/icons-material/ArrowDownwardOutlined';
 import ArrowUpwardOutlined from '@mui/icons-material/ArrowUpwardOutlined';
 import { Box, Skeleton, TablePagination } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
 import { flexRender, type Column } from '@tanstack/react-table';
 import { useMemo, useState, type CSSProperties, type ReactNode } from 'react';
 
@@ -58,7 +57,7 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
         stickyHeader,
         hover = true,
         striped = false,
-        fitToScreen,
+        fitToScreen = true,
         maxHeight = 480,
         onRowClick,
         loading,
@@ -83,7 +82,6 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
     const SortAscIcon = slots?.sortIconAsc ?? ArrowUpwardOutlined;
     const SortDescIcon = slots?.sortIconDesc ?? ArrowDownwardOutlined;
 
-    const theme = useTheme();
     const { table, refs, derived, state, actions } = engine;
     const [draggingId, setDraggingId] = useState<string | null>(null);
     const [dragOverId, setDragOverId] = useState<string | null>(null);
@@ -105,9 +103,11 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
     }, [table.getState().columnSizingInfo, table.getState().columnSizing, table.getState().columnVisibility, table.getState().columnOrder]);
 
     const totalSize = table.getTotalSize();
+    // Full-width default: non-pinned columns grow to fill spare width but never
+    // shrink below their defined size (so wide tables scroll instead of cramming).
     const flexFor = (column: Column<any, unknown>): string =>
         fitToScreen && !column.getIsPinned()
-            ? `1 1 var(--col-${column.id}-size)`
+            ? `1 0 var(--col-${column.id}-size)`
             : `0 0 var(--col-${column.id}-size)`;
 
     const scrollable = stickyHeader || enableVirtualization;
@@ -199,14 +199,19 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
         const row = rows[rowIndex];
         if (!row) return null;
         const isOdd = rowIndex % 2 === 1;
+        const isSelected = table.getIsRowSelected?.(row.id) ?? false;
         return (
             <GridRow
                 key={row.id}
                 role="row"
-                aria-selected={table.getIsRowSelected?.(row.id) || undefined}
+                aria-selected={isSelected || undefined}
                 onClick={onRowClick ? (e) => onRowClick(e as any, row) : undefined}
                 sx={{
-                    '--dt-row-bg': striped && isOdd ? theme.palette.action.hover : 'var(--dt-pinned-bg)',
+                    '--dt-row-bg': isSelected
+                        ? 'var(--dt-row-bg-selected)'
+                        : striped && isOdd
+                            ? 'var(--dt-row-bg-stripe)'
+                            : 'var(--dt-pinned-bg)',
                     background: 'var(--dt-row-bg)',
                     cursor: onRowClick ? 'pointer' : 'default',
                     ...(hover ? { '&:hover': { '--dt-row-bg': 'var(--dt-row-bg-hover)' } } : {}),

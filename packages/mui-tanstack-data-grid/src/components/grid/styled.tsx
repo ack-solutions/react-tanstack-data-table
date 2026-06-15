@@ -19,6 +19,23 @@ export const GridRoot = styled('div', { name: 'MuiTanstackDataGrid', slot: 'Root
     position: 'relative',
     width: '100%',
     fontSize: 'var(--dt-font-size)',
+    // Self-framing card: a single outer border + rounded corners (consumes the
+    // --dt-radius token) so the grid reads as a modern surface, not bare rules.
+    backgroundColor: 'var(--dt-pinned-bg)',
+    border: '1px solid var(--dt-border-color)',
+    borderRadius: 'var(--dt-radius)',
+    overflow: 'hidden',
+}) as unknown as DivSlot;
+
+export const GridToolbar = styled('div', { name: 'MuiTanstackDataGrid', slot: 'Toolbar' })({
+    display: 'flex',
+    alignItems: 'center',
+    gap: 4,
+    flexWrap: 'wrap',
+    minHeight: 52,
+    paddingInline: 12,
+    paddingBlock: 8,
+    borderBottom: '1px solid var(--dt-border-color)',
 }) as unknown as DivSlot;
 
 export const GridScroller = styled('div', { name: 'MuiTanstackDataGrid', slot: 'Scroller' })({
@@ -58,6 +75,9 @@ export const GridRow = styled('div', { name: 'MuiTanstackDataGrid', slot: 'Row' 
     minHeight: 'var(--dt-row-height)',
     background: 'var(--dt-row-bg)',
     borderBottom: '1px solid var(--dt-border-color)',
+    transition: 'background-color 120ms ease',
+    // The card's own bottom border closes the grid; drop the last row's rule.
+    '&:last-of-type': { borderBottom: 'none' },
 }) as unknown as DivSlot;
 
 export const GridCell = styled('div', { name: 'MuiTanstackDataGrid', slot: 'Cell' })({

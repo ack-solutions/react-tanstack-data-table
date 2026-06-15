@@ -51,15 +51,21 @@ The grid below is the same one, rendered under that theme:
 Every visual is a `--dt-*` CSS variable whose default derives from your MUI theme. Override a token only
 to make the grid deviate from the rest of the app.
 
+The grid renders as a **self-framing card** — a 1px `--dt-border-color` outer border with `--dt-radius`
+rounded corners — so you don't need to wrap it in your own `<Paper>`. Drop the frame with
+`sx={{ border: 0, borderRadius: 0 }}` on the root if you prefer.
+
 | Token | Defaults from |
 | --- | --- |
 | `--dt-border-color` | `palette.divider` |
-| `--dt-header-bg` | `palette.background.default` / grey |
-| `--dt-header-color` | `palette.text.secondary` |
+| `--dt-header-bg` | `palette.grey[50]` (light) / `palette.grey[900]` (dark) |
+| `--dt-header-color` | `palette.text.primary` |
 | `--dt-row-bg-hover` | `palette.action.hover` |
 | `--dt-row-bg-selected` | `palette.action.selected` |
+| `--dt-row-bg-stripe` | subtle tint (used when `striped`) |
 | `--dt-row-height`, `--dt-cell-padding-x/y` | density preset |
-| `--dt-font-size`, `--dt-radius` | typography / `theme.shape` |
+| `--dt-font-size` | density preset |
+| `--dt-radius` | `theme.shape.borderRadius` (floored at 8px) |
 
 ## 4. Per-instance overrides
 

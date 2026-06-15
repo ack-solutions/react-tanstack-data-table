@@ -16,6 +16,35 @@ format: each release groups changes as **Added** (new features), **Changed** (be
 
 ---
 
+## [1.3.2](https://www.npmjs.com/package/@ackplus/mui-tanstack-data-grid/v/1.3.2) — 2026-06-15
+
+A modern default look for the grid and toolbar — all still fully overridable via the same
+theme/token/`slotProps` layers.
+
+### Added
+- **Self-framing card.** The grid now renders inside a rounded, bordered surface (it finally consumes
+  the `--dt-radius` token, floored at 8px). No need to wrap it in your own `<Paper>`.
+- **Collapsible search.** The global search is now a search **icon** that expands into a field on click
+  (auto-focus, clear button, auto-collapses when emptied) instead of an always-on input.
+- **Themeable `Toolbar` slot** (`components.MuiTanstackDataGrid.styleOverrides.toolbar`).
+- Selected rows now get a background tint (`--dt-row-bg-selected`); rows transition smoothly on hover.
+
+### Changed
+- **Full-width by default.** `fitToScreen` now defaults to `true`, so columns stretch to fill the
+  container (they still never shrink below their defined size — wide tables scroll). Pass
+  `fitToScreen={false}` for the previous fixed-width behaviour.
+- **Modernized dropdowns.** Density, columns and export menus get rounded/elevated surfaces, section
+  labels, and the density menu shows a per-option icon + a check on the active density.
+- **`extraFilter` moved to the right** side of the toolbar (was on the left).
+- Default header is crisper: `text.primary` labels on a lighter `grey[50]` (light) background; the
+  striped path now uses the dedicated `--dt-row-bg-stripe` token.
+
+### Docs
+- Updated [Theming](/theming) defaults table and [Toolbar](/features/toolbar) (collapsible search,
+  `extraFilter` placement, the new `toolbar` style slot).
+
+---
+
 ## [1.3.1](https://www.npmjs.com/package/@ackplus/mui-tanstack-data-grid/v/1.3.1) — 2026-06-15
 
 Documentation/metadata corrections only — no API or runtime changes.

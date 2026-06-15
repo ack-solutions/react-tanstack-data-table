@@ -125,6 +125,7 @@ export function ColumnFilterControl<T extends Record<string, any>>({ engine, tit
                 onClose={close}
                 anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
                 transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                slotProps={{ paper: { elevation: 3, sx: { mt: 0.75, borderRadius: 2 } } }}
             >
                 <Box sx={{ p: 2, minWidth: 440, maxWidth: 640 }}>
                     <Typography variant="subtitle2" sx={{ mb: 1 }}>{title}</Typography>

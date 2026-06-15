@@ -11,7 +11,6 @@ import {
     Chip,
     FormControlLabel,
     LinearProgress,
-    Paper,
     Stack,
     Switch,
     ToggleButton,
@@ -68,7 +67,7 @@ export function V2DemoPage() {
     const apiRef = useRef<DataTableApi<Person> | null>(null);
 
     const [striped, setStriped] = useState(true);
-    const [fitToScreen, setFitToScreen] = useState(false);
+    const [fitToScreen, setFitToScreen] = useState(true);
     const [selectedCount, setSelectedCount] = useState(0);
 
     const columns = useMemo<ColumnDef<Person, any>[]>(() => [
@@ -130,7 +129,7 @@ export function V2DemoPage() {
                 <Typography variant="caption" color="text.secondary">{selectedCount} selected</Typography>
             </Stack>
 
-            <Paper variant="outlined" sx={{ borderRadius: 2, overflow: 'hidden' }}>
+            <Box>
                 <DataTable<Person>
                     apiRef={apiRef}
                     columns={columns}
@@ -168,7 +167,7 @@ export function V2DemoPage() {
                     }}
                     slotProps={{ selectionColumn: { enablePinning: true } }}
                 />
-            </Paper>
+            </Box>
         </Box>
     );
 }

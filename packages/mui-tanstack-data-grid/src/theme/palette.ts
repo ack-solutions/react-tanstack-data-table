@@ -27,8 +27,8 @@ export function resolveDataGridPalette(theme: Theme): TanstackDataGridPalette {
     const user = (p as unknown as { tanstackDataGrid?: Partial<TanstackDataGridPalette> }).tanstackDataGrid ?? {};
     const dark = p.mode === 'dark';
     return {
-        headerBg: user.headerBg ?? (dark ? p.grey[900] : p.grey[100]),
-        headerColor: user.headerColor ?? p.text.secondary,
+        headerBg: user.headerBg ?? (dark ? p.grey[900] : p.grey[50]),
+        headerColor: user.headerColor ?? p.text.primary,
         borderColor: user.borderColor ?? p.divider,
         pinnedBg: user.pinnedBg ?? p.background.paper,
         rowHoverBg: user.rowHoverBg ?? p.action.hover,

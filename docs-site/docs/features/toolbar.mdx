@@ -16,14 +16,32 @@ only appears when you enable at least one.
 
 | Prop | Control |
 | --- | --- |
-| `enableGlobalFilter` | Global search box |
+| `enableGlobalFilter` | Collapsible global search (a search icon that expands into a field) |
 | `enableColumnFilter` | Column-filter rule builder (with active-count badge) |
 | `enableColumnVisibility` | Show/hide columns menu |
 | `enableDensitySelector` | Density menu (compact / standard / comfortable) |
 | `enableExport` | Export menu (CSV / Excel) |
 | `enableRefresh` | Refresh button (re-runs `onFetchData`) |
 | `enableReset` | Reset layout + filters |
-| `extraFilter` | Render any custom node in the toolbar |
+| `extraFilter` | Render any custom node on the **right** of the toolbar |
+
+## Layout
+
+The search sits on the **left** as an icon and expands into a field when clicked — it auto-focuses, shows
+a clear button while it has text, and collapses again when emptied. Everything else (your `extraFilter`,
+then the filter / columns / density / export controls, then refresh / reset) is grouped on the **right**.
+
+Restyle the whole bar through the themeable `toolbar` slot:
+
+```ts
+createTheme({
+  components: {
+    MuiTanstackDataGrid: {
+      styleOverrides: { toolbar: { paddingInline: 16, gap: 8 } },
+    },
+  },
+});
+```
 
 ## Bulk-actions bar
 

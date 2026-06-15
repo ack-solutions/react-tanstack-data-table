@@ -32,7 +32,9 @@ export function useDataTableTokens(density: DataTableDensity = 'standard'): CSSP
             [DT_VARS.cellPaddingX]: `${d.cellPaddingX}px`,
             [DT_VARS.cellPaddingY]: `${d.cellPaddingY}px`,
             [DT_VARS.fontSize]: d.fontSize,
-            [DT_VARS.radius]: `${theme.shape.borderRadius}px`,
+            // Outer card radius. Derives from the theme but floors at 8px so the
+            // default reads modern; consumers can drop it via --dt-radius / sx.
+            [DT_VARS.radius]: `${Math.max(Number(theme.shape.borderRadius) || 0, 8)}px`,
             [DT_VARS.zHeader]: 3,
             [DT_VARS.zPinned]: 2,
         };
