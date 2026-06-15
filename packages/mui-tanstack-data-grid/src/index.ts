@@ -1,8 +1,11 @@
 /**
- * @ackplus/react-tanstack-data-table — v2 (dev)
+ * @ackplus/mui-tanstack-data-grid
  *
- * Phase 1 scaffold: theming system + types. The headless core, render layer,
- * and `<DataTable>` component land in later phases.
+ * A lightweight, MUI-themed React data grid built on the headless TanStack Table
+ * engine. Public surface: the theming system, types, custom TanStack features
+ * (selection, advanced column filtering), utilities, the headless engine
+ * (`./core`), and the render layer — the `<DataTable>` component, toolbars, and
+ * filters (`./components`).
  */
 
 // Theming (tokens, palette, MUI component registration, helpers)

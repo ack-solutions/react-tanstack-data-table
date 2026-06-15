@@ -16,6 +16,22 @@ format: each release groups changes as **Added** (new features), **Changed** (be
 
 ---
 
+## [1.3.1](https://www.npmjs.com/package/@ackplus/mui-tanstack-data-grid/v/1.3.1) — 2026-06-15
+
+Documentation/metadata corrections only — no API or runtime changes.
+
+### Fixed
+- Corrected a stale banner comment in the published type declarations (`dist/types/index.d.ts`) that
+  still described the package as a "Phase 1 scaffold" with the grid components "landing in later phases."
+  It now accurately reflects the shipped surface (and the correct package name).
+
+### Docs
+- Migration guide: documented the v1 → v2 imperative-handle change — the `forwardRef` `ref` is replaced
+  by an **`apiRef`** prop (the API itself is unchanged). Clarified that `stateKey` /
+  `defaultHiddenColumns` were example-wrapper props, never grid props.
+
+---
+
 ## [1.3.0](https://www.npmjs.com/package/@ackplus/mui-tanstack-data-grid/v/1.3.0) — 2026-06-14
 
 Dual-format build so bundlers tree-shake unused grid code (not just icons).

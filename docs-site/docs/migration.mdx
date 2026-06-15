@@ -50,4 +50,29 @@ npm uninstall @ackplus/react-tanstack-data-table
 - Column `minSize`/`maxSize` are now respected, and resizing no longer redistributes neighbouring columns.
 - Density names changed (`small`/`medium` → `compact`/`standard`/`comfortable`).
 - Excel export lazy-loads `xlsx` on first use; the API is unchanged.
-- **`apiRef` is unchanged** — same namespaces and method names.
+
+## 4. Imperative handle: `ref` → `apiRef`
+
+The imperative API (its namespaces and method names) is **unchanged** — but *how you obtain it* changed.
+In v1, `<DataTable>` was a `forwardRef` component, so you read the handle off a React `ref`. In v2,
+`<DataTable>` is a plain function component that **does not accept a `ref`**; it exposes the handle
+through a dedicated **`apiRef`** prop instead.
+
+```diff
+- const ref = useRef<DataTableApi<Row>>(null);
+- <DataTable ref={ref} columns={columns} data={rows} />;
++ const apiRef = useRef<DataTableApi<Row> | null>(null);
++ <DataTable apiRef={apiRef} columns={columns} data={rows} />;
+```
+
+Once wired, `apiRef.current` gives you the same API as before (`apiRef.current?.selection.selectAll()`,
+`apiRef.current?.export.toCsv()`, etc.).
+
+:::note State persistence
+`stateKey` and `defaultHiddenColumns` were never `<DataTable>` props — they belonged to the example
+app's `DataGrid` wrapper, which persisted state and converted hidden-column names into
+`initialState.columnVisibility`. The grid itself has no built-in persistence; use `initialState`
+(uncontrolled) or the controlled `onColumnVisibilityChange` / `onDataStateChange` callbacks plus your
+own storage. See the [example app](https://github.com/ack-solutions/react-tanstack-data-table) for a
+ready-made wrapper.
+:::
