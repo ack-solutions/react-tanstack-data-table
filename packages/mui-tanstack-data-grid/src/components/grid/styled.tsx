@@ -100,13 +100,16 @@ export const GridDetailPanel = styled('div', { name: 'MuiTanstackDataGrid', slot
 }) as unknown as DivSlot;
 
 export const GridFooter = styled('div', { name: 'MuiTanstackDataGrid', slot: 'Footer' })({
-    display: 'flex',
-    justifyContent: 'flex-end',
     borderTop: '1px solid var(--dt-border-color)',
-    // Tame MUI's <TablePagination>: align its padding with the grid cells, drop
-    // the private horizontal scrollbar (overflow:auto), and let it wrap on narrow
-    // widths instead of overflowing/clipping at the rounded card edge.
-    '& .MuiTablePagination-root': { overflow: 'visible' },
+    // Tame MUI's <TablePagination> so the footer is robust everywhere it's
+    // embedded — including CSS-heavy hosts (Docusaurus, WordPress themes,
+    // Tailwind/Bootstrap resets).
+    //
+    // - Root spans the full width (so it right-aligns and only wraps when the
+    //   grid is genuinely narrow, never because the flex row shrink-wrapped it).
+    // - overflow:visible kills MUI's private horizontal scrollbar.
+    // - Padding aligns with the grid cells (default is a cramped 2px on the right).
+    '& .MuiTablePagination-root': { overflow: 'visible', width: '100%' },
     '& .MuiTablePagination-spacer': { display: 'none' },
     '& .MuiTablePagination-toolbar': {
         minHeight: 48,
@@ -114,6 +117,12 @@ export const GridFooter = styled('div', { name: 'MuiTanstackDataGrid', slot: 'Fo
         flexWrap: 'wrap',
         justifyContent: 'flex-end',
         rowGap: 4,
+    },
+    // Global `p { margin }` (Docusaurus/WordPress/Tailwind) leaks into the
+    // pagination labels and balloons the row height — pin them flush.
+    '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': {
+        margin: 0,
+        lineHeight: 1.43,
     },
 }) as unknown as DivSlot;
 

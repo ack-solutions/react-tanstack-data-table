@@ -16,6 +16,17 @@ format: each release groups changes as **Added** (new features), **Changed** (be
 
 ---
 
+## [1.4.3](https://www.npmjs.com/package/@ackplus/mui-tanstack-data-grid/v/1.4.3) — 2026-06-16
+
+### Fixed
+- **Pagination footer survives CSS-heavy host pages.** Completes the 1.4.2 fix. Global `p { margin }` from
+  host typography (Docusaurus, WordPress themes, Tailwind/Bootstrap resets) was leaking into MUI's
+  pagination `<p>` labels and ballooning the footer to ~3× height (and 1.4.2's `flex-wrap` then made it
+  wrap). The labels are now pinned flush (`margin: 0`) and the pagination root spans the full width, so the
+  footer stays a clean single row wherever the grid is embedded — not just in a pristine MUI app.
+
+---
+
 ## [1.4.2](https://www.npmjs.com/package/@ackplus/mui-tanstack-data-grid/v/1.4.2) — 2026-06-16
 
 ### Fixed
