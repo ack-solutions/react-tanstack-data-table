@@ -1,10 +1,16 @@
+import { useColorMode } from '@docusaurus/theme-common';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
-import type { ReactNode } from 'react';
+import { useMemo, type ReactNode } from 'react';
 
-const theme = createTheme();
-
-/** Wraps a demo in an MUI theme + a bordered surface that fits the Docusaurus page. */
+/**
+ * Wraps a demo in an MUI theme + a bordered surface that fits the Docusaurus page.
+ * The MUI `palette.mode` follows Docusaurus's light/dark toggle, so the grid (which
+ * derives all its colours from the theme) switches with the docs.
+ */
 export function MuiProvider({ children }: { children: ReactNode }) {
+    const { colorMode } = useColorMode();
+    const theme = useMemo(() => createTheme({ palette: { mode: colorMode } }), [colorMode]);
+
     return (
         <ThemeProvider theme={theme}>
             <div
