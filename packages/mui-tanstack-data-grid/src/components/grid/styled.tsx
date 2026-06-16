@@ -63,9 +63,12 @@ export const GridHeaderCell = styled('div', { name: 'MuiTanstackDataGrid', slot:
     alignItems: 'center',
     position: 'relative',
     paddingInline: 'var(--dt-cell-padding-x)',
+    fontSize: '0.8125rem',
     fontWeight: 600,
     color: 'var(--dt-header-color)',
     userSelect: 'none',
+    // Subtle vertical separators between header columns (design reference).
+    '&:not(:first-of-type)': { boxShadow: 'inset 1px 0 0 var(--dt-border-color)' },
 }) as unknown as DivSlot;
 
 export const GridBody = styled('div', { name: 'MuiTanstackDataGrid', slot: 'Body' })({}) as unknown as DivSlot;

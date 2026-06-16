@@ -3,7 +3,7 @@ title: Toolbar
 ---
 
 import LiveDemo from '@site/src/demo/LiveDemo';
-import { FullDemo } from '@site/src/demo/demos';
+import { FullDemo, ToolbarLayoutDemo } from '@site/src/demo/demos';
 
 # Toolbar
 
@@ -18,7 +18,7 @@ only appears when you enable at least one.
 | --- | --- |
 | `enableGlobalFilter` | Collapsible global search (a search icon that expands into a field) |
 | `enableColumnFilter` | Column-filter rule builder (with active-count badge) |
-| `enableColumnVisibility` | Show/hide columns menu |
+| `enableColumnVisibility` | Columns panel — show/hide (also pin & reorder when those are enabled) |
 | `enableDensitySelector` | Density menu (compact / standard / comfortable) |
 | `enableExport` | Export menu (CSV / Excel) |
 | `enableRefresh` | Refresh button (re-runs `onFetchData`) |
@@ -43,6 +43,33 @@ createTheme({
 });
 ```
 
+### Reorder / reposition the controls
+
+Pass **`renderToolbar`** to arrange the built-in controls however you like. It hands you each ready-made
+control element — `search`, `filter`, `columns`, `density`, `export`, `refresh`, `reset`, and your
+`extraFilter` — so you can order and position them freely (e.g. actions on the left, search on the right).
+A control you didn't enable comes through as `null`.
+
+<LiveDemo>{() => <ToolbarLayoutDemo />}</LiveDemo>
+
+```tsx
+<DataTable
+  columns={columns}
+  data={rows}
+  enableGlobalFilter enableColumnVisibility enableExport enableRefresh enableReset
+  renderToolbar={(c) => (
+    <>
+      {c.columns}{c.density}{c.export}{c.refresh}{c.reset}
+      <Box sx={{ flex: 1 }} />   {/* spacer pushes the rest right */}
+      {c.filter}{c.search}
+    </>
+  )}
+/>
+```
+
+Each `columns` / `density` / `export` element already includes its menu/popover, so it works wherever you
+place it. For a **complete** replacement with your own components, use `slots={{ toolbar: MyToolbar }}`.
+
 ## Bulk-actions bar
 
 When `enableBulkActions` is set and rows are selected, a bulk-actions bar appears above the grid showing
@@ -51,9 +78,10 @@ the selected count, a Clear action, and whatever you return from `renderBulkActi
 
 ## Customising the toolbar
 
-Replace or restyle any toolbar part with `slots` / `slotProps`, or build your own toolbar entirely and
-drive the grid through [`apiRef`](/api/api-ref) (`apiRef.current.filtering.setGlobalFilter(…)`,
-`apiRef.current.export.exportCSV()`, etc.).
+Three levels, lightest first: [`renderToolbar`](#reorder--reposition-the-controls) to rearrange the
+built-in controls; restyle individual parts with `slots` / `slotProps`; or replace the whole bar with
+`slots={{ toolbar: MyToolbar }}` and drive the grid through [`apiRef`](/api/api-ref)
+(`apiRef.current.filtering.setGlobalFilter(…)`, `apiRef.current.export.exportCSV()`, etc.).
 
 ### Custom icons
 
@@ -86,16 +114,18 @@ for the sort indicators), so **MUI icons inherit the right size automatically**.
 plain SVG) renders fine too, but it won't read MUI's `fontSize` — size it yourself, e.g. wrap it
 (`(props) => <Search size={18} {...props} />`) or set its own size prop, if you need it to match exactly.
 
-| Slot | Replaces | Default |
-| --- | --- | --- |
-| `searchIcon` | global search adornment | `SearchOutlined` |
-| `filterIcon` | column-filter button | `FilterListOutlined` |
-| `addFilterIcon` | "Add filter" button | `AddOutlined` |
-| `clearIcon` | remove a filter rule | `CloseOutlined` |
-| `columnsIcon` | column-visibility button | `ViewColumnOutlined` |
-| `densityIcon` | density selector | `DensitySmallOutlined` |
-| `exportIcon` | export button + menu items | `FileDownloadOutlined` |
-| `refreshIcon` | refresh button | `RefreshOutlined` |
-| `resetIcon` | reset button | `RestartAltOutlined` |
-| `sortIconAsc` / `sortIconDesc` | header sort indicators | `ArrowUpwardOutlined` / `ArrowDownwardOutlined` |
-| `expandIcon` / `collapseIcon` | row expand/collapse | `KeyboardArrowDownOutlined` / `KeyboardArrowUpOutlined` |
+| Slot | Replaces |
+| --- | --- |
+| `searchIcon` | global search adornment |
+| `filterIcon` | column-filter button |
+| `addFilterIcon` | "Add filter" button (filter popover) |
+| `clearIcon` | clear search / remove a filter rule |
+| `columnsIcon` | columns panel button (show/hide, pin, reorder) |
+| `densityIcon` | density selector |
+| `exportIcon` | export button + menu items |
+| `refreshIcon` | refresh button |
+| `resetIcon` | reset button |
+| `sortIconAsc` / `sortIconDesc` | header sort indicators |
+| `expandIcon` / `collapseIcon` | row expand/collapse |
+
+Each defaults to a built-in **feather-style line icon** (the `expandIcon` / `collapseIcon` defaults are MUI chevrons). The full, grouped slot list is in the [Props reference](/api/props#slots--slotprops).

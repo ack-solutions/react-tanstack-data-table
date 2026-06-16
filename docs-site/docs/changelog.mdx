@@ -16,6 +16,35 @@ format: each release groups changes as **Added** (new features), **Changed** (be
 
 ---
 
+## [1.4.0](https://www.npmjs.com/package/@ackplus/mui-tanstack-data-grid/v/1.4.0) — 2026-06-16
+
+A design-reference visual refresh, a full column manager, and a customizable toolbar.
+
+### Added
+- **`renderToolbar` render-prop** — arrange the built-in toolbar controls (search, filter, columns,
+  density, export, refresh, reset, `extraFilter`) in any order or position. `slots.toolbar` is now also
+  wired for a complete replacement. See [Toolbar → Reorder / reposition](/features/toolbar#reorder--reposition-the-controls).
+- **Rebuilt Columns panel** (the toolbar ⊞ button): wider + compact, with a per-column **show/hide eye
+  toggle**, **pin** left/right, **drag-to-reorder**, and a **Show all / Reset / Done** footer. Replaces the
+  old checkbox menu. See [The Columns panel](/features/columns#the-columns-panel).
+- **Feather-style default icons** for the toolbar and sort indicators — lightweight inline SVG (no
+  `@mui/icons-material` barrel pulled in), still fully overridable through `slots`.
+
+### Changed
+- **Default look refreshed** to match the design reference: header uses `text.secondary` labels at 13px
+  with subtle column separators.
+- **`DataTableSlots` reorganized** — kept flat (MUI-consistent) but grouped by section, and the permissive
+  `[slot: string]` index signature was **removed** so you get real autocomplete + typo-safety. `slotProps`
+  now explicitly types `selectionColumn` / `expandColumn`. (If you were passing an unknown slot key, TS
+  will now flag it.)
+
+### Docs
+- Confirmed **light + dark theme** support end-to-end, including under `CssVarsProvider` — every colour
+  derives from your MUI theme and follows a light↔dark switch automatically.
+- New: toolbar reorder demo, Columns-panel guide, and a grouped [Slots reference](/api/props#slots--slotprops).
+
+---
+
 ## [1.3.3](https://www.npmjs.com/package/@ackplus/mui-tanstack-data-grid/v/1.3.3) — 2026-06-15
 
 Column pinning gets a UI, and row expansion now actually works.

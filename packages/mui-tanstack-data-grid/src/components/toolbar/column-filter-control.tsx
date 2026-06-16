@@ -5,7 +5,6 @@
  */
 import AddOutlined from '@mui/icons-material/AddOutlined';
 import CloseOutlined from '@mui/icons-material/CloseOutlined';
-import FilterListOutlined from '@mui/icons-material/FilterListOutlined';
 import {
     Badge,
     Box,
@@ -27,6 +26,7 @@ import { getColumnType, isColumnFilterable } from '../../utils/column-helpers';
 import type { ColumnFilterRule } from '../../types/filter.types';
 import type { DataTableSlots } from '../../types/slots.types';
 import type { UseDataTableResult } from '../../core/use-data-table';
+import { FilterFeatherIcon } from '../icons';
 import { FILTER_OPERATORS } from '../filters/operators';
 import { FilterValueInput } from '../filters/filter-value-input';
 
@@ -40,7 +40,7 @@ const NO_VALUE_OPS = ['isEmpty', 'isNotEmpty'];
 
 export function ColumnFilterControl<T extends Record<string, any>>({ engine, title = 'Column Filters', slots }: ColumnFilterControlProps<T>): ReactElement {
     const table = engine.table as any;
-    const FilterIcon = slots?.filterIcon ?? FilterListOutlined;
+    const FilterIcon = slots?.filterIcon ?? FilterFeatherIcon;
     const AddFilterIcon = slots?.addFilterIcon ?? AddOutlined;
     const ClearIcon = slots?.clearIcon ?? CloseOutlined;
     const [anchor, setAnchor] = useState<HTMLElement | null>(null);

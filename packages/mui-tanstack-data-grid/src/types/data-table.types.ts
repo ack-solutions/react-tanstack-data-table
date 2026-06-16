@@ -33,6 +33,32 @@ import type {
 } from './state.types';
 
 /**
+ * The built-in toolbar controls, as ready-to-render elements, handed to
+ * `renderToolbar` so callers can arrange them in any order/position. A control
+ * is `null` when its feature flag is off (e.g. `search` is null without
+ * `enableGlobalFilter`). Each `columns`/`density`/`export` element already
+ * includes its popover/menu, so it works wherever you place it.
+ */
+export interface DataTableToolbarControls {
+    /** Collapsible global search. */
+    search: ReactNode;
+    /** Column-filter button + popover. */
+    filter: ReactNode;
+    /** Columns button + panel (show/hide, pin, reorder). */
+    columns: ReactNode;
+    /** Density selector button + menu. */
+    density: ReactNode;
+    /** Export button + menu (CSV/Excel). */
+    export: ReactNode;
+    /** Refresh button. */
+    refresh: ReactNode;
+    /** Reset button. */
+    reset: ReactNode;
+    /** Your `extraFilter` node. */
+    extraFilter: ReactNode;
+}
+
+/**
  * Props for the `<DataTable>` component.
  *
  * Naming conventions: `enableX` = feature toggle · `onXChange` = state callback ·
@@ -54,6 +80,13 @@ export interface DataTableProps<T> {
     idKey?: keyof T;
     extraFilter?: ReactNode | null;
     footerFilter?: ReactNode | null;
+    /**
+     * Rearrange / restyle the built-in toolbar. Receives the ready-made control
+     * elements ({@link DataTableToolbarControls}) so you can place them in any
+     * order or position (e.g. search on the right). Return your layout. For a
+     * complete replacement, use `slots.toolbar` instead.
+     */
+    renderToolbar?: (controls: DataTableToolbarControls) => ReactNode;
 
     /** @deprecated Renamed to `rowCount`. */
     totalRow?: number;

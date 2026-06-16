@@ -8,8 +8,8 @@ import { ColumnsDemo } from '@site/src/demo/demos';
 
 # Columns
 
-Resize by dragging a column's edge, reorder by dragging a header, pin columns left/right (they stay put
-while scrolling), and show/hide columns from the toolbar. Pinned columns are excluded from reordering.
+Resize by dragging a column's edge, and reorder, pin, or show/hide columns — either by dragging headers
+directly or from the **Columns panel** in the toolbar. Pinned columns are excluded from reordering.
 
 <LiveDemo>{() => <ColumnsDemo />}</LiveDemo>
 
@@ -31,10 +31,22 @@ while scrolling), and show/hide columns from the toolbar. Pinned columns are exc
 | --- | --- | --- | --- |
 | `enableColumnResizing` | `boolean` | `false` | Drag column edges to resize. |
 | `columnResizeMode` | `'onChange' \| 'onEnd'` | `'onChange'` | Apply resize live or on release. |
-| `enableColumnReordering` | `boolean` | `false` | Drag headers to reorder. |
+| `enableColumnReordering` | `boolean` | `false` | Drag headers — or rows in the Columns panel — to reorder. |
 | `onColumnOrderChange` | `(order) => void` | — | Columns reordered. |
 | `enableColumnPinning` | `boolean` | `false` | Sticky left/right columns. |
-| `enableColumnVisibility` | `boolean` | `true` | Show/hide from the toolbar. |
+| `enableColumnVisibility` | `boolean` | `true` | Show/hide (eye toggle) from the Columns panel. |
+
+## The Columns panel
+
+The toolbar's **Columns** button (shown when any of `enableColumnVisibility`, `enableColumnPinning`, or
+`enableColumnReordering` is set) opens a panel to manage every column in one place:
+
+- **Show / hide** — the eye toggle per column (greyed when hidden).
+- **Pin** left / right — when `enableColumnPinning` is on.
+- **Reorder** — drag the handle (⠿) to reposition, when `enableColumnReordering` is on.
+- **Show all** · **Reset** · **Done** in the footer.
+
+Changes apply live. The built-in selection / expander columns are excluded.
 
 ## Column sizing
 

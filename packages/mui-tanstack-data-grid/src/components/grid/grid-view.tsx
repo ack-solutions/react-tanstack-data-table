@@ -6,12 +6,11 @@
  * offsets from the same numbers; rows are virtualized when enabled. Theming and
  * density come from the `--dt-*` tokens applied to the root.
  */
-import ArrowDownwardOutlined from '@mui/icons-material/ArrowDownwardOutlined';
-import ArrowUpwardOutlined from '@mui/icons-material/ArrowUpwardOutlined';
 import { Box, Skeleton, TablePagination } from '@mui/material';
 import { flexRender, type Column } from '@tanstack/react-table';
 import { Fragment, useMemo, useState, type CSSProperties, type ReactNode } from 'react';
 
+import { SortAscFeatherIcon, SortDescFeatherIcon } from '../icons';
 import { useDataTableTokens } from '../../theme/use-data-table-tokens';
 import type { DataTableProps } from '../../types/data-table.types';
 import type { UseDataTableResult } from '../../core/use-data-table';
@@ -76,13 +75,17 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
         enableColumnReordering,
         renderBulkActions,
         renderDetailPanel,
+        renderToolbar,
         slots,
     } = props;
 
     const showToolbar = !!(enableGlobalFilter || enableColumnFilter || enableColumnVisibility || enableColumnPinning || enableExport || enableDensitySelector || enableReset || enableRefresh || extraFilter);
+    // `slots.toolbar` fully replaces the toolbar; otherwise the built-in one
+    // (which itself honours `renderToolbar` for rearranging controls).
+    const ToolbarComponent = (slots?.toolbar ?? DataTableToolbar) as typeof DataTableToolbar;
 
-    const SortAscIcon = slots?.sortIconAsc ?? ArrowUpwardOutlined;
-    const SortDescIcon = slots?.sortIconDesc ?? ArrowDownwardOutlined;
+    const SortAscIcon = slots?.sortIconAsc ?? SortAscFeatherIcon;
+    const SortDescIcon = slots?.sortIconDesc ?? SortDescFeatherIcon;
 
     const { table, refs, derived, state, actions } = engine;
     const [draggingId, setDraggingId] = useState<string | null>(null);
@@ -281,18 +284,20 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
     return (
         <GridRoot style={tokens} className={props.className}>
             {showToolbar ? (
-                <DataTableToolbar
+                <ToolbarComponent
                     engine={engine}
                     enableGlobalFilter={enableGlobalFilter}
                     enableColumnFilter={enableColumnFilter}
                     enableColumnVisibility={enableColumnVisibility}
                     enableColumnPinning={enableColumnPinning}
+                    enableColumnReordering={enableColumnReordering}
                     enableExport={enableExport}
                     enableDensitySelector={enableDensitySelector}
                     enableReset={enableReset}
                     enableRefresh={enableRefresh}
                     extraFilter={extraFilter}
                     slots={slots}
+                    renderToolbar={renderToolbar}
                 />
             ) : null}
             {derived.isSomeRowsSelected ? (

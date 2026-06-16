@@ -28,7 +28,7 @@ export function resolveDataGridPalette(theme: Theme): TanstackDataGridPalette {
     const dark = p.mode === 'dark';
     return {
         headerBg: user.headerBg ?? (dark ? p.grey[900] : p.grey[50]),
-        headerColor: user.headerColor ?? p.text.primary,
+        headerColor: user.headerColor ?? p.text.secondary,
         borderColor: user.borderColor ?? p.divider,
         pinnedBg: user.pinnedBg ?? p.background.paper,
         rowHoverBg: user.rowHoverBg ?? p.action.hover,

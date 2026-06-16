@@ -79,7 +79,8 @@ Every prop, grouped by area. Use the **search** (top right) to find a setting fa
 | `enableExport` | `boolean` | `false` | Export menu. |
 | `enableReset` | `boolean` | `false` | Reset button. |
 | `enableRefresh` | `boolean` | `false` | Refresh button. |
-| `extraFilter` | `ReactNode` | — | Custom toolbar content. |
+| `extraFilter` | `ReactNode` | — | Custom toolbar content (right side by default). |
+| `renderToolbar` | `(controls) => ReactNode` | — | Rearrange the built-in toolbar controls ([guide](/features/toolbar#reorder--reposition-the-controls)). |
 
 ## States & customization
 
@@ -95,3 +96,45 @@ Every prop, grouped by area. Use the **search** (top right) to find a setting fa
 | `onRowClick` | `(event, row) => void` | — | Row click. |
 | `selectOnRowClick` | `boolean` | `false` | Toggle selection on row click. |
 | `logging` | `boolean \| DataTableLoggingOptions` | `false` | Debug logging. |
+
+## Slots & slotProps
+
+`slots` replaces a part; `slotProps` injects props/`sx` into one — the MUI pattern. Slots are a **flat**
+map of descriptive keys (not nested by section); pass only what you want to override, and each falls back
+to the built-in.
+
+### Structure slots
+
+| Slot | Part |
+| --- | --- |
+| `root`, `scroller`, `grid` | outer card / scroll area / grid |
+| `header`, `headerRow`, `headerCell` | header parts |
+| `body`, `row`, `cell`, `detailPanel` | body parts |
+| `footer`, `pagination` | footer / pagination |
+| `loadingOverlay`, `noRowsOverlay` | overlays |
+
+### Toolbar & control slots
+
+| Slot | Part |
+| --- | --- |
+| `toolbar` | the whole toolbar |
+| `searchInput` | global search field |
+| `columnFilterControl`, `columnVisibilityControl`, `columnPinningControl`, `densityControl` | toolbar menus |
+| `exportButton`, `refreshButton`, `resetButton` | toolbar buttons |
+| `bulkActionsToolbar` | selection bulk-actions bar |
+
+### Icon slots
+
+Swap in your own set (e.g. lucide); defaults are built-in line icons. See [Custom icons](/features/toolbar#custom-icons).
+
+| Slot | Used for |
+| --- | --- |
+| `searchIcon`, `clearIcon` | search / clear |
+| `filterIcon`, `addFilterIcon` | column filter |
+| `columnsIcon` | columns panel (show/hide, pin, reorder) |
+| `densityIcon`, `exportIcon`, `refreshIcon`, `resetIcon` | toolbar buttons |
+| `sortIconAsc`, `sortIconDesc` | header sort |
+| `expandIcon`, `collapseIcon` | row expand / collapse |
+
+`slotProps` accepts the same keys, plus **`selectionColumn`** / **`expandColumn`** to configure the
+auto-generated checkbox / expander columns — e.g. `slotProps={{ selectionColumn: { enablePinning: true } }}`.

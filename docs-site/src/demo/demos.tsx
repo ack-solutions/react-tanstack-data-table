@@ -1,4 +1,4 @@
-import { Button } from '@mui/material';
+import { Box, Button } from '@mui/material';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { DataTable } from '@ackplus/mui-tanstack-data-grid';
 
@@ -57,6 +57,32 @@ export function ColumnsDemo() {
 
 export function ExportDemo() {
     return <DataTable columns={columns} data={users} enableExport exportFilename="users" enablePagination initialState={page5} />;
+}
+
+export function ToolbarLayoutDemo() {
+    return (
+        <DataTable
+            columns={columns}
+            data={users}
+            enableGlobalFilter
+            enableColumnFilter
+            enableColumnVisibility
+            enableDensitySelector
+            enableExport
+            enableRefresh
+            enableReset
+            enablePagination
+            initialState={page5}
+            // Rearrange the built-in controls: actions on the left, search on the right.
+            renderToolbar={(c) => (
+                <>
+                    {c.columns}{c.density}{c.export}{c.refresh}{c.reset}
+                    <Box sx={{ flex: 1 }} />
+                    {c.filter}{c.search}
+                </>
+            )}
+        />
+    );
 }
 
 export function PinningDemo() {

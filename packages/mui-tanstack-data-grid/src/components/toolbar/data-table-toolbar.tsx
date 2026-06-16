@@ -4,21 +4,12 @@
  * (CSV/Excel), refresh, reset, plus a caller `extraFilter` slot on the right.
  * Each control drives the headless engine through `engine.api` / `engine.actions`.
  */
-import AlignHorizontalLeftOutlined from '@mui/icons-material/AlignHorizontalLeftOutlined';
-import AlignHorizontalRightOutlined from '@mui/icons-material/AlignHorizontalRightOutlined';
 import CheckOutlined from '@mui/icons-material/CheckOutlined';
-import ClearOutlined from '@mui/icons-material/ClearOutlined';
 import DensityLargeOutlined from '@mui/icons-material/DensityLargeOutlined';
 import DensityMediumOutlined from '@mui/icons-material/DensityMediumOutlined';
 import DensitySmallOutlined from '@mui/icons-material/DensitySmallOutlined';
-import FileDownloadOutlined from '@mui/icons-material/FileDownloadOutlined';
-import RefreshOutlined from '@mui/icons-material/RefreshOutlined';
-import RestartAltOutlined from '@mui/icons-material/RestartAltOutlined';
-import SearchOutlined from '@mui/icons-material/SearchOutlined';
-import ViewColumnOutlined from '@mui/icons-material/ViewColumnOutlined';
 import {
     Box,
-    Checkbox,
     Collapse,
     Divider,
     IconButton,
@@ -35,9 +26,20 @@ import { useEffect, useRef, useState, type ComponentType, type ReactNode } from 
 
 import type { DataTableDensity } from '../../theme/tokens';
 import type { DataTableSlots } from '../../types/slots.types';
+import type { DataTableToolbarControls } from '../../types/data-table.types';
 import type { UseDataTableResult } from '../../core/use-data-table';
+import {
+    ClearFeatherIcon,
+    ColumnsFeatherIcon,
+    DensityFeatherIcon,
+    ExportFeatherIcon,
+    RefreshFeatherIcon,
+    ResetFeatherIcon,
+    SearchFeatherIcon,
+} from '../icons';
 import { GridToolbar } from '../grid/styled';
 import { ColumnFilterControl } from './column-filter-control';
+import { ColumnsPanel } from './columns-panel';
 
 export interface DataTableToolbarProps<T> {
     engine: UseDataTableResult<T>;
@@ -45,6 +47,7 @@ export interface DataTableToolbarProps<T> {
     enableColumnFilter?: boolean;
     enableColumnVisibility?: boolean;
     enableColumnPinning?: boolean;
+    enableColumnReordering?: boolean;
     enableExport?: boolean;
     enableDensitySelector?: boolean;
     enableReset?: boolean;
@@ -52,6 +55,7 @@ export interface DataTableToolbarProps<T> {
     extraFilter?: ReactNode;
     searchPlaceholder?: string;
     slots?: Partial<DataTableSlots>;
+    renderToolbar?: (controls: DataTableToolbarControls) => ReactNode;
 }
 
 const DENSITY_LABEL: Record<DataTableDensity, string> = {
@@ -68,11 +72,6 @@ const DENSITY_ICON: Record<DataTableDensity, ComponentType<{ fontSize?: 'small' 
 
 // Shared modern menu surface: rounded, lightly elevated, sensible min width.
 const menuSlotProps = { paper: { elevation: 3, sx: { mt: 0.75, borderRadius: 2, minWidth: 200 } } } as const;
-
-const columnLabel = (col: any): string => {
-    const header = col.columnDef?.header;
-    return typeof header === 'string' && header ? header : col.id;
-};
 
 /** Collapsible search: a Search icon that expands to a field (auto-focus, clear, auto-collapse when empty). */
 function ToolbarSearch(props: {
@@ -140,6 +139,7 @@ export function DataTableToolbar<T extends Record<string, any>>(props: DataTable
         enableColumnFilter,
         enableColumnVisibility,
         enableColumnPinning,
+        enableColumnReordering,
         enableExport,
         enableDensitySelector,
         enableReset,
@@ -147,17 +147,18 @@ export function DataTableToolbar<T extends Record<string, any>>(props: DataTable
         extraFilter,
         searchPlaceholder = 'Search…',
         slots,
+        renderToolbar,
     } = props;
 
-    const SearchIcon = slots?.searchIcon ?? SearchOutlined;
-    const ClearIcon = slots?.clearIcon ?? ClearOutlined;
-    const DensityIcon = slots?.densityIcon ?? DensitySmallOutlined;
-    const ColumnsIcon = slots?.columnsIcon ?? ViewColumnOutlined;
-    const ExportIcon = slots?.exportIcon ?? FileDownloadOutlined;
-    const RefreshIcon = slots?.refreshIcon ?? RefreshOutlined;
-    const ResetIcon = slots?.resetIcon ?? RestartAltOutlined;
+    const SearchIcon = slots?.searchIcon ?? SearchFeatherIcon;
+    const ClearIcon = slots?.clearIcon ?? ClearFeatherIcon;
+    const DensityIcon = slots?.densityIcon ?? DensityFeatherIcon;
+    const ColumnsIcon = slots?.columnsIcon ?? ColumnsFeatherIcon;
+    const ExportIcon = slots?.exportIcon ?? ExportFeatherIcon;
+    const RefreshIcon = slots?.refreshIcon ?? RefreshFeatherIcon;
+    const ResetIcon = slots?.resetIcon ?? ResetFeatherIcon;
 
-    const { table, api, derived, actions } = engine;
+    const { api, derived, actions } = engine;
     const [search, setSearch] = useState(engine.state.globalFilter || '');
     const [colAnchor, setColAnchor] = useState<HTMLElement | null>(null);
     const [densityAnchor, setDensityAnchor] = useState<HTMLElement | null>(null);
@@ -168,155 +169,133 @@ export function DataTableToolbar<T extends Record<string, any>>(props: DataTable
         api.filtering.setGlobalFilter(value);
     };
 
-    const hasActionGroup = enableColumnFilter || enableColumnVisibility || enableDensitySelector || enableExport;
+    const hasActionGroup = enableColumnFilter || enableColumnVisibility || enableColumnPinning || enableColumnReordering || enableDensitySelector || enableExport;
+
+    // Each built-in control is built once here, so the default layout and a
+    // caller's `renderToolbar(controls)` share the exact same elements.
+    const searchEl = enableGlobalFilter ? (
+        <ToolbarSearch value={search} onChange={onSearch} placeholder={searchPlaceholder} SearchIcon={SearchIcon} ClearIcon={ClearIcon} />
+    ) : null;
+
+    const extraFilterEl = extraFilter ? <Box sx={{ display: 'inline-flex', alignItems: 'center' }}>{extraFilter}</Box> : null;
+
+    const filterEl = enableColumnFilter ? <ColumnFilterControl engine={engine} slots={slots} /> : null;
+
+    const columnsEl = enableColumnVisibility || enableColumnPinning || enableColumnReordering ? (
+        <>
+            <Tooltip title="Columns">
+                <IconButton size="small" onClick={(e) => setColAnchor(e.currentTarget)}>
+                    <ColumnsIcon fontSize="small" />
+                </IconButton>
+            </Tooltip>
+            <ColumnsPanel
+                engine={engine}
+                anchorEl={colAnchor}
+                open={!!colAnchor}
+                onClose={() => setColAnchor(null)}
+                enableColumnVisibility={enableColumnVisibility}
+                enableColumnPinning={enableColumnPinning}
+                enableColumnReordering={enableColumnReordering}
+            />
+        </>
+    ) : null;
+
+    const densityEl = enableDensitySelector ? (
+        <>
+            <Tooltip title="Density">
+                <IconButton size="small" onClick={(e) => setDensityAnchor(e.currentTarget)}>
+                    <DensityIcon fontSize="small" />
+                </IconButton>
+            </Tooltip>
+            <Menu anchorEl={densityAnchor} open={!!densityAnchor} onClose={() => setDensityAnchor(null)} slotProps={menuSlotProps}>
+                {(['compact', 'standard', 'comfortable'] as DataTableDensity[]).map((d) => {
+                    const Icon = DENSITY_ICON[d];
+                    const selected = derived.density === d;
+                    return (
+                        <MenuItem
+                            key={d}
+                            selected={selected}
+                            onClick={() => {
+                                actions.setDensity(d);
+                                setDensityAnchor(null);
+                            }}
+                        >
+                            <ListItemIcon><Icon fontSize="small" /></ListItemIcon>
+                            <ListItemText primary={DENSITY_LABEL[d]} />
+                            {selected ? <CheckOutlined fontSize="small" color="primary" sx={{ ml: 2 }} /> : null}
+                        </MenuItem>
+                    );
+                })}
+            </Menu>
+        </>
+    ) : null;
+
+    const exportEl = enableExport ? (
+        <>
+            <Tooltip title="Export">
+                <IconButton size="small" onClick={(e) => setExportAnchor(e.currentTarget)}>
+                    <ExportIcon fontSize="small" />
+                </IconButton>
+            </Tooltip>
+            <Menu anchorEl={exportAnchor} open={!!exportAnchor} onClose={() => setExportAnchor(null)} slotProps={menuSlotProps}>
+                <ListSubheader sx={{ lineHeight: '32px', bgcolor: 'transparent' }}>Export as</ListSubheader>
+                <MenuItem onClick={() => { void api.export.exportCSV(); setExportAnchor(null); }}>
+                    <ListItemIcon><ExportIcon fontSize="small" /></ListItemIcon>
+                    <ListItemText primary="CSV" secondary=".csv" />
+                </MenuItem>
+                <MenuItem onClick={() => { void api.export.exportExcel(); setExportAnchor(null); }}>
+                    <ListItemIcon><ExportIcon fontSize="small" /></ListItemIcon>
+                    <ListItemText primary="Excel" secondary=".xlsx" />
+                </MenuItem>
+            </Menu>
+        </>
+    ) : null;
+
+    const refreshEl = enableRefresh ? (
+        <Tooltip title="Refresh">
+            <IconButton size="small" onClick={() => api.data.refresh()}>
+                <RefreshIcon fontSize="small" />
+            </IconButton>
+        </Tooltip>
+    ) : null;
+
+    const resetEl = enableReset ? (
+        <Tooltip title="Reset">
+            <IconButton size="small" onClick={() => api.layout.resetAll()}>
+                <ResetIcon fontSize="small" />
+            </IconButton>
+        </Tooltip>
+    ) : null;
+
+    // Caller-controlled layout: hand over the ready-made controls to arrange freely.
+    if (renderToolbar) {
+        const controls: DataTableToolbarControls = {
+            search: searchEl,
+            filter: filterEl,
+            columns: columnsEl,
+            density: densityEl,
+            export: exportEl,
+            refresh: refreshEl,
+            reset: resetEl,
+            extraFilter: extraFilterEl,
+        };
+        return <GridToolbar>{renderToolbar(controls)}</GridToolbar>;
+    }
 
     return (
         <GridToolbar>
-            {enableGlobalFilter ? (
-                <ToolbarSearch
-                    value={search}
-                    onChange={onSearch}
-                    placeholder={searchPlaceholder}
-                    SearchIcon={SearchIcon}
-                    ClearIcon={ClearIcon}
-                />
-            ) : null}
-
+            {searchEl}
             <Box sx={{ flex: 1 }} />
-
-            {extraFilter ? <Box sx={{ display: 'inline-flex', alignItems: 'center' }}>{extraFilter}</Box> : null}
-
-            {enableColumnFilter ? <ColumnFilterControl engine={engine} slots={slots} /> : null}
-
-            {enableColumnVisibility || enableColumnPinning ? (
-                <>
-                    <Tooltip title="Columns">
-                        <IconButton size="small" onClick={(e) => setColAnchor(e.currentTarget)}>
-                            <ColumnsIcon fontSize="small" />
-                        </IconButton>
-                    </Tooltip>
-                    <Menu anchorEl={colAnchor} open={!!colAnchor} onClose={() => setColAnchor(null)} slotProps={menuSlotProps}>
-                        <ListSubheader sx={{ lineHeight: '32px', bgcolor: 'transparent' }}>Columns</ListSubheader>
-                        {table
-                            .getAllLeafColumns()
-                            // Skip the built-in selection/expander columns (ids start with "_").
-                            .filter((col) => !col.id.startsWith('_')
-                                && ((enableColumnVisibility && col.getCanHide()) || (enableColumnPinning && col.getCanPin())))
-                            .map((col) => {
-                                const canHide = !!enableColumnVisibility && col.getCanHide();
-                                const canPin = !!enableColumnPinning && col.getCanPin();
-                                const pinned = col.getIsPinned();
-                                return (
-                                    <MenuItem
-                                        key={col.id}
-                                        dense
-                                        disableRipple
-                                        onClick={canHide ? () => api.columnVisibility.toggleColumn(col.id) : undefined}
-                                        sx={{ gap: 0.5 }}
-                                    >
-                                        {canHide ? (
-                                            <Checkbox edge="start" size="small" checked={col.getIsVisible()} disableRipple sx={{ p: 0.5, mr: 0.5 }} />
-                                        ) : null}
-                                        <ListItemText primary={columnLabel(col)} sx={{ mr: 2 }} />
-                                        {canPin ? (
-                                            <Box sx={{ display: 'inline-flex' }} onClick={(e) => e.stopPropagation()}>
-                                                <Tooltip title={pinned === 'left' ? 'Unpin' : 'Pin left'}>
-                                                    <IconButton
-                                                        size="small"
-                                                        color={pinned === 'left' ? 'primary' : 'default'}
-                                                        onClick={() => (pinned === 'left' ? api.columnPinning.unpinColumn(col.id) : api.columnPinning.pinColumnLeft(col.id))}
-                                                    >
-                                                        <AlignHorizontalLeftOutlined fontSize="small" />
-                                                    </IconButton>
-                                                </Tooltip>
-                                                <Tooltip title={pinned === 'right' ? 'Unpin' : 'Pin right'}>
-                                                    <IconButton
-                                                        size="small"
-                                                        color={pinned === 'right' ? 'primary' : 'default'}
-                                                        onClick={() => (pinned === 'right' ? api.columnPinning.unpinColumn(col.id) : api.columnPinning.pinColumnRight(col.id))}
-                                                    >
-                                                        <AlignHorizontalRightOutlined fontSize="small" />
-                                                    </IconButton>
-                                                </Tooltip>
-                                            </Box>
-                                        ) : null}
-                                    </MenuItem>
-                                );
-                            })}
-                    </Menu>
-                </>
-            ) : null}
-
-            {enableDensitySelector ? (
-                <>
-                    <Tooltip title="Density">
-                        <IconButton size="small" onClick={(e) => setDensityAnchor(e.currentTarget)}>
-                            <DensityIcon fontSize="small" />
-                        </IconButton>
-                    </Tooltip>
-                    <Menu anchorEl={densityAnchor} open={!!densityAnchor} onClose={() => setDensityAnchor(null)} slotProps={menuSlotProps}>
-                        {(['compact', 'standard', 'comfortable'] as DataTableDensity[]).map((d) => {
-                            const Icon = DENSITY_ICON[d];
-                            const selected = derived.density === d;
-                            return (
-                                <MenuItem
-                                    key={d}
-                                    selected={selected}
-                                    onClick={() => {
-                                        actions.setDensity(d);
-                                        setDensityAnchor(null);
-                                    }}
-                                >
-                                    <ListItemIcon><Icon fontSize="small" /></ListItemIcon>
-                                    <ListItemText primary={DENSITY_LABEL[d]} />
-                                    {selected ? <CheckOutlined fontSize="small" color="primary" sx={{ ml: 2 }} /> : null}
-                                </MenuItem>
-                            );
-                        })}
-                    </Menu>
-                </>
-            ) : null}
-
-            {enableExport ? (
-                <>
-                    <Tooltip title="Export">
-                        <IconButton size="small" onClick={(e) => setExportAnchor(e.currentTarget)}>
-                            <ExportIcon fontSize="small" />
-                        </IconButton>
-                    </Tooltip>
-                    <Menu anchorEl={exportAnchor} open={!!exportAnchor} onClose={() => setExportAnchor(null)} slotProps={menuSlotProps}>
-                        <ListSubheader sx={{ lineHeight: '32px', bgcolor: 'transparent' }}>Export as</ListSubheader>
-                        <MenuItem onClick={() => { void api.export.exportCSV(); setExportAnchor(null); }}>
-                            <ListItemIcon><ExportIcon fontSize="small" /></ListItemIcon>
-                            <ListItemText primary="CSV" secondary=".csv" />
-                        </MenuItem>
-                        <MenuItem onClick={() => { void api.export.exportExcel(); setExportAnchor(null); }}>
-                            <ListItemIcon><ExportIcon fontSize="small" /></ListItemIcon>
-                            <ListItemText primary="Excel" secondary=".xlsx" />
-                        </MenuItem>
-                    </Menu>
-                </>
-            ) : null}
-
+            {extraFilterEl}
+            {filterEl}
+            {columnsEl}
+            {densityEl}
+            {exportEl}
             {hasActionGroup && (enableRefresh || enableReset) ? (
                 <Divider orientation="vertical" flexItem sx={{ mx: 0.5, my: 1 }} />
             ) : null}
-
-            {enableRefresh ? (
-                <Tooltip title="Refresh">
-                    <IconButton size="small" onClick={() => api.data.refresh()}>
-                        <RefreshIcon fontSize="small" />
-                    </IconButton>
-                </Tooltip>
-            ) : null}
-
-            {enableReset ? (
-                <Tooltip title="Reset">
-                    <IconButton size="small" onClick={() => api.layout.resetAll()}>
-                        <ResetIcon fontSize="small" />
-                    </IconButton>
-                </Tooltip>
-            ) : null}
+            {refreshEl}
+            {resetEl}
         </GridToolbar>
     );
 }
