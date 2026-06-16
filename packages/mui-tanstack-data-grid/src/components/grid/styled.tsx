@@ -100,7 +100,21 @@ export const GridDetailPanel = styled('div', { name: 'MuiTanstackDataGrid', slot
 }) as unknown as DivSlot;
 
 export const GridFooter = styled('div', { name: 'MuiTanstackDataGrid', slot: 'Footer' })({
+    display: 'flex',
+    justifyContent: 'flex-end',
     borderTop: '1px solid var(--dt-border-color)',
+    // Tame MUI's <TablePagination>: align its padding with the grid cells, drop
+    // the private horizontal scrollbar (overflow:auto), and let it wrap on narrow
+    // widths instead of overflowing/clipping at the rounded card edge.
+    '& .MuiTablePagination-root': { overflow: 'visible' },
+    '& .MuiTablePagination-spacer': { display: 'none' },
+    '& .MuiTablePagination-toolbar': {
+        minHeight: 48,
+        paddingInline: 'var(--dt-cell-padding-x)',
+        flexWrap: 'wrap',
+        justifyContent: 'flex-end',
+        rowGap: 4,
+    },
 }) as unknown as DivSlot;
 
 export const GridOverlay = styled('div', { name: 'MuiTanstackDataGrid', slot: 'Overlay' })({
