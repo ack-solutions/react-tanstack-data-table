@@ -33,7 +33,8 @@ still pin via `initialState` or the [`apiRef`](#imperative-control).
 
 When `enableColumnPinning` is on, the built-in **selection** (`_selection`) and **expander**
 (`_expanding`) columns are **pinned left automatically**, so the checkbox and expand toggle stay visible
-while scrolling. Override the defaults by passing your own `initialState.columnPinning`:
+while scrolling. This **merges** with your own `initialState.columnPinning` — you only pin your columns,
+the special ones stay left:
 
 ```tsx
 <DataTable
@@ -43,15 +44,19 @@ while scrolling. Override the defaults by passing your own `initialState.columnP
   enableRowSelection
   initialState={{
     columnPinning: {
-      left: ['_selection', 'name'],  // checkbox + name stuck left
-      right: ['actions'],            // actions stuck right
+      left: ['name'],      // name stuck left (checkbox/expander auto-pinned before it)
+      right: ['actions'],  // actions stuck right
     },
   }}
 />
 ```
 
-Pin the built-in columns by their ids: `_selection` (checkbox) and `_expanding` (expander). Pin your own
-columns by their `id`. Array order = pin order from the edge inwards.
+To override the default, pin a special column yourself by its id — `_selection` (checkbox) or
+`_expanding` (expander) — anywhere in `left` / `right`, and the automatic pin steps aside.
+
+**Pinned columns always render in column order.** Within each side they follow the columns' order (or your
+[drag-reorder](/features/columns#the-columns-panel)), so a column that's last overall stays rightmost when
+pinned right, regardless of the order you pinned things in.
 
 ## Imperative control
 

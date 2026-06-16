@@ -172,7 +172,7 @@ export function V2DemoPage() {
                     onRowClick={(_, row) => console.log('row click', row.original.name)}
                     initialState={{
                         pagination: { pageIndex: 0, pageSize: 10 },
-                        columnPinning: { left: ['_selection', '_expanding', 'name'], right: ['actions'] },
+                        columnPinning: { left: ['name'], right: ['actions'] },
                     }}
                     slotProps={{ selectionColumn: { enablePinning: true } }}
                 />

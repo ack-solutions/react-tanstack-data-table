@@ -16,6 +16,19 @@ format: each release groups changes as **Added** (new features), **Changed** (be
 
 ---
 
+## [1.4.1](https://www.npmjs.com/package/@ackplus/mui-tanstack-data-grid/v/1.4.1) — 2026-06-16
+
+### Fixed
+- **Pinned columns now keep column order.** Pinning a column right no longer appends it past the others —
+  each side renders in the columns' order, so e.g. a last "Actions" column stays rightmost when you pin
+  another column right.
+- **Default-pinned special columns survive a custom `initialState`.** The automatic left-pin of the
+  selection / expander columns now **merges** with `initialState.columnPinning` instead of being replaced,
+  so pinning your own columns (e.g. `right: ['actions']`) no longer un-pins the checkbox/expander. Override
+  by pinning a special column yourself.
+
+---
+
 ## [1.4.0](https://www.npmjs.com/package/@ackplus/mui-tanstack-data-grid/v/1.4.0) — 2026-06-16
 
 A design-reference visual refresh, a full column manager, and a customizable toolbar.

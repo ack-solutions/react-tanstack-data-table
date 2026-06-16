@@ -291,16 +291,21 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
 
     const initialStateConfig = useMemo(() => ({ ...DEFAULT_INITIAL_STATE, ...initialState }), [initialState]);
 
-    // When pinning is enabled and the caller hasn't specified columnPinning, pin
-    // the special columns (selection, expander) to the left by default so the
-    // checkbox/expander stay visible while scrolling horizontally.
+    // Default-pin the special columns (selection, expander) to the LEFT so the
+    // checkbox/expander stay visible while scrolling. This merges with — rather
+    // than replaces — any `initialState.columnPinning` the caller supplies, so
+    // pinning e.g. an actions column right doesn't drop the select/expand pin.
+    // The caller can still override by pinning a special column themselves.
     const initialColumnPinning = useMemo(() => {
-        if (initialState?.columnPinning) return initialState.columnPinning;
-        if (!enableColumnPinning) return DEFAULT_INITIAL_STATE.columnPinning;
-        const left: string[] = [];
-        if (enableRowSelection) left.push(DEFAULT_SELECTION_COLUMN_ID);
-        if (enableExpanding) left.push(DEFAULT_EXPAND_COLUMN_ID);
-        return { left, right: [] };
+        const provided = initialState?.columnPinning;
+        if (!enableColumnPinning) return provided ?? DEFAULT_INITIAL_STATE.columnPinning;
+        const left = [...(provided?.left ?? [])];
+        const right = [...(provided?.right ?? [])];
+        const pinned = new Set([...left, ...right]);
+        const autoLeft: string[] = [];
+        if (enableRowSelection && !pinned.has(DEFAULT_SELECTION_COLUMN_ID)) autoLeft.push(DEFAULT_SELECTION_COLUMN_ID);
+        if (enableExpanding && !pinned.has(DEFAULT_EXPAND_COLUMN_ID)) autoLeft.push(DEFAULT_EXPAND_COLUMN_ID);
+        return { left: [...autoLeft, ...left], right };
     }, [initialState, enableColumnPinning, enableRowSelection, enableExpanding]);
 
     const initialUIState: EngineUIState = useMemo(
@@ -1110,18 +1115,33 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
             resetColumnOrder: () => dispatch({ type: 'SET_COLUMN_ORDER', payload: initialStateConfig.columnOrder || [] }),
         };
 
+        // Rank a column id by its position in the current visual column order, so
+        // pinned columns within a side always render in column order (e.g. the
+        // last column stays rightmost when pinned right).
+        const columnRank = () => {
+            const order = uiRef.current.columnOrder.length
+                ? uiRef.current.columnOrder
+                : tableRef.current.getAllLeafColumns().map((c: any) => c.id);
+            return (id: string) => {
+                const i = order.indexOf(id);
+                return i < 0 ? Number.MAX_SAFE_INTEGER : i;
+            };
+        };
+
         api.columnPinning = {
             pinColumnLeft: (columnId) => {
                 const cur = uiRef.current.columnPinning;
-                const left = cur.left!.includes(columnId) ? cur.left! : [...cur.left!.filter((id) => id !== columnId), columnId];
+                const rank = columnRank();
+                const left = [...cur.left!.filter((id) => id !== columnId), columnId].sort((a, b) => rank(a) - rank(b));
                 const right = cur.right!.filter((id) => id !== columnId);
                 dispatch({ type: 'SET_COLUMN_PINNING', payload: { left, right } });
                 onColumnPinningChangeRef.current?.({ left, right });
             },
             pinColumnRight: (columnId) => {
                 const cur = uiRef.current.columnPinning;
+                const rank = columnRank();
                 const left = cur.left!.filter((id) => id !== columnId);
-                const right = cur.right!.includes(columnId) ? cur.right! : [...cur.right!.filter((id) => id !== columnId), columnId];
+                const right = [...cur.right!.filter((id) => id !== columnId), columnId].sort((a, b) => rank(a) - rank(b));
                 dispatch({ type: 'SET_COLUMN_PINNING', payload: { left, right } });
                 onColumnPinningChangeRef.current?.({ left, right });
             },
