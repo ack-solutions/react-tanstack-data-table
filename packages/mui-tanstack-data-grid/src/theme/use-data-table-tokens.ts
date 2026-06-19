@@ -15,18 +15,23 @@ export function useDataTableTokens(density: DataTableDensity = 'standard'): CSSP
     const theme = useTheme();
     return useMemo(() => {
         const pal = resolveDataGridPalette(theme);
+        const p: any = (theme.vars ?? theme).palette;
+        // Raw overrides only (so an unset mode-dependent token falls through to the
+        // GridRoot styled's scheme-aware default instead of pinning to one mode).
+        const userPal = (theme.palette as unknown as { tanstackDataGrid?: Record<string, string> }).tanstackDataGrid ?? {};
         const d = DENSITY_PRESETS[density] ?? DENSITY_PRESETS.standard;
         const vars: Record<string, string | number> = {
             [DT_VARS.borderColor]: pal.borderColor,
-            [DT_VARS.headerBg]: pal.headerBg,
             [DT_VARS.headerColor]: pal.headerColor,
-            [DT_VARS.rowBg]: theme.palette.background.paper,
+            [DT_VARS.rowBg]: p.background.paper,
             [DT_VARS.rowBgHover]: pal.rowHoverBg,
             [DT_VARS.rowBgSelected]: pal.selectedBg,
-            [DT_VARS.rowBgStripe]: pal.stripeBg,
             [DT_VARS.pinnedBg]: pal.pinnedBg,
-            [DT_VARS.pinnedShadow]: theme.palette.mode === 'dark' ? 'rgba(0,0,0,0.5)' : 'rgba(0,0,0,0.18)',
-            [DT_VARS.resizeHandle]: theme.palette.primary.main,
+            [DT_VARS.resizeHandle]: p.primary.main,
+            // headerBg / stripe / pinnedShadow defaults are scheme-aware in the
+            // GridRoot styled; only emit them inline when explicitly overridden.
+            ...(userPal.headerBg ? { [DT_VARS.headerBg]: userPal.headerBg } : {}),
+            ...(userPal.stripeBg ? { [DT_VARS.rowBgStripe]: userPal.stripeBg } : {}),
             [DT_VARS.rowHeight]: `${d.rowHeight}px`,
             [DT_VARS.headerHeight]: `${d.headerHeight}px`,
             [DT_VARS.cellPaddingX]: `${d.cellPaddingX}px`,

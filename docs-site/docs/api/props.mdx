@@ -19,7 +19,9 @@ Every prop, grouped by area. Use the **search** (top right) to find a setting fa
 | `idKey` | `keyof T` | `'id'` | Shorthand row-id field. |
 | `dataMode` | `'client' \| 'server'` | `'client'` | Client-held or server-fetched. |
 | `onFetchData` | `(filters, meta) => Promise<{ data, total }>` | — | Server fetch handler. |
-| `initialState` | `Partial<TableState>` | — | Initial sorting/pagination/pinning/visibility/sizing. |
+| `initialState` | `Partial<TableState>` | — | Initial sorting/pagination/pinning/visibility/sizing/density. |
+| `stateKey` | `string` | — | Persist view state under this key (see [State persistence](#state-persistence)). |
+| `persist` | `PersistOptions` | — | Tune persistence: `storage` (`'local'`/`'session'`/custom), `include`, `debounceMs`. |
 | `onDataStateChange` | `(state) => void` | — | Any table-state change. |
 
 ## Sorting / Filtering / Pagination
@@ -60,7 +62,8 @@ Every prop, grouped by area. Use the **search** (top right) to find a setting fa
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `density` | `'compact' \| 'standard' \| 'comfortable'` | `'standard'` | Row height + padding. |
+| `density` | `'compact' \| 'standard' \| 'comfortable'` | — | **Controlled** density — overrides the selector. |
+| `defaultDensity` | `'compact' \| 'standard' \| 'comfortable'` | `'standard'` | **Uncontrolled** initial density; the selector can still change it. |
 | `striped` | `boolean` | `false` | Alternate row background. |
 | `hover` | `boolean` | `true` | Highlight the hovered row. |
 | `fitToScreen` | `boolean` | `true` | Stretch columns to fill width. |
@@ -138,3 +141,38 @@ Swap in your own set (e.g. lucide); defaults are built-in line icons. See [Custo
 
 `slotProps` accepts the same keys, plus **`selectionColumn`** / **`expandColumn`** to configure the
 auto-generated checkbox / expander columns — e.g. `slotProps={{ selectionColumn: { enablePinning: true } }}`.
+
+## State persistence
+
+Give the grid a stable `stateKey` and it remembers its view state — pagination, sort, global search,
+column filters, column order / width / visibility / pinning, and density — across reloads and remounts,
+with no save/restore wiring:
+
+```tsx
+<DataTable columns={columns} data={rows} stateKey="expenses" enablePagination enableColumnPinning />
+```
+
+It reads the saved snapshot into `initialState` on mount and writes (debounced) on change. **Selection and
+row expansion are excluded by default.** Tune it with `persist`:
+
+```tsx
+<DataTable
+  stateKey="expenses"
+  persist={{
+    storage: 'session',                 // 'local' (default) | 'session' | a custom Storage-like object
+    include: ['sorting', 'pagination', 'columnPinning'], // whitelist (default: all but selection/expansion)
+    debounceMs: 500,                    // write throttle (default 300)
+  }}
+/>
+```
+
+SSR-safe (no-ops without `window`; a custom `storage` object is honored anywhere). Storage keys are
+namespaced as `dt:<stateKey>`.
+
+## Dark mode & `cssVariables` themes
+
+The grid derives every colour from your MUI theme, so it follows light/dark automatically — including the
+modern setup `createTheme({ cssVariables: true, colorSchemes: { light, dark } })`: it reads palette values
+via `theme.vars` and emits its mode-dependent defaults with `applyStyles('dark')`. To customise grid
+colours per scheme, use [`createDataTableTheme`](/theming) (`palette` + optional `darkPalette`), which
+emits `colorSchemes` overrides that compose cleanly with a `cssVariables` app theme.

@@ -23,10 +23,16 @@ export interface TanstackDataGridPalette {
  * MUI palette.
  */
 export function resolveDataGridPalette(theme: Theme): TanstackDataGridPalette {
-    const p = theme.palette;
-    const user = (p as unknown as { tanstackDataGrid?: Partial<TanstackDataGridPalette> }).tanstackDataGrid ?? {};
-    const dark = p.mode === 'dark';
+    // Prefer the CSS-variable palette (`theme.vars`) so colours follow
+    // `colorSchemes` under MUI `cssVariables: true`; fall back to the resolved
+    // palette for classic themes (where `palette.mode` reflects the active scheme).
+    const p: any = (theme.vars ?? theme).palette;
+    const user = (theme.palette as unknown as { tanstackDataGrid?: Partial<TanstackDataGridPalette> }).tanstackDataGrid ?? {};
+    const dark = theme.palette.mode === 'dark';
     return {
+        // headerBg / stripeBg are mode-dependent: their scheme-aware defaults are
+        // emitted by the GridRoot styled (via `applyStyles('dark')`). The values
+        // below are only used by direct callers of this helper.
         headerBg: user.headerBg ?? (dark ? p.grey[900] : p.grey[50]),
         headerColor: user.headerColor ?? p.text.secondary,
         borderColor: user.borderColor ?? p.divider,

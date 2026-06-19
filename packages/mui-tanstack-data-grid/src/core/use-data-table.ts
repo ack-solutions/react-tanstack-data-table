@@ -45,6 +45,10 @@ import {
     useDebouncedFetch,
     runExport,
     createLogger,
+    resolveStorage,
+    readPersistedState,
+    writePersistedState,
+    DEFAULT_PERSIST_KEYS,
 } from '../utils';
 
 const DEFAULT_INITIAL_STATE = {
@@ -189,6 +193,8 @@ export interface UseDataTableResult<T = any> {
 export function useDataTable<T extends Record<string, any>>(props: DataTableProps<T>): UseDataTableResult<T> {
     const {
         initialState,
+        stateKey,
+        persist,
         columns,
         data = [],
         idKey = 'id' as keyof T,
@@ -278,7 +284,6 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
     // otherwise it's uncontrolled (driven by the toolbar's density selector → ui.density).
     const controlledDensity: DataTableDensity | undefined =
         props.density ?? (props.tableSize === 'small' ? 'compact' : props.tableSize === 'medium' ? 'standard' : undefined);
-    const initialDensity: DataTableDensity = controlledDensity ?? 'standard';
     const estimateRowHeight = props.estimatedRowHeight ?? props.estimateRowHeight ?? 52;
 
     const theme = useTheme();
@@ -289,7 +294,20 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
     const isServerFiltering = filterMode === 'server' || isServerMode;
     const isServerSorting = sortingMode === 'server' || isServerMode;
 
-    const initialStateConfig = useMemo(() => ({ ...DEFAULT_INITIAL_STATE, ...initialState }), [initialState]);
+    // Persistence: read the saved snapshot once on mount (storage is synchronous),
+    // then seed the engine from it on top of the caller's `initialState`.
+    const persistStorage = useMemo(() => resolveStorage(persist), [persist]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- read once on mount
+    const persistedInitial = useMemo(() => readPersistedState(persistStorage, stateKey), []);
+
+    const initialStateConfig = useMemo(
+        () => ({ ...DEFAULT_INITIAL_STATE, ...initialState, ...persistedInitial }),
+        [initialState, persistedInitial],
+    );
+
+    // Uncontrolled initial density: `defaultDensity` / `initialState.density` / a
+    // saved snapshot seed it; the controlled `density` prop still overrides at render.
+    const initialDensity: DataTableDensity = controlledDensity ?? props.defaultDensity ?? initialStateConfig.density ?? 'standard';
 
     // Default-pin the special columns (selection, expander) to the LEFT so the
     // checkbox/expander stay visible while scrolling. This merges with — rather
@@ -297,7 +315,7 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
     // pinning e.g. an actions column right doesn't drop the select/expand pin.
     // The caller can still override by pinning a special column themselves.
     const initialColumnPinning = useMemo(() => {
-        const provided = initialState?.columnPinning;
+        const provided = persistedInitial.columnPinning ?? initialState?.columnPinning;
         if (!enableColumnPinning) return provided ?? DEFAULT_INITIAL_STATE.columnPinning;
         const left = [...(provided?.left ?? [])];
         const right = [...(provided?.right ?? [])];
@@ -306,7 +324,7 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
         if (enableRowSelection && !pinned.has(DEFAULT_SELECTION_COLUMN_ID)) autoLeft.push(DEFAULT_SELECTION_COLUMN_ID);
         if (enableExpanding && !pinned.has(DEFAULT_EXPAND_COLUMN_ID)) autoLeft.push(DEFAULT_EXPAND_COLUMN_ID);
         return { left: [...autoLeft, ...left], right };
-    }, [initialState, enableColumnPinning, enableRowSelection, enableExpanding]);
+    }, [initialState, persistedInitial, enableColumnPinning, enableRowSelection, enableExpanding]);
 
     const initialUIState: EngineUIState = useMemo(
         () => ({
@@ -681,6 +699,31 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
         lastSentRef.current = key;
         cb(payload as Partial<TableState>);
     }, [table, ui.sorting, ui.pagination, ui.globalFilter, ui.columnFilter, ui.columnVisibility, ui.columnSizing, ui.columnOrder, ui.columnPinning, onDataStateChangeRef]);
+
+    // Persistence: write the whitelisted state to storage on change (debounced).
+    const persistInclude = useMemo(() => persist?.include ?? DEFAULT_PERSIST_KEYS, [persist]);
+    const persistTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    useEffect(() => {
+        if (!stateKey || !persistStorage) return;
+        const live = table.getState();
+        const snapshot: Partial<TableState> = {
+            sorting: live.sorting,
+            pagination: live.pagination,
+            globalFilter: live.globalFilter,
+            columnFilter: live.columnFilter,
+            columnVisibility: live.columnVisibility,
+            columnSizing: live.columnSizing,
+            columnOrder: live.columnOrder,
+            columnPinning: live.columnPinning,
+            density: controlledDensity ?? uiRef.current.density,
+        };
+        if (persistTimerRef.current) clearTimeout(persistTimerRef.current);
+        persistTimerRef.current = setTimeout(() => {
+            writePersistedState(persistStorage, stateKey, snapshot, persistInclude);
+        }, persist?.debounceMs ?? 300);
+        return () => { if (persistTimerRef.current) clearTimeout(persistTimerRef.current); };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [stateKey, persistStorage, persistInclude, table, ui.sorting, ui.pagination, ui.globalFilter, ui.columnFilter, ui.columnVisibility, ui.columnSizing, ui.columnOrder, ui.columnPinning, ui.density]);
 
     const normalizeRefreshOptions = useCallback(
         (options?: boolean | DataRefreshOptions, fallbackReason = 'refresh') => {

@@ -69,10 +69,8 @@ Once wired, `apiRef.current` gives you the same API as before (`apiRef.current?.
 `apiRef.current?.export.toCsv()`, etc.).
 
 :::note State persistence
-`stateKey` and `defaultHiddenColumns` were never `<DataTable>` props — they belonged to the example
-app's `DataGrid` wrapper, which persisted state and converted hidden-column names into
-`initialState.columnVisibility`. The grid itself has no built-in persistence; use `initialState`
-(uncontrolled) or the controlled `onColumnVisibilityChange` / `onDataStateChange` callbacks plus your
-own storage. See the [example app](https://github.com/ack-solutions/react-tanstack-data-table) for a
-ready-made wrapper.
+v1's `stateKey` lived on the example app's `DataGrid` wrapper. **Since 1.5.0 `stateKey` is a first-class
+`<DataTable>` prop** — pass it directly and the grid persists view state for you (see
+[State persistence](/api/props#state-persistence)). For v1's `defaultHiddenColumns`, map the hidden names
+into `initialState.columnVisibility`.
 :::

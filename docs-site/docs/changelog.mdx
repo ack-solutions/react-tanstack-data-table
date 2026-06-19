@@ -16,6 +16,33 @@ format: each release groups changes as **Added** (new features), **Changed** (be
 
 ---
 
+## [1.5.0](https://www.npmjs.com/package/@ackplus/mui-tanstack-data-grid/v/1.5.0) — 2026-06-17
+
+Integration-quality improvements for teams building on top of `<DataTable>`.
+
+### Added
+- **State persistence.** Set `stateKey="…"` to remember pagination, sort, search, filters, and column
+  layout (order / width / visibility / pinning) + density across reloads and remounts — no extra wiring.
+  Tune with `persist?: { storage?: 'local' | 'session' | StorageLike; include?: (keyof TableState)[];
+  debounceMs?: number }`. Selection + expansion are excluded by default; SSR-safe.
+- **`defaultDensity`.** An *uncontrolled* initial density (also honors `initialState.density`) so you can
+  set a starting density **without** disabling the density selector. `density` remains the controlled
+  override.
+- **Type re-exports.** The TanStack types used across the public surface — `ColumnPinningState`,
+  `SortingState`, `ColumnOrderState`, `VisibilityState`, `ColumnSizingState`, `PaginationState`,
+  `ExpandedState`, `RowSelectionState`, `Row`, `ColumnDef`, `Updater` — are now exported from the package
+  root, so callbacks/state type without deep imports.
+
+### Fixed
+- **Density selector no longer dead when a default is set.** Passing `density` previously pinned it (the
+  selector became a no-op). Use `defaultDensity` / `initialState.density` for a changeable start.
+- **Dark mode under MUI `cssVariables`.** The grid now reads colours via `theme.vars` and emits its
+  mode-dependent defaults with `applyStyles('dark')`, so it follows `colorSchemes` toggling.
+  `createDataTableTheme()` emits per-scheme `colorSchemes` overrides (with an optional `darkPalette`)
+  instead of a flat top-level `palette`, composing cleanly with a `cssVariables` app theme.
+
+---
+
 ## [1.4.3](https://www.npmjs.com/package/@ackplus/mui-tanstack-data-grid/v/1.4.3) — 2026-06-16
 
 ### Fixed

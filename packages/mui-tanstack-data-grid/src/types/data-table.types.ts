@@ -14,6 +14,7 @@ import type { SelectionState, SelectMode } from './selection.types';
 import type { DataTableLoggingOptions } from './logging.types';
 import type { DataTableApi } from './api.types';
 import type { DataTableSlots, PartialSlotProps } from './slots.types';
+import type { PersistOptions } from '../utils/persistence';
 import type {
     ExportConcurrencyMode,
     ExportProgressPayload,
@@ -94,6 +95,15 @@ export interface DataTableProps<T> {
     // ── Data modes / fetching ─────────────────────────────────────────────
     dataMode?: 'client' | 'server';
     initialState?: Partial<TableState>;
+    /**
+     * Opt-in view-state persistence. Set a stable `stateKey` to remember the
+     * grid's state — pagination, sort, search, filters, column order / width /
+     * visibility / pinning, density — across reloads and remounts with no extra
+     * wiring (read into `initialState` on mount, written on change). Selection
+     * and row expansion are excluded by default. Tune via {@link persist}.
+     */
+    stateKey?: string;
+    persist?: PersistOptions;
     initialLoadData?: boolean;
     onDataStateChange?: (state: Partial<TableState>) => void;
     onFetchData?: (filters: Partial<TableFilters>, meta?: DataFetchMeta) => Promise<{ data: T[]; total: number }>;
@@ -207,8 +217,15 @@ export interface DataTableProps<T> {
     onSortingChange?: (sorting: SortingState) => void;
 
     // ── Appearance ────────────────────────────────────────────────────────
-    /** Row density. Maps v1 `small`→`compact`, `medium`→`standard`. */
+    /**
+     * **Controlled** row density. When set, it overrides the density selector
+     * every render (the selector becomes a no-op). Maps v1 `small`→`compact`,
+     * `medium`→`standard`. For a starting density that the user can still change,
+     * use {@link defaultDensity} (or `initialState.density`) instead.
+     */
     density?: DataTableDensity;
+    /** **Uncontrolled** initial density; the density selector can still change it. */
+    defaultDensity?: DataTableDensity;
     hover?: boolean;
     striped?: boolean;
     /** Columns stretch to fill the width (and still respect min/max). */

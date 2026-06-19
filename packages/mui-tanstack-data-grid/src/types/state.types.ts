@@ -5,6 +5,7 @@ import type {
     VisibilityState,
 } from '@tanstack/react-table';
 
+import type { DataTableDensity } from '../theme/tokens';
 import type { ColumnFilterState } from './filter.types';
 import type { SelectionState } from './selection.types';
 
@@ -25,6 +26,7 @@ export interface TableState {
     columnPinning?: ColumnPinningState;
     selectionState?: SelectionState;
     expanded?: Record<string, boolean>;
+    density?: DataTableDensity;
 }
 
 /** Normalised filter/state passed to the server fetch handler. */

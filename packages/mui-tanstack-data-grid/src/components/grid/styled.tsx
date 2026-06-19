@@ -11,20 +11,42 @@ import { styled } from '@mui/material/styles';
 import type { SxProps, Theme } from '@mui/material/styles';
 import type { ForwardRefExoticComponent, HTMLAttributes, RefAttributes } from 'react';
 
+import { DT_VARS } from '../../theme/tokens';
+
 type DivSlot = ForwardRefExoticComponent<
     HTMLAttributes<HTMLDivElement> & { sx?: SxProps<Theme> } & RefAttributes<HTMLDivElement>
 >;
 
-export const GridRoot = styled('div', { name: 'MuiTanstackDataGrid', slot: 'Root' })({
-    position: 'relative',
-    width: '100%',
-    fontSize: 'var(--dt-font-size)',
-    // Self-framing card: a single outer border + rounded corners (consumes the
-    // --dt-radius token) so the grid reads as a modern surface, not bare rules.
-    backgroundColor: 'var(--dt-pinned-bg)',
-    border: '1px solid var(--dt-border-color)',
-    borderRadius: 'var(--dt-radius)',
-    overflow: 'hidden',
+export const GridRoot = styled('div', { name: 'MuiTanstackDataGrid', slot: 'Root' })(({ theme }) => {
+    const p = theme.palette as any;
+    // Mode-dependent token defaults. Emitted scheme-conditionally so the grid
+    // follows dark mode under MUI `cssVariables: true` + `colorSchemes` (where
+    // `palette.mode` no longer reflects the active scheme). Overridable via
+    // `palette.tanstackDataGrid.*` or the `--dt-*` variables.
+    const darkTokens = {
+        [DT_VARS.headerBg]: p.grey[900],
+        [DT_VARS.rowBgStripe]: 'rgba(255,255,255,0.03)',
+        [DT_VARS.pinnedShadow]: 'rgba(0,0,0,0.5)',
+    };
+    return {
+        position: 'relative',
+        width: '100%',
+        fontSize: 'var(--dt-font-size)',
+        // Self-framing card: a single outer border + rounded corners (consumes the
+        // --dt-radius token) so the grid reads as a modern surface, not bare rules.
+        backgroundColor: 'var(--dt-pinned-bg)',
+        border: '1px solid var(--dt-border-color)',
+        borderRadius: 'var(--dt-radius)',
+        overflow: 'hidden',
+        [DT_VARS.headerBg]: p.grey[50],
+        [DT_VARS.rowBgStripe]: 'rgba(0,0,0,0.02)',
+        [DT_VARS.pinnedShadow]: 'rgba(0,0,0,0.18)',
+        ...(typeof theme.applyStyles === 'function'
+            ? theme.applyStyles('dark', darkTokens)
+            : p.mode === 'dark'
+                ? darkTokens
+                : {}),
+    };
 }) as unknown as DivSlot;
 
 export const GridToolbar = styled('div', { name: 'MuiTanstackDataGrid', slot: 'Toolbar' })({
