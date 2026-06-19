@@ -70,8 +70,11 @@ Every prop, grouped by area. Use the **search** (top right) to find a setting fa
 | `striped` | `boolean` | `false` | Alternate row background. |
 | `hover` | `boolean` | `true` | Highlight the hovered row. |
 | `fitToScreen` | `boolean` | `true` | Stretch columns to fill width. |
-| `stickyHeader` | `boolean` | — | Keep the header visible while scrolling. |
-| `maxHeight` | `string \| number` | `480` | Scroll-container max height. |
+| `stickyHeader` | `boolean` | — | Pin the header; on its own it bounds the body at `maxHeight` (see [Height & scrolling](#height--scrolling)). |
+| `stickyFooter` | `boolean` | — | Pin the pagination footer; like `stickyHeader`, it bounds the body. |
+| `maxHeight` | `string \| number` | `480`¹ | Cap the scroll viewport; **active on its own**. ¹Default applied only in a bounded mode. |
+| `height` | `string \| number` | — | Fix the grid height (`'100%'` fills a sized parent); the body scrolls to fill. |
+| `minHeight` | `string \| number` | — | Optional floor so a near-empty grid doesn't collapse. |
 | `enableVirtualization` | `boolean` | `false` | Render only visible rows. |
 | `estimatedRowHeight` | `number` | `52` | Virtualizer row-height estimate. |
 | `getRowClassName` | `({ row, index }) => string` | — | Conditional row class. |
@@ -144,6 +147,15 @@ Swap in your own set (e.g. lucide); defaults are built-in line icons. See [Custo
 
 `slotProps` accepts the same keys, plus **`selectionColumn`** / **`expandColumn`** to configure the
 auto-generated checkbox / expander columns — e.g. `slotProps={{ selectionColumn: { enablePinning: true } }}`.
+
+## Height & scrolling
+
+The grid is a flex column — header pinned to the top, footer to the bottom, body scrolling between.
+Three height modes: **auto** (default, grows to content), **`maxHeight`** (caps and scrolls), and
+**`height`** (fixed, or `"100%"` to fill a sized parent). A bounded height is all the body needs to
+scroll — **`minHeight` is not required**.
+
+See **[Height & scrolling](/features/layout)** for the full guide with a live demo of each mode.
 
 ## State persistence
 

@@ -241,10 +241,25 @@ export interface DataTableProps<T> {
     /** Conditional class for a cell. */
     getCellClassName?: (params: { row: Row<T>; columnId: string; value: any }) => string;
 
-    // ── Sticky / scroll ───────────────────────────────────────────────────
+    // ── Sticky / scroll / height ──────────────────────────────────────────
+    //
+    // Three height modes (like MUI X / AG Grid):
+    //   • Auto (default) — grid grows to content, no inner scroll.
+    //   • Capped (`maxHeight`) — body scrolls past the cap.
+    //   • Fixed/fill (`height`) — grid is exactly `height`; body flexes & scrolls.
+    // In any bounded mode the header pins to the top and the footer to the bottom
+    // while the body scrolls between them.
+
+    /** Pin the header to the top; on its own it bounds the body at `maxHeight` (default `480`). */
     stickyHeader?: boolean;
+    /** Pin the footer (pagination) to the bottom; like `stickyHeader`, it bounds the body. */
     stickyFooter?: boolean;
+    /** Cap the scroll viewport; beyond it the body scrolls. Active on its own. */
     maxHeight?: string | number;
+    /** Fixed grid height (use `'100%'` to fill a flex/positioned parent); body scrolls to fill. */
+    height?: string | number;
+    /** Optional floor so a near-empty grid doesn't collapse. */
+    minHeight?: string | number;
     /** @deprecated Renamed to `stickyHeader`. */
     enableStickyHeaderOrFooter?: boolean;
 

@@ -15,6 +15,7 @@ import { useDataTableTokens } from '../../theme/use-data-table-tokens';
 import type { DataTableProps } from '../../types/data-table.types';
 import type { UseDataTableResult } from '../../core/use-data-table';
 import { GridRoot, GridScroller, GridHeader, GridHeaderRow, GridHeaderCell, GridBody, GridRow, GridCell, GridDetailPanel, GridFooter, GridOverlay } from './styled';
+import { resolveScrollLayout } from './scroll-layout';
 import { DataTableToolbar } from '../toolbar/data-table-toolbar';
 import { BulkActionsToolbar } from '../toolbar/bulk-actions-toolbar';
 
@@ -54,10 +55,14 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
         enableVirtualization = false,
         enablePagination = false,
         stickyHeader,
+        stickyFooter,
+        enableStickyHeaderOrFooter,
         hover = true,
         striped = false,
         fitToScreen = true,
-        maxHeight = 480,
+        maxHeight,
+        height,
+        minHeight,
         onRowClick,
         loading,
         skeletonRows = 5,
@@ -115,7 +120,15 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
             ? `1 0 var(--col-${column.id}-size)`
             : `0 0 var(--col-${column.id}-size)`;
 
-    const scrollable = stickyHeader || enableVirtualization;
+    const { rootStyle, scrollerStyle } = resolveScrollLayout({
+        // `enableStickyHeaderOrFooter` is the deprecated alias for `stickyHeader`.
+        stickyHeader: stickyHeader ?? enableStickyHeaderOrFooter,
+        stickyFooter,
+        enableVirtualization,
+        height,
+        minHeight,
+        maxHeight,
+    });
     const emptyText = noRowsMessage ?? emptyMessage ?? 'No rows';
 
     const renderHeader = () =>
@@ -282,7 +295,7 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
     };
 
     return (
-        <GridRoot style={tokens} className={props.className}>
+        <GridRoot style={{ ...tokens, ...rootStyle }} className={props.className}>
             {showToolbar ? (
                 <ToolbarComponent
                     engine={engine}
@@ -313,7 +326,7 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
                 role="table"
                 aria-rowcount={derived.tableTotalRow}
                 aria-colcount={table.getVisibleLeafColumns().length}
-                style={scrollable ? { maxHeight } : undefined}
+                style={scrollerStyle}
             >
                 <div style={{ ...columnSizeVars, width: fitToScreen ? '100%' : totalSize, minWidth: totalSize } as CSSProperties}>
                     <GridHeader role="rowgroup">{renderHeader()}</GridHeader>

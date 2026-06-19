@@ -1,458 +1,117 @@
-import { Paper, Stack, Typography, Box, Alert, Chip, Divider } from '@mui/material';
+import { useMemo } from 'react';
+import { Box, Paper, Stack, Typography, Chip, Alert } from '@mui/material';
+import { DataTable } from '@ackplus/mui-tanstack-data-grid';
+import type { ColumnDef } from '@tanstack/react-table';
 import { FeatureLayout } from './common/FeatureLayout';
 import { CodeBlock } from './common/CodeBlock';
 
+interface Row {
+    id: number;
+    name: string;
+    email: string;
+    role: string;
+    city: string;
+}
+
+const ROLES = ['Admin', 'Editor', 'Viewer', 'Owner'];
+const CITIES = ['London', 'Berlin', 'Paris', 'Tokyo', 'Austin', 'Oslo'];
+
+function makeRows(n: number): Row[] {
+    return Array.from({ length: n }, (_, i) => ({
+        id: i + 1,
+        name: `Person ${i + 1}`,
+        email: `person${i + 1}@example.com`,
+        role: ROLES[i % ROLES.length],
+        city: CITIES[i % CITIES.length],
+    }));
+}
+
+const COLUMNS: ColumnDef<Row, any>[] = [
+    { accessorKey: 'id', header: 'ID', size: 80 },
+    { accessorKey: 'name', header: 'Name', size: 180 },
+    { accessorKey: 'email', header: 'Email', size: 240 },
+    { accessorKey: 'role', header: 'Role', size: 120 },
+    { accessorKey: 'city', header: 'City', size: 140 },
+];
+
 export function LayoutPage() {
-  return (
-    <FeatureLayout
-      title="Layout & Container"
-      subtitle="Main Features"
-      description="Compose the DataTable into any layout—cards, split panes, or dense dashboards—while keeping headers, toolbar, and pagination in sync. Customize the container using slot props for complete control."
-    >
-      <Stack spacing={4}>
-        {/* Default Container */}
-        <Paper variant="outlined" sx={{ p: 3, borderRadius: 2 }}>
-          <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
-            <Typography variant="h6" sx={{ fontWeight: 700 }}>
-              Default Paper Container
-            </Typography>
-            <Chip label="Default" size="small" color="primary" variant="outlined" />
-          </Stack>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            By default, the DataTable uses Material-UI&apos;s <code>TableContainer</code> component 
-            with <code>Paper</code> as the component prop. This provides a clean, card-like appearance 
-            that integrates seamlessly with Material Design layouts.
-          </Typography>
-          <CodeBlock
-            language="tsx"
-            code={`// Default usage - TableContainer with Paper component
-<DataTable
-  columns={columns}
-  data={data}
-  enablePagination
-  enableSorting
-/>
+    const few = useMemo(() => makeRows(5), []);
+    const many = useMemo(() => makeRows(60), []);
+    const lots = useMemo(() => makeRows(200), []);
 
-// This renders as:
-<TableContainer component={Paper} sx={{ width: '100%', overflowX: 'auto' }}>
-  <Table>
-    {/* Table content */}
-  </Table>
-</TableContainer>`}
-          />
-        </Paper>
+    return (
+        <FeatureLayout
+            title="Height & scrolling"
+            subtitle="Layout"
+            description="The grid is a flex column: the header pins to the top, the footer (pagination) pins to the bottom, and the body scrolls between them. Pick one of three height modes."
+        >
+            <Stack spacing={4}>
+                <Alert severity="info">
+                    <Typography variant="body2">
+                        <strong>Three modes.</strong> <code>Auto</code> (default) grows to content, no inner scroll ·{' '}
+                        <code>maxHeight</code> caps the body and scrolls past it · <code>height</code> fixes the grid (use{' '}
+                        <code>{"height=\"100%\""}</code> to fill a sized parent) and the body scrolls to fill. A bounded
+                        height is all that&apos;s needed for the body to scroll — <strong>no <code>minHeight</code> is required</strong>.
+                    </Typography>
+                </Alert>
 
-        {/* Customizing Container with Slot Props */}
-        <Paper variant="outlined" sx={{ p: 3, borderRadius: 2 }}>
-          <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>
-            Customize Container with Slot Props
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            The DataTable uses Material-UI&apos;s <code>TableContainer</code> with <code>Paper</code> as its 
-            component. You can customize it using <code>slotProps.tableContainer</code> to pass props to the 
-            TableContainer (which wraps the Paper).
-          </Typography>
-          
-          <Alert severity="info" sx={{ mb: 3 }}>
-            <Typography variant="body2">
-              <strong>Note:</strong> The <code>TableContainer</code> uses <code>component={'{Paper}'}</code> 
-              internally. Use <code>slotProps.tableContainer</code> to customize styling, or 
-              use <code>slots.tableContainer</code> to replace the entire container component.
-            </Typography>
-          </Alert>
+                {/* 1. Auto height */}
+                <Paper variant="outlined" sx={{ p: 3, borderRadius: 2 }}>
+                    <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
+                        <Typography variant="h6" sx={{ fontWeight: 700 }}>Auto height</Typography>
+                        <Chip label="Default" size="small" color="primary" variant="outlined" />
+                    </Stack>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        No height bound — the grid is exactly as tall as its rows and never scrolls internally.
+                    </Typography>
+                    <Box id="demo-auto" sx={{ mb: 2 }}>
+                        <DataTable<Row> columns={COLUMNS} data={few} />
+                    </Box>
+                    <CodeBlock language="tsx" code={`<DataTable columns={columns} data={data} />`} />
+                </Paper>
 
-          <Typography variant="subtitle2" sx={{ fontWeight: 600, mt: 3, mb: 1 }}>
-            Example 1: Customize TableContainer Styling
-          </Typography>
-          <CodeBlock
-            language="tsx"
-            code={`// Customize the TableContainer (which uses Paper as component)
-<DataTable
-  columns={columns}
-  data={data}
-  slotProps={{
-    tableContainer: {
-      elevation: 3,
-      sx: {
-        borderRadius: 3,
-        border: '2px solid',
-        borderColor: 'primary.main',
-        backgroundColor: 'background.default',
-      }
-    }
-  }}
-/>`}
-          />
+                {/* 2. maxHeight (capped) */}
+                <Paper variant="outlined" sx={{ p: 3, borderRadius: 2 }}>
+                    <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>Capped — <code>maxHeight</code></Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        The body grows until it hits <code>maxHeight</code>, then scrolls. The sticky header stays put.
+                        <code>maxHeight</code> works on its own — you don&apos;t also need <code>stickyHeader</code>.
+                    </Typography>
+                    <Box id="demo-capped" sx={{ mb: 2 }}>
+                        <DataTable<Row> columns={COLUMNS} data={many} maxHeight={260} />
+                    </Box>
+                    <CodeBlock language="tsx" code={`<DataTable columns={columns} data={data} maxHeight={260} />`} />
+                </Paper>
 
-          <Typography variant="subtitle2" sx={{ fontWeight: 600, mt: 3, mb: 1 }}>
-            Example 2: Flat, Borderless Design
-          </Typography>
-          <CodeBlock
-            language="tsx"
-            code={`// Remove elevation for a flat design
-<DataTable
-  columns={columns}
-  data={data}
-  slotProps={{
-    tableContainer: {
-      elevation: 0,
-      sx: {
-        backgroundColor: 'transparent',
-        borderRadius: 0,
-      }
-    }
-  }}
-/>`}
-          />
+                {/* 3. height (fixed / fill) */}
+                <Paper variant="outlined" sx={{ p: 3, borderRadius: 2 }}>
+                    <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>Fixed / fill — <code>height</code></Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        Give the grid a fixed <code>height</code> (or <code>{"\"100%\""}</code> to fill a sized parent). The
+                        body flexes to fill the space and scrolls, while the header and the pagination footer stay pinned —
+                        the classic dashboard panel. Here the grid fills a fixed-height parent.
+                    </Typography>
+                    <Box id="demo-fill" sx={{ height: 360, mb: 2 }}>
+                        <DataTable<Row>
+                            columns={COLUMNS}
+                            data={lots}
+                            height="100%"
+                            enablePagination
+                            initialState={{ pagination: { pageIndex: 0, pageSize: 25 } }}
+                        />
+                    </Box>
+                    <CodeBlock
+                        language="tsx"
+                        code={`// Fill a sized parent — body scrolls between a pinned header & footer
+<Box sx={{ height: 360 }}>
+  <DataTable columns={columns} data={data} height="100%" enablePagination />
+</Box>
 
-          <Typography variant="subtitle2" sx={{ fontWeight: 600, mt: 3, mb: 1 }}>
-            Example 3: Replace with Box Component
-          </Typography>
-          <CodeBlock
-            language="tsx"
-            code={`// Replace TableContainer with Box for simpler styling
-import { Box } from '@mui/material';
-
-<DataTable
-  columns={columns}
-  data={data}
-  slotProps={{
-    tableContainer: {
-    component: Box,
-      sx: {
-        border: '1px solid',
-        borderColor: 'divider',
-        borderRadius: 2,
-        overflow: 'auto',
-      }
-    }
-  }}
-/>`}
-          />
-        </Paper>
-
-        {/* Layout Examples */}
-        <Paper variant="outlined" sx={{ p: 3, borderRadius: 2 }}>
-          <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>
-            Common Layout Patterns
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            Compose the DataTable into various layouts to match your application&apos;s design. Here are 
-            some popular patterns:
-          </Typography>
-
-          <Stack spacing={3} divider={<Divider />}>
-            {/* Pattern 1: Card Layout */}
-            <Box>
-              <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-                📋 Card Layout with Header
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                Wrap the table in a card with a custom header and actions.
-              </Typography>
-              <CodeBlock
-                language="tsx"
-                code={`<Paper elevation={2} sx={{ borderRadius: 2 }}>
-  <Box sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
-    <Stack direction="row" justifyContent="space-between" alignItems="center">
-      <Typography variant="h6">Employee Directory</Typography>
-      <Button startIcon={<AddIcon />}>Add Employee</Button>
-    </Stack>
-  </Box>
-  <DataTable
-    columns={columns}
-    data={data}
-    slotProps={{
-      tableContainer: {
-        elevation: 0,
-        sx: { borderRadius: 0 }
-      }
-    }}
-  />
-</Paper>`}
-              />
-            </Box>
-
-            {/* Pattern 2: Split Pane */}
-            <Box>
-              <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-                📱 Split Pane with Filters
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                Side-by-side layout with persistent filters.
-              </Typography>
-              <CodeBlock
-                language="tsx"
-                code={`<Stack direction="row" spacing={2}>
-  {/* Sidebar Filters */}
-  <Paper sx={{ width: 280, p: 2 }}>
-    <Typography variant="h6" gutterBottom>Filters</Typography>
-    <Stack spacing={2}>
-      <FilterSelect label="Department" options={departments} />
-      <FilterSelect label="Status" options={statuses} />
-      <FilterRange label="Salary" min={0} max={200000} />
-    </Stack>
-  </Paper>
-
-  {/* Main Table */}
-  <Box sx={{ flex: 1 }}>
-    <DataTable
-      columns={columns}
-      data={data}
-      enableSorting
-      enablePagination
-    />
-  </Box>
-</Stack>`}
-              />
-            </Box>
-
-            {/* Pattern 3: Dashboard Grid */}
-            <Box>
-              <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-                📊 Dashboard Grid Layout
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                Combine tables with charts and KPIs in a dashboard grid.
-              </Typography>
-              <CodeBlock
-                language="tsx"
-                code={`<Grid container spacing={3}>
-  {/* KPI Cards */}
-  <Grid item xs={12} md={3}>
-    <StatsCard title="Total Users" value="1,234" />
-  </Grid>
-  <Grid item xs={12} md={3}>
-    <StatsCard title="Active" value="987" />
-  </Grid>
-  <Grid item xs={12} md={3}>
-    <StatsCard title="Inactive" value="247" />
-  </Grid>
-  <Grid item xs={12} md={3}>
-    <StatsCard title="New Today" value="12" />
-  </Grid>
-
-  {/* Chart */}
-  <Grid item xs={12} md={6}>
-    <Paper sx={{ p: 3, height: 400 }}>
-      <LineChart data={chartData} />
-    </Paper>
-  </Grid>
-
-  {/* Table */}
-  <Grid item xs={12} md={6}>
-    <DataTable
-      columns={columns}
-      data={data}
-      enablePagination
-      slotProps={{
-        tableContainer: {
-          sx: { height: 400 }
-        }
-      }}
-    />
-  </Grid>
-</Grid>`}
-              />
-            </Box>
-
-            {/* Pattern 4: Full Page */}
-            <Box>
-              <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-                🖥️ Full Page Layout
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                Edge-to-edge table for maximum screen real estate.
-              </Typography>
-              <CodeBlock
-                language="tsx"
-                code={`<Stack sx={{ height: '100vh' }}>
-  {/* App Header */}
-  <AppHeader />
-
-  {/* Table takes remaining height */}
-  <Box sx={{ flex: 1, overflow: 'hidden' }}>
-    <DataTable
-      columns={columns}
-      data={data}
-      enableVirtualization
-      maxHeight="100%"
-      slotProps={{
-        tableContainer: {
-          elevation: 0,
-          sx: {
-            height: '100%',
-            borderRadius: 0,
-          }
-        }
-      }}
-    />
-  </Box>
-</Stack>`}
-              />
-            </Box>
-          </Stack>
-        </Paper>
-
-        {/* Sticky Regions and Scrolling */}
-        <Paper variant="outlined" sx={{ p: 3, borderRadius: 2 }}>
-          <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>
-            Sticky Headers & Column Pinning
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Combine sticky headers, column pinning, and virtualization to keep key information visible 
-            while scrolling through large datasets.
-          </Typography>
-          
-          <Alert severity="info" sx={{ mb: 3 }}>
-            <Typography variant="body2">
-              <strong>Pro Tip:</strong> Enable <code>enableStickyHeaderOrFooter</code> to keep headers 
-              visible during vertical scrolling, and use <code>enableColumnPinning</code> to lock 
-              important columns during horizontal scrolling.
-            </Typography>
-          </Alert>
-
-          <CodeBlock
-            language="tsx"
-            code={`<DataTable
-  columns={columns}
-  data={largeDataset}
-  enableVirtualization
-  enableStickyHeaderOrFooter
-  enableColumnPinning
-  maxHeight="600px"
-  initialState={{
-    columnPinning: {
-      left: ['_selection', 'name', 'id'],  // Pin selection, name, and ID to left
-      right: ['actions'],                   // Pin actions to right
-    }
-  }}
-  slotProps={{
-    tableContainer: {
-      sx: {
-        maxHeight: 600,
-        overflow: 'auto',
-      }
-    }
-  }}
-/>
-
-// With this setup:
-// ✅ Header stays visible when scrolling down
-// ✅ First 3 columns stay visible when scrolling right
-// ✅ Actions column stays visible when scrolling left
-// ✅ Only visible rows are rendered (virtualization)`}
-          />
-        </Paper>
-
-        {/* Container Height Control */}
-        <Paper variant="outlined" sx={{ p: 3, borderRadius: 2 }}>
-          <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>
-            Container Height Control
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Control the table height to fit your layout requirements using the <code>maxHeight</code> prop 
-            or container styling.
-          </Typography>
-
-          <Stack spacing={2}>
-            <Box>
-              <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-                Fixed Height
-              </Typography>
-              <CodeBlock
-                language="tsx"
-                code={`<DataTable
-  columns={columns}
-  data={data}
-  maxHeight="400px"
-  enableVirtualization
-/>`}
-              />
-            </Box>
-
-            <Box>
-              <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-                Flex Layout (Fill Available Space)
-              </Typography>
-              <CodeBlock
-                language="tsx"
-                code={`<Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
-  <Header />
-  <Box sx={{ flex: 1, minHeight: 0 }}>
-    <DataTable
-      columns={columns}
-      data={data}
-      maxHeight="100%"
-      enableVirtualization
-    />
-  </Box>
-</Box>`}
-              />
-            </Box>
-          </Stack>
-        </Paper>
-
-        {/* Shell-first Composition */}
-        <Paper variant="outlined" sx={{ p: 3, borderRadius: 2 }}>
-          <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>
-            Shell-First Composition
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Build your own custom layout shell and embed the table components. Toolbar, filters, 
-            and pagination can live anywhere in your layout.
-          </Typography>
-          
-          <Alert severity="info" sx={{ mb: 3 }}>
-            <Typography variant="body2">
-              <strong>Note:</strong> The toolbar is shown when <code>enableGlobalFilter</code> is true 
-              or when <code>extraFilter</code> is provided. To hide the toolbar completely, set{' '}
-              <code>enableGlobalFilter={'{false}'}</code> and don&apos;t provide <code>extraFilter</code>.
-            </Typography>
-          </Alert>
-
-          <CodeBlock
-            language="tsx"
-            code={`function CustomTableLayout() {
-  const apiRef = useRef<DataTableApi<User>>(null);
-
-  return (
-    <Stack spacing={2}>
-      {/* Custom Toolbar Outside Table */}
-      <Paper variant="outlined" sx={{ p: 2 }}>
-        <Stack direction="row" spacing={2} justifyContent="space-between">
-          <SearchField 
-            onChange={(value) => apiRef.current?.filtering.setGlobalFilter(value)} 
-          />
-          <Button onClick={() => apiRef.current?.export.exportData('xlsx')}>
-            Export
-          </Button>
-        </Stack>
-      </Paper>
-
-      {/* Table without built-in toolbar */}
-      <DataTable
-        ref={apiRef}
-        columns={columns}
-        data={data}
-        enableGlobalFilter={false}  // Disable built-in toolbar
-        enablePagination={false}     // Handle pagination separately
-      />
-
-      {/* Custom Pagination Outside Table */}
-      <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-        <CustomPagination
-          page={page}
-          total={total}
-          onChange={(newPage) => apiRef.current?.pagination.setPageIndex(newPage)}
-        />
-      </Box>
-    </Stack>
-  );
-}`}
-          />
-        </Paper>
-      </Stack>
-    </FeatureLayout>
-  );
+// …or a fixed pixel height
+<DataTable columns={columns} data={data} height={360} enablePagination />`}
+                    />
+                </Paper>
+            </Stack>
+        </FeatureLayout>
+    );
 }

@@ -26,6 +26,7 @@ export function BulkActionsToolbar({ selectedCount, selectionState, onClear, ren
                 px: 1.5,
                 py: 0.75,
                 borderRadius: 1,
+                flexShrink: 0,
                 bgcolor: 'primary.main',
                 color: 'primary.contrastText',
             }}

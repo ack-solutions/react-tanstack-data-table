@@ -52,6 +52,33 @@ export function PersistenceDemo() {
     );
 }
 
+export function HeightAutoDemo() {
+    // Auto height (default): no bound → the grid is exactly as tall as its rows.
+    return <DataTable columns={columns} data={makeUsers(5)} enableSorting />;
+}
+
+export function HeightCappedDemo() {
+    // Capped: maxHeight on its own caps the body and scrolls; the header stays pinned.
+    return <DataTable columns={columns} data={makeUsers(60)} maxHeight={260} enableSorting />;
+}
+
+export function HeightFillDemo() {
+    // Fixed/fill: the grid fills its 340px parent, the body scrolls, and the header +
+    // pagination footer stay pinned. Scroll the rows — header and footer hold.
+    return (
+        <Box sx={{ height: 340 }}>
+            <DataTable
+                columns={columns}
+                data={makeUsers(80)}
+                height="100%"
+                enablePagination
+                enableColumnPinning
+                initialState={{ pagination: { pageIndex: 0, pageSize: 25 }, columnPinning: { left: ['name'] } }}
+            />
+        </Box>
+    );
+}
+
 export function BasicDemo() {
     return <DataTable columns={columns} data={users} enableSorting enableColumnResizing enablePagination initialState={page5} />;
 }

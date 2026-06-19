@@ -16,6 +16,34 @@ format: each release groups changes as **Added** (new features), **Changed** (be
 
 ---
 
+## [1.6.1](https://www.npmjs.com/package/@ackplus/mui-tanstack-data-grid/v/1.6.1) — 2026-06-19
+
+Fixes the height / sticky / scroll behaviour and gives it a proper, standard model — the grid is now a
+flex column with three height modes ([Height & scrolling](/features/layout)). Backward compatible:
+auto-height and existing `stickyHeader` / `maxHeight` setups are unchanged.
+
+### Fixed
+- **`stickyFooter` now works.** It was declared but never wired; it now pins the footer and bounds the
+  body like `stickyHeader`.
+- **`maxHeight` is active on its own.** Previously it was ignored unless `stickyHeader` (or
+  `enableVirtualization`) was also set; setting `maxHeight` now caps and scrolls by itself.
+- **`enableStickyHeaderOrFooter`** (the deprecated alias) is honored again — it maps to `stickyHeader`.
+- The grid root is a flex column and the scroller flexes (`flex: 1 1 auto; min-height: 0`), so in a
+  fixed/fill height the footer correctly pins to the bottom while the body scrolls.
+
+### Added
+- **`height`** — fix the grid height (`'100%'` fills a sized parent); the body flexes to fill and scrolls
+  while the header and footer stay pinned (the dashboard-panel layout that wasn't previously expressible).
+- **`minHeight`** — optional floor so a near-empty grid doesn't collapse. A bounded height is *not*
+  required for the body to scroll; this is purely a minimum.
+
+### Docs
+- New [Height & scrolling](/features/layout) feature page with a live demo of each mode. The example app's
+  **Layout** page was rewritten around the three modes (it previously documented a removed
+  `TableContainer` API).
+
+---
+
 ## [1.6.0](https://www.npmjs.com/package/@ackplus/mui-tanstack-data-grid/v/1.6.0) — 2026-06-19
 
 ### Added

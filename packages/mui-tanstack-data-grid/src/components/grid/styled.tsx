@@ -30,6 +30,11 @@ export const GridRoot = styled('div', { name: 'MuiTanstackDataGrid', slot: 'Root
     };
     return {
         position: 'relative',
+        // Flex column so the scroller can fill a fixed/`100%` height while the
+        // toolbar and footer keep their size — header pins to the top, footer to
+        // the bottom, body scrolls between them. Inert in auto-height mode.
+        display: 'flex',
+        flexDirection: 'column',
         width: '100%',
         fontSize: 'var(--dt-font-size)',
         // Self-framing card: a single outer border + rounded corners (consumes the
@@ -54,6 +59,7 @@ export const GridToolbar = styled('div', { name: 'MuiTanstackDataGrid', slot: 'T
     alignItems: 'center',
     gap: 4,
     flexWrap: 'wrap',
+    flexShrink: 0,
     minHeight: 52,
     paddingInline: 12,
     paddingBlock: 8,
@@ -64,6 +70,10 @@ export const GridScroller = styled('div', { name: 'MuiTanstackDataGrid', slot: '
     position: 'relative',
     width: '100%',
     overflow: 'auto',
+    // The single growing/shrinking child: fills a fixed-height root and `minHeight:0`
+    // lets it shrink below content so the body (not the page) scrolls.
+    flex: '1 1 auto',
+    minHeight: 0,
 }) as unknown as DivSlot;
 
 export const GridHeader = styled('div', { name: 'MuiTanstackDataGrid', slot: 'Header' })({
@@ -123,6 +133,8 @@ export const GridDetailPanel = styled('div', { name: 'MuiTanstackDataGrid', slot
 
 export const GridFooter = styled('div', { name: 'MuiTanstackDataGrid', slot: 'Footer' })({
     borderTop: '1px solid var(--dt-border-color)',
+    // Held at its natural height so it pins to the bottom while the scroller flexes.
+    flexShrink: 0,
     // Tame MUI's <TablePagination> so the footer is robust everywhere it's
     // embedded — including CSS-heavy hosts (Docusaurus, WordPress themes,
     // Tailwind/Bootstrap resets).
