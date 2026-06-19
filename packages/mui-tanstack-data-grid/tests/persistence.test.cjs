@@ -4,6 +4,7 @@ const assert = require('node:assert/strict');
 const {
     readPersistedState,
     writePersistedState,
+    clearPersistedState,
     resolveStorage,
     DEFAULT_PERSIST_KEYS,
 } = require('../dist/cjs/utils/persistence.js');
@@ -68,6 +69,16 @@ test('resolveStorage: built-ins null under SSR, custom Storage-like always honor
     assert.equal(resolveStorage({ storage: 'session' }), null, 'session → null under SSR');
     const custom = memStorage();
     assert.equal(resolveStorage({ storage: custom }), custom, 'custom storage works under SSR');
+});
+
+test('clearPersistedState removes the saved snapshot', () => {
+    const s = memStorage();
+    writePersistedState(s, 'gone', { density: 'compact' }, DEFAULT_PERSIST_KEYS);
+    assert.ok(s._map.has('dt:gone'));
+    clearPersistedState('gone', { storage: s });
+    assert.ok(!s._map.has('dt:gone'), 'snapshot removed');
+    assert.doesNotThrow(() => clearPersistedState(undefined, { storage: s }), 'no key → no-op');
+    assert.doesNotThrow(() => clearPersistedState('x'), 'default storage under SSR → no-op, no throw');
 });
 
 test('DEFAULT_PERSIST_KEYS covers layout + view, not selection/expansion', () => {

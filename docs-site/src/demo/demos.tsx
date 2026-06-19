@@ -1,3 +1,4 @@
+import { useMemo, useState } from 'react';
 import { Box, Button } from '@mui/material';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { DataTable } from '@ackplus/mui-tanstack-data-grid';
@@ -5,6 +6,51 @@ import { DataTable } from '@ackplus/mui-tanstack-data-grid';
 import { columns, users, makeUsers } from './sample';
 
 const page5 = { pagination: { pageIndex: 0, pageSize: 5 } };
+
+export function DarkModeDemo() {
+    // Toggling the theme's mode restyles the grid — it derives every colour from
+    // the theme (and follows `colorSchemes` under `cssVariables` apps too).
+    const [mode, setMode] = useState<'light' | 'dark'>('light');
+    const theme = useMemo(() => createTheme({ palette: { mode } }), [mode]);
+    return (
+        <ThemeProvider theme={theme}>
+            <Box sx={{ p: 1.5, bgcolor: 'background.default', borderRadius: 1 }}>
+                <Button size="small" variant="outlined" onClick={() => setMode((m) => (m === 'dark' ? 'light' : 'dark'))} sx={{ mb: 1.5 }}>
+                    Toggle theme — currently {mode}
+                </Button>
+                <DataTable
+                    columns={columns}
+                    data={users}
+                    enableSorting
+                    enableColumnResizing
+                    enableColumnPinning
+                    enableColumnVisibility
+                    enablePagination
+                    enableDensitySelector
+                    initialState={{ pagination: { pageIndex: 0, pageSize: 5 }, columnPinning: { left: ['name'] } }}
+                />
+            </Box>
+        </ThemeProvider>
+    );
+}
+
+export function PersistenceDemo() {
+    return (
+        <DataTable
+            columns={columns}
+            data={makeUsers(48)}
+            stateKey="docs-persistence-demo"
+            enableSorting
+            enableColumnResizing
+            enableColumnReordering
+            enableColumnPinning
+            enableColumnVisibility
+            enableDensitySelector
+            enablePagination
+            initialState={page5}
+        />
+    );
+}
 
 export function BasicDemo() {
     return <DataTable columns={columns} data={users} enableSorting enableColumnResizing enablePagination initialState={page5} />;

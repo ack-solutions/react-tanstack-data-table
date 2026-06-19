@@ -4,6 +4,9 @@ sidebar_label: Props
 sidebar_position: 1
 ---
 
+import LiveDemo from '@site/src/demo/LiveDemo';
+import { PersistenceDemo } from '@site/src/demo/demos';
+
 # `<DataTable>` props
 
 Every prop, grouped by area. Use the **search** (top right) to find a setting fast.
@@ -152,6 +155,10 @@ with no save/restore wiring:
 <DataTable columns={columns} data={rows} stateKey="expenses" enablePagination enableColumnPinning />
 ```
 
+Try it — sort, paginate, reorder/resize/hide a column, then **reload the page**: the view comes back.
+
+<LiveDemo>{() => <PersistenceDemo />}</LiveDemo>
+
 It reads the saved snapshot into `initialState` on mount and writes (debounced) on change. **Selection and
 row expansion are excluded by default.** Tune it with `persist`:
 
@@ -167,7 +174,8 @@ row expansion are excluded by default.** Tune it with `persist`:
 ```
 
 SSR-safe (no-ops without `window`; a custom `storage` object is honored anywhere). Storage keys are
-namespaced as `dt:<stateKey>`.
+namespaced as `dt:<stateKey>`. To forget a saved view (e.g. a "Reset" button), call
+`clearPersistedState(stateKey, persist?)` and remount/reload.
 
 ## Dark mode & `cssVariables` themes
 

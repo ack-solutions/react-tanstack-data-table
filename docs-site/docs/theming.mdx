@@ -4,7 +4,7 @@ title: Theming
 ---
 
 import LiveDemo from '@site/src/demo/LiveDemo';
-import { ThemingDemo } from '@site/src/demo/demos';
+import { ThemingDemo, DarkModeDemo } from '@site/src/demo/demos';
 
 # Theming
 
@@ -71,3 +71,24 @@ rounded corners — so you don't need to wrap it in your own `<Paper>`. Drop the
 
 Use the `density` prop, `sx` on the root, or `slotProps` on any part. Slots replace a part entirely. The
 MUI theme, tokens, and `sx` compose — you never manage colours twice.
+
+## 5. Dark mode
+
+The grid follows your theme's light/dark mode automatically — including the modern setup
+`createTheme({ cssVariables: true, colorSchemes: { light, dark } })`. It reads palette values via
+`theme.vars` and emits its mode-dependent defaults with `applyStyles('dark')`, so toggling the scheme
+restyles the header, rows, borders, and toolbar:
+
+<LiveDemo>{() => <DarkModeDemo />}</LiveDemo>
+
+```tsx
+const theme = createTheme({
+  cssVariables: { colorSchemeSelector: 'class' },
+  colorSchemes: { light: true, dark: true },
+});
+// …toggle with useColorScheme().setMode('dark') — the grid follows.
+```
+
+To customise grid colours **per scheme**, merge [`createDataTableTheme`](#2-theme-it-like-a-mui-component)
+(`palette` + optional `darkPalette`) — it emits `colorSchemes` overrides that compose cleanly with a
+`cssVariables` theme (no flat top-level `palette`).

@@ -77,3 +77,18 @@ export function writePersistedState(
         /* quota exceeded / disabled — ignore */
     }
 }
+
+/**
+ * Forget a grid's saved view. Call with the same `stateKey` (+ `persist`) you
+ * passed to `<DataTable>`, then remount/reload to start from `initialState` —
+ * e.g. a "Reset saved view" button. SSR-safe.
+ */
+export function clearPersistedState(stateKey: string | undefined, persist?: PersistOptions): void {
+    const storage = resolveStorage(persist);
+    if (!storage || !stateKey) return;
+    try {
+        storage.removeItem(storageKey(stateKey));
+    } catch {
+        /* disabled — ignore */
+    }
+}
