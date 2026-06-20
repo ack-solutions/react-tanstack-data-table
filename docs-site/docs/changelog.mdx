@@ -16,7 +16,32 @@ format: each release groups changes as **Added** (new features), **Changed** (be
 
 ---
 
-## [1.9.0](https://www.npmjs.com/package/@ackplus/mui-tanstack-data-grid/v/1.9.0) — 2026-06-20
+## [1.10.0](https://www.npmjs.com/package/@ackplus/mui-tanstack-data-grid/v/1.10.0) — 2026-06-20
+
+Completes **Tier C** — keyboard accessibility, inline editing, and tree data. Backward compatible (no API
+removed); the grid now uses the ARIA grid roles and keyboard nav is always on.
+
+### Added
+- **Keyboard navigation + ARIA grid.** WCAG grid-pattern operability: `role="grid"` (`treegrid` for tree
+  data), `aria-rowindex`/`aria-colindex`/`aria-rowcount`/`aria-colcount`, header `aria-sort`. A roving
+  tabindex with **↑ ↓ ← →**, **Home/End**, **Ctrl+Home/End**, **PageUp/PageDown** moves the focused cell;
+  **Enter/F2** activates it (sort a header, toggle a control, or start editing); focus follows paging and
+  scrolls virtualized rows into view. See [Accessibility](/features/accessibility).
+- **Inline cell editing.** Mark a column [`editable`](/features/editing); double-click or Enter/F2 to edit.
+  Type-aware editor (text / number / date, dropdown for `select`/`boolean`); Enter or blur commits, Escape
+  cancels. `processRowUpdate(newRow, oldRow)` persists the change (reverts + `onProcessRowUpdateError` on a
+  throw); without it, edits update the grid's local data.
+- **Tree data.** [`getSubRows`](/features/tree-data) renders hierarchical rows — an expander only on rows
+  with children, depth indentation, and `role="treegrid"` + `aria-level` / `aria-expanded`. Use instead of
+  `renderDetailPanel`.
+
+### Changed
+- The scroll container is now `role="grid"` (was `role="table"`) and body cells `role="gridcell"`, per the
+  ARIA grid pattern.
+
+### Docs
+- New [Accessibility](/features/accessibility), [Editing](/features/editing), and
+  [Tree data](/features/tree-data) feature pages, each with a live demo.
 
 Finishes **Tier B** — a footer aggregation row and full localization. Backward compatible.
 

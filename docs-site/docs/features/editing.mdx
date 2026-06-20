@@ -1,0 +1,43 @@
+---
+title: Inline editing
+sidebar_label: Editing
+---
+
+import LiveDemo from '@site/src/demo/LiveDemo';
+import { EditingDemo } from '@site/src/demo/demos';
+
+# Inline cell editing
+
+Mark a column `editable` and the grid lets users edit its cells in place — **double-click** a cell, or focus
+it and press **Enter** / **F2**. The editor is type-aware (text / number / date, and a dropdown for
+`type: 'select'` or `type: 'boolean'`). **Enter** or blur commits; **Escape** cancels.
+
+<LiveDemo>{() => <EditingDemo />}</LiveDemo>
+
+```tsx
+const columns = [
+  { id: 'name', header: 'Name', accessorKey: 'name', editable: true },
+  { id: 'role', header: 'Role', accessorKey: 'role', editable: true,
+    type: 'select', options: [{ label: 'Admin', value: 'Admin' }, { label: 'Editor', value: 'Editor' }] },
+];
+
+<DataTable
+  columns={columns}
+  data={rows}
+  processRowUpdate={async (newRow, oldRow) => {
+    const saved = await api.save(newRow);  // persist
+    return saved;                          // grid applies the returned row
+  }}
+  onProcessRowUpdateError={(err) => toast.error(String(err))}
+/>
+```
+
+On commit the grid calls **`processRowUpdate(newRow, oldRow)`** and applies the returned row to its data.
+If it **throws/rejects**, `onProcessRowUpdateError` fires and the edit is reverted. Without a
+`processRowUpdate`, edits update the grid's local data directly. `editable` can be a function
+(`(row) => boolean`) to allow editing per-row.
+
+:::note
+Phase-1 editing is single-cell, and in [tree data](/features/tree-data) only top-level rows are editable.
+Whole-row edit mode, sub-row editing, and edit-while-virtualized-scrolling are future enhancements.
+:::

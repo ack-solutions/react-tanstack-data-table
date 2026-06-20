@@ -387,6 +387,72 @@ export function LocaleDemo() {
     );
 }
 
+const editableColumns: ColumnDef<typeof users[number], any>[] = [
+    { id: 'name', header: 'Name', accessorKey: 'name', editable: true, size: 170 },
+    { id: 'email', header: 'Email', accessorKey: 'email', editable: true, size: 220 },
+    {
+        id: 'role', header: 'Role', accessorKey: 'role', editable: true, type: 'select', size: 130,
+        options: [{ label: 'Admin', value: 'Admin' }, { label: 'Editor', value: 'Editor' }, { label: 'Viewer', value: 'Viewer' }],
+    },
+    {
+        id: 'status', header: 'Status', accessorKey: 'status', editable: true, type: 'select', size: 130,
+        options: [{ label: 'Active', value: 'active' }, { label: 'Invited', value: 'invited' }],
+    },
+];
+
+export function EditingDemo() {
+    // Double-click a cell (or focus it and press Enter) to edit. processRowUpdate commits;
+    // here it just echoes the row back, so the grid applies the edit to its data.
+    return (
+        <DataTable
+            columns={editableColumns}
+            data={makeUsers(6)}
+            enablePagination
+            initialState={page5}
+            processRowUpdate={(newRow) => newRow}
+        />
+    );
+}
+
+interface FileNode {
+    id: number;
+    name: string;
+    kind: string;
+    size: string;
+    children?: FileNode[];
+}
+
+const fileTree: FileNode[] = [
+    { id: 1, name: 'src', kind: 'Folder', size: '—', children: [
+        { id: 2, name: 'components', kind: 'Folder', size: '—', children: [
+            { id: 3, name: 'Button.tsx', kind: 'File', size: '2 KB' },
+            { id: 4, name: 'Input.tsx', kind: 'File', size: '3 KB' },
+        ] },
+        { id: 5, name: 'index.ts', kind: 'File', size: '1 KB' },
+    ] },
+    { id: 6, name: 'package.json', kind: 'File', size: '1 KB' },
+    { id: 7, name: 'README.md', kind: 'File', size: '4 KB' },
+];
+
+const treeColumns: ColumnDef<FileNode, any>[] = [
+    { id: 'name', header: 'Name', accessorKey: 'name', size: 260 },
+    { id: 'kind', header: 'Kind', accessorKey: 'kind', size: 120 },
+    { id: 'size', header: 'Size', accessorKey: 'size', size: 100, align: 'right' },
+];
+
+export function TreeDemo() {
+    // `getSubRows` turns nested data into a tree: an expander on parent rows + depth indentation.
+    return (
+        <DataTable
+            columns={treeColumns}
+            data={fileTree}
+            getSubRows={(row) => row.children}
+            enableColumnPinning
+            initialState={{ expanded: true } as any}
+        />
+    );
+}
+
 export function FullDemo() {
     return (
         <DataTable

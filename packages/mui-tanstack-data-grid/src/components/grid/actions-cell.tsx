@@ -43,6 +43,7 @@ export function ActionsCell<T>({ row, getRowActions, display = 'auto', moreIcon 
                                 color={a.color ?? 'default'}
                                 disabled={a.disabled}
                                 aria-label={a.label}
+                                tabIndex={-1}
                                 onClick={(e) => run(e, a)}
                             >
                                 {a.icon
@@ -65,6 +66,7 @@ export function ActionsCell<T>({ row, getRowActions, display = 'auto', moreIcon 
                 aria-haspopup="menu"
                 aria-expanded={!!anchor}
                 aria-controls={anchor ? 'dt-row-actions-menu' : undefined}
+                tabIndex={-1}
                 onClick={(e) => { e.stopPropagation(); setAnchor(e.currentTarget); }}
             >
                 <MoreIcon fontSize="small" />

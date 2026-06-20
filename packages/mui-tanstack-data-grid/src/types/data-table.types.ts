@@ -191,6 +191,17 @@ export interface DataTableProps<T> {
     /** Force the row-actions presentation. `'auto'` (default) picks icons vs menu. */
     rowActionsDisplay?: 'icons' | 'menu' | 'auto';
 
+    // ── Editing ───────────────────────────────────────────────────────────
+    /**
+     * Commit an inline cell edit (mark columns with `editable`). Receives the updated
+     * row and the original; return the row to persist (optionally transformed), or throw
+     * to reject. On success the grid applies the returned row to its data; on a throw the
+     * edit reverts. Without it, edits update the grid's local data directly.
+     */
+    processRowUpdate?: (newRow: T, oldRow: T) => T | Promise<T>;
+    /** Called when `processRowUpdate` throws/rejects (the edit is reverted). */
+    onProcessRowUpdateError?: (error: unknown) => void;
+
     // ── Bulk actions ──────────────────────────────────────────────────────
     enableBulkActions?: boolean;
     renderBulkActions?: (selectionState: SelectionState) => ReactNode;
@@ -222,6 +233,12 @@ export interface DataTableProps<T> {
     enableRowExpansion?: boolean;
     getRowCanExpand?: (row: Row<T>) => boolean;
     renderDetailPanel?: (row: Row<T>) => ReactNode;
+    /**
+     * Tree data: return a row's child rows. Enables hierarchical rows with an
+     * expander that appears only on rows that have children, and depth indentation.
+     * Mutually exclusive with `renderDetailPanel` (use one or the other).
+     */
+    getSubRows?: (originalRow: T, index: number) => T[] | undefined;
     /** @deprecated Renamed to `enableRowExpansion`. */
     enableExpanding?: boolean;
     /** @deprecated Renamed to `renderDetailPanel`. */

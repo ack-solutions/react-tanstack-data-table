@@ -60,6 +60,8 @@ declare module '@tanstack/react-table' {
         filterable?: boolean;
         /** Wrap cell text instead of truncating with an ellipsis (default: false). */
         wrapText?: boolean;
+        /** Allow inline editing of this column's cells (needs a `processRowUpdate` or local data). */
+        editable?: boolean | ((row: TData) => boolean);
         /** Conditional class for body cells (DataGrid-style). */
         cellClassName?: string | ((context: { value: any; row: TData }) => string);
         /** Conditional class for the header cell. */

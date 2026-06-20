@@ -1,0 +1,41 @@
+---
+title: Tree data
+sidebar_label: Tree data
+---
+
+import LiveDemo from '@site/src/demo/LiveDemo';
+import { TreeDemo } from '@site/src/demo/demos';
+
+# Tree data
+
+Return a row's children from `getSubRows` and the grid renders **hierarchical rows**: an expander appears
+only on rows that have children, child rows are indented by depth, and the grid exposes the tree to
+assistive tech (`role="treegrid"`, `aria-level`, `aria-expanded`).
+
+<LiveDemo>{() => <TreeDemo />}</LiveDemo>
+
+```tsx
+const data = [
+  { id: 1, name: 'src', children: [
+    { id: 2, name: 'components', children: [{ id: 3, name: 'Button.tsx' }] },
+    { id: 4, name: 'index.ts' },
+  ] },
+  { id: 5, name: 'package.json' },
+];
+
+<DataTable
+  columns={columns}
+  data={data}
+  getSubRows={(row) => row.children}
+  initialState={{ expanded: true }}  // expand all initially (optional)
+/>
+```
+
+Expansion reuses the standard machinery, so `expanded` participates in `initialState`, `onDataStateChange`,
+and the imperative API. Use **either** `getSubRows` (tree) **or** `renderDetailPanel` (master-detail) on a
+grid, not both.
+
+:::note Scope
+Client-side, pre-nested data. Lazy/async child loading and server-side tree models are out of scope for
+this version. Advanced column filters and inline editing apply to **top-level** rows in tree mode.
+:::

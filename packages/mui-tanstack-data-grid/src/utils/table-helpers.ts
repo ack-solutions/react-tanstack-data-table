@@ -12,14 +12,17 @@ export function calculateSkeletonRows(containerHeight: number, rowHeight: number
     return Math.min(estimatedRows, maxRows);
 }
 
-/** Stable row id: `row[idKey]` when present, else `row-<index>`. */
-export function generateRowId<T>(row: T, index: number, idKey?: keyof T): string {
+/** Stable row id: `row[idKey]` when present, else a positional id. For tree
+ *  sub-rows pass `parentId` so the positional fallback is namespaced under the
+ *  parent (`<parentId>.<index>`) and never collides across siblings of different
+ *  parents. A real `idKey` value is assumed globally unique and used as-is. */
+export function generateRowId<T>(row: T, index: number, idKey?: keyof T, parentId?: string): string {
     // Honour id === 0, but fall back to a positional id for null/undefined/empty
     // (an empty-string id would collide across rows).
     if (idKey && row[idKey] != null && (row[idKey] as unknown) !== '') {
         return String(row[idKey]);
     }
-    return `row-${index}`;
+    return parentId != null ? `${parentId}.${index}` : `row-${index}`;
 }
 
 /** Default value formatting by column type. */

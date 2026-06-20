@@ -99,6 +99,8 @@ export const GridHeaderCell = styled('div', { name: 'MuiTanstackDataGrid', slot:
     fontWeight: 600,
     color: 'var(--dt-header-color)',
     userSelect: 'none',
+    outline: 'none',
+    '&:focus-visible': { outline: '2px solid var(--dt-resize-handle)', outlineOffset: '-2px', zIndex: 1 },
     // Subtle vertical separators between header columns (design reference).
     '&:not(:first-of-type)': { boxShadow: 'inset 1px 0 0 var(--dt-border-color)' },
 }) as unknown as DivSlot;
@@ -121,6 +123,8 @@ export const GridCell = styled('div', { name: 'MuiTanstackDataGrid', slot: 'Cell
     alignItems: 'center',
     minWidth: 0,
     paddingInline: 'var(--dt-cell-padding-x)',
+    outline: 'none',
+    '&:focus-visible': { outline: '2px solid var(--dt-resize-handle)', outlineOffset: '-2px', zIndex: 1 },
 }) as unknown as DivSlot;
 
 // Aggregation summary row — sticks to the bottom of the scroll viewport, above

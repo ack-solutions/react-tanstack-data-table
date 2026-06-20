@@ -176,6 +176,7 @@ export interface UseDataTableResult<T = any> {
         visibleLeafColumns: ReturnType<typeof useReactTable<T>>['getVisibleLeafColumns'];
         fitToScreen: boolean;
         density: DataTableDensity;
+        isTree: boolean;
         isExporting: boolean;
         exportPhase: ExportPhase | null;
         exportProgress: ExportProgressPayload;
@@ -285,6 +286,11 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
     const enableColumnReordering = props.enableColumnReordering ?? props.enableColumnDragging ?? false;
     const onColumnOrderChange = props.onColumnOrderChange ?? props.onColumnDragEnd;
     const enableExpanding = props.enableRowExpansion ?? props.enableExpanding ?? false;
+    // Tree data: `getSubRows` turns on the same expansion machinery (expanded model +
+    // expander column), but the expander shows only on rows that actually have children.
+    const getSubRows = props.getSubRows;
+    const hasTree = !!getSubRows;
+    const expandEnabled = enableExpanding || hasTree;
     const onColumnFilterChange = props.onColumnFilterChange ?? props.onColumnFiltersChange;
     // Density is controlled when `density` (or the deprecated `tableSize`) is passed;
     // otherwise it's uncontrolled (driven by the toolbar's density selector → ui.density).
@@ -339,11 +345,11 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
         const pinned = new Set([...left, ...right]);
         const autoLeft: string[] = [];
         if (enableRowSelection && !pinned.has(DEFAULT_SELECTION_COLUMN_ID)) autoLeft.push(DEFAULT_SELECTION_COLUMN_ID);
-        if (enableExpanding && !pinned.has(DEFAULT_EXPAND_COLUMN_ID)) autoLeft.push(DEFAULT_EXPAND_COLUMN_ID);
+        if (expandEnabled && !pinned.has(DEFAULT_EXPAND_COLUMN_ID)) autoLeft.push(DEFAULT_EXPAND_COLUMN_ID);
         const autoRight: string[] = [];
         if (hasRowActions && !pinned.has(DEFAULT_ACTIONS_COLUMN_ID)) autoRight.push(DEFAULT_ACTIONS_COLUMN_ID);
         return { left: [...autoLeft, ...left], right: [...right, ...autoRight] };
-    }, [initialState, persistedInitial, enableColumnPinning, enableRowSelection, enableExpanding, hasRowActions]);
+    }, [initialState, persistedInitial, enableColumnPinning, enableRowSelection, expandEnabled, hasRowActions]);
 
     const initialUIState: EngineUIState = useMemo(
         () => ({
@@ -418,14 +424,17 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
     );
 
     const getRowId = useCallback(
-        (row: T, index: number) => (getRowIdProp ? getRowIdProp(row, index) : generateRowId(row, index, idKey)),
+        // TanStack passes the parent row for sub-rows; namespace the positional
+        // fallback under it so tree children don't collide on `row-<index>`.
+        (row: T, index: number, parent?: { id: string }) =>
+            getRowIdProp ? getRowIdProp(row, index) : generateRowId(row, index, idKey, parent?.id),
         [getRowIdProp, idKey],
     );
 
     const enhancedColumns = useMemo(() => {
         // Normalize user columns first (valueGetter → accessorFn, default type/format cells).
         let cols = columns.map((c) => normalizeUserColumn<T>(c));
-        if (enableExpanding) {
+        if (expandEnabled) {
             cols = [
                 createExpandingColumn<T>({
                     ...(slotProps?.expandColumn && typeof slotProps.expandColumn === 'object' ? slotProps.expandColumn : {}),
@@ -464,7 +473,7 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
         // Depend on the two strings the columns actually consume — not the whole
         // localeText object, which is a fresh reference each render for inline
         // partial overrides and would otherwise rebuild every column.
-    }, [columns, enableExpanding, enableRowSelection, enableMultiRowSelection, hasRowActions, rowActionsDisplay, slotProps?.expandColumn, slotProps?.selectionColumn, slotProps?.actionsColumn, slots?.expandIcon, slots?.collapseIcon, slots?.moreActionsIcon, localeText.expandRow, localeText.collapseRow]);
+    }, [columns, expandEnabled, enableRowSelection, enableMultiRowSelection, hasRowActions, rowActionsDisplay, slotProps?.expandColumn, slotProps?.selectionColumn, slotProps?.actionsColumn, slots?.expandIcon, slots?.collapseIcon, slots?.moreActionsIcon, localeText.expandRow, localeText.collapseRow]);
 
     const fetchData = useEvent(
         async (overrides: Partial<TableState> = {}, options?: { delay?: number; meta?: DataFetchMeta }) => {
@@ -510,7 +519,7 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
             ...(enableSorting ? { sorting: ui.sorting } : {}),
             ...(enablePagination ? { pagination: ui.pagination } : {}),
             ...(enableGlobalFilter ? { globalFilter: ui.globalFilter } : {}),
-            ...(enableExpanding ? { expanded: ui.expanded } : {}),
+            ...(expandEnabled ? { expanded: ui.expanded } : {}),
             ...(enableColumnReordering ? { columnOrder: ui.columnOrder } : {}),
             ...(enableColumnPinning ? { columnPinning: ui.columnPinning } : {}),
             ...(enableColumnVisibility ? { columnVisibility: ui.columnVisibility } : {}),
@@ -581,7 +590,7 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
               }
             : {}),
 
-        ...(enableExpanding
+        ...(expandEnabled
             ? {
                   onExpandedChange: (u: any) => {
                       const prev = uiRef.current.expanded;
@@ -590,6 +599,7 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
                   },
               }
             : {}),
+        ...(hasTree ? { getSubRows: getSubRows as any } : {}),
 
         ...(enableColumnReordering
             ? {
@@ -636,7 +646,7 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
         ...(enableSorting ? { getSortedRowModel: getSortedRowModel() } : {}),
         ...(enableColumnFilter || enableGlobalFilter ? { getFilteredRowModel: getCombinedFilteredRowModel<T>() } : {}),
         ...(enablePagination && !isServerPagination ? { getPaginationRowModel: getPaginationRowModel() } : {}),
-        ...(enableExpanding ? { getExpandedRowModel: getExpandedRowModel() } : {}),
+        ...(expandEnabled ? { getExpandedRowModel: getExpandedRowModel() } : {}),
 
         enableSorting,
         manualSorting: isServerSorting,
@@ -647,9 +657,11 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
         columnResizeDirection: theme.direction,
 
         enableColumnPinning,
-        // Detail-panel expansion: default every row to expandable so the toggle
-        // works on flat data; callers can gate it via getRowCanExpand.
-        ...(enableExpanding ? { getRowCanExpand: (getRowCanExpand ?? (() => true)) as any } : {}),
+        // Expansion: tree rows are expandable only when they have children; detail-panel
+        // rows default to expandable (callers can override via getRowCanExpand).
+        ...(expandEnabled
+            ? { getRowCanExpand: (getRowCanExpand ?? (hasTree ? (r: any) => (r.subRows?.length ?? 0) > 0 : () => true)) as any }
+            : {}),
 
         manualPagination: isServerPagination,
         autoResetPageIndex: false,
@@ -1454,6 +1466,7 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
             visibleLeafColumns: table.getVisibleLeafColumns,
             fitToScreen,
             density: controlledDensity ?? ui.density,
+            isTree: hasTree,
             isExporting,
             exportPhase,
             exportProgress,

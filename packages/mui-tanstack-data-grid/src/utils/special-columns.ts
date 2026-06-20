@@ -75,6 +75,7 @@ export const createSelectionColumn = <T>(
             onChange: () => table.toggleAllRowsSelected?.(),
             size: 'small',
             sx: { p: 0 },
+            tabIndex: -1, // roving tabindex lives on the cell; Enter activates this
             'aria-checked': allSelected ? 'true' : someSelected ? 'mixed' : 'false',
         });
     },
@@ -90,6 +91,7 @@ export const createSelectionColumn = <T>(
             },
             size: 'small',
             sx: { p: 0, opacity: canSelect ? 1 : 0.5 },
+            tabIndex: -1,
             'aria-checked': checked ? 'true' : 'false',
         });
     },
@@ -115,18 +117,23 @@ export const createExpandingColumn = <T>(
         enablePinning: false,
         hideInExport: true,
         header: '',
-        cell: ({ row }) =>
-            createElement(
+        cell: ({ row }) => {
+            // Tree rows expose getCanExpand() = has children; detail-panel rows default true.
+            if (row.getCanExpand && !row.getCanExpand()) return null;
+            const expanded = row.getIsExpanded();
+            return createElement(
                 IconButton,
                 {
                     onClick: row.getToggleExpandedHandler(),
                     size: 'small',
                     sx: { p: 0 },
-                    'aria-label': row.getIsExpanded() ? collapseLabel : expandLabel,
-                    'aria-expanded': row.getIsExpanded(),
+                    tabIndex: -1,
+                    'aria-label': expanded ? collapseLabel : expandLabel,
+                    'aria-expanded': expanded,
                 },
-                row.getIsExpanded() ? createElement(CollapseIcon) : createElement(ExpandIcon),
-            ),
+                expanded ? createElement(CollapseIcon) : createElement(ExpandIcon),
+            );
+        },
         ...columnConfig,
     };
 };

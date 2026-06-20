@@ -1,0 +1,36 @@
+---
+title: Accessibility & keyboard
+sidebar_label: Accessibility
+---
+
+import LiveDemo from '@site/src/demo/LiveDemo';
+import { ColumnsDemo } from '@site/src/demo/demos';
+
+# Accessibility & keyboard
+
+The grid implements the ARIA grid pattern: the scroll container is `role="grid"` (`treegrid` for
+[tree data](/features/tree-data)) with `aria-rowcount` / `aria-colcount`, header cells are `columnheader`
+with `aria-sort`, and body cells are `gridcell` with `aria-rowindex` / `aria-colindex`.
+
+**Keyboard navigation is always on.** Tab moves focus into the grid (a single cell is tabbable — a roving
+tabindex), then:
+
+| Key | Action |
+| --- | --- |
+| **↑ ↓ ← →** | Move between cells (header row included) |
+| **Home** / **End** | First / last cell in the row |
+| **Ctrl+Home** / **Ctrl+End** | First / last cell in the grid |
+| **PageUp** / **PageDown** | Jump up / down by a page |
+| **Enter** / **F2** | Activate the cell — sort a header, toggle a control, or start [editing](/features/editing) |
+| **Escape** | Cancel an in-progress edit |
+
+Focus is restored to the right cell as you page and (for virtualized grids) scrolls the target row into
+view. Pressing Enter on a cell delegates to its interactive child (a button, checkbox, or link) when there
+is one. Try it — click a cell below and use the arrow keys:
+
+<LiveDemo>{() => <ColumnsDemo />}</LiveDemo>
+
+:::note
+This covers structure + keyboard operability. A live-region announcer for sort/filter/page changes is a
+planned addition.
+:::
