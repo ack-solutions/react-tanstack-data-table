@@ -36,10 +36,12 @@ import type { DataTableDensity } from '../theme/tokens';
 import type { ExportPhase, ExportProgressPayload, ExportStateChange } from '../types/export.types';
 
 import { ColumnFilterFeature, getCombinedFilteredRowModel, SelectionFeature } from '../features';
-import { DEFAULT_SELECTION_COLUMN_ID, DEFAULT_EXPAND_COLUMN_ID } from '../types/column.types';
+import { DEFAULT_SELECTION_COLUMN_ID, DEFAULT_EXPAND_COLUMN_ID, DEFAULT_ACTIONS_COLUMN_ID } from '../types/column.types';
 import {
     createExpandingColumn,
     createSelectionColumn,
+    createActionsColumn,
+    normalizeUserColumn,
     generateRowId,
     withIdsDeep,
     useDebouncedFetch,
@@ -286,6 +288,14 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
         props.density ?? (props.tableSize === 'small' ? 'compact' : props.tableSize === 'medium' ? 'standard' : undefined);
     const estimateRowHeight = props.estimatedRowHeight ?? props.estimateRowHeight ?? 52;
 
+    // Row actions: keep the latest callback in a ref so an inline `getRowActions`
+    // doesn't change column identity every render; `hasRowActions` (a stable bool)
+    // gates the column + its right-pin.
+    const getRowActionsRef = useRef(props.getRowActions);
+    getRowActionsRef.current = props.getRowActions;
+    const hasRowActions = !!props.getRowActions;
+    const rowActionsDisplay = props.rowActionsDisplay;
+
     const theme = useTheme();
     const log = useMemo(() => createLogger('engine', logging), [logging]);
 
@@ -323,8 +333,10 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
         const autoLeft: string[] = [];
         if (enableRowSelection && !pinned.has(DEFAULT_SELECTION_COLUMN_ID)) autoLeft.push(DEFAULT_SELECTION_COLUMN_ID);
         if (enableExpanding && !pinned.has(DEFAULT_EXPAND_COLUMN_ID)) autoLeft.push(DEFAULT_EXPAND_COLUMN_ID);
-        return { left: [...autoLeft, ...left], right };
-    }, [initialState, persistedInitial, enableColumnPinning, enableRowSelection, enableExpanding]);
+        const autoRight: string[] = [];
+        if (hasRowActions && !pinned.has(DEFAULT_ACTIONS_COLUMN_ID)) autoRight.push(DEFAULT_ACTIONS_COLUMN_ID);
+        return { left: [...autoLeft, ...left], right: [...right, ...autoRight] };
+    }, [initialState, persistedInitial, enableColumnPinning, enableRowSelection, enableExpanding, hasRowActions]);
 
     const initialUIState: EngineUIState = useMemo(
         () => ({
@@ -404,7 +416,8 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
     );
 
     const enhancedColumns = useMemo(() => {
-        let cols = [...columns];
+        // Normalize user columns first (valueGetter → accessorFn, default type/format cells).
+        let cols = columns.map((c) => normalizeUserColumn<T>(c));
         if (enableExpanding) {
             cols = [
                 createExpandingColumn<T>({
@@ -426,8 +439,20 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
                 ...cols,
             ];
         }
+        if (hasRowActions) {
+            cols = [
+                ...cols,
+                createActionsColumn<T>({
+                    ...(slotProps?.actionsColumn && typeof slotProps.actionsColumn === 'object' ? slotProps.actionsColumn : {}),
+                    getRowActions: (row: any) => getRowActionsRef.current!(row),
+                    display: rowActionsDisplay,
+                    moreIcon: slots?.moreActionsIcon,
+                }),
+            ];
+        }
         return withIdsDeep(cols);
-    }, [columns, enableExpanding, enableRowSelection, enableMultiRowSelection, slotProps?.expandColumn, slotProps?.selectionColumn, slots?.expandIcon, slots?.collapseIcon]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [columns, enableExpanding, enableRowSelection, enableMultiRowSelection, hasRowActions, rowActionsDisplay, slotProps?.expandColumn, slotProps?.selectionColumn, slotProps?.actionsColumn, slots?.expandIcon, slots?.collapseIcon, slots?.moreActionsIcon]);
 
     const fetchData = useEvent(
         async (overrides: Partial<TableState> = {}, options?: { delay?: number; meta?: DataFetchMeta }) => {

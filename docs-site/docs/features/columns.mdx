@@ -4,7 +4,7 @@ sidebar_label: Columns
 ---
 
 import LiveDemo from '@site/src/demo/LiveDemo';
-import { ColumnsDemo, CellRowStylingDemo } from '@site/src/demo/demos';
+import { ColumnsDemo, CellRowStylingDemo, RowActionsDemo, ValueFormatterDemo } from '@site/src/demo/demos';
 
 # Columns
 
@@ -97,3 +97,59 @@ const columns = [
 `wrapText` grows rows in the standard grid. Under `enableVirtualization` the row height is a fixed estimate,
 so wrapped content is clipped — per-row measurement for virtualized auto-height is a separate enhancement.
 :::
+
+## Value getters & formatters
+
+Give a column a `type` and it renders a sensible default cell — no hand-written renderers:
+
+- `type: 'number'` → locale grouping (`1,234.5`)
+- `type: 'date'` → `Jun 12, 2026` (parsed with `dayjs`, no UTC drift)
+- `type: 'boolean'` → `Yes` / `No`
+- `type: 'select'` → the matching `options` label
+
+For a **computed** column, use `valueGetter` (it compiles to an accessor, so sorting, filtering, and export
+all read the same value). For **display-only** formatting, use `valueFormatter` — it never affects export.
+Precedence for the cell: an explicit `cell` > `valueFormatter` > the type default > the raw value.
+
+<LiveDemo>{() => <ValueFormatterDemo />}</LiveDemo>
+
+```tsx
+const columns = [
+  // computed column (no accessorKey) — drives sort/filter/export too
+  { id: 'name', header: 'Rep', valueGetter: ({ row }) => `${row.first} ${row.last}` },
+  // type default + a display-only override
+  { id: 'amount', header: 'Amount', accessorKey: 'amount', type: 'number',
+    valueFormatter: ({ value }) => `$${Number(value).toLocaleString()}` },
+  { id: 'closedOn', header: 'Closed', accessorKey: 'closedOn', type: 'date' },
+  { id: 'won', header: 'Won', accessorKey: 'won', type: 'boolean' },
+];
+```
+
+## Row actions
+
+`getRowActions(row)` adds an auto-generated **`_actions`** column (pinned right when `enableColumnPinning`
+is on, like the selection/expander columns; otherwise the last column). A few actions render as inline icon
+buttons; returning 3+ (or any action without an `icon`) collapses them into an overflow **⋮** menu. Every
+handler stops propagation, so it won't trigger `onRowClick`.
+
+<LiveDemo>{() => <RowActionsDemo />}</LiveDemo>
+
+```tsx
+import EditOutlined from '@mui/icons-material/EditOutlined';
+import DeleteOutline from '@mui/icons-material/DeleteOutline';
+
+<DataTable
+  columns={columns}
+  data={data}
+  getRowActions={(row) => [
+    { label: 'Edit', icon: EditOutlined, onClick: () => edit(row.original) },
+    { label: 'Delete', icon: DeleteOutline, color: 'error',
+      disabled: row.original.locked,
+      onClick: () => remove(row.original) },
+  ]}
+/>
+```
+
+Each action: `{ label, icon?, onClick(row), disabled?, hidden?, color? }`. Tune the column via
+`slotProps.actionsColumn`, force the layout with `rowActionsDisplay` (`'icons' | 'menu' | 'auto'`), and
+swap the overflow glyph with `slots.moreActionsIcon`.

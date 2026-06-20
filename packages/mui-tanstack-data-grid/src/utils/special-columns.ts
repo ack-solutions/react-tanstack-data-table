@@ -3,8 +3,10 @@ import KeyboardArrowUpOutlined from '@mui/icons-material/KeyboardArrowUpOutlined
 import { Checkbox, IconButton } from '@mui/material';
 import { createElement, type ComponentType } from 'react';
 
-import { DEFAULT_SELECTION_COLUMN_ID, DEFAULT_EXPAND_COLUMN_ID } from '../types/column.types';
+import { DEFAULT_SELECTION_COLUMN_ID, DEFAULT_EXPAND_COLUMN_ID, DEFAULT_ACTIONS_COLUMN_ID } from '../types/column.types';
 import type { DataTableColumn } from '../types/column.types';
+import type { DataTableRowAction } from '../types/data-table.types';
+import { ActionsCell } from '../components/grid/actions-cell';
 
 export interface SelectionColumnConfig {
     multiSelect?: boolean;
@@ -16,6 +18,35 @@ export interface ExpandingColumnConfig {
     /** Icon for an expanded row (defaults to KeyboardArrowUpOutlined). */
     collapseIcon?: ComponentType<any>;
 }
+
+export interface ActionsColumnConfig {
+    getRowActions: (row: any) => DataTableRowAction<any>[];
+    display?: 'icons' | 'menu' | 'auto';
+    moreIcon?: ComponentType<any>;
+}
+
+/** Auto-generated, right-pinned row-actions column (rendered by {@link ActionsCell}). */
+export const createActionsColumn = <T>(
+    config: Partial<DataTableColumn<T>> & ActionsColumnConfig,
+): DataTableColumn<T, any> => {
+    const { getRowActions, display, moreIcon, ...columnConfig } = config;
+    return {
+        id: DEFAULT_ACTIONS_COLUMN_ID,
+        header: '',
+        size: 88,
+        minSize: 64,
+        maxSize: 200,
+        align: 'center',
+        filterable: false,
+        enableResizing: false,
+        enableSorting: false,
+        enableHiding: false,
+        enablePinning: true,
+        hideInExport: true,
+        cell: ({ row }) => createElement(ActionsCell, { row, getRowActions, display, moreIcon }),
+        ...columnConfig,
+    };
+};
 
 /** Auto-generated checkbox selection column, driven by the SelectionFeature. */
 export const createSelectionColumn = <T>(

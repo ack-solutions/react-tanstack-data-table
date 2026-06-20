@@ -1,6 +1,68 @@
 import type { Column, ColumnDef } from '@tanstack/react-table';
+import dayjs from 'dayjs';
 
 export type ColumnType = 'text' | 'number' | 'date' | 'boolean' | 'select' | 'actions';
+
+/**
+ * Display formatter for a typed column — number via `Intl`, date via `dayjs`
+ * (avoids the `new Date('YYYY-MM-DD')` UTC-shift), boolean → Yes/No, select →
+ * option label. Build once per column and reuse (the `Intl` instance is cached).
+ * Empty values pass through untouched.
+ */
+export function makeTypeCellFormatter(def: any): (value: any) => any {
+    const type = def?.type;
+    if (type === 'number') {
+        const nf = new Intl.NumberFormat();
+        return (v) => (v === null || v === undefined || v === '' || Number.isNaN(Number(v)) ? v : nf.format(Number(v)));
+    }
+    if (type === 'date') {
+        return (v) => {
+            if (!v) return v;
+            const d = dayjs(v);
+            return d.isValid() ? d.format('MMM D, YYYY') : v;
+        };
+    }
+    if (type === 'boolean') {
+        return (v) => (v === null || v === undefined || v === '' ? v : v ? 'Yes' : 'No');
+    }
+    if (type === 'select') {
+        const opts: any[] = def?.options || [];
+        return (v) => {
+            const o = opts.find((x) => x.value === v);
+            return o ? o.label : v;
+        };
+    }
+    return (v) => v;
+}
+
+/**
+ * Normalize a user column:
+ *  - compile `valueGetter` → a TanStack `accessorFn` (only when there's no
+ *    `accessorKey`/`accessorFn`), so sorting, filtering, and export all read the
+ *    derived value;
+ *  - supply a default display `cell` when none is given. Precedence:
+ *    explicit `cell` > `valueFormatter` > type default > raw value.
+ * Display formatting (cell) never affects export, which reads the raw value.
+ */
+export function normalizeUserColumn<T>(col: ColumnDef<T, any>): ColumnDef<T, any> {
+    const def: any = { ...col };
+    if (Array.isArray(def.columns)) def.columns = def.columns.map((c: any) => normalizeUserColumn(c));
+
+    if (typeof def.valueGetter === 'function' && def.accessorKey == null && def.accessorFn == null) {
+        const vg = def.valueGetter;
+        def.accessorFn = (row: T) => vg({ row });
+    }
+    if (def.cell == null) {
+        if (typeof def.valueFormatter === 'function') {
+            const vf = def.valueFormatter;
+            def.cell = (ctx: any) => vf({ value: ctx.getValue(), row: ctx.row.original });
+        } else if (def.type && def.type !== 'text') {
+            const fmt = makeTypeCellFormatter(def);
+            def.cell = (ctx: any) => fmt(ctx.getValue());
+        }
+    }
+    return def;
+}
 
 export function getColumnType(column: Column<any, unknown>): ColumnType {
     if (column?.columnDef?.type) return column.columnDef.type as ColumnType;

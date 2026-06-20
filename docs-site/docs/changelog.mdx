@@ -16,6 +16,32 @@ format: each release groups changes as **Added** (new features), **Changed** (be
 
 ---
 
+## [1.8.0](https://www.npmjs.com/package/@ackplus/mui-tanstack-data-grid/v/1.8.0) — 2026-06-20
+
+Tier B CRUD verbs — a **row-actions column** and **value getters / formatters**, the two features that
+remove the most per-column boilerplate. Backward compatible.
+
+### Added
+- **Row actions.** `getRowActions(row) => DataTableRowAction[]` adds an auto-generated `_actions` column
+  (pinned right when `enableColumnPinning` is on). A few actions render as inline icon buttons; 3+ (or any
+  without an `icon`) collapse into an overflow **⋮** menu. Each action is
+  `{ label, icon?, onClick(row), disabled?, hidden?, color? }`. Configure via `slotProps.actionsColumn`,
+  `rowActionsDisplay` (`'icons' | 'menu' | 'auto'`), and `slots.moreActionsIcon`. Handlers stop propagation
+  so they don't trigger `onRowClick`.
+- **`column.valueGetter`** — derive a value for a column with no `accessorKey`; it compiles to a TanStack
+  `accessorFn`, so sorting, filtering, and export all read the derived value.
+- **`column.valueFormatter`** — format a value for **display only** (export keeps the raw value).
+- **Type-default cells.** A column's `type` (`number` / `date` / `boolean` / `select`) now renders a
+  sensible default cell — locale-grouped number, `dayjs`-formatted date (no UTC drift), Yes/No, or the
+  matching `options` label — when you don't supply a `cell`. Precedence: `cell` > `valueFormatter` >
+  type default > raw.
+
+### Docs
+- [Columns](/features/columns) gains **Value getters & formatters** and **Row actions** sections, each with
+  a live demo.
+
+---
+
 ## [1.7.0](https://www.npmjs.com/package/@ackplus/mui-tanstack-data-grid/v/1.7.0) — 2026-06-20
 
 Makes the public API **honest** — turns several typed-but-dead props/methods into working features and adds

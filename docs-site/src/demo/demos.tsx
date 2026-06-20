@@ -1,6 +1,9 @@
 import { useMemo, useState } from 'react';
 import { Box, Button } from '@mui/material';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
+import EditOutlined from '@mui/icons-material/EditOutlined';
+import DeleteOutline from '@mui/icons-material/DeleteOutline';
+import VisibilityOutlined from '@mui/icons-material/VisibilityOutlined';
 import type { ColumnDef } from '@tanstack/react-table';
 import { DataTable } from '@ackplus/mui-tanstack-data-grid';
 
@@ -260,6 +263,64 @@ export function CellRowStylingDemo() {
             />
         </Box>
     );
+}
+
+export function RowActionsDemo() {
+    // `getRowActions` adds an auto-generated, right-pinned actions column. Two actions
+    // here render as inline icon buttons; returning 3+ (or any without an icon) collapses
+    // them into an overflow ⋮ menu.
+    return (
+        <DataTable
+            columns={columns}
+            data={users}
+            enablePagination
+            enableColumnPinning
+            initialState={page5}
+            getRowActions={(row) => [
+                { label: 'View', icon: VisibilityOutlined, onClick: () => window.alert(`View ${row.original.name}`) },
+                { label: 'Edit', icon: EditOutlined, onClick: () => window.alert(`Edit ${row.original.name}`) },
+                {
+                    label: 'Delete',
+                    icon: DeleteOutline,
+                    color: 'error',
+                    disabled: row.original.status === 'active',
+                    onClick: () => window.alert(`Delete ${row.original.name}`),
+                },
+            ]}
+        />
+    );
+}
+
+interface Sale {
+    id: number;
+    first: string;
+    last: string;
+    amount: number;
+    closedOn: string;
+    won: boolean;
+}
+
+const salesRows: Sale[] = [
+    { id: 1, first: 'Ada', last: 'Lovelace', amount: 12500.5, closedOn: '2026-01-18', won: true },
+    { id: 2, first: 'Alan', last: 'Turing', amount: 9800, closedOn: '2026-02-03', won: false },
+    { id: 3, first: 'Grace', last: 'Hopper', amount: 23150.75, closedOn: '2026-02-21', won: true },
+    { id: 4, first: 'Edsger', last: 'Dijkstra', amount: 4300, closedOn: '2026-03-09', won: false },
+];
+
+const salesColumns: ColumnDef<Sale, any>[] = [
+    // valueGetter: a computed column with no accessorKey — sorting/filtering use it too.
+    { id: 'name', header: 'Rep', valueGetter: ({ row }) => `${row.first} ${row.last}`, size: 160 },
+    // type drives the default cell formatting (no hand-written renderers):
+    { id: 'amount', header: 'Amount', accessorKey: 'amount', type: 'number',
+      valueFormatter: ({ value }) => `$${Number(value).toLocaleString()}`, align: 'right', size: 130 },
+    { id: 'closedOn', header: 'Closed', accessorKey: 'closedOn', type: 'date', size: 140 },
+    { id: 'won', header: 'Won', accessorKey: 'won', type: 'boolean', align: 'center', size: 90 },
+];
+
+export function ValueFormatterDemo() {
+    // `valueGetter` derives a value (feeds sort/filter/export); `type` gives a default
+    // display cell (number/date/boolean); `valueFormatter` customizes display only.
+    return <DataTable columns={salesColumns} data={salesRows} enableSorting />;
 }
 
 export function FullDemo() {

@@ -7,12 +7,12 @@
  */
 import type { Table } from '@tanstack/react-table';
 
-import { DEFAULT_SELECTION_COLUMN_ID, DEFAULT_EXPAND_COLUMN_ID } from '../../types/column.types';
+import { DEFAULT_SELECTION_COLUMN_ID, DEFAULT_EXPAND_COLUMN_ID, DEFAULT_ACTIONS_COLUMN_ID } from '../../types/column.types';
 import type { ExportFormat, ExportRequest, ExportScope } from '../../types/export.types';
 import type { SelectionState } from '../../types/selection.types';
 import { resolveExportHeader, toExportColumns, type ResolvedExportColumn } from './format';
 
-const SPECIAL_COLUMN_IDS = new Set([DEFAULT_SELECTION_COLUMN_ID, DEFAULT_EXPAND_COLUMN_ID]);
+const SPECIAL_COLUMN_IDS = new Set([DEFAULT_SELECTION_COLUMN_ID, DEFAULT_EXPAND_COLUMN_ID, DEFAULT_ACTIONS_COLUMN_ID]);
 
 export interface BuildExportRequestOptions {
     format: ExportFormat;

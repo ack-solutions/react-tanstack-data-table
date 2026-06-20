@@ -59,17 +59,20 @@ export interface DataTableSlots {
     resetIcon?: ComponentType<any>; // reset button
     expandIcon?: ComponentType<any>; // collapsed row (expand)
     collapseIcon?: ComponentType<any>; // expanded row (collapse)
+    moreActionsIcon?: ComponentType<any>; // row-actions overflow menu (defaults to ⋮)
 }
 
 /**
- * Props injected into each slot, keyed by slot name (MUI `slotProps`). Two extra
+ * Props injected into each slot, keyed by slot name (MUI `slotProps`). Three extra
  * keys configure the auto-generated special columns:
  *  - `selectionColumn` — overrides spread into the checkbox column
  *  - `expandColumn` — overrides spread into the expander column
+ *  - `actionsColumn` — overrides spread into the row-actions column
  */
 export type DataTableSlotProps = { [K in keyof DataTableSlots]?: Record<string, any> } & {
     selectionColumn?: Record<string, any>;
     expandColumn?: Record<string, any>;
+    actionsColumn?: Record<string, any>;
 };
 
 export type PartialSlotProps = DataTableSlotProps;

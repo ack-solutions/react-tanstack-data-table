@@ -1,4 +1,4 @@
-import type { ReactNode, MouseEvent, RefObject } from 'react';
+import type { ReactNode, MouseEvent, RefObject, ComponentType } from 'react';
 import type {
     Row,
     SortingState,
@@ -67,6 +67,21 @@ export interface DataTableToolbarControls {
  * (`striped`, `hover`) = visual modifiers. v1 names are kept as `@deprecated`
  * aliases and removed in v3.
  */
+/** A single per-row action shown in the auto-generated actions column. */
+export interface DataTableRowAction<T = any> {
+    /** Tooltip (icon mode) and menu-item text (menu mode). */
+    label: string;
+    /** Icon component (e.g. a per-path MUI icon or lucide icon). Required for icon mode. */
+    icon?: ComponentType<any>;
+    onClick: (row: Row<T>) => void;
+    /** Render the action disabled for this row. */
+    disabled?: boolean;
+    /** Omit the action for this row entirely. */
+    hidden?: boolean;
+    /** MUI colour for the icon button / menu item. */
+    color?: 'inherit' | 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning';
+}
+
 export interface DataTableProps<T> {
     // ── Data ──────────────────────────────────────────────────────────────
     /** Column definitions. */
@@ -160,6 +175,16 @@ export interface DataTableProps<T> {
     // ── Row interaction ───────────────────────────────────────────────────
     onRowClick?: (event: MouseEvent<HTMLDivElement>, row: Row<T>) => void;
     selectOnRowClick?: boolean;
+    /**
+     * Per-row actions (Edit / Delete / View…). Providing this adds an auto-generated
+     * `_actions` column (right-pinned when `enableColumnPinning` is on); the per-row
+     * return value controls which actions show for that row (return `[]` for none).
+     * Few actions render as inline icon buttons; more (or any without an icon) collapse
+     * into an overflow menu.
+     */
+    getRowActions?: (row: Row<T>) => DataTableRowAction<T>[];
+    /** Force the row-actions presentation. `'auto'` (default) picks icons vs menu. */
+    rowActionsDisplay?: 'icons' | 'menu' | 'auto';
 
     // ── Bulk actions ──────────────────────────────────────────────────────
     enableBulkActions?: boolean;

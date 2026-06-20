@@ -160,7 +160,9 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
                     const headerClassName = (column.columnDef as any).headerClassName as string | undefined;
                     const canSort = column.getCanSort();
                     const canResize = enableColumnResizing && column.getCanResize();
-                    const canDrag = !!enableColumnReordering && !column.getIsPinned();
+                    // Special columns (_selection/_expanding/_actions) are never reorderable —
+                    // guard by id so it holds even when column pinning (their usual fence) is off.
+                    const canDrag = !!enableColumnReordering && !column.getIsPinned() && !column.id.startsWith('_');
                     const sorted = column.getIsSorted();
                     const isDropTarget = dragOverId === column.id && draggingId !== null && draggingId !== column.id;
                     return (

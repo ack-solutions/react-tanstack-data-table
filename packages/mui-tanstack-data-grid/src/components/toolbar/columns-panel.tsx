@@ -11,6 +11,7 @@ import { Box, Button, Divider, IconButton, Popover, Tooltip, Typography } from '
 import { useState, type ReactElement } from 'react';
 
 import { EyeFeatherIcon, EyeOffFeatherIcon } from '../icons';
+import { DEFAULT_ACTIONS_COLUMN_ID } from '../../types/column.types';
 import type { UseDataTableResult } from '../../core/use-data-table';
 
 const columnLabel = (col: any): string => {
@@ -49,8 +50,12 @@ export function ColumnsPanel<T extends Record<string, any>>(props: ColumnsPanelP
 
     const commitOrder = (ids: string[]) => {
         if (!enableColumnReordering) return;
-        const specials = table.getAllLeafColumns().map((c: any) => c.id).filter((id: string) => id.startsWith('_'));
-        api.columnOrdering.setColumnOrder([...specials, ...ids]);
+        // Keep special columns out of the reordered data ids, on the correct side:
+        // _selection/_expanding lead, the right-pinned _actions trails.
+        const specialIds = table.getAllLeafColumns().map((c: any) => c.id).filter((id: string) => id.startsWith('_'));
+        const leftSpecials = specialIds.filter((id: string) => id !== DEFAULT_ACTIONS_COLUMN_ID);
+        const rightSpecials = specialIds.filter((id: string) => id === DEFAULT_ACTIONS_COLUMN_ID);
+        api.columnOrdering.setColumnOrder([...leftSpecials, ...ids, ...rightSpecials]);
     };
 
     const handleDrop = (overId: string) => {

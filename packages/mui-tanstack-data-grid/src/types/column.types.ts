@@ -7,6 +7,7 @@ import type { ColumnFilterRule } from './filter.types';
 // snapshots (columnOrder/visibility/pinning) still resolve after upgrade.
 export const DEFAULT_SELECTION_COLUMN_ID = '_selection';
 export const DEFAULT_EXPAND_COLUMN_ID = '_expanding';
+export const DEFAULT_ACTIONS_COLUMN_ID = '_actions';
 
 interface ColumnExportContext<TData, TValue> {
     value: any;
@@ -38,6 +39,17 @@ declare module '@tanstack/react-table' {
         options?: { label: string; value: string }[];
         /** Cell + header text alignment. */
         align?: 'left' | 'center' | 'right';
+        /**
+         * Derive the column's value from the row when there's no plain `accessorKey`
+         * (e.g. a computed/combined field). Feeds sorting, filtering, and export — so
+         * the whole grid agrees on one value.
+         */
+        valueGetter?: (params: { row: TData }) => any;
+        /**
+         * Format the value for **display only** (the cell). Sorting/filtering/export
+         * keep using the raw value. Ignored if the column defines its own `cell`.
+         */
+        valueFormatter?: (params: { value: any; row: TData }) => any;
         /** Mark the column as filterable in the column-filter UI. */
         filterable?: boolean;
         /** Wrap cell text instead of truncating with an ellipsis (default: false). */
