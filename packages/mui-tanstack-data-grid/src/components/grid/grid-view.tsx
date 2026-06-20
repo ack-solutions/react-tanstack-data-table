@@ -14,8 +14,10 @@ import { SortAscFeatherIcon, SortDescFeatherIcon } from '../icons';
 import { useDataTableTokens } from '../../theme/use-data-table-tokens';
 import type { DataTableProps } from '../../types/data-table.types';
 import type { UseDataTableResult } from '../../core/use-data-table';
-import { GridRoot, GridScroller, GridHeader, GridHeaderRow, GridHeaderCell, GridBody, GridRow, GridCell, GridDetailPanel, GridFooter, GridOverlay } from './styled';
+import { GridRoot, GridScroller, GridHeader, GridHeaderRow, GridHeaderCell, GridBody, GridRow, GridCell, GridDetailPanel, GridFooter, GridFooterRow, GridOverlay } from './styled';
 import { resolveScrollLayout } from './scroll-layout';
+import { computeColumnTotals, formatAggregation } from '../../utils/aggregation';
+import { LocaleTextProvider } from '../../locale/locale-context';
 import { DataTableToolbar } from '../toolbar/data-table-toolbar';
 import { BulkActionsToolbar } from '../toolbar/bulk-actions-toolbar';
 
@@ -68,6 +70,7 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
         enableColumnResizing = false,
         enableVirtualization = false,
         enablePagination = false,
+        enableAggregation = false,
         stickyHeader,
         stickyFooter,
         enableStickyHeaderOrFooter,
@@ -109,6 +112,7 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
     const SortDescIcon = slots?.sortIconDesc ?? SortDescFeatherIcon;
 
     const { table, refs, derived, state, actions } = engine;
+    const locale = engine.localeText;
     const [draggingId, setDraggingId] = useState<string | null>(null);
     const [dragOverId, setDragOverId] = useState<string | null>(null);
     const density = derived.density;
@@ -139,6 +143,24 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
         return holdWidth ? `0 0 var(--col-${column.id}-size)` : `1 0 var(--col-${column.id}-size)`;
     };
 
+    // Footer aggregation — client mode only (in server mode the row model is just the
+    // loaded page, so totals would be silently page-scoped). Recompute when the filtered
+    // (pre-pagination) row set OR a column's aggregation config changes.
+    const aggregationEnabled = enableAggregation && !derived.isServerMode;
+    const preModel = aggregationEnabled ? (table as any).getPrePaginationRowModel?.() : null;
+    const aggKey = aggregationEnabled
+        ? table.getAllLeafColumns().map((c) => {
+            const a = (c.columnDef as any).aggregation;
+            return `${c.id}:${typeof a === 'function' ? 'fn' : a ?? ''}`;
+        }).join('|')
+        : '';
+    const columnTotals = useMemo(
+        () => (aggregationEnabled ? computeColumnTotals(table) : {}),
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [aggregationEnabled, preModel, aggKey],
+    );
+    const showAggregation = aggregationEnabled && table.getVisibleLeafColumns().some((c) => columnTotals[c.id] != null);
+
     const { rootStyle, scrollerStyle } = resolveScrollLayout({
         // `enableStickyHeaderOrFooter` is the deprecated alias for `stickyHeader`.
         stickyHeader: stickyHeader ?? enableStickyHeaderOrFooter,
@@ -148,7 +170,7 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
         minHeight,
         maxHeight,
     });
-    const emptyText = noRowsMessage ?? emptyMessage ?? 'No rows';
+    const emptyText = noRowsMessage ?? emptyMessage ?? locale.noRows;
 
     const renderHeader = () =>
         table.getHeaderGroups().map((hg) => (
@@ -220,7 +242,7 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
                                     onTouchStart={header.getResizeHandler()}
                                     onClick={(e) => e.stopPropagation()}
                                     onDoubleClick={(e) => { e.stopPropagation(); engine.api.columnResizing.autoSizeColumn(column.id); }}
-                                    title="Double-click to fit"
+                                    title={locale.autoFitColumn}
                                     sx={{
                                         position: 'absolute',
                                         top: 0,
@@ -335,7 +357,34 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
         return rows.map((_, i) => renderRow(i));
     };
 
+    const renderAggregation = () => (
+        <GridFooterRow role="row">
+            {table.getVisibleLeafColumns().map((column) => {
+                const align = getAlign(column);
+                const total = columnTotals[column.id];
+                const text = total ? formatAggregation(total.kind, total.value) : '';
+                return (
+                    <GridCell
+                        key={column.id}
+                        role="cell"
+                        data-col-id={column.id}
+                        style={{
+                            flex: flexFor(column),
+                            width: `var(--col-${column.id}-size)`,
+                            justifyContent: align === 'right' ? 'flex-end' : align === 'center' ? 'center' : 'flex-start',
+                            ...getPinnedStyle(column),
+                            ...(column.getIsPinned() ? { backgroundColor: 'var(--dt-header-bg)', backgroundImage: 'none' } : {}),
+                        }}
+                    >
+                        <Box component="span" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{text}</Box>
+                    </GridCell>
+                );
+            })}
+        </GridFooterRow>
+    );
+
     return (
+        <LocaleTextProvider value={locale}>
         <GridRoot style={{ ...tokens, ...rootStyle }} className={props.className}>
             {showToolbar ? (
                 <ToolbarComponent
@@ -372,6 +421,7 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
                 <div style={{ ...columnSizeVars, width: fitToScreen ? '100%' : totalSize, minWidth: totalSize } as CSSProperties}>
                     <GridHeader role="rowgroup">{renderHeader()}</GridHeader>
                     <GridBody role="rowgroup">{renderBody()}</GridBody>
+                    {showAggregation ? <div role="rowgroup">{renderAggregation()}</div> : null}
                 </div>
             </GridScroller>
 
@@ -385,9 +435,12 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
                         onPageChange={(_, page) => engine.api.pagination.goToPage(page)}
                         onRowsPerPageChange={(e) => engine.api.pagination.setPageSize(Number(e.target.value))}
                         rowsPerPageOptions={[5, 10, 25, 50, 100]}
+                        labelRowsPerPage={locale.paginationRowsPerPage}
+                        labelDisplayedRows={({ from, to, count }) => locale.paginationDisplayedRows({ from, to, count })}
                     />
                 </GridFooter>
             ) : null}
         </GridRoot>
+        </LocaleTextProvider>
     );
 }

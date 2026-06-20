@@ -323,6 +323,70 @@ export function ValueFormatterDemo() {
     return <DataTable columns={salesColumns} data={salesRows} enableSorting />;
 }
 
+const aggColumns: ColumnDef<Sale, any>[] = [
+    { id: 'name', header: 'Rep', valueGetter: ({ row }) => `${row.first} ${row.last}`, size: 160, aggregation: 'count' },
+    { id: 'amount', header: 'Amount', accessorKey: 'amount', type: 'number', align: 'right', size: 130, aggregation: 'sum' },
+    { id: 'closedOn', header: 'Closed', accessorKey: 'closedOn', type: 'date', size: 140 },
+    { id: 'won', header: 'Won', accessorKey: 'won', type: 'boolean', align: 'center', size: 90 },
+];
+
+export function AggregationDemo() {
+    // `enableAggregation` + per-column `aggregation` → a sticky footer summary row
+    // (count of reps, sum of amounts) over the filtered rows.
+    return <DataTable columns={aggColumns} data={salesRows} enableAggregation enableColumnFilter />;
+}
+
+// A partial French override — only the keys you set change; the rest fall back to English.
+const frFR = {
+    toolbarSearch: 'Rechercher',
+    searchPlaceholder: 'Rechercher…',
+    toolbarColumns: 'Colonnes',
+    toolbarDensity: 'Densité',
+    toolbarExport: 'Exporter',
+    exportAs: 'Exporter en',
+    filterButton: 'Filtres',
+    filterTitle: 'Filtres de colonne',
+    filterApply: 'Appliquer',
+    filterClearAll: 'Tout effacer',
+    filterAddFilter: 'Ajouter un filtre',
+    filterColumn: 'Colonne',
+    filterOperator: 'Opérateur',
+    filterValue: 'Valeur',
+    columnsManageTitle: 'Colonnes',
+    columnsShowAll: 'Tout afficher',
+    columnsReset: 'Réinitialiser',
+    columnsDone: 'Terminé',
+    noRows: 'Aucune ligne',
+    clearSelection: 'Effacer',
+    selectedRows: (n: number) => `${n} sélectionné(s)`,
+    paginationRowsPerPage: 'Lignes par page :',
+    paginationDisplayedRows: ({ from, to, count }: { from: number; to: number; count: number }) => `${from}–${to} sur ${count}`,
+    operators: { contains: 'Contient', equals: 'Égal à', startsWith: 'Commence par', between: 'Entre' },
+};
+
+export function LocaleDemo() {
+    const [fr, setFr] = useState(false);
+    return (
+        <Box>
+            <Button size="small" variant="outlined" sx={{ mb: 1.5 }} onClick={() => setFr((f) => !f)}>
+                {fr ? 'Switch to English' : 'Passer en français'}
+            </Button>
+            <DataTable
+                columns={columns}
+                data={users}
+                localeText={fr ? frFR : undefined}
+                enableGlobalFilter
+                enableColumnFilter
+                enableColumnVisibility
+                enableDensitySelector
+                enableExport
+                enablePagination
+                initialState={page5}
+            />
+        </Box>
+    );
+}
+
 export function FullDemo() {
     return (
         <DataTable

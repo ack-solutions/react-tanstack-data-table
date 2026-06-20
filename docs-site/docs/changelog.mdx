@@ -16,6 +16,27 @@ format: each release groups changes as **Added** (new features), **Changed** (be
 
 ---
 
+## [1.9.0](https://www.npmjs.com/package/@ackplus/mui-tanstack-data-grid/v/1.9.0) — 2026-06-20
+
+Finishes **Tier B** — a footer aggregation row and full localization. Backward compatible.
+
+### Added
+- **Footer aggregation.** `enableAggregation` + a per-column `aggregation`
+  (`'sum' | 'avg' | 'min' | 'max' | 'count'`, or a function over the filtered rows) renders a **sticky
+  footer summary row**, aligned with and pinned like its columns. Totals also available via
+  `apiRef.current.aggregation.getTotals()`. Client mode (server/grouped totals out of scope).
+- **Localization — `localeText`.** Every built-in string — operator labels, toolbar tooltips, the
+  column-filter and columns panels, the selection count, "No rows", pagination labels, and aria-labels — is
+  translatable via a **partial** `localeText` (unset keys fall back to English). Operator labels localize
+  while the underlying operator value (the logic key) is unchanged. The English bundle is exported as `enUS`
+  / `DEFAULT_LOCALE_TEXT`; interpolated strings (`selectedRows`, `paginationDisplayedRows`) are functions.
+
+### Docs
+- New [Aggregation](/features/aggregation) and [Localization](/features/localization) feature pages, each
+  with a live demo (a summary row; an EN↔FR toggle).
+
+---
+
 ## [1.8.0](https://www.npmjs.com/package/@ackplus/mui-tanstack-data-grid/v/1.8.0) — 2026-06-20
 
 Tier B CRUD verbs — a **row-actions column** and **value getters / formatters**, the two features that

@@ -9,6 +9,7 @@ import type { ReactElement } from 'react';
 
 import { getColumnOptions, getColumnType, getCustomFilterComponent } from '../../utils/column-helpers';
 import type { ColumnFilterRule } from '../../types/filter.types';
+import { useLocaleText } from '../../locale/locale-context';
 
 export interface FilterValueInputProps<T> {
     filter: ColumnFilterRule;
@@ -19,6 +20,7 @@ export interface FilterValueInputProps<T> {
 const sx = { flex: 1, minWidth: 150 };
 
 export function FilterValueInput<T>({ filter, column, onValueChange }: FilterValueInputProps<T>): ReactElement {
+    const locale = useLocaleText();
     const columnType = getColumnType(column);
     const Custom = getCustomFilterComponent(column);
     const options = getColumnOptions(column);
@@ -35,11 +37,11 @@ export function FilterValueInput<T>({ filter, column, onValueChange }: FilterVal
     if (columnType === 'boolean') {
         return (
             <FormControl size="small" sx={sx}>
-                <InputLabel>Value</InputLabel>
-                <Select value={filter.value || 'any'} label="Value" onChange={(e) => onValueChange(e.target.value)}>
-                    <MenuItem value="any">Any</MenuItem>
-                    <MenuItem value="true">True</MenuItem>
-                    <MenuItem value="false">False</MenuItem>
+                <InputLabel>{locale.filterValue}</InputLabel>
+                <Select value={filter.value || 'any'} label={locale.filterValue} onChange={(e) => onValueChange(e.target.value)}>
+                    <MenuItem value="any">{locale.booleanAny}</MenuItem>
+                    <MenuItem value="true">{locale.booleanTrue}</MenuItem>
+                    <MenuItem value="false">{locale.booleanFalse}</MenuItem>
                 </Select>
             </FormControl>
         );
@@ -50,11 +52,11 @@ export function FilterValueInput<T>({ filter, column, onValueChange }: FilterVal
             const current = Array.isArray(filter.value) ? filter.value : [];
             return (
                 <FormControl size="small" sx={sx}>
-                    <InputLabel>Values</InputLabel>
+                    <InputLabel>{locale.filterValues}</InputLabel>
                     <Select
                         multiple
                         value={current}
-                        label="Values"
+                        label={locale.filterValues}
                         onChange={(e) => onValueChange(e.target.value)}
                         renderValue={(selected) => (selected as string[]).join(', ')}
                     >
@@ -70,8 +72,8 @@ export function FilterValueInput<T>({ filter, column, onValueChange }: FilterVal
         }
         return (
             <FormControl size="small" sx={sx}>
-                <InputLabel>Value</InputLabel>
-                <Select value={filter.value ?? ''} label="Value" onChange={(e) => onValueChange(e.target.value)}>
+                <InputLabel>{locale.filterValue}</InputLabel>
+                <Select value={filter.value ?? ''} label={locale.filterValue} onChange={(e) => onValueChange(e.target.value)}>
                     {options.map((o) => (
                         <MenuItem key={String(o.value)} value={o.value}>{o.label}</MenuItem>
                     ))}
@@ -90,7 +92,7 @@ export function FilterValueInput<T>({ filter, column, onValueChange }: FilterVal
                 <TextField
                     size="small"
                     type={isDate ? 'date' : 'number'}
-                    label="From"
+                    label={locale.rangeFrom}
                     InputLabelProps={isDate ? { shrink: true } : undefined}
                     value={fmt(v.from)}
                     onChange={(e) => set('from', e.target.value)}
@@ -99,7 +101,7 @@ export function FilterValueInput<T>({ filter, column, onValueChange }: FilterVal
                 <TextField
                     size="small"
                     type={isDate ? 'date' : 'number'}
-                    label="To"
+                    label={locale.rangeTo}
                     InputLabelProps={isDate ? { shrink: true } : undefined}
                     value={fmt(v.to)}
                     onChange={(e) => set('to', e.target.value)}
@@ -114,7 +116,7 @@ export function FilterValueInput<T>({ filter, column, onValueChange }: FilterVal
             <TextField
                 size="small"
                 type="date"
-                label="Value"
+                label={locale.filterValue}
                 InputLabelProps={{ shrink: true }}
                 value={filter.value ? String(filter.value).slice(0, 10) : ''}
                 onChange={(e) => onValueChange(e.target.value)}
@@ -124,8 +126,8 @@ export function FilterValueInput<T>({ filter, column, onValueChange }: FilterVal
     }
 
     if (columnType === 'number') {
-        return <TextField size="small" type="number" label="Value" value={filter.value ?? ''} onChange={(e) => onValueChange(e.target.value)} sx={sx} />;
+        return <TextField size="small" type="number" label={locale.filterValue} value={filter.value ?? ''} onChange={(e) => onValueChange(e.target.value)} sx={sx} />;
     }
 
-    return <TextField size="small" label="Value" value={filter.value ?? ''} onChange={(e) => onValueChange(e.target.value)} sx={sx} />;
+    return <TextField size="small" label={locale.filterValue} value={filter.value ?? ''} onChange={(e) => onValueChange(e.target.value)} sx={sx} />;
 }

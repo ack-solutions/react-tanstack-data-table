@@ -14,6 +14,7 @@ import type { SelectionState, SelectMode } from './selection.types';
 import type { DataTableLoggingOptions } from './logging.types';
 import type { DataTableApi } from './api.types';
 import type { DataTableSlots, PartialSlotProps } from './slots.types';
+import type { DataTableLocaleText } from './locale.types';
 import type { PersistOptions } from '../utils/persistence';
 import type {
     ExportConcurrencyMode,
@@ -96,6 +97,10 @@ export interface DataTableProps<T> {
     idKey?: keyof T;
     extraFilter?: ReactNode | null;
     footerFilter?: ReactNode | null;
+    /** Show a sticky footer **summary row** with per-column `aggregation` totals (client mode). */
+    enableAggregation?: boolean;
+    /** Override built-in UI strings (operators, toolbar, pagination, …). Falls back to `enUS`. */
+    localeText?: Partial<DataTableLocaleText>;
     /**
      * Rearrange / restyle the built-in toolbar. Receives the ready-made control
      * elements ({@link DataTableToolbarControls}) so you can place them in any

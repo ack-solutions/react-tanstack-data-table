@@ -123,6 +123,22 @@ export const GridCell = styled('div', { name: 'MuiTanstackDataGrid', slot: 'Cell
     paddingInline: 'var(--dt-cell-padding-x)',
 }) as unknown as DivSlot;
 
+// Aggregation summary row — sticks to the bottom of the scroll viewport, above
+// the (out-of-scroller) pagination footer. Sits inside the column-sized track so
+// its cells align with the data columns and honour pinning.
+export const GridFooterRow = styled('div', { name: 'MuiTanstackDataGrid', slot: 'FooterRow' })({
+    display: 'flex',
+    position: 'sticky',
+    bottom: 0,
+    zIndex: 'var(--dt-z-header)' as unknown as number,
+    minHeight: 'var(--dt-row-height)',
+    background: 'var(--dt-header-bg)',
+    borderTop: '1px solid var(--dt-border-color)',
+    fontWeight: 600,
+    fontSize: '0.8125rem',
+    color: 'var(--dt-header-color)',
+}) as unknown as DivSlot;
+
 export const GridDetailPanel = styled('div', { name: 'MuiTanstackDataGrid', slot: 'DetailPanel' })({
     boxSizing: 'border-box',
     width: '100%',

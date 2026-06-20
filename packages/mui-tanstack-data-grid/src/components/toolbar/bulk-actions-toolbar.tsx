@@ -7,6 +7,7 @@ import { Box, Button, Stack, Typography } from '@mui/material';
 import type { ReactNode } from 'react';
 
 import type { SelectionState } from '../../types/selection.types';
+import { useLocaleText } from '../../locale/locale-context';
 
 export interface BulkActionsToolbarProps {
     selectedCount: number;
@@ -16,6 +17,7 @@ export interface BulkActionsToolbarProps {
 }
 
 export function BulkActionsToolbar({ selectedCount, selectionState, onClear, renderBulkActions }: BulkActionsToolbarProps): ReactNode {
+    const locale = useLocaleText();
     return (
         <Stack
             direction="row"
@@ -32,10 +34,10 @@ export function BulkActionsToolbar({ selectedCount, selectionState, onClear, ren
             }}
         >
             <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                {selectedCount} selected
+                {locale.selectedRows(selectedCount)}
             </Typography>
             <Button size="small" variant="text" onClick={onClear} sx={{ color: 'inherit', textTransform: 'none' }}>
-                Clear
+                {locale.clearSelection}
             </Button>
             <Box sx={{ flex: 1 }} />
             {renderBulkActions?.(selectionState)}

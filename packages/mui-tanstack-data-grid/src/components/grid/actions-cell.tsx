@@ -10,6 +10,7 @@ import { createElement, useState, type ComponentType, type MouseEvent, type Reac
 import type { Row } from '@tanstack/react-table';
 
 import type { DataTableRowAction } from '../../types/data-table.types';
+import { useLocaleText } from '../../locale/locale-context';
 
 export interface ActionsCellProps<T> {
     row: Row<T>;
@@ -20,6 +21,7 @@ export interface ActionsCellProps<T> {
 
 export function ActionsCell<T>({ row, getRowActions, display = 'auto', moreIcon }: ActionsCellProps<T>): ReactElement | null {
     const [anchor, setAnchor] = useState<HTMLElement | null>(null);
+    const locale = useLocaleText();
     const actions = (getRowActions(row) || []).filter((a) => !a.hidden);
     if (!actions.length) return null;
 
@@ -59,7 +61,7 @@ export function ActionsCell<T>({ row, getRowActions, display = 'auto', moreIcon 
         <Box sx={{ display: 'inline-flex' }} onClick={(e) => e.stopPropagation()}>
             <IconButton
                 size="small"
-                aria-label="Row actions"
+                aria-label={locale.rowActions}
                 aria-haspopup="menu"
                 aria-expanded={!!anchor}
                 aria-controls={anchor ? 'dt-row-actions-menu' : undefined}
@@ -73,7 +75,7 @@ export function ActionsCell<T>({ row, getRowActions, display = 'auto', moreIcon 
                 open={!!anchor}
                 onClose={() => setAnchor(null)}
                 onClick={(e) => e.stopPropagation()}
-                MenuListProps={{ 'aria-label': 'Row actions' }}
+                MenuListProps={{ 'aria-label': locale.rowActions }}
                 anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
                 transformOrigin={{ vertical: 'top', horizontal: 'right' }}
             >

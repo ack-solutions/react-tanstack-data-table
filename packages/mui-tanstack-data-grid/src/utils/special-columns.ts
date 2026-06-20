@@ -17,6 +17,9 @@ export interface ExpandingColumnConfig {
     expandIcon?: ComponentType<any>;
     /** Icon for an expanded row (defaults to KeyboardArrowUpOutlined). */
     collapseIcon?: ComponentType<any>;
+    /** Localized aria-labels. */
+    expandLabel?: string;
+    collapseLabel?: string;
 }
 
 export interface ActionsColumnConfig {
@@ -97,7 +100,7 @@ export const createSelectionColumn = <T>(
 export const createExpandingColumn = <T>(
     config: Partial<DataTableColumn<T>> & ExpandingColumnConfig,
 ): DataTableColumn<T> => {
-    const { expandIcon, collapseIcon, ...columnConfig } = config;
+    const { expandIcon, collapseIcon, expandLabel = 'Expand row', collapseLabel = 'Collapse row', ...columnConfig } = config;
     const ExpandIcon = expandIcon ?? KeyboardArrowDownOutlined;
     const CollapseIcon = collapseIcon ?? KeyboardArrowUpOutlined;
     return {
@@ -119,7 +122,7 @@ export const createExpandingColumn = <T>(
                     onClick: row.getToggleExpandedHandler(),
                     size: 'small',
                     sx: { p: 0 },
-                    'aria-label': row.getIsExpanded() ? 'Collapse row' : 'Expand row',
+                    'aria-label': row.getIsExpanded() ? collapseLabel : expandLabel,
                     'aria-expanded': row.getIsExpanded(),
                 },
                 row.getIsExpanded() ? createElement(CollapseIcon) : createElement(ExpandIcon),

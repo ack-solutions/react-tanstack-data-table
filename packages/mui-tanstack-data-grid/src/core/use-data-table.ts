@@ -37,11 +37,14 @@ import type { ExportPhase, ExportProgressPayload, ExportStateChange } from '../t
 
 import { ColumnFilterFeature, getCombinedFilteredRowModel, SelectionFeature } from '../features';
 import { DEFAULT_SELECTION_COLUMN_ID, DEFAULT_EXPAND_COLUMN_ID, DEFAULT_ACTIONS_COLUMN_ID } from '../types/column.types';
+import { resolveLocaleText } from '../locale/default-locale';
+import type { DataTableLocaleText } from '../types/locale.types';
 import {
     createExpandingColumn,
     createSelectionColumn,
     createActionsColumn,
     normalizeUserColumn,
+    computeColumnTotals,
     generateRowId,
     withIdsDeep,
     useDebouncedFetch,
@@ -155,6 +158,7 @@ function curateExportFilters(s: any): Partial<TableFilters> {
 
 export interface UseDataTableResult<T = any> {
     table: ReturnType<typeof useReactTable<T>>;
+    localeText: DataTableLocaleText;
     refs: {
         tableContainerRef: RefObject<HTMLDivElement | null>;
         apiRef: RefObject<DataTableApi<T> | null>;
@@ -296,6 +300,9 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
     const hasRowActions = !!props.getRowActions;
     const rowActionsDisplay = props.rowActionsDisplay;
 
+    // Merge the consumer's localeText over the English defaults (once).
+    const localeText = useMemo(() => resolveLocaleText(props.localeText), [props.localeText]);
+
     const theme = useTheme();
     const log = useMemo(() => createLogger('engine', logging), [logging]);
 
@@ -424,6 +431,8 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
                     ...(slotProps?.expandColumn && typeof slotProps.expandColumn === 'object' ? slotProps.expandColumn : {}),
                     expandIcon: slots?.expandIcon,
                     collapseIcon: slots?.collapseIcon,
+                    expandLabel: localeText.expandRow,
+                    collapseLabel: localeText.collapseRow,
                 }),
                 ...cols,
             ];
@@ -452,7 +461,10 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
         }
         return withIdsDeep(cols);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [columns, enableExpanding, enableRowSelection, enableMultiRowSelection, hasRowActions, rowActionsDisplay, slotProps?.expandColumn, slotProps?.selectionColumn, slotProps?.actionsColumn, slots?.expandIcon, slots?.collapseIcon, slots?.moreActionsIcon]);
+        // Depend on the two strings the columns actually consume — not the whole
+        // localeText object, which is a fresh reference each render for inline
+        // partial overrides and would otherwise rebuild every column.
+    }, [columns, enableExpanding, enableRowSelection, enableMultiRowSelection, hasRowActions, rowActionsDisplay, slotProps?.expandColumn, slotProps?.selectionColumn, slotProps?.actionsColumn, slots?.expandIcon, slots?.collapseIcon, slots?.moreActionsIcon, localeText.expandRow, localeText.collapseRow]);
 
     const fetchData = useEvent(
         async (overrides: Partial<TableState> = {}, options?: { delay?: number; meta?: DataFetchMeta }) => {
@@ -1310,6 +1322,15 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
             resetColumnSizing: () => dispatch({ type: 'SET_COLUMN_SIZING', payload: initialStateConfig.columnSizing || {} }),
         };
 
+        api.aggregation = {
+            getTotals: () => {
+                const totals = computeColumnTotals(tableRef.current);
+                const out: Record<string, any> = {};
+                for (const id of Object.keys(totals)) out[id] = totals[id].value;
+                return out;
+            },
+        };
+
         api.selection = {
             selectRow: (rowId) => tableRef.current.selectRow?.(rowId),
             deselectRow: (rowId) => tableRef.current.deselectRow?.(rowId),
@@ -1419,6 +1440,7 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
 
     return {
         table,
+        localeText,
         refs: { tableContainerRef, apiRef, exportControllerRef },
         derived: {
             isServerMode,

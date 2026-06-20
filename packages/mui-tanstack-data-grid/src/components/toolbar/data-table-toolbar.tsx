@@ -40,6 +40,7 @@ import {
 import { GridToolbar } from '../grid/styled';
 import { ColumnFilterControl } from './column-filter-control';
 import { ColumnsPanel } from './columns-panel';
+import { useLocaleText } from '../../locale/locale-context';
 
 export interface DataTableToolbarProps<T> {
     engine: UseDataTableResult<T>;
@@ -57,12 +58,6 @@ export interface DataTableToolbarProps<T> {
     slots?: Partial<DataTableSlots>;
     renderToolbar?: (controls: DataTableToolbarControls) => ReactNode;
 }
-
-const DENSITY_LABEL: Record<DataTableDensity, string> = {
-    compact: 'Compact',
-    standard: 'Standard',
-    comfortable: 'Comfortable',
-};
 
 const DENSITY_ICON: Record<DataTableDensity, ComponentType<{ fontSize?: 'small' }>> = {
     compact: DensitySmallOutlined,
@@ -82,6 +77,7 @@ function ToolbarSearch(props: {
     ClearIcon: ComponentType<{ fontSize?: 'small' }>;
 }): ReactNode {
     const { value, onChange, placeholder, SearchIcon, ClearIcon } = props;
+    const locale = useLocaleText();
     const [open, setOpen] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
     const hasText = value.length > 0;
@@ -97,8 +93,8 @@ function ToolbarSearch(props: {
     return (
         <Box sx={{ display: 'inline-flex', alignItems: 'center' }}>
             {!expanded ? (
-                <Tooltip title="Search">
-                    <IconButton size="small" onClick={() => setOpen(true)} aria-label="Open search">
+                <Tooltip title={locale.toolbarSearch}>
+                    <IconButton size="small" onClick={() => setOpen(true)} aria-label={locale.toolbarSearch}>
                         <SearchIcon fontSize="small" />
                     </IconButton>
                 </Tooltip>
@@ -120,7 +116,7 @@ function ToolbarSearch(props: {
                         ),
                         endAdornment: hasText ? (
                             <InputAdornment position="end">
-                                <IconButton size="small" edge="end" aria-label="Clear search" onClick={() => { onChange(''); setOpen(false); }}>
+                                <IconButton size="small" edge="end" aria-label={locale.clearSearch} onClick={() => { onChange(''); setOpen(false); }}>
                                     <ClearIcon fontSize="small" />
                                 </IconButton>
                             </InputAdornment>
@@ -145,7 +141,7 @@ export function DataTableToolbar<T extends Record<string, any>>(props: DataTable
         enableReset,
         enableRefresh,
         extraFilter,
-        searchPlaceholder = 'Search…',
+        searchPlaceholder,
         slots,
         renderToolbar,
     } = props;
@@ -159,6 +155,12 @@ export function DataTableToolbar<T extends Record<string, any>>(props: DataTable
     const ResetIcon = slots?.resetIcon ?? ResetFeatherIcon;
 
     const { api, derived, actions } = engine;
+    const locale = engine.localeText;
+    const densityLabel: Record<DataTableDensity, string> = {
+        compact: locale.densityCompact,
+        standard: locale.densityStandard,
+        comfortable: locale.densityComfortable,
+    };
     const [search, setSearch] = useState(engine.state.globalFilter || '');
     const [colAnchor, setColAnchor] = useState<HTMLElement | null>(null);
     const [densityAnchor, setDensityAnchor] = useState<HTMLElement | null>(null);
@@ -174,7 +176,7 @@ export function DataTableToolbar<T extends Record<string, any>>(props: DataTable
     // Each built-in control is built once here, so the default layout and a
     // caller's `renderToolbar(controls)` share the exact same elements.
     const searchEl = enableGlobalFilter ? (
-        <ToolbarSearch value={search} onChange={onSearch} placeholder={searchPlaceholder} SearchIcon={SearchIcon} ClearIcon={ClearIcon} />
+        <ToolbarSearch value={search} onChange={onSearch} placeholder={searchPlaceholder ?? locale.searchPlaceholder} SearchIcon={SearchIcon} ClearIcon={ClearIcon} />
     ) : null;
 
     const extraFilterEl = extraFilter ? <Box sx={{ display: 'inline-flex', alignItems: 'center' }}>{extraFilter}</Box> : null;
@@ -183,7 +185,7 @@ export function DataTableToolbar<T extends Record<string, any>>(props: DataTable
 
     const columnsEl = enableColumnVisibility || enableColumnPinning || enableColumnReordering ? (
         <>
-            <Tooltip title="Columns">
+            <Tooltip title={locale.toolbarColumns}>
                 <IconButton size="small" onClick={(e) => setColAnchor(e.currentTarget)}>
                     <ColumnsIcon fontSize="small" />
                 </IconButton>
@@ -202,7 +204,7 @@ export function DataTableToolbar<T extends Record<string, any>>(props: DataTable
 
     const densityEl = enableDensitySelector ? (
         <>
-            <Tooltip title="Density">
+            <Tooltip title={locale.toolbarDensity}>
                 <IconButton size="small" onClick={(e) => setDensityAnchor(e.currentTarget)}>
                     <DensityIcon fontSize="small" />
                 </IconButton>
@@ -221,7 +223,7 @@ export function DataTableToolbar<T extends Record<string, any>>(props: DataTable
                             }}
                         >
                             <ListItemIcon><Icon fontSize="small" /></ListItemIcon>
-                            <ListItemText primary={DENSITY_LABEL[d]} />
+                            <ListItemText primary={densityLabel[d]} />
                             {selected ? <CheckOutlined fontSize="small" color="primary" sx={{ ml: 2 }} /> : null}
                         </MenuItem>
                     );
@@ -232,27 +234,27 @@ export function DataTableToolbar<T extends Record<string, any>>(props: DataTable
 
     const exportEl = enableExport ? (
         <>
-            <Tooltip title="Export">
+            <Tooltip title={locale.toolbarExport}>
                 <IconButton size="small" onClick={(e) => setExportAnchor(e.currentTarget)}>
                     <ExportIcon fontSize="small" />
                 </IconButton>
             </Tooltip>
             <Menu anchorEl={exportAnchor} open={!!exportAnchor} onClose={() => setExportAnchor(null)} slotProps={menuSlotProps}>
-                <ListSubheader sx={{ lineHeight: '32px', bgcolor: 'transparent' }}>Export as</ListSubheader>
+                <ListSubheader sx={{ lineHeight: '32px', bgcolor: 'transparent' }}>{locale.exportAs}</ListSubheader>
                 <MenuItem onClick={() => { void api.export.exportCSV(); setExportAnchor(null); }}>
                     <ListItemIcon><ExportIcon fontSize="small" /></ListItemIcon>
-                    <ListItemText primary="CSV" secondary=".csv" />
+                    <ListItemText primary={locale.exportCSV} secondary=".csv" />
                 </MenuItem>
                 <MenuItem onClick={() => { void api.export.exportExcel(); setExportAnchor(null); }}>
                     <ListItemIcon><ExportIcon fontSize="small" /></ListItemIcon>
-                    <ListItemText primary="Excel" secondary=".xlsx" />
+                    <ListItemText primary={locale.exportExcel} secondary=".xlsx" />
                 </MenuItem>
             </Menu>
         </>
     ) : null;
 
     const refreshEl = enableRefresh ? (
-        <Tooltip title="Refresh">
+        <Tooltip title={locale.toolbarRefresh}>
             <IconButton size="small" onClick={() => api.data.refresh()}>
                 <RefreshIcon fontSize="small" />
             </IconButton>
@@ -260,7 +262,7 @@ export function DataTableToolbar<T extends Record<string, any>>(props: DataTable
     ) : null;
 
     const resetEl = enableReset ? (
-        <Tooltip title="Reset">
+        <Tooltip title={locale.toolbarReset}>
             <IconButton size="small" onClick={() => api.layout.resetAll()}>
                 <ResetIcon fontSize="small" />
             </IconButton>

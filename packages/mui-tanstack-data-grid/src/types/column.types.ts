@@ -50,6 +50,12 @@ declare module '@tanstack/react-table' {
          * keep using the raw value. Ignored if the column defines its own `cell`.
          */
         valueFormatter?: (params: { value: any; row: TData }) => any;
+        /**
+         * Footer aggregation for this column (needs `enableAggregation`). A built-in
+         * reducer (`'sum' | 'avg' | 'min' | 'max' | 'count'`) over the filtered rows,
+         * or a function receiving the filtered row data. Client-mode only.
+         */
+        aggregation?: 'sum' | 'avg' | 'min' | 'max' | 'count' | ((rows: TData[]) => any);
         /** Mark the column as filterable in the column-filter UI. */
         filterable?: boolean;
         /** Wrap cell text instead of truncating with an ellipsis (default: false). */

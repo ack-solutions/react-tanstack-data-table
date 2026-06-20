@@ -32,6 +32,7 @@ export interface ColumnsPanelProps<T> {
 export function ColumnsPanel<T extends Record<string, any>>(props: ColumnsPanelProps<T>): ReactElement {
     const { engine, anchorEl, open, onClose, enableColumnVisibility, enableColumnPinning, enableColumnReordering } = props;
     const { table, api } = engine;
+    const locale = engine.localeText;
 
     const dataCols = table.getAllLeafColumns().filter((c: any) => !c.id.startsWith('_'));
     const [dragId, setDragId] = useState<string | null>(null);
@@ -90,7 +91,7 @@ export function ColumnsPanel<T extends Record<string, any>>(props: ColumnsPanelP
             slotProps={{ paper: { elevation: 3, sx: { mt: 0.75, borderRadius: 2, width: 320 } } }}
         >
             <Typography variant="subtitle2" sx={{ px: 2, py: 1.25 }}>
-                Columns
+                {locale.columnsManageTitle}
             </Typography>
             <Divider />
 
@@ -126,7 +127,7 @@ export function ColumnsPanel<T extends Record<string, any>>(props: ColumnsPanelP
                             ) : null}
 
                             {canHide ? (
-                                <Tooltip title={visible ? 'Hide' : 'Show'}>
+                                <Tooltip title={visible ? locale.hideColumn : locale.showColumn}>
                                     <IconButton size="small" onClick={() => api.columnVisibility.toggleColumn(col.id)} sx={{ color: visible ? 'text.secondary' : 'text.disabled' }}>
                                         {visible ? <EyeFeatherIcon fontSize="small" /> : <EyeOffFeatherIcon fontSize="small" />}
                                     </IconButton>
@@ -144,12 +145,12 @@ export function ColumnsPanel<T extends Record<string, any>>(props: ColumnsPanelP
 
                             {canPin ? (
                                 <>
-                                    <Tooltip title={pinned === 'left' ? 'Unpin' : 'Pin left'}>
+                                    <Tooltip title={pinned === 'left' ? locale.unpin : locale.pinLeft}>
                                         <IconButton size="small" color={pinned === 'left' ? 'primary' : 'default'} onClick={() => (pinned === 'left' ? api.columnPinning.unpinColumn(col.id) : api.columnPinning.pinColumnLeft(col.id))}>
                                             <AlignHorizontalLeftOutlined fontSize="small" />
                                         </IconButton>
                                     </Tooltip>
-                                    <Tooltip title={pinned === 'right' ? 'Unpin' : 'Pin right'}>
+                                    <Tooltip title={pinned === 'right' ? locale.unpin : locale.pinRight}>
                                         <IconButton size="small" color={pinned === 'right' ? 'primary' : 'default'} onClick={() => (pinned === 'right' ? api.columnPinning.unpinColumn(col.id) : api.columnPinning.pinColumnRight(col.id))}>
                                             <AlignHorizontalRightOutlined fontSize="small" />
                                         </IconButton>
@@ -165,15 +166,15 @@ export function ColumnsPanel<T extends Record<string, any>>(props: ColumnsPanelP
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 1.5, py: 1 }}>
                 {enableColumnVisibility ? (
                     <Button size="small" onClick={() => api.columnVisibility.showAllColumns()}>
-                        Show all
+                        {locale.columnsShowAll}
                     </Button>
                 ) : null}
                 <Box sx={{ flex: 1 }} />
                 <Button size="small" color="inherit" onClick={handleReset}>
-                    Reset
+                    {locale.columnsReset}
                 </Button>
                 <Button size="small" variant="contained" disableElevation onClick={onClose}>
-                    Done
+                    {locale.columnsDone}
                 </Button>
             </Box>
         </Popover>

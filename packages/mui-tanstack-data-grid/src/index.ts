@@ -17,6 +17,9 @@ export * from './types';
 // Custom TanStack features (selection, advanced column filtering)
 export * from './features';
 
+// Localization (default strings, enUS, locale context/hook)
+export * from './locale';
+
 // Utilities (pure helpers, debounced fetch)
 export * from './utils';
 

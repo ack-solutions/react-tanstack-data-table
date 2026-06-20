@@ -83,6 +83,11 @@ export interface DataTableApi<T = any> {
         resetColumnSizing: () => void;
     };
 
+    aggregation: {
+        /** Per-column footer totals over the filtered rows: `{ [columnId]: value }`. */
+        getTotals: () => Record<string, any>;
+    };
+
     filtering: {
         setGlobalFilter: (filter: string) => void;
         clearGlobalFilter: () => void;

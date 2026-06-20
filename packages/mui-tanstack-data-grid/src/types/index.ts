@@ -6,5 +6,6 @@ export * from './logging.types';
 export * from './state.types';
 export * from './column.types';
 export * from './slots.types';
+export * from './locale.types';
 export * from './api.types';
 export * from './data-table.types';

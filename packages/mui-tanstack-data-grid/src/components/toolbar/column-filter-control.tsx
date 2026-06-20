@@ -27,8 +27,9 @@ import type { ColumnFilterRule } from '../../types/filter.types';
 import type { DataTableSlots } from '../../types/slots.types';
 import type { UseDataTableResult } from '../../core/use-data-table';
 import { FilterFeatherIcon } from '../icons';
-import { FILTER_OPERATORS } from '../filters/operators';
+import { getOperators } from '../filters/operators';
 import { FilterValueInput } from '../filters/filter-value-input';
+import { useLocaleText } from '../../locale/locale-context';
 
 export interface ColumnFilterControlProps<T> {
     engine: UseDataTableResult<T>;
@@ -38,7 +39,9 @@ export interface ColumnFilterControlProps<T> {
 
 const NO_VALUE_OPS = ['isEmpty', 'isNotEmpty'];
 
-export function ColumnFilterControl<T extends Record<string, any>>({ engine, title = 'Column Filters', slots }: ColumnFilterControlProps<T>): ReactElement {
+export function ColumnFilterControl<T extends Record<string, any>>({ engine, title, slots }: ColumnFilterControlProps<T>): ReactElement {
+    const locale = useLocaleText();
+    const heading = title ?? locale.filterTitle;
     const table = engine.table as any;
     const FilterIcon = slots?.filterIcon ?? FilterFeatherIcon;
     const AddFilterIcon = slots?.addFilterIcon ?? AddOutlined;
@@ -57,7 +60,8 @@ export function ColumnFilterControl<T extends Record<string, any>>({ engine, tit
     const operatorsFor = (columnId: string) => {
         const col = filterableColumns.find((c: any) => c.id === columnId);
         const type = getColumnType(col);
-        return (FILTER_OPERATORS as any)[type] || FILTER_OPERATORS.text;
+        const ops = getOperators(locale.operators);
+        return (ops as any)[type] || ops.text;
     };
 
     const addFilter = (columnId?: string, operator?: string) => {
@@ -124,7 +128,7 @@ export function ColumnFilterControl<T extends Record<string, any>>({ engine, tit
 
     return (
         <>
-            <Tooltip title="Filters">
+            <Tooltip title={locale.filterButton}>
                 <Badge badgeContent={activeCount} color="primary" invisible={activeCount === 0}>
                     <IconButton size="small" onClick={(e) => setAnchor(e.currentTarget)}>
                         <FilterIcon fontSize="small" />
@@ -140,16 +144,16 @@ export function ColumnFilterControl<T extends Record<string, any>>({ engine, tit
                 slotProps={{ paper: { elevation: 3, sx: { mt: 0.75, borderRadius: 2 } } }}
             >
                 <Box sx={{ p: 2, minWidth: 440, maxWidth: 640 }}>
-                    <Typography variant="subtitle2" sx={{ mb: 1 }}>{title}</Typography>
+                    <Typography variant="subtitle2" sx={{ mb: 1 }}>{heading}</Typography>
                     <Divider sx={{ mb: 2 }} />
 
                     {filters.length > 1 ? (
                         <Box sx={{ mb: 2 }}>
                             <FormControl size="small" sx={{ minWidth: 120 }}>
-                                <InputLabel>Logic</InputLabel>
-                                <Select value={filterLogic} label="Logic" onChange={(e) => table.setPendingFilterLogic?.(e.target.value)}>
-                                    <MenuItem value="AND">AND</MenuItem>
-                                    <MenuItem value="OR">OR</MenuItem>
+                                <InputLabel>{locale.filterLogic}</InputLabel>
+                                <Select value={filterLogic} label={locale.filterLogic} onChange={(e) => table.setPendingFilterLogic?.(e.target.value)}>
+                                    <MenuItem value="AND">{locale.filterLogicAnd}</MenuItem>
+                                    <MenuItem value="OR">{locale.filterLogicOr}</MenuItem>
                                 </Select>
                             </FormControl>
                         </Box>
@@ -163,8 +167,8 @@ export function ColumnFilterControl<T extends Record<string, any>>({ engine, tit
                             return (
                                 <Stack key={filter.id} direction="row" spacing={1} alignItems="center">
                                     <FormControl size="small" sx={{ minWidth: 120 }}>
-                                        <InputLabel>Column</InputLabel>
-                                        <Select value={filter.columnId || ''} label="Column" onChange={(e) => handleColumnChange(filter.id, e.target.value as string, filter)}>
+                                        <InputLabel>{locale.filterColumn}</InputLabel>
+                                        <Select value={filter.columnId || ''} label={locale.filterColumn} onChange={(e) => handleColumnChange(filter.id, e.target.value as string, filter)}>
                                             {filterableColumns.map((c: any) => (
                                                 <MenuItem key={c.id} value={c.id}>
                                                     {typeof c.columnDef.header === 'string' ? c.columnDef.header : c.id}
@@ -174,8 +178,8 @@ export function ColumnFilterControl<T extends Record<string, any>>({ engine, tit
                                     </FormControl>
 
                                     <FormControl size="small" sx={{ minWidth: 120 }}>
-                                        <InputLabel>Operator</InputLabel>
-                                        <Select value={filter.operator || ''} label="Operator" disabled={!filter.columnId} onChange={(e) => handleOperatorChange(filter.id, e.target.value as string, filter)}>
+                                        <InputLabel>{locale.filterOperator}</InputLabel>
+                                        <Select value={filter.operator || ''} label={locale.filterOperator} disabled={!filter.columnId} onChange={(e) => handleOperatorChange(filter.id, e.target.value as string, filter)}>
                                             {operators.map((o: any) => (
                                                 <MenuItem key={o.value} value={o.value}>{o.label}</MenuItem>
                                             ))}
@@ -195,14 +199,14 @@ export function ColumnFilterControl<T extends Record<string, any>>({ engine, tit
                     </Stack>
 
                     <Button variant="outlined" size="small" startIcon={<AddFilterIcon />} onClick={() => addFilter()} disabled={!filterableColumns.length} sx={{ mb: 2 }}>
-                        Add filter
+                        {locale.filterAddFilter}
                     </Button>
 
                     <Stack direction="row" spacing={1} justifyContent="flex-end">
                         {hasApplied ? (
-                            <Button variant="outlined" size="small" color="error" onClick={clearAll}>Clear all</Button>
+                            <Button variant="outlined" size="small" color="error" onClick={clearAll}>{locale.filterClearAll}</Button>
                         ) : null}
-                        <Button variant="contained" size="small" onClick={apply} disabled={!canApply}>Apply</Button>
+                        <Button variant="contained" size="small" onClick={apply} disabled={!canApply}>{locale.filterApply}</Button>
                     </Stack>
                 </Box>
             </Popover>

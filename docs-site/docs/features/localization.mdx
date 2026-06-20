@@ -1,0 +1,41 @@
+---
+title: Localization
+sidebar_label: Localization
+---
+
+import LiveDemo from '@site/src/demo/LiveDemo';
+import { LocaleDemo } from '@site/src/demo/demos';
+
+# Localization
+
+Every built-in string the grid renders — operator labels, toolbar tooltips, the column-filter and columns
+panels, the selection count, "No rows", and the pagination labels — is translatable through `localeText`.
+Pass a **partial** object: only the keys you set change; the rest fall back to English (`enUS`).
+
+<LiveDemo>{() => <LocaleDemo />}</LiveDemo>
+
+```tsx
+<DataTable
+  columns={columns}
+  data={data}
+  localeText={{
+    filterApply: 'Appliquer',
+    filterClearAll: 'Tout effacer',
+    columnsManageTitle: 'Colonnes',
+    selectedRows: (n) => `${n} sélectionné(s)`,
+    paginationRowsPerPage: 'Lignes par page :',
+    paginationDisplayedRows: ({ from, to, count }) => `${from}–${to} sur ${count}`,
+    // operator labels localize; the underlying value (the logic key) never changes
+    operators: { contains: 'Contient', equals: 'Égal à', between: 'Entre' },
+  }}
+/>
+```
+
+The default English bundle is exported as `enUS` (alias of `DEFAULT_LOCALE_TEXT`) — start from it to build a
+full locale, or import it for reference. Interpolated strings (`selectedRows`, `paginationDisplayedRows`) are
+functions.
+
+:::note
+This is the string layer only. **RTL** layout and bundled locale packs are not included — supply your own
+`localeText` for other languages.
+:::

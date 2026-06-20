@@ -1,0 +1,40 @@
+---
+title: Footer aggregation
+sidebar_label: Aggregation
+---
+
+import LiveDemo from '@site/src/demo/LiveDemo';
+import { AggregationDemo } from '@site/src/demo/demos';
+
+# Footer aggregation
+
+Set `enableAggregation` and give one or more columns an `aggregation` to get a **sticky footer summary row**.
+Totals are computed over the **filtered** rows (client mode) and the cells stay aligned with — and pinned
+like — their columns.
+
+<LiveDemo>{() => <AggregationDemo />}</LiveDemo>
+
+```tsx
+const columns = [
+  { id: 'rep', header: 'Rep', accessorKey: 'rep', aggregation: 'count' },
+  { id: 'amount', header: 'Amount', accessorKey: 'amount', type: 'number', aggregation: 'sum' },
+];
+
+<DataTable columns={columns} data={data} enableAggregation />
+```
+
+Built-in reducers: **`sum` · `avg` · `min` · `max`** (over the numeric values) and **`count`** (all rows). For
+anything else, pass a function that receives the filtered row data:
+
+```tsx
+{ id: 'amount', header: 'Amount', accessorKey: 'amount',
+  aggregation: (rows) => `${rows.filter((r) => r.won).length} won` }
+```
+
+The totals are also available imperatively: `apiRef.current.aggregation.getTotals()` returns
+`{ [columnId]: value }`.
+
+:::note Scope
+Client mode only — totals run over the loaded rows. Server-side totals and grouped subtotals are out of
+scope (a flat, client-side summary row).
+:::

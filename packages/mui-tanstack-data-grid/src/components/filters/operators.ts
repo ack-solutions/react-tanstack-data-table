@@ -39,3 +39,22 @@ export const FILTER_OPERATORS = {
         { value: 'isNotEmpty', label: 'Is not empty' },
     ],
 } as const;
+
+export type OperatorOption = { value: string; label: string };
+
+/**
+ * Operator lists with labels localized from `localeText.operators` (the keyed
+ * `value` stays — only the display label changes). Falls back to the English
+ * labels above for any operator the locale doesn't override.
+ */
+export function getOperators(operatorLabels?: Record<string, string>): Record<string, OperatorOption[]> {
+    const relabel = (arr: readonly OperatorOption[]): OperatorOption[] =>
+        arr.map((o) => ({ value: o.value, label: operatorLabels?.[o.value] ?? o.label }));
+    return {
+        text: relabel(FILTER_OPERATORS.text),
+        boolean: relabel(FILTER_OPERATORS.boolean),
+        number: relabel(FILTER_OPERATORS.number),
+        date: relabel(FILTER_OPERATORS.date),
+        select: relabel(FILTER_OPERATORS.select),
+    };
+}
