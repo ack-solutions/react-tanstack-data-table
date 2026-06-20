@@ -18,6 +18,7 @@ import { GridRoot, GridScroller, GridHeader, GridHeaderRow, GridHeaderCell, Grid
 import { resolveScrollLayout } from './scroll-layout';
 import { useKeyboardNav, type FocusedCell } from './use-keyboard-nav';
 import { EditCell } from './edit-cell';
+import { GridAnnouncer } from './grid-announcer';
 import { computeColumnTotals, formatAggregation } from '../../utils/aggregation';
 import { LocaleTextProvider } from '../../locale/locale-context';
 import { DataTableToolbar } from '../toolbar/data-table-toolbar';
@@ -479,6 +480,7 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
     return (
         <LocaleTextProvider value={locale}>
         <GridRoot style={{ ...tokens, ...rootStyle }} className={props.className}>
+            <GridAnnouncer engine={engine} />
             {showToolbar ? (
                 <ToolbarComponent
                     engine={engine}

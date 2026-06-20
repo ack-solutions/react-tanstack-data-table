@@ -80,7 +80,7 @@ interface EngineUIState {
     globalFilter: string;
     selectionState: SelectionState;
     columnFilter: ColumnFilterState;
-    expanded: Record<string, boolean>;
+    expanded: boolean | Record<string, boolean>;
     density: DataTableDensity;
     columnOrder: ColumnOrderState;
     columnPinning: ColumnPinningState;
@@ -751,6 +751,9 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
 
     // Persistence: write the whitelisted state to storage on change (debounced).
     const persistInclude = useMemo(() => persist?.include ?? DEFAULT_PERSIST_KEYS, [persist]);
+    // Only react to expansion changes when expansion is actually persisted, so a tree
+    // grid that didn't opt in doesn't re-write storage on every expand/collapse.
+    const persistsExpanded = persistInclude.includes('expanded');
     const persistTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     useEffect(() => {
         if (!stateKey || !persistStorage) return;
@@ -765,6 +768,8 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
             columnOrder: live.columnOrder,
             columnPinning: live.columnPinning,
             density: controlledDensity ?? uiRef.current.density,
+            // ExpandedState is `true | Record` — persist faithfully (true = expand-all).
+            expanded: live.expanded,
         };
         if (persistTimerRef.current) clearTimeout(persistTimerRef.current);
         persistTimerRef.current = setTimeout(() => {
@@ -772,7 +777,7 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
         }, persist?.debounceMs ?? 300);
         return () => { if (persistTimerRef.current) clearTimeout(persistTimerRef.current); };
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [stateKey, persistStorage, persistInclude, table, ui.sorting, ui.pagination, ui.globalFilter, ui.columnFilter, ui.columnVisibility, ui.columnSizing, ui.columnOrder, ui.columnPinning, ui.density]);
+    }, [stateKey, persistStorage, persistInclude, table, ui.sorting, ui.pagination, ui.globalFilter, ui.columnFilter, ui.columnVisibility, ui.columnSizing, ui.columnOrder, ui.columnPinning, ui.density, persistsExpanded ? ui.expanded : 0]);
 
     const normalizeRefreshOptions = useCallback(
         (options?: boolean | DataRefreshOptions, fallbackReason = 'refresh') => {

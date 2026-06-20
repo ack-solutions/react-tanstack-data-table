@@ -30,7 +30,6 @@ is one. Try it — click a cell below and use the arrow keys:
 
 <LiveDemo>{() => <ColumnsDemo />}</LiveDemo>
 
-:::note
-This covers structure + keyboard operability. A live-region announcer for sort/filter/page changes is a
-planned addition.
-:::
+A visually-hidden `aria-live="polite"` region announces **sort, filter, page, and selection** changes to
+screen-reader users. Announcement strings are localizable via `localeText` (`announceSort`,
+`announceFilteredRows`, `announcePage`, `selectedRows`).

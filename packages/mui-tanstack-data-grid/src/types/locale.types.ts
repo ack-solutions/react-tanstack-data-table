@@ -67,4 +67,9 @@ export interface DataTableLocaleText {
     // Pagination
     paginationRowsPerPage: string;
     paginationDisplayedRows: (params: { from: number; to: number; count: number }) => string;
+
+    // Screen-reader announcements (aria-live)
+    announceSort: (column: string, direction: 'ascending' | 'descending' | 'none') => string;
+    announceFilteredRows: (count: number) => string;
+    announcePage: (page: number, pageCount: number) => string;
 }

@@ -448,6 +448,7 @@ export function TreeDemo() {
             data={fileTree}
             getSubRows={(row) => row.children}
             enableColumnPinning
+            enableColumnFilter
             initialState={{ expanded: true } as any}
         />
     );

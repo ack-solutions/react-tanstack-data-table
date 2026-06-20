@@ -82,6 +82,11 @@ export const DEFAULT_LOCALE_TEXT: DataTableLocaleText = {
     // Pagination
     paginationRowsPerPage: 'Rows per page:',
     paginationDisplayedRows: ({ from, to, count }) => `${from}–${to} of ${count}`,
+
+    // Screen-reader announcements (aria-live)
+    announceSort: (column, direction) => (direction === 'none' ? 'Sorting cleared' : `Sorted by ${column}, ${direction}`),
+    announceFilteredRows: (count) => `${count} rows after filter`,
+    announcePage: (page, pageCount) => `Page ${page} of ${pageCount}`,
 };
 
 /** English locale (independent copy of the defaults), for `localeText={enUS}`. */

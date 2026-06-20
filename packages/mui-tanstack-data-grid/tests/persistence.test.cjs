@@ -39,6 +39,19 @@ test('write → read round-trips the whitelisted slices, excludes selection/expa
     assert.equal(back.expanded, undefined, 'expansion excluded by default');
 });
 
+test('tree expansion is persistable when opted into via include (opt-in, not default)', () => {
+    const s = memStorage();
+    writePersistedState(s, 'tree', { expanded: { '1': true, '1.0': true }, density: 'compact' }, ['expanded']);
+    const back = readPersistedState(s, 'tree');
+    assert.deepEqual(back.expanded, { '1': true, '1.0': true });
+    assert.equal(back.density, undefined, 'only included keys are written');
+    assert.ok(!DEFAULT_PERSIST_KEYS.includes('expanded'), 'expanded stays opt-in (not in DEFAULT_PERSIST_KEYS)');
+    // expand-all sentinel (true) must survive a round-trip, not collapse to {}
+    const s2 = memStorage();
+    writePersistedState(s2, 'all', { expanded: true }, ['expanded']);
+    assert.equal(readPersistedState(s2, 'all').expanded, true, 'expanded:true (expand-all) round-trips faithfully');
+});
+
 test('include whitelist limits what is written', () => {
     const s = memStorage();
     writePersistedState(s, 'g', { sorting: [{ id: 'x', desc: true }], globalFilter: 'hi', density: 'comfortable' }, ['sorting']);

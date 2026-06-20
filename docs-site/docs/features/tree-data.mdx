@@ -37,5 +37,7 @@ grid, not both.
 
 :::note Scope
 Client-side, pre-nested data. Lazy/async child loading and server-side tree models are out of scope for
-this version. Advanced column filters and inline editing apply to **top-level** rows in tree mode.
+this version. Column filters are tree-aware — a branch is kept when it **or any descendant** matches (the
+kept branch shows in full). Inline editing applies to **top-level** rows in tree mode. Tree expansion can
+be persisted by adding `'expanded'` to `persist.include`.
 :::

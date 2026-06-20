@@ -16,6 +16,27 @@ format: each release groups changes as **Added** (new features), **Changed** (be
 
 ---
 
+## [1.11.0](https://www.npmjs.com/package/@ackplus/mui-tanstack-data-grid/v/1.11.0) — 2026-06-20
+
+Polishes the Tier C features — the documented follow-ups. Backward compatible.
+
+### Added
+- **Screen-reader announcements.** A visually-hidden `aria-live` region announces sort, filter, page, and
+  selection changes (localizable: `announceSort`, `announceFilteredRows`, `announcePage`, `selectedRows`).
+- **Persistable tree expansion.** Add `'expanded'` to `persist.include` to remember which tree rows are
+  expanded across reloads (opt-in; still excluded by default).
+
+### Fixed
+- **Column filters are now tree-aware.** A branch is kept when it **or any descendant** matches, so a
+  matching child is no longer dropped because its parent doesn't match (previously filters were
+  top-level-only). The kept branch shows in full.
+
+### Docs
+- [Accessibility](/features/accessibility) documents the live-region announcer; [Tree data](/features/tree-data)
+  documents tree-aware filtering and expansion persistence.
+
+---
+
 ## [1.10.0](https://www.npmjs.com/package/@ackplus/mui-tanstack-data-grid/v/1.10.0) — 2026-06-20
 
 Completes **Tier C** — keyboard accessibility, inline editing, and tree data. Backward compatible (no API

@@ -25,7 +25,8 @@ export interface TableState {
     columnOrder?: ColumnOrderState;
     columnPinning?: ColumnPinningState;
     selectionState?: SelectionState;
-    expanded?: Record<string, boolean>;
+    /** TanStack ExpandedState — `true` means "expand all". */
+    expanded?: boolean | Record<string, boolean>;
     density?: DataTableDensity;
 }
 

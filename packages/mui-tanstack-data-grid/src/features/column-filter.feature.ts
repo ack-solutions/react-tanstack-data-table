@@ -215,9 +215,12 @@ export const getCombinedFilteredRowModel = <TData,>() => {
             return baseFilteredModel;
         }
 
-        const filteredRows = baseFilteredModel.rows.filter((row) =>
-            matchesCustomColumnFilters(row, filters, logic),
-        );
+        // Tree-aware: keep a row if it OR any descendant matches, so a matching child
+        // isn't lost when its parent doesn't match (the kept branch shows in full).
+        const matchesOrDescendant = (row: any): boolean =>
+            matchesCustomColumnFilters(row, filters, logic) ||
+            (Array.isArray(row.subRows) && row.subRows.length > 0 && row.subRows.some(matchesOrDescendant));
+        const filteredRows = baseFilteredModel.rows.filter(matchesOrDescendant);
 
         const flatRows: Row<TData>[] = [];
         const rowsById: Record<string, Row<TData>> = {};
