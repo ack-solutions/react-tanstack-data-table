@@ -244,6 +244,18 @@ function evaluateFilterCondition(columnValue: any, operator: string, filterValue
         if (operator === 'isNotEmpty') return columnValue !== null && columnValue !== undefined && columnValue !== '';
 
         const dCol = columnValue ? toDay(columnValue) : null;
+
+        if (operator === 'between') {
+            // Inclusive range; `{ from, to }`. Either bound may be omitted (open-ended).
+            const { from, to } = filterValue && typeof filterValue === 'object' ? filterValue : ({} as any);
+            const dFrom = from ? toDay(from) : null;
+            const dTo = to ? toDay(to) : null;
+            if (!dCol || (!dFrom && !dTo)) return false;
+            if (dFrom && dCol.isBefore(dFrom, 'day')) return false;
+            if (dTo && dCol.isAfter(dTo, 'day')) return false;
+            return true;
+        }
+
         const dFilter = filterValue ? toDay(filterValue) : null;
         if (!dCol || !dFilter) return false;
         switch (operator) {
@@ -297,6 +309,23 @@ function evaluateFilterCondition(columnValue: any, operator: string, filterValue
                 return Number(columnValue) < Number(filterValue);
             case 'lessThanOrEqual':
                 return Number(columnValue) <= Number(filterValue);
+            case 'between': {
+                // Inclusive range; `{ from, to }`. Either bound may be omitted (open-ended).
+                // A blank/whitespace/unparseable bound is treated as absent — with no
+                // usable bound the rule is a no-op (matches nothing), never match-all.
+                const { from, to } = filterValue && typeof filterValue === 'object' ? filterValue : ({} as any);
+                if (columnValue === null || columnValue === undefined || columnValue === '') return false;
+                const n = Number(columnValue);
+                if (Number.isNaN(n)) return false;
+                const lo = String(from ?? '').trim() === '' ? NaN : Number(from);
+                const hi = String(to ?? '').trim() === '' ? NaN : Number(to);
+                const loOk = !Number.isNaN(lo);
+                const hiOk = !Number.isNaN(hi);
+                if (!loOk && !hiOk) return false;
+                if (loOk && n < lo) return false;
+                if (hiOk && n > hi) return false;
+                return true;
+            }
         }
     }
 

@@ -21,10 +21,13 @@ Set `type` on a `ColumnDef` to drive the operators and value input:
 | `type` | Operators |
 | --- | --- |
 | `text` (default) | contains, startsWith, endsWith, equals, notEquals, isEmpty, isNotEmpty |
-| `number` | equals, notEquals, greaterThan, lessThan, greaterThanOrEqual, lessThanOrEqual, isEmpty, isNotEmpty |
-| `date` | equals, notEquals, after, before, isEmpty, isNotEmpty |
+| `number` | equals, notEquals, greaterThan, lessThan, greaterThanOrEqual, lessThanOrEqual, **between**, isEmpty, isNotEmpty |
+| `date` | equals, notEquals, after, before, **between**, isEmpty, isNotEmpty |
 | `boolean` | is |
 | `select` | equals, notEquals, in, notIn, isEmpty, isNotEmpty (uses `options`) |
+
+`between` (number & date) shows two inputs — a `{ from, to }` range, inclusive. Either bound may be left
+blank for an open-ended range (e.g. *from 100* with no upper bound).
 
 ```tsx
 const columns = [

@@ -3,7 +3,7 @@
  * False; select → single/multi; date → native date input (no heavy date-picker
  * peer dep — the value is an ISO string `dayjs` parses); number/text → TextField.
  */
-import { Box, Checkbox, FormControl, InputLabel, ListItemText, MenuItem, Select, TextField } from '@mui/material';
+import { Box, Checkbox, FormControl, InputLabel, ListItemText, MenuItem, Select, Stack, TextField } from '@mui/material';
 import type { Column } from '@tanstack/react-table';
 import type { ReactElement } from 'react';
 
@@ -77,6 +77,35 @@ export function FilterValueInput<T>({ filter, column, onValueChange }: FilterVal
                     ))}
                 </Select>
             </FormControl>
+        );
+    }
+
+    if (operator === 'between' && (columnType === 'date' || columnType === 'number')) {
+        const v = filter.value && typeof filter.value === 'object' ? filter.value : {};
+        const isDate = columnType === 'date';
+        const fmt = (x: any) => (isDate ? (x ? String(x).slice(0, 10) : '') : (x ?? ''));
+        const set = (key: 'from' | 'to', val: string) => onValueChange({ ...v, [key]: val });
+        return (
+            <Stack direction="row" spacing={1} sx={sx}>
+                <TextField
+                    size="small"
+                    type={isDate ? 'date' : 'number'}
+                    label="From"
+                    InputLabelProps={isDate ? { shrink: true } : undefined}
+                    value={fmt(v.from)}
+                    onChange={(e) => set('from', e.target.value)}
+                    fullWidth
+                />
+                <TextField
+                    size="small"
+                    type={isDate ? 'date' : 'number'}
+                    label="To"
+                    InputLabelProps={isDate ? { shrink: true } : undefined}
+                    value={fmt(v.to)}
+                    onChange={(e) => set('to', e.target.value)}
+                    fullWidth
+                />
+            </Stack>
         );
     }
 

@@ -16,6 +16,45 @@ format: each release groups changes as **Added** (new features), **Changed** (be
 
 ---
 
+## [1.7.0](https://www.npmjs.com/package/@ackplus/mui-tanstack-data-grid/v/1.7.0) — 2026-06-20
+
+Makes the public API **honest** — turns several typed-but-dead props/methods into working features and adds
+a range filter operator. Backward compatible: every new hook is opt-in and unset behaves exactly as before.
+
+### Added
+- **`column.wrapText`** — wrap long cell (and header) text instead of truncating with an ellipsis. In
+  non-virtualized grids the CSS-Grid rows grow to fit for free.
+- **`column.cellClassName`** — `string` or `({ value, row }) => string` applied to each body cell of the
+  column (DataGrid-style conditional styling).
+- **`column.headerClassName`** — `string` applied to the column's header cell.
+- **`getRowClassName({ row, index })`** — table-level hook to class each row.
+- **`getCellClassName({ row, columnId, value })`** — table-level hook to class each cell; merges with the
+  per-column `cellClassName`.
+- **`between` filter operator** (number & date) in the column-filter rule builder — a two-field
+  `{ from, to }` range; either bound may be omitted (open-ended). Inclusive.
+
+### Fixed
+- **`autoSizeColumn` / `autoSizeAllColumns` now work** (`apiRef.columnResizing.*`) — they were no-ops.
+  **Double-click a column's resize handle** to fit it to its content; widths clamp to the column's
+  `minSize`/`maxSize` and persist like a manual resize. (Measures the rows currently in the DOM — the
+  virtual window / current page.)
+- **Resized / auto-fitted columns hold their exact width under `fitToScreen`.** Previously a column you
+  resized still flex-grew to fill, so its width drifted; now a user-sized column keeps its width while the
+  remaining (untouched) columns absorb spare space.
+
+### Docs
+- [Columns](/features/columns#cell--row-styling) gains a **Cell & row styling** section with a live demo of
+  `wrapText` and the class-name hooks, and a note on double-click auto-fit. The [Filtering](/features/filtering)
+  page documents the `between` range operator.
+
+:::note Virtualization + auto-height
+`wrapText` grows rows in the standard (non-virtualized) grid. Under `enableVirtualization` the virtualizer
+uses a fixed row-height estimate, so wrapped rows are clipped to the estimate; per-row measurement for
+virtualized auto-height is a separate, future enhancement.
+:::
+
+---
+
 ## [1.6.1](https://www.npmjs.com/package/@ackplus/mui-tanstack-data-grid/v/1.6.1) — 2026-06-19
 
 Fixes the height / sticky / scroll behaviour and gives it a proper, standard model — the grid is now a

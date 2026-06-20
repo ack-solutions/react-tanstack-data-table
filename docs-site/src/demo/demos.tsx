@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Box, Button } from '@mui/material';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
+import type { ColumnDef } from '@tanstack/react-table';
 import { DataTable } from '@ackplus/mui-tanstack-data-grid';
 
 import { columns, users, makeUsers } from './sample';
@@ -207,6 +208,57 @@ export function ThemingDemo() {
         <ThemeProvider theme={brandedTheme}>
             <DataTable columns={columns} data={users} enableSorting enablePagination initialState={page5} />
         </ThemeProvider>
+    );
+}
+
+interface StyledRow {
+    id: number;
+    name: string;
+    role: 'Admin' | 'Editor' | 'Viewer';
+    bio: string;
+}
+
+const styledRows: StyledRow[] = [
+    { id: 1, name: 'Liam Smith', role: 'Admin', bio: 'Owns billing and platform infrastructure; long-time maintainer of the export pipeline.' },
+    { id: 2, name: 'Olivia Chen', role: 'Editor', bio: 'Writes and reviews the documentation and curates the component examples.' },
+    { id: 3, name: 'Noah Patel', role: 'Viewer', bio: 'Read-only analytics access for the quarterly reporting dashboards.' },
+    { id: 4, name: 'Emma Rossi', role: 'Admin', bio: 'Manages user provisioning and the SSO integration across every workspace.' },
+];
+
+const styledColumns: ColumnDef<StyledRow, any>[] = [
+    { id: 'name', header: 'Name', accessorKey: 'name', size: 150 },
+    {
+        id: 'role',
+        header: 'Role',
+        accessorKey: 'role',
+        size: 120,
+        // Per-column hooks: a static class on the header, a conditional one per cell.
+        headerClassName: 'dt-role-header',
+        cellClassName: ({ value }) => (value === 'Admin' ? 'dt-admin' : ''),
+    },
+    // `wrapText` lets the long Bio text wrap (and the row grow) instead of truncating.
+    { id: 'bio', header: 'Bio', accessorKey: 'bio', size: 240, wrapText: true },
+];
+
+export function CellRowStylingDemo() {
+    // The class-name hooks emit plain CSS classes onto the grid's cells/rows; here
+    // they're scoped via the wrapper's `sx` so the demo stays self-contained.
+    return (
+        <Box
+            sx={{
+                '& .dt-role-header': { color: 'primary.main' },
+                '& .dt-admin': { fontWeight: 700, color: 'success.main' },
+                '& .dt-viewer-row': { fontStyle: 'italic', color: 'text.secondary' },
+            }}
+        >
+            <DataTable
+                columns={styledColumns}
+                data={styledRows}
+                // Table-level hooks: italicise Viewer rows; merges with per-column `cellClassName`.
+                getRowClassName={({ row }) => (row.original.role === 'Viewer' ? 'dt-viewer-row' : '')}
+                getCellClassName={({ columnId, value }) => (columnId === 'role' && value === 'Admin' ? 'dt-admin' : '')}
+            />
+        </Box>
     );
 }
 

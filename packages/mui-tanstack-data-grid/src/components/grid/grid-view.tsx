@@ -27,6 +27,20 @@ function getAlign(column: Column<any, unknown>): 'left' | 'center' | 'right' {
     return (column.columnDef as any).align ?? 'left';
 }
 
+// Join class hooks (per-column + table-level), dropping falsy results; returns
+// `undefined` when empty so we never emit a bare `class=""`.
+function joinClassNames(...names: Array<string | undefined | null | false>): string | undefined {
+    const joined = names.filter(Boolean).join(' ');
+    return joined || undefined;
+}
+
+// Cells/headers wrap (instead of ellipsis-truncating) when the column opts in.
+function textWrapSx(wrapText: boolean): CSSProperties {
+    return wrapText
+        ? { whiteSpace: 'normal', wordBreak: 'break-word' }
+        : { whiteSpace: 'nowrap', textOverflow: 'ellipsis' };
+}
+
 function getPinnedStyle(column: Column<any, unknown>): CSSProperties {
     const pinned = column.getIsPinned();
     if (!pinned) return {};
@@ -64,6 +78,8 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
         height,
         minHeight,
         onRowClick,
+        getRowClassName,
+        getCellClassName,
         loading,
         skeletonRows = 5,
         noRowsMessage,
@@ -113,12 +129,15 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
     }, [table.getState().columnSizingInfo, table.getState().columnSizing, table.getState().columnVisibility, table.getState().columnOrder]);
 
     const totalSize = table.getTotalSize();
-    // Full-width default: non-pinned columns grow to fill spare width but never
-    // shrink below their defined size (so wide tables scroll instead of cramming).
-    const flexFor = (column: Column<any, unknown>): string =>
-        fitToScreen && !column.getIsPinned()
-            ? `1 0 var(--col-${column.id}-size)`
-            : `0 0 var(--col-${column.id}-size)`;
+    const columnSizing = table.getState().columnSizing;
+    // Full-width default: untouched columns grow to fill spare width (never shrinking
+    // below their size, so wide tables scroll instead of cramming). A pinned, non-fit,
+    // or user-sized column (manually resized or auto-fitted) instead holds its exact
+    // width — so an auto-fit visibly snaps even under fitToScreen.
+    const flexFor = (column: Column<any, unknown>): string => {
+        const holdWidth = !fitToScreen || column.getIsPinned() || columnSizing[column.id] != null;
+        return holdWidth ? `0 0 var(--col-${column.id}-size)` : `1 0 var(--col-${column.id}-size)`;
+    };
 
     const { rootStyle, scrollerStyle } = resolveScrollLayout({
         // `enableStickyHeaderOrFooter` is the deprecated alias for `stickyHeader`.
@@ -137,6 +156,8 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
                 {hg.headers.map((header) => {
                     const column = header.column;
                     const align = getAlign(column);
+                    const wrapText = !!(column.columnDef as any).wrapText;
+                    const headerClassName = (column.columnDef as any).headerClassName as string | undefined;
                     const canSort = column.getCanSort();
                     const canResize = enableColumnResizing && column.getCanResize();
                     const canDrag = !!enableColumnReordering && !column.getIsPinned();
@@ -146,6 +167,8 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
                         <GridHeaderCell
                             key={header.id}
                             role="columnheader"
+                            data-col-id={column.id}
+                            className={headerClassName}
                             aria-sort={sorted === 'asc' ? 'ascending' : sorted === 'desc' ? 'descending' : 'none'}
                             onClick={canSort ? column.getToggleSortingHandler() : undefined}
                             onDragOver={canDrag ? (e) => { e.preventDefault(); if (dragOverId !== column.id) setDragOverId(column.id); } : undefined}
@@ -170,10 +193,11 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
                         >
                             <Box
                                 component="span"
+                                data-cell-content
                                 draggable={canDrag || undefined}
                                 onDragStart={canDrag ? (e) => { e.dataTransfer.setData('text/plain', column.id); e.dataTransfer.effectAllowed = 'move'; setDraggingId(column.id); } : undefined}
                                 onDragEnd={canDrag ? () => { setDraggingId(null); setDragOverId(null); } : undefined}
-                                sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: canDrag ? 'grab' : undefined }}
+                                sx={{ overflow: 'hidden', ...textWrapSx(wrapText), cursor: canDrag ? 'grab' : undefined }}
                             >
                                 {header.isPlaceholder ? null : flexRender(column.columnDef.header, header.getContext())}
                             </Box>
@@ -193,6 +217,8 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
                                     onMouseDown={header.getResizeHandler()}
                                     onTouchStart={header.getResizeHandler()}
                                     onClick={(e) => e.stopPropagation()}
+                                    onDoubleClick={(e) => { e.stopPropagation(); engine.api.columnResizing.autoSizeColumn(column.id); }}
+                                    title="Double-click to fit"
                                     sx={{
                                         position: 'absolute',
                                         top: 0,
@@ -219,10 +245,12 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
         const isOdd = rowIndex % 2 === 1;
         const isSelected = table.getIsRowSelected?.(row.id) ?? false;
         const isExpanded = !!renderDetailPanel && (row.getIsExpanded?.() ?? false);
+        const rowClassName = getRowClassName?.({ row, index: rowIndex });
         return (
             <Fragment key={row.id}>
             <GridRow
                 role="row"
+                className={rowClassName}
                 aria-selected={isSelected || undefined}
                 onClick={onRowClick ? (e) => onRowClick(e as any, row) : undefined}
                 sx={{
@@ -239,10 +267,21 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
                 {row.getVisibleCells().map((cell) => {
                     const column = cell.column;
                     const align = getAlign(column);
+                    const def = column.columnDef as any;
+                    const wrapText = !!def.wrapText;
+                    const value = cell.getValue();
+                    const cellClassName = joinClassNames(
+                        typeof def.cellClassName === 'function'
+                            ? def.cellClassName({ value, row: row.original })
+                            : def.cellClassName,
+                        getCellClassName?.({ row, columnId: column.id, value }),
+                    );
                     return (
                         <GridCell
                             key={cell.id}
                             role="cell"
+                            data-col-id={column.id}
+                            className={cellClassName}
                             style={{
                                 flex: flexFor(column),
                                 width: `var(--col-${column.id}-size)`,
@@ -250,7 +289,7 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
                                 ...getPinnedStyle(column),
                             }}
                         >
-                            <Box component="span" sx={{ minWidth: 0, width: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: align }}>
+                            <Box component="span" data-cell-content sx={{ minWidth: 0, width: '100%', overflow: 'hidden', ...textWrapSx(wrapText), textAlign: align }}>
                                 {flexRender(column.columnDef.cell, cell.getContext())}
                             </Box>
                         </GridCell>

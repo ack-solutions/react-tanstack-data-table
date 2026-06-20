@@ -4,7 +4,7 @@ sidebar_label: Columns
 ---
 
 import LiveDemo from '@site/src/demo/LiveDemo';
-import { ColumnsDemo } from '@site/src/demo/demos';
+import { ColumnsDemo, CellRowStylingDemo } from '@site/src/demo/demos';
 
 # Columns
 
@@ -53,3 +53,47 @@ Changes apply live. The built-in selection / expander columns are excluded.
 Set `size`, `minSize`, and `maxSize` on a `ColumnDef`. Because the grid uses CSS Grid (not an HTML
 `<table>`), min/max are respected and resizing one column never shifts its neighbours. Use `fitToScreen`
 to stretch columns to fill the width while still honouring min/max.
+
+With `enableColumnResizing`, **double-click a column's resize handle to auto-fit it** to its content
+(clamped to `minSize`/`maxSize`). The same is available imperatively via `apiRef.current.columnResizing`
+— `autoSizeColumn(id)` and `autoSizeAllColumns()`. Auto-fit measures the rows currently rendered (the
+virtual window / current page).
+
+## Cell & row styling
+
+By default a cell truncates overflowing text with an ellipsis. Set `wrapText` on a column to wrap instead —
+in the non-virtualized grid the row grows to fit. You can also attach CSS classes conditionally: per-column
+with `cellClassName` / `headerClassName`, or table-wide with `getRowClassName` / `getCellClassName` (the
+table-level cell hook merges with the per-column one).
+
+<LiveDemo>{() => <CellRowStylingDemo />}</LiveDemo>
+
+```tsx
+const columns = [
+  { id: 'role', header: 'Role', accessorKey: 'role',
+    headerClassName: 'role-header',
+    cellClassName: ({ value }) => (value === 'Admin' ? 'is-admin' : '') },
+  // Wrap long text instead of truncating (the row grows to fit).
+  { id: 'bio', header: 'Bio', accessorKey: 'bio', wrapText: true },
+];
+
+<DataTable
+  columns={columns}
+  data={data}
+  getRowClassName={({ row, index }) => (index % 2 ? 'odd-row' : '')}
+  getCellClassName={({ columnId, value }) => (value == null ? 'is-empty' : '')}
+/>
+```
+
+| Option | Type | Scope | Description |
+| --- | --- | --- | --- |
+| `wrapText` | `boolean` | column | Wrap cell + header text instead of ellipsis truncation. |
+| `cellClassName` | `string \| (({ value, row }) => string)` | column | Class for each body cell of the column. |
+| `headerClassName` | `string` | column | Class for the column's header cell. |
+| `getRowClassName` | `({ row, index }) => string` | table | Class for each row. |
+| `getCellClassName` | `({ row, columnId, value }) => string` | table | Class for each cell (merges with `cellClassName`). |
+
+:::note Virtualization
+`wrapText` grows rows in the standard grid. Under `enableVirtualization` the row height is a fixed estimate,
+so wrapped content is clipped — per-row measurement for virtualized auto-height is a separate enhancement.
+:::

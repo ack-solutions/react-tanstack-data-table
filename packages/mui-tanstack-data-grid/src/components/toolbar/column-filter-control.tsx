@@ -67,19 +67,31 @@ export function ColumnFilterControl<T extends Record<string, any>>({ engine, tit
     };
     const updateFilter = (id: string, updates: Partial<ColumnFilterRule>) => table.updatePendingColumnFilter?.(id, updates);
 
+    // Keep the value shape consistent with the operator: `between` carries a
+    // `{ from, to }` object; scalar operators a primitive; no-value operators ''.
+    const coerceValue = (op: string, prev: any) => {
+        if (NO_VALUE_OPS.includes(op)) return '';
+        const isObj = prev && typeof prev === 'object' && !Array.isArray(prev);
+        if (op === 'between') return isObj ? prev : {};
+        return isObj ? '' : prev; // leaving a range — its object is invalid for scalars
+    };
+    const hasRangeBound = (v: any) =>
+        !!v && typeof v === 'object' && (String(v.from ?? '').trim() !== '' || String(v.to ?? '').trim() !== '');
+
     const handleColumnChange = (id: string, newColumnId: string, cur: ColumnFilterRule) => {
         const operators = operatorsFor(newColumnId);
         const valid = operators.some((o: any) => o.value === cur.operator);
         const newOp = valid ? cur.operator : operators[0]?.value || '';
-        updateFilter(id, { columnId: newColumnId, operator: newOp, value: NO_VALUE_OPS.includes(newOp) ? '' : cur.value });
+        updateFilter(id, { columnId: newColumnId, operator: newOp, value: coerceValue(newOp, cur.value) });
     };
     const handleOperatorChange = (id: string, newOp: string, cur: ColumnFilterRule) => {
-        updateFilter(id, { operator: newOp, value: NO_VALUE_OPS.includes(newOp) ? '' : cur.value });
+        updateFilter(id, { operator: newOp, value: coerceValue(newOp, cur.value) });
     };
 
     const pendingReady = filters.filter((f) => {
         if (!f.columnId || !f.operator) return false;
         if (NO_VALUE_OPS.includes(f.operator)) return true;
+        if (f.operator === 'between') return hasRangeBound(f.value);
         return f.value != null && String(f.value).trim() !== '';
     }).length;
     const hasApplied = activeCount > 0;

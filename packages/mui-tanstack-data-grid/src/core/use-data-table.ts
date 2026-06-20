@@ -1202,14 +1202,86 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
             resetColumnPinning: () => dispatch({ type: 'SET_COLUMN_PINNING', payload: initialColumnPinning }),
         };
 
+        // Auto-fit: measure the widest rendered content for a column and return a
+        // clamped pixel width. Measures only rows currently in the DOM (the virtual
+        // window / current page); browser-only (no-op under SSR).
+        const measureColumnWidth = (columnId: string): number | null => {
+            const container = tableContainerRef.current;
+            if (!container || typeof document === 'undefined') return null;
+            const sel = typeof CSS !== 'undefined' && CSS.escape ? CSS.escape(columnId) : columnId.replace(/"/g, '\\"');
+            const cells = container.querySelectorAll(`[data-col-id="${sel}"]`);
+            if (!cells.length) return null;
+            const sandbox = document.createElement('div');
+            sandbox.style.cssText = 'position:absolute;left:-99999px;top:0;visibility:hidden;pointer-events:none;white-space:nowrap;';
+            container.appendChild(sandbox);
+            let content = 0;
+            let padX = 0;
+            cells.forEach((cell) => {
+                const cs = getComputedStyle(cell as HTMLElement);
+                const cellPad = (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0);
+                padX = Math.max(padX, cellPad);
+                const node = (cell.querySelector('[data-cell-content]') as HTMLElement) || (cell as HTMLElement);
+                // Copy the node's resolved font onto the clone — the header is bold 13px,
+                // which the relocated clone would otherwise lose (it'd inherit the root 14px/400).
+                const ncs = getComputedStyle(node);
+                const clone = node.cloneNode(true) as HTMLElement;
+                clone.style.width = 'auto';
+                clone.style.maxWidth = 'none';
+                clone.style.whiteSpace = 'nowrap';
+                clone.style.display = 'inline-block';
+                clone.style.fontFamily = ncs.fontFamily;
+                clone.style.fontSize = ncs.fontSize;
+                clone.style.fontWeight = ncs.fontWeight;
+                clone.style.fontStyle = ncs.fontStyle;
+                clone.style.letterSpacing = ncs.letterSpacing;
+                sandbox.appendChild(clone);
+                let w = clone.getBoundingClientRect().width;
+                sandbox.removeChild(clone);
+                // Percentage/100%-width content (e.g. a progress bar) collapses to ~0 once
+                // detached — fall back to the cell's current rendered content width.
+                if (w <= 0) w = Math.max(0, (cell as HTMLElement).getBoundingClientRect().width - cellPad);
+                content = Math.max(content, w);
+            });
+            container.removeChild(sandbox);
+            if (content <= 0) return null;
+            const col: any = tableRef.current.getColumn?.(columnId);
+            const min = col?.columnDef?.minSize ?? 40;
+            const max = col?.columnDef?.maxSize ?? Number.MAX_SAFE_INTEGER;
+            // Headroom for the sort icon + resize handle that share the header cell.
+            return Math.min(max, Math.max(min, Math.ceil(content + padX + 28)));
+        };
+
+        const commitSizing = (next: Record<string, number>) => {
+            dispatch({ type: 'SET_COLUMN_SIZING', payload: next });
+            onColumnSizingChangeRef.current?.(next);
+        };
+
         api.columnResizing = {
             resizeColumn: (columnId, width) => {
-                const cur = uiRef.current.columnSizing;
-                dispatch({ type: 'SET_COLUMN_SIZING', payload: { ...cur, [columnId]: width } });
-                onColumnSizingChangeRef.current?.({ ...cur, [columnId]: width });
+                commitSizing({ ...uiRef.current.columnSizing, [columnId]: width });
             },
-            autoSizeColumn: () => undefined,
-            autoSizeAllColumns: () => undefined,
+            autoSizeColumn: (columnId) => {
+                if (columnId.startsWith('_')) return; // special columns (selection/expand)
+                const col: any = tableRef.current.getColumn?.(columnId);
+                if (col?.getCanResize && !col.getCanResize()) return;
+                const width = measureColumnWidth(columnId);
+                if (width == null) return;
+                commitSizing({ ...uiRef.current.columnSizing, [columnId]: width });
+            },
+            autoSizeAllColumns: () => {
+                const next = { ...uiRef.current.columnSizing };
+                let changed = false;
+                for (const col of tableRef.current.getVisibleLeafColumns()) {
+                    if (col.id.startsWith('_')) continue; // skip underscore-prefixed special columns
+                    if (col.getCanResize && !col.getCanResize()) continue;
+                    const width = measureColumnWidth(col.id);
+                    if (width != null) {
+                        next[col.id] = width;
+                        changed = true;
+                    }
+                }
+                if (changed) commitSizing(next);
+            },
             resetColumnSizing: () => dispatch({ type: 'SET_COLUMN_SIZING', payload: initialStateConfig.columnSizing || {} }),
         };
 

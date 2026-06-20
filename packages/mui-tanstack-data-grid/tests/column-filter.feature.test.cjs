@@ -89,3 +89,53 @@ test('AND / OR logic across multiple filters', () => {
     // no filters → always matches
     assert.equal(matches(row, []), true);
 });
+
+test('number "between" — inclusive range, open-ended bounds, empty guard', () => {
+    const at = (n) => createMockRow({ salary: n }, { salary: 'number' });
+    const rng = (from, to) => [rule('salary', 'between', { from, to }, 'number')];
+    assert.equal(matches(at(5), rng(1, 10)), true);
+    assert.equal(matches(at(1), rng(1, 10)), true, 'lower bound inclusive');
+    assert.equal(matches(at(10), rng(1, 10)), true, 'upper bound inclusive');
+    assert.equal(matches(at(0), rng(1, 10)), false);
+    assert.equal(matches(at(11), rng(1, 10)), false);
+    // open-ended: only one bound supplied
+    assert.equal(matches(at(50), rng(5, '')), true, 'from-only → n >= from');
+    assert.equal(matches(at(2), rng(5, '')), false);
+    assert.equal(matches(at(2), rng('', 5)), true, 'to-only → n <= to');
+    assert.equal(matches(at(9), rng('', 5)), false);
+    // no bounds at all → not ready, never matches
+    assert.equal(matches(at(5), rng('', '')), false);
+    assert.equal(matches(at(5), [rule('salary', 'between', {}, 'number')]), false);
+    // string-numeric coercion
+    assert.equal(matches(createMockRow({ salary: '7' }, { salary: 'number' }), rng(1, 10)), true);
+    // adversarial: an unparseable / whitespace bound is treated as absent — a no-op,
+    // NOT match-all (regression guard for the NaN-bound bug)
+    assert.equal(matches(at(99999), rng('x', '')), false, 'NaN single bound → no-op, not match-all');
+    assert.equal(matches(at(99999), rng('   ', '')), false, 'whitespace bound → no-op');
+    assert.equal(matches(at(7), rng('x', 'y')), false, 'both bounds unparseable → no match');
+    // inverted bounds (from > to) → empty set
+    assert.equal(matches(at(50), rng(100, 1)), false, 'inverted range matches nothing');
+    // null / empty column value is never "between"
+    assert.equal(matches(at(null), rng(-5, 5)), false, 'null value → false even if 0 ∈ range');
+    assert.equal(matches(createMockRow({ salary: '' }, { salary: 'number' }), rng(-5, 5)), false);
+});
+
+test('date "between" — inclusive day range, open-ended bounds', () => {
+    const on = (d) => createMockRow({ d }, { d: 'date' });
+    const rng = (from, to) => [rule('d', 'between', { from, to }, 'date')];
+    assert.equal(matches(on('2026-06-12'), rng('2026-06-10', '2026-06-15')), true);
+    assert.equal(matches(on('2026-06-10'), rng('2026-06-10', '2026-06-15')), true, 'from inclusive');
+    assert.equal(matches(on('2026-06-15'), rng('2026-06-10', '2026-06-15')), true, 'to inclusive');
+    assert.equal(matches(on('2026-06-09'), rng('2026-06-10', '2026-06-15')), false);
+    assert.equal(matches(on('2026-06-16'), rng('2026-06-10', '2026-06-15')), false);
+    // open-ended
+    assert.equal(matches(on('2026-06-20'), rng('2026-06-10', '')), true, 'from-only');
+    assert.equal(matches(on('2026-06-01'), rng('2026-06-10', '')), false);
+    assert.equal(matches(on('2026-06-01'), rng('', '2026-06-10')), true, 'to-only');
+    // no bounds → never matches
+    assert.equal(matches(on('2026-06-12'), rng('', '')), false);
+    // adversarial: an invalid date bound is treated as absent; here no usable bound → no-op
+    assert.equal(matches(on('2026-06-12'), rng('not-a-date', '')), false, 'invalid bound → no-op, not match-all');
+    // empty column value is never "between"
+    assert.equal(matches(on(''), rng('2026-06-10', '2026-06-15')), false, 'empty value → false');
+});

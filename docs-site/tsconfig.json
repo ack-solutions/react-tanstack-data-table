@@ -6,7 +6,19 @@
   "compilerOptions": {
     "baseUrl": ".",
     "ignoreDeprecations": "6.0",
-    "strict": true
+    "strict": true,
+    // Force a SINGLE @mui/material across the program. docs-site installs its own
+    // copy (file: dep, separate node_modules) while @ackplus/mui-tanstack-data-grid's
+    // built dist resolves @mui/material from the monorepo's pnpm store — two physical
+    // copies. The package augments `@mui/material/styles` (adds palette.tanstackDataGrid
+    // and components.MuiTanstackDataGrid); TS merges module augmentations by resolved
+    // file, so without this the augmentation lands on the package's copy and never
+    // reaches the copy docs-site's createTheme() uses. These paths apply program-wide,
+    // redirecting the package's dist .d.ts to docs-site's copy so the augmentation merges.
+    "paths": {
+      "@mui/material": ["./node_modules/@mui/material"],
+      "@mui/material/*": ["./node_modules/@mui/material/*"]
+    }
   },
   "exclude": [".docusaurus", "build"]
 }
