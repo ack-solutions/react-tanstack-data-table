@@ -3,7 +3,7 @@ title: Filtering
 ---
 
 import LiveDemo from '@site/src/demo/LiveDemo';
-import { FilteringDemo } from '@site/src/demo/demos';
+import { FilteringDemo, FacetedFilterDemo } from '@site/src/demo/demos';
 
 # Filtering
 
@@ -37,6 +37,23 @@ const columns = [
 
 <DataTable columns={columns} data={data} enableGlobalFilter enableColumnFilter />
 ```
+
+## Auto-populated (faceted) options
+
+A `type: 'select'` column **without** an explicit `options` list auto-populates its filter values from the
+data's distinct values (cardinality-guarded). Below, *Role* and *Status* are `type: 'select'` with no
+`options` — open the column filter and the value dropdown is filled from the data.
+
+<LiveDemo>{() => <FacetedFilterDemo />}</LiveDemo>
+
+```tsx
+// no `options` → distinct values are derived from the data
+{ id: 'role', header: 'Role', accessorKey: 'role', type: 'select' }
+```
+
+The values reflect the **data**, not other active filters (the rule-builder's custom filter isn't a native
+TanStack column filter). Auto-population needs the full dataset locally, so it's a **client-mode** feature —
+under server pagination/filtering only one page is loaded, so provide explicit `options` instead.
 
 ## Props
 

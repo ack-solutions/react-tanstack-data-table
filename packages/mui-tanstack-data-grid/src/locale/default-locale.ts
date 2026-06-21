@@ -71,6 +71,7 @@ export const DEFAULT_LOCALE_TEXT: DataTableLocaleText = {
     // Selection / bulk
     selectedRows: (count) => `${count} selected`,
     clearSelection: 'Clear',
+    copy: 'Copy',
 
     // Overlays & rows
     noRows: 'No rows',

@@ -88,6 +88,11 @@ export interface DataTableApi<T = any> {
         getTotals: () => Record<string, any>;
     };
 
+    clipboard: {
+        /** Copy the selected rows (visible export columns) to the clipboard as delimited text; resolves the count copied. */
+        copySelectedRows: (options?: { includeHeaders?: boolean; delimiter?: string }) => Promise<number>;
+    };
+
     filtering: {
         setGlobalFilter: (filter: string) => void;
         clearGlobalFilter: () => void;

@@ -76,7 +76,15 @@ export function buildExportRequest<T>(table: Table<T>, options: BuildExportReque
 
     const source = onlyVisibleColumns ? table.getVisibleLeafColumns() : table.getAllLeafColumns();
     let leaf = source.filter(
-        (col) => !SPECIAL_COLUMN_IDS.has(col.id) && (col.columnDef as any)?.hideInExport !== true,
+        (col) =>
+            !SPECIAL_COLUMN_IDS.has(col.id) &&
+            (col.columnDef as any)?.hideInExport !== true &&
+            // Drop accessorless display columns (an `actions`/render-only column with no
+            // accessorKey, accessorFn, or valueGetter) — they have no value to serialize and
+            // would otherwise emit a stray blank column. `accessorFn` is set for both accessorKey
+            // and accessorFn/valueGetter columns; a column with no accessor can still opt in by
+            // defining `exportValue`.
+            (typeof (col as any).accessorFn === 'function' || typeof (col.columnDef as any)?.exportValue === 'function'),
     );
 
     if (columnIds && columnIds.length) {

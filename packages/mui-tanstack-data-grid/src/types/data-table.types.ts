@@ -248,6 +248,14 @@ export interface DataTableProps<T> {
     enablePagination?: boolean;
     paginationMode?: 'client' | 'server';
     onPaginationChange?: (pagination: PaginationState) => void;
+    /** Page-size choices in the footer (default `[5, 10, 25, 50, 100]`); `[]` hides the selector. */
+    rowsPerPageOptions?: number[];
+
+    // ── Clipboard ─────────────────────────────────────────────────────────
+    /** Show a "Copy" action in the bulk-actions bar (also available via `apiRef.clipboard`). */
+    enableClipboardCopy?: boolean;
+    /** Called after a successful clipboard copy with the number of rows copied. */
+    onClipboardCopy?: (rowCount: number) => void;
 
     // ── Filtering ─────────────────────────────────────────────────────────
     enableGlobalFilter?: boolean;

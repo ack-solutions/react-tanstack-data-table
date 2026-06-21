@@ -3,7 +3,7 @@ title: Pagination
 ---
 
 import LiveDemo from '@site/src/demo/LiveDemo';
-import { PaginationDemo } from '@site/src/demo/demos';
+import { PaginationDemo, RowsPerPageDemo } from '@site/src/demo/demos';
 
 # Pagination
 
@@ -22,12 +22,24 @@ fetch handler.
 />
 ```
 
+## Page-size options
+
+Customise the rows-per-page choices with `rowsPerPageOptions` (default `[5, 10, 25, 50, 100]`); pass `[]` to
+hide the selector. Replace the whole footer with `slots.pagination`.
+
+<LiveDemo>{() => <RowsPerPageDemo />}</LiveDemo>
+
+```tsx
+<DataTable columns={columns} data={data} enablePagination rowsPerPageOptions={[3, 6, 12]} />
+```
+
 ## Props
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
 | `enablePagination` | `boolean` | `false` | Show the pagination footer. |
 | `paginationMode` | `'client' \| 'server'` | `'client'` | Paginate locally or on the server. |
+| `rowsPerPageOptions` | `number[]` | `[5,10,25,50,100]` | Page-size choices (`[]` hides the selector). |
 | `rowCount` | `number` | — | Server total row count (server mode). |
 | `onPaginationChange` | `(pagination) => void` | — | Page index/size changed. |
 

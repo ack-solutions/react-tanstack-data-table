@@ -12,6 +12,8 @@
 import {
     getCoreRowModel,
     getExpandedRowModel,
+    getFacetedRowModel,
+    getFacetedUniqueValues,
     getPaginationRowModel,
     getSortedRowModel,
     useReactTable,
@@ -45,6 +47,8 @@ import {
     createActionsColumn,
     normalizeUserColumn,
     computeColumnTotals,
+    rowsToDelimitedText,
+    writeToClipboard,
     generateRowId,
     withIdsDeep,
     useDebouncedFetch,
@@ -409,6 +413,7 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
     const onServerExportRef = useLatestRef(onServerExport);
     const onExportStreamRef = useLatestRef(onExportStream);
     const onExportPollRef = useLatestRef(onExportPoll);
+    const onClipboardCopyRef = useLatestRef(props.onClipboardCopy);
 
     const fetchHandler = useEvent((filters: any, opts: any) => onFetchDataRef.current?.(filters, opts));
     const { debouncedFetch, isLoading: fetchLoading } = useDebouncedFetch<T>(fetchHandler);
@@ -633,6 +638,13 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
         getCoreRowModel: getCoreRowModel(),
         ...(enableSorting ? { getSortedRowModel: getSortedRowModel() } : {}),
         ...(enableColumnFilter || enableGlobalFilter ? { getFilteredRowModel: getCombinedFilteredRowModel<T>() } : {}),
+        // Faceted models power auto-populated `select` filter options (distinct values).
+        // Only valid when ALL data is local — under server pagination/filtering the engine
+        // holds a single page, so the distinct values would be partial and page-dependent.
+        // When skipped, getColumnOptions falls back to a free-text input.
+        ...(enableColumnFilter && !isServerFiltering && !isServerPagination
+            ? { getFacetedRowModel: getFacetedRowModel(), getFacetedUniqueValues: getFacetedUniqueValues() }
+            : {}),
         ...(enablePagination && !isServerPagination ? { getPaginationRowModel: getPaginationRowModel() } : {}),
         ...(expandEnabled ? { getExpandedRowModel: getExpandedRowModel() } : {}),
 
@@ -1358,6 +1370,24 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
                 const out: Record<string, any> = {};
                 for (const id of Object.keys(totals)) out[id] = totals[id].value;
                 return out;
+            },
+        };
+
+        api.clipboard = {
+            // Copies the currently selected rows. In server pagination/`selectMode="all"`,
+            // selection is page-scoped (only loaded rows are serialized) — see docs. A throwing
+            // custom export transform degrades to "nothing copied" (0) rather than rejecting.
+            copySelectedRows: async (options) => {
+                try {
+                    const rows = tableRef.current.getSelectedRows();
+                    if (!rows.length) return 0;
+                    const text = rowsToDelimitedText(tableRef.current, rows, options);
+                    const ok = await writeToClipboard(text);
+                    if (ok) onClipboardCopyRef.current?.(rows.length);
+                    return ok ? rows.length : 0;
+                } catch {
+                    return 0;
+                }
             },
         };
 

@@ -56,6 +56,7 @@ export interface DataTableLocaleText {
     // Selection / bulk
     selectedRows: (count: number) => string;
     clearSelection: string;
+    copy: string;
 
     // Overlays & rows
     noRows: string;

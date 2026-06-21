@@ -16,6 +16,26 @@ format: each release groups changes as **Added** (new features), **Changed** (be
 
 ---
 
+## [1.12.0](https://www.npmjs.com/package/@ackplus/mui-tanstack-data-grid/v/1.12.0) — 2026-06-21
+
+More admin power-user features from the deferred backlog. Backward compatible.
+
+### Added
+- **Configurable page size.** `rowsPerPageOptions` sets the footer's page-size choices (default
+  `[5, 10, 25, 50, 100]`; `[]` hides the selector). Replace the whole footer with `slots.pagination`.
+- **Faceted (auto) filter options.** A `type: 'select'` column with **no** `options` auto-populates its
+  filter values from the data's distinct values (cardinality-guarded). Values reflect the data, not other
+  active filters.
+- **Clipboard copy.** `enableClipboardCopy` adds a **Copy** action to the bulk-actions bar (tab-separated
+  text that pastes into Sheets/Excel); also `apiRef.current.clipboard.copySelectedRows()` and the
+  `onClipboardCopy(count)` callback.
+
+### Docs
+- [Pagination](/features/pagination) (page-size options), [Filtering](/features/filtering) (auto-populated
+  options), and [Selection](/features/selection) (clipboard copy) each gain a section + live demo.
+
+---
+
 ## [1.11.1](https://www.npmjs.com/package/@ackplus/mui-tanstack-data-grid/v/1.11.1) — 2026-06-21
 
 ### Fixed

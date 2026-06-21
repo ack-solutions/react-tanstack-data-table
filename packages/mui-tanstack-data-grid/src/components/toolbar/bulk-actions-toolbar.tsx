@@ -13,10 +13,11 @@ export interface BulkActionsToolbarProps {
     selectedCount: number;
     selectionState: SelectionState;
     onClear: () => void;
+    onCopy?: () => void;
     renderBulkActions?: (selectionState: SelectionState) => ReactNode;
 }
 
-export function BulkActionsToolbar({ selectedCount, selectionState, onClear, renderBulkActions }: BulkActionsToolbarProps): ReactNode {
+export function BulkActionsToolbar({ selectedCount, selectionState, onClear, onCopy, renderBulkActions }: BulkActionsToolbarProps): ReactNode {
     const locale = useLocaleText();
     return (
         <Stack
@@ -39,6 +40,11 @@ export function BulkActionsToolbar({ selectedCount, selectionState, onClear, ren
             <Button size="small" variant="text" onClick={onClear} sx={{ color: 'inherit', textTransform: 'none' }}>
                 {locale.clearSelection}
             </Button>
+            {onCopy ? (
+                <Button size="small" variant="text" onClick={onCopy} sx={{ color: 'inherit', textTransform: 'none' }}>
+                    {locale.copy}
+                </Button>
+            ) : null}
             <Box sx={{ flex: 1 }} />
             {renderBulkActions?.(selectionState)}
         </Stack>

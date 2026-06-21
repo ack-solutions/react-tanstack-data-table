@@ -4,7 +4,7 @@ sidebar_label: Selection
 ---
 
 import LiveDemo from '@site/src/demo/LiveDemo';
-import { SelectionDemo } from '@site/src/demo/demos';
+import { SelectionDemo, ClipboardDemo } from '@site/src/demo/demos';
 
 # Selection & bulk actions
 
@@ -39,6 +39,23 @@ semantics so *select all* works across server pages without loading every row. W
 | `enableBulkActions` | `boolean` | `false` | Show the bulk-actions bar. |
 | `renderBulkActions` | `(selection) => ReactNode` | — | Custom action buttons. |
 | `onSelectionChange` | `(selection) => void` | — | Selection changed. |
+
+## Clipboard copy
+
+`enableClipboardCopy` adds a **Copy** action to the bulk-actions bar — copies the selected rows (visible,
+exportable columns) as tab-separated text that pastes straight into Sheets/Excel. Also available
+imperatively: `apiRef.current.clipboard.copySelectedRows()` (resolves the count actually copied). Hook
+`onClipboardCopy` for a toast.
+
+Copy serializes the **loaded** selected rows. Under server pagination with `selectMode="all"` (exclude
+mode), only rows on the current page are copied — the same scope limit as any client-side bulk action over
+server data; copy all by routing through a server export instead.
+
+<LiveDemo>{() => <ClipboardDemo />}</LiveDemo>
+
+```tsx
+<DataTable columns={columns} data={data} enableRowSelection enableBulkActions enableClipboardCopy />
+```
 
 ## Selection state
 

@@ -81,6 +81,26 @@ export function getColumnOptions(column: Column<any, unknown>): any[] {
             { value: false, label: 'No' },
         ];
     }
+    // Faceted: auto-populate `select` options from the data's distinct values when none
+    // are declared (needs the faceted model mounted; cardinality-guarded). These reflect
+    // the data, not other active filters (the custom column filter isn't native).
+    if (getColumnType(column) === 'select' && typeof (column as any).getFacetedUniqueValues === 'function') {
+        try {
+            const map: Map<any, number> = (column as any).getFacetedUniqueValues();
+            if (map && map.size > 0 && map.size <= 200) {
+                return Array.from(map.keys())
+                    .filter((v) => v !== null && v !== undefined && v !== '')
+                    .sort((a, b) =>
+                        typeof a === 'number' && typeof b === 'number'
+                            ? a - b
+                            : String(a).localeCompare(String(b), undefined, { numeric: true }),
+                    )
+                    .map((v) => ({ label: String(v), value: v }));
+            }
+        } catch {
+            /* faceted model not mounted — fall through */
+        }
+    }
     return [];
 }
 

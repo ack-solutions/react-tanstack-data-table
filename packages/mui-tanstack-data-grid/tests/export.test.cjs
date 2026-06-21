@@ -56,20 +56,23 @@ function mockTable(columns) {
 
 const COLUMNS = [
     { id: '_selection', columnDef: { header: '' } }, // special helper col — excluded
-    { id: 'name', columnDef: { header: 'Name' } },
-    { id: 'email', columnDef: { header: 'Email', exportHeader: 'E-mail Address' } },
-    { id: 'secret', columnDef: { header: 'Secret', hideInExport: true } }, // excluded
+    { id: 'name', accessorFn: (r) => r.name, columnDef: { header: 'Name' } },
+    { id: 'email', accessorFn: (r) => r.email, columnDef: { header: 'Email', exportHeader: 'E-mail Address' } },
+    { id: 'secret', accessorFn: (r) => r.secret, columnDef: { header: 'Secret', hideInExport: true } }, // excluded
+    { id: 'actions', columnDef: { header: 'Actions' } }, // accessorless display col — excluded
+    { id: 'full', columnDef: { header: 'Full', exportValue: () => 'x' } }, // no accessor but opts in via exportValue — kept
 ];
 
-test('buildExportRequest resolves visible columns, drops special + hideInExport, keeps order/headers', () => {
+test('buildExportRequest resolves visible columns, drops special + hideInExport + accessorless display, keeps order/headers', () => {
     const { request, columns } = buildExportRequest(mockTable(COLUMNS), {
         format: 'csv',
         filename: 'users',
         filters: {},
     });
-    assert.deepStrictEqual(request.columns.map((c) => c.id), ['name', 'email']);
-    assert.deepStrictEqual(request.columns.map((c) => c.header), ['Name', 'E-mail Address']);
-    assert.strictEqual(columns.length, 2); // resolved (with column refs) matches
+    // _selection (special), secret (hideInExport), actions (no accessor) dropped; full kept via exportValue.
+    assert.deepStrictEqual(request.columns.map((c) => c.id), ['name', 'email', 'full']);
+    assert.deepStrictEqual(request.columns.map((c) => c.header), ['Name', 'E-mail Address', 'Full']);
+    assert.strictEqual(columns.length, 3); // resolved (with column refs) matches
     assert.strictEqual(request.scope, 'all'); // no filters, no selection
 });
 

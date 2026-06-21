@@ -73,6 +73,8 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
         enableColumnResizing = false,
         enableVirtualization = false,
         enablePagination = false,
+        rowsPerPageOptions = [5, 10, 25, 50, 100],
+        enableClipboardCopy = false,
         enableAggregation = false,
         stickyHeader,
         stickyFooter,
@@ -503,6 +505,7 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
                     selectedCount={derived.selectedRowCount}
                     selectionState={state.selectionState}
                     onClear={() => engine.api.selection.deselectAll()}
+                    onCopy={enableClipboardCopy ? () => { void engine.api.clipboard.copySelectedRows(); } : undefined}
                     renderBulkActions={renderBulkActions}
                 />
             ) : null}
@@ -523,17 +526,29 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
 
             {enablePagination ? (
                 <GridFooter>
-                    <TablePagination
-                        component="div"
-                        count={derived.tableTotalRow}
-                        page={state.pagination.pageIndex}
-                        rowsPerPage={state.pagination.pageSize}
-                        onPageChange={(_, page) => engine.api.pagination.goToPage(page)}
-                        onRowsPerPageChange={(e) => engine.api.pagination.setPageSize(Number(e.target.value))}
-                        rowsPerPageOptions={[5, 10, 25, 50, 100]}
-                        labelRowsPerPage={locale.paginationRowsPerPage}
-                        labelDisplayedRows={({ from, to, count }) => locale.paginationDisplayedRows({ from, to, count })}
-                    />
+                    {(() => {
+                        const PaginationComponent = slots?.pagination ?? TablePagination;
+                        // Keep the current pageSize in the options so MUI's Select always has a
+                        // matching value (avoids its out-of-range console error when the active
+                        // pageSize isn't one of the configured choices). `[]` still hides the selector.
+                        const pageSizeOptions =
+                            rowsPerPageOptions.length > 0 && !rowsPerPageOptions.includes(state.pagination.pageSize)
+                                ? [...rowsPerPageOptions, state.pagination.pageSize].sort((a, b) => a - b)
+                                : rowsPerPageOptions;
+                        return (
+                            <PaginationComponent
+                                component="div"
+                                count={derived.tableTotalRow}
+                                page={state.pagination.pageIndex}
+                                rowsPerPage={state.pagination.pageSize}
+                                onPageChange={(_: unknown, page: number) => engine.api.pagination.goToPage(page)}
+                                onRowsPerPageChange={(e: any) => engine.api.pagination.setPageSize(Number(e.target.value))}
+                                rowsPerPageOptions={pageSizeOptions}
+                                labelRowsPerPage={locale.paginationRowsPerPage}
+                                labelDisplayedRows={({ from, to, count }: { from: number; to: number; count: number }) => locale.paginationDisplayedRows({ from, to, count })}
+                            />
+                        );
+                    })()}
                 </GridFooter>
             ) : null}
         </GridRoot>

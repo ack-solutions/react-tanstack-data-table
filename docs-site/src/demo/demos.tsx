@@ -87,6 +87,46 @@ export function BasicDemo() {
     return <DataTable columns={columns} data={users} enableSorting enableColumnResizing enablePagination initialState={page5} />;
 }
 
+export function RowsPerPageDemo() {
+    // Custom page-size choices via rowsPerPageOptions.
+    return (
+        <DataTable
+            columns={columns}
+            data={makeUsers(40)}
+            enablePagination
+            rowsPerPageOptions={[3, 6, 12]}
+            initialState={{ pagination: { pageIndex: 0, pageSize: 6 } }}
+        />
+    );
+}
+
+export function ClipboardDemo() {
+    // enableClipboardCopy adds a "Copy" action to the bulk-actions bar (select rows → Copy → paste as TSV).
+    return (
+        <DataTable
+            columns={columns}
+            data={users}
+            enableRowSelection
+            enableBulkActions
+            enableClipboardCopy
+            enablePagination
+            initialState={page5}
+            onClipboardCopy={(n) => console.log(`copied ${n} rows`)}
+        />
+    );
+}
+
+const facetedColumns: ColumnDef<(typeof users)[number], any>[] = [
+    { id: 'name', header: 'Name', accessorKey: 'name', size: 170 },
+    // type:'select' with NO `options` → the filter auto-populates distinct values from the data.
+    { id: 'role', header: 'Role', accessorKey: 'role', type: 'select', size: 150 } as ColumnDef<(typeof users)[number], any>,
+    { id: 'status', header: 'Status', accessorKey: 'status', type: 'select', size: 150 } as ColumnDef<(typeof users)[number], any>,
+];
+
+export function FacetedFilterDemo() {
+    return <DataTable columns={facetedColumns} data={makeUsers(40)} enableColumnFilter enablePagination initialState={page5} />;
+}
+
 export function SortingDemo() {
     return <DataTable columns={columns} data={users} enableSorting enablePagination initialState={page5} />;
 }

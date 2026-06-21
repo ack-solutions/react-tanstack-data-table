@@ -2,7 +2,32 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { normalizeUserColumn, makeTypeCellFormatter } = require('../dist/cjs/utils/column-helpers.js');
+const { normalizeUserColumn, makeTypeCellFormatter, getColumnOptions } = require('../dist/cjs/utils/column-helpers.js');
+
+test('getColumnOptions — explicit options win; faceted distinct values auto-populate a select; cardinality guard', () => {
+    // explicit options take precedence
+    const explicit = [{ label: 'A', value: 'a' }];
+    assert.deepEqual(getColumnOptions({ columnDef: { type: 'select', options: explicit } }), explicit);
+    // boolean → Yes/No
+    assert.deepEqual(getColumnOptions({ columnDef: { type: 'boolean' } }), [{ value: true, label: 'Yes' }, { value: false, label: 'No' }]);
+    // select with NO options + faceted model → sorted distinct values
+    const faceted = { columnDef: { type: 'select' }, getFacetedUniqueValues: () => new Map([['Editor', 3], ['Admin', 2], ['Viewer', 1]]) };
+    assert.deepEqual(getColumnOptions(faceted), [{ label: 'Admin', value: 'Admin' }, { label: 'Editor', value: 'Editor' }, { label: 'Viewer', value: 'Viewer' }]);
+    // numeric distinct values sort numerically (not lexicographically), values preserved as numbers
+    const numeric = { columnDef: { type: 'select' }, getFacetedUniqueValues: () => new Map([[10, 1], [2, 1], [100, 1], [3, 1], [1, 1], [20, 1]]) };
+    assert.deepEqual(getColumnOptions(numeric), [
+        { label: '1', value: 1 }, { label: '2', value: 2 }, { label: '3', value: 3 },
+        { label: '10', value: 10 }, { label: '20', value: 20 }, { label: '100', value: 100 },
+    ]);
+    // empty/null distinct values skipped
+    const withEmpty = { columnDef: { type: 'select' }, getFacetedUniqueValues: () => new Map([['X', 1], ['', 1], [null, 1]]) };
+    assert.deepEqual(getColumnOptions(withEmpty), [{ label: 'X', value: 'X' }]);
+    // cardinality guard: > 200 distinct values → no options (too many to list)
+    const huge = { columnDef: { type: 'select' }, getFacetedUniqueValues: () => new Map(Array.from({ length: 201 }, (_, i) => [String(i), 1])) };
+    assert.deepEqual(getColumnOptions(huge), []);
+    // select without facets or options → empty (text input)
+    assert.deepEqual(getColumnOptions({ columnDef: { type: 'select' } }), []);
+});
 
 const ctx = (value, original = {}) => ({ getValue: () => value, row: { original } });
 
