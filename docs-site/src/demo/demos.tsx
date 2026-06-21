@@ -1,11 +1,11 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Box, Button } from '@mui/material';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import EditOutlined from '@mui/icons-material/EditOutlined';
 import DeleteOutline from '@mui/icons-material/DeleteOutline';
 import VisibilityOutlined from '@mui/icons-material/VisibilityOutlined';
 import type { ColumnDef } from '@tanstack/react-table';
-import { DataTable } from '@ackplus/mui-tanstack-data-grid';
+import { DataTable, createRowPinAction } from '@ackplus/mui-tanstack-data-grid';
 
 import { columns, users, makeUsers } from './sample';
 
@@ -341,6 +341,26 @@ export function RowActionsDemo() {
                     disabled: row.original.status === 'active',
                     onClick: () => window.alert(`Delete ${row.original.name}`),
                 },
+            ]}
+        />
+    );
+}
+
+export function PinnedRowsDemo() {
+    // Pin rows to the top/bottom so they stay visible while the rest scroll/paginate.
+    // Liam starts pinned top, Zoe pinned bottom; use each row's pushpin buttons to pin/unpin.
+    const apiRef = useRef<any>(null);
+    return (
+        <DataTable
+            apiRef={apiRef}
+            columns={columns}
+            data={users}
+            enableRowPinning
+            enablePagination
+            initialState={{ pagination: { pageIndex: 0, pageSize: 5 }, rowPinning: { top: ['1'], bottom: ['8'] } }}
+            getRowActions={(row) => [
+                createRowPinAction(apiRef, row, 'top'),
+                createRowPinAction(apiRef, row, 'bottom'),
             ]}
         />
     );

@@ -46,6 +46,7 @@ export const DT_VARS = {
     radius: '--dt-radius',
     zHeader: '--dt-z-header',
     zPinned: '--dt-z-pinned',
+    zRowPinned: '--dt-z-row-pinned',
 } as const;
 
 export type DataTableVarName = (typeof DT_VARS)[keyof typeof DT_VARS];

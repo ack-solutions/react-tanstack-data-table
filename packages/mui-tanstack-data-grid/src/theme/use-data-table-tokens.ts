@@ -42,6 +42,9 @@ export function useDataTableTokens(density: DataTableDensity = 'standard'): CSSP
             [DT_VARS.radius]: `${Math.max(Number(theme.shape.borderRadius) || 0, 8)}px`,
             [DT_VARS.zHeader]: 3,
             [DT_VARS.zPinned]: 2,
+            // Pinned-row bands sit above the header corner (so a both-row+column-pinned
+            // cell out-ranks the sticky header and other pinned columns).
+            [DT_VARS.zRowPinned]: 4,
         };
         return vars as CSSProperties;
     }, [theme, density]);

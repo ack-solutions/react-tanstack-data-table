@@ -2,6 +2,7 @@ import type {
     SortingState,
     ColumnPinningState,
     ColumnOrderState,
+    RowPinningState,
     VisibilityState,
 } from '@tanstack/react-table';
 
@@ -24,6 +25,8 @@ export interface TableState {
     columnSizing?: Record<string, number>;
     columnOrder?: ColumnOrderState;
     columnPinning?: ColumnPinningState;
+    /** Pinned rows by id — `{ top: [...], bottom: [...] }`. Client data mode only. */
+    rowPinning?: RowPinningState;
     selectionState?: SelectionState;
     /** TanStack ExpandedState — `true` means "expand all". */
     expanded?: boolean | Record<string, boolean>;

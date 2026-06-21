@@ -4,6 +4,7 @@ import type {
     SortingState,
     ColumnResizeMode,
     ColumnPinningState,
+    RowPinningState,
     PaginationState,
     ColumnDef,
 } from '@tanstack/react-table';
@@ -224,6 +225,18 @@ export interface DataTableProps<T> {
     // ── Column pinning ────────────────────────────────────────────────────
     enableColumnPinning?: boolean;
     onColumnPinningChange?: (pinning: ColumnPinningState) => void;
+
+    // ── Row pinning ───────────────────────────────────────────────────────
+    /**
+     * Pin individual rows to the top and/or bottom so they stay visible while the
+     * rest scroll — pinned rows survive sort, filter, and pagination. Pin via
+     * `apiRef.current.rowPinning` or the exported `createRowPinAction` helper (spread
+     * into `getRowActions`), and seed pins with `initialState.rowPinning`.
+     * **Client data mode only** (like footer aggregation); ignored under server
+     * pagination. Top-level rows only (not tree sub-rows).
+     */
+    enableRowPinning?: boolean;
+    onRowPinningChange?: (pinning: RowPinningState) => void;
 
     // ── Column visibility ─────────────────────────────────────────────────
     enableColumnVisibility?: boolean;

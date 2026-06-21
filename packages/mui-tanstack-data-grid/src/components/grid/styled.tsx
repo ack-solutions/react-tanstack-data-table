@@ -143,6 +143,25 @@ export const GridFooterRow = styled('div', { name: 'MuiTanstackDataGrid', slot: 
     color: 'var(--dt-header-color)',
 }) as unknown as DivSlot;
 
+// Pinned-row bands — sticky rowgroups inside the single scroller. The top band
+// parks just under the (always-sticky) header; the bottom band parks above the
+// aggregation footer. The exact `top`/`bottom` offsets depend on header/footer
+// presence, so they're applied as inline style in GridView (not baked here). The
+// opaque background stops scrolling center rows from bleeding through.
+export const GridPinnedTopBand = styled('div', { name: 'MuiTanstackDataGrid', slot: 'PinnedTopBand' })({
+    position: 'sticky',
+    zIndex: 'var(--dt-z-row-pinned)' as unknown as number,
+    background: 'var(--dt-pinned-bg)',
+    boxShadow: '0 2px 4px -2px var(--dt-pinned-shadow)',
+}) as unknown as DivSlot;
+
+export const GridPinnedBottomBand = styled('div', { name: 'MuiTanstackDataGrid', slot: 'PinnedBottomBand' })({
+    position: 'sticky',
+    zIndex: 'var(--dt-z-row-pinned)' as unknown as number,
+    background: 'var(--dt-pinned-bg)',
+    boxShadow: '0 -2px 4px -2px var(--dt-pinned-shadow)',
+}) as unknown as DivSlot;
+
 export const GridDetailPanel = styled('div', { name: 'MuiTanstackDataGrid', slot: 'DetailPanel' })({
     boxSizing: 'border-box',
     width: '100%',

@@ -64,6 +64,9 @@ export interface DataTableLocaleText {
     collapseRow: string;
     rowActions: string;
     autoFitColumn: string;
+    pinRowTop: string;
+    pinRowBottom: string;
+    unpinRow: string;
 
     // Column menu (header kebab)
     columnMenuLabel: string;

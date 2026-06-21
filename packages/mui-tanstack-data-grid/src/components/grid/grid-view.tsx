@@ -7,14 +7,14 @@
  * density come from the `--dt-*` tokens applied to the root.
  */
 import { Box, Skeleton, TablePagination } from '@mui/material';
-import { flexRender, type Column } from '@tanstack/react-table';
+import { flexRender, type Column, type Row } from '@tanstack/react-table';
 import { Fragment, useCallback, useMemo, useState, type CSSProperties, type ReactNode } from 'react';
 
 import { SortAscFeatherIcon, SortDescFeatherIcon } from '../icons';
 import { useDataTableTokens } from '../../theme/use-data-table-tokens';
 import type { DataTableProps } from '../../types/data-table.types';
 import type { UseDataTableResult } from '../../core/use-data-table';
-import { GridRoot, GridScroller, GridHeader, GridHeaderRow, GridHeaderCell, GridBody, GridRow, GridCell, GridDetailPanel, GridFooter, GridFooterRow, GridOverlay } from './styled';
+import { GridRoot, GridScroller, GridHeader, GridHeaderRow, GridHeaderCell, GridBody, GridRow, GridCell, GridDetailPanel, GridFooter, GridFooterRow, GridOverlay, GridPinnedTopBand, GridPinnedBottomBand } from './styled';
 import { resolveScrollLayout } from './scroll-layout';
 import { useKeyboardNav, type FocusedCell } from './use-keyboard-nav';
 import { EditCell } from './edit-cell';
@@ -135,6 +135,13 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
     const tokens = useDataTableTokens(density);
 
     const rows = derived.rows;
+    // Pinned-row bands (center = `rows`). Empty unless row pinning is active (client mode).
+    const topRows = derived.topRows;
+    const bottomRows = derived.bottomRows;
+    // Monotonic display index across bands → contiguous data-r / aria-rowindex:
+    // top rows 0..T-1, center T..T+C-1, bottom T+C..T+C+B-1.
+    const topCount = topRows.length;
+    const allRenderedRows = topRows.length || bottomRows.length ? [...topRows, ...rows, ...bottomRows] : rows;
     const rowVirtualizer = actions.renderRowModel.rowVirtualizer;
     const isVirtual = enableVirtualization && !enablePagination && rows.length > 0;
 
@@ -207,7 +214,8 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
     // Enter/F2 on an editable cell starts editing; otherwise it activates the cell's control.
     const handleCellActivate = useCallback((cell: FocusedCell) => {
         if (cell.row > 0) {
-            const r = rows[cell.row - 1];
+            // data-r is the monotonic display index (+1), so index the combined band array.
+            const r = allRenderedRows[cell.row - 1];
             const col = table.getVisibleLeafColumns()[cell.col];
             if (r && col && isColEditable(col, r)) { setEditing({ rowId: r.id, columnId: col.id }); return; }
         }
@@ -218,13 +226,15 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
         if (interactive) interactive.click();
         else el.click();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [rows, table, refs.tableContainerRef]);
+    }, [allRenderedRows, table, refs.tableContainerRef]);
 
     const kbd = useKeyboardNav({
-        rowCount: rows.length,
+        rowCount: allRenderedRows.length,
         colCount: table.getVisibleLeafColumns().length,
         containerRef: refs.tableContainerRef,
-        scrollToRow: isVirtual ? (i: number) => rowVirtualizer.scrollToIndex(i) : undefined,
+        // The virtualizer counts only center rows; keyboard row indices are display
+        // indices (top band offsets them by topCount), so map back before scrolling.
+        scrollToRow: isVirtual ? (i: number) => rowVirtualizer.scrollToIndex(i - topCount) : undefined,
         pageSize: enablePagination ? state.pagination.pageSize : 10,
         onActivate: handleCellActivate,
     });
@@ -353,19 +363,23 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
             </GridHeaderRow>
         ));
 
-    const renderRow = (rowIndex: number) => {
-        const row = rows[rowIndex];
+    const renderRow = (row: Row<T> | undefined, displayIndex: number) => {
         if (!row) return null;
-        const isOdd = rowIndex % 2 === 1;
+        const isOdd = displayIndex % 2 === 1;
         const isSelected = table.getIsRowSelected?.(row.id) ?? false;
+        const pinned = row.getIsPinned?.();
         // Tree mode uses the expander for sub-rows, not a detail panel (mutually exclusive).
-        const isExpanded = !isTree && !!renderDetailPanel && (row.getIsExpanded?.() ?? false);
-        const rowClassName = getRowClassName?.({ row, index: rowIndex });
+        // Pinned rows live in a sticky band, so suppress their detail panel (deferred).
+        const isExpanded = !isTree && !!renderDetailPanel && (row.getIsExpanded?.() ?? false) && !pinned;
+        const rowClassName = getRowClassName?.({ row, index: displayIndex });
+        // Pinned rows float across pages, so report their true data position (stable) rather
+        // than a page-relative index that would change per page and collide with center rows.
+        const ariaRowIndex = pinned ? row.index + 2 : ariaRowStart + displayIndex + 2;
         return (
             <Fragment key={row.id}>
             <GridRow
                 role="row"
-                aria-rowindex={ariaRowStart + rowIndex + 2}
+                aria-rowindex={ariaRowIndex}
                 aria-level={isTree ? row.depth + 1 : undefined}
                 aria-expanded={isTree && (row.getCanExpand?.() ?? false) ? row.getIsExpanded() : undefined}
                 className={rowClassName}
@@ -401,11 +415,11 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
                             key={cell.id}
                             role="gridcell"
                             data-col-id={column.id}
-                            data-r={rowIndex + 1}
+                            data-r={displayIndex + 1}
                             data-c={colIndex}
-                            tabIndex={kbd.isFocused(rowIndex + 1, colIndex) ? 0 : -1}
+                            tabIndex={kbd.isFocused(displayIndex + 1, colIndex) ? 0 : -1}
                             aria-colindex={colIndex + 1}
-                            onFocus={() => kbd.setFocused({ row: rowIndex + 1, col: colIndex })}
+                            onFocus={() => kbd.setFocused({ row: displayIndex + 1, col: colIndex })}
                             onDoubleClick={editable ? (e) => { e.stopPropagation(); setEditing({ rowId: row.id, columnId: column.id }); } : undefined}
                             onClick={editable || cellEditing ? (e) => e.stopPropagation() : undefined}
                             className={cellClassName}
@@ -464,13 +478,18 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
             return (
                 <>
                     {paddingTop > 0 ? <div style={{ height: paddingTop }} /> : null}
-                    {virtualRows.map((vr) => renderRow(vr.index))}
+                    {virtualRows.map((vr) => renderRow(rows[vr.index], topCount + vr.index))}
                     {paddingBottom > 0 ? <div style={{ height: paddingBottom }} /> : null}
                 </>
             );
         }
-        return rows.map((_, i) => renderRow(i));
+        // Center rows start after the top band so their display index stays contiguous.
+        return rows.map((row, i) => renderRow(row, topCount + i));
     };
+
+    // A pinned band (top or bottom) reuses renderRow with the band's display-index offset.
+    const renderPinnedBand = (bandRows: Row<T>[], startDisplayIndex: number) =>
+        bandRows.map((row, i) => renderRow(row, startDisplayIndex + i));
 
     const renderAggregation = () => (
         <GridFooterRow role="row">
@@ -538,7 +557,19 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
             >
                 <div style={{ ...columnSizeVars, width: fitToScreen ? '100%' : totalSize, minWidth: totalSize } as CSSProperties}>
                     <GridHeader role="rowgroup">{renderHeader()}</GridHeader>
+                    {!loading && topRows.length ? (
+                        // Parks just under the always-sticky header.
+                        <GridPinnedTopBand role="rowgroup" style={{ top: 'var(--dt-header-height)' }}>
+                            {renderPinnedBand(topRows, 0)}
+                        </GridPinnedTopBand>
+                    ) : null}
                     <GridBody role="rowgroup">{renderBody()}</GridBody>
+                    {!loading && bottomRows.length ? (
+                        // Parks above the aggregation footer (when present), else at the viewport bottom.
+                        <GridPinnedBottomBand role="rowgroup" style={{ bottom: showAggregation ? 'var(--dt-row-height)' : 0 }}>
+                            {renderPinnedBand(bottomRows, topCount + rows.length)}
+                        </GridPinnedBottomBand>
+                    ) : null}
                     {showAggregation ? <div role="rowgroup">{renderAggregation()}</div> : null}
                 </div>
             </GridScroller>

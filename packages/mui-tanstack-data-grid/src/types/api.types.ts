@@ -1,5 +1,6 @@
 import type {
     ColumnPinningState,
+    RowPinningState,
     SortingState,
     ColumnOrderState,
     Row,
@@ -42,6 +43,7 @@ export interface SavedLayout {
     columnOrder: string[];
     columnSizing: Record<string, number>;
     columnPinning: ColumnPinningState;
+    rowPinning?: RowPinningState;
     pagination?: PaginationModel;
     globalFilter?: string;
     columnFilter?: ColumnFilterState;
@@ -74,6 +76,15 @@ export interface DataTableApi<T = any> {
         unpinColumn: (columnId: string) => void;
         setPinning: (pinning: ColumnPinningState) => void;
         resetColumnPinning: () => void;
+    };
+
+    rowPinning: {
+        pinRowTop: (rowId: string) => void;
+        pinRowBottom: (rowId: string) => void;
+        unpinRow: (rowId: string) => void;
+        setRowPinning: (pinning: RowPinningState) => void;
+        resetRowPinning: () => void;
+        getPinnedRowIds: () => RowPinningState;
     };
 
     columnResizing: {

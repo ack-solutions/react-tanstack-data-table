@@ -79,6 +79,9 @@ export const DEFAULT_LOCALE_TEXT: DataTableLocaleText = {
     collapseRow: 'Collapse row',
     rowActions: 'Row actions',
     autoFitColumn: 'Double-click to fit',
+    pinRowTop: 'Pin to top',
+    pinRowBottom: 'Pin to bottom',
+    unpinRow: 'Unpin row',
 
     // Column menu (header kebab)
     columnMenuLabel: 'Column menu',

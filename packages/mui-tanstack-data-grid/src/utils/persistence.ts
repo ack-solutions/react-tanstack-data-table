@@ -21,7 +21,12 @@ export interface PersistOptions {
     debounceMs?: number;
 }
 
-/** Restorable slices persisted by default — excludes transient selection/expansion. */
+/**
+ * Restorable slices persisted by default — excludes transient selection/expansion.
+ * `rowPinning` is also excluded: it stores row ids, so it's only safe to persist with a
+ * stable `getRowId` (the positional default would re-pin the wrong record after the data
+ * changes). Opt in via `persist.include` when you supply a stable `getRowId`.
+ */
 export const DEFAULT_PERSIST_KEYS: (keyof TableState)[] = [
     'sorting',
     'pagination',

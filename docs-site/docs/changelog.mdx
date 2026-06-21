@@ -16,6 +16,24 @@ format: each release groups changes as **Added** (new features), **Changed** (be
 
 ---
 
+## [1.14.0](https://www.npmjs.com/package/@ackplus/mui-tanstack-data-grid/v/1.14.0) — 2026-06-21
+
+Second remaining backlog slice. Backward compatible.
+
+### Added
+- **Row pinning.** Pin individual rows to the **top** and/or **bottom** so they stay visible while the
+  rest scroll — pinned rows survive sort, filter, and pagination. Enable with `enableRowPinning`; seed with
+  `initialState.rowPinning`; pin via `apiRef.current.rowPinning` (`pinRowTop` / `pinRowBottom` / `unpinRow`
+  / `setRowPinning` / `resetRowPinning` / `getPinnedRowIds`) or the exported **`createRowPinAction`** helper
+  (spread into `getRowActions`). Fires `onRowPinningChange`; included in `saveLayout`/`restoreLayout`.
+  **Client data mode only** (ignored under server pagination); top-level rows only (not tree sub-rows).
+  Persist with `persist.include: ['rowPinning']` **plus** a stable `getRowId`.
+
+### Docs
+- [Pinning](/features/pinning) gains a "Row pinning" section + live demo.
+
+---
+
 ## [1.13.0](https://www.npmjs.com/package/@ackplus/mui-tanstack-data-grid/v/1.13.0) — 2026-06-21
 
 First of the remaining backlog slices. Backward compatible.

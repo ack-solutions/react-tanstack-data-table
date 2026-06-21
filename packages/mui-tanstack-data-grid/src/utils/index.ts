@@ -6,5 +6,6 @@ export * from './logger';
 export * from './persistence';
 export * from './aggregation';
 export * from './clipboard';
+export * from './row-pin-action';
 export * from './export-utils';
 export * from './export';

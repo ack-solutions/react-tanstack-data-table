@@ -19,6 +19,7 @@ import {
     useReactTable,
     type ColumnOrderState,
     type ColumnPinningState,
+    type RowPinningState,
     type PaginationState,
     type SortingState,
     type Updater,
@@ -50,6 +51,7 @@ import {
     rowsToDelimitedText,
     writeToClipboard,
     generateRowId,
+    sanitizeRowPinning,
     withIdsDeep,
     useDebouncedFetch,
     runExport,
@@ -68,6 +70,7 @@ const DEFAULT_INITIAL_STATE = {
     expanded: {} as Record<string, boolean>,
     columnOrder: [] as ColumnOrderState,
     columnPinning: { left: [], right: [] } as ColumnPinningState,
+    rowPinning: { top: [], bottom: [] } as RowPinningState,
     columnVisibility: {} as Record<string, boolean>,
     columnSizing: {} as Record<string, number>,
     columnFilter: {
@@ -77,6 +80,10 @@ const DEFAULT_INITIAL_STATE = {
         pendingLogic: 'AND',
     } as ColumnFilterState,
 };
+
+// Stable empty array so derived.topRows/bottomRows keep a constant identity when
+// row pinning is off (avoids needless re-renders downstream).
+const EMPTY_ROWS: Row<any>[] = [];
 
 interface EngineUIState {
     sorting: SortingState;
@@ -88,6 +95,7 @@ interface EngineUIState {
     density: DataTableDensity;
     columnOrder: ColumnOrderState;
     columnPinning: ColumnPinningState;
+    rowPinning: RowPinningState;
     columnVisibility: Record<string, boolean>;
     columnSizing: Record<string, number>;
 }
@@ -103,6 +111,7 @@ type EngineAction =
     | { type: 'SET_DENSITY'; payload: DataTableDensity }
     | { type: 'SET_COLUMN_ORDER'; payload: ColumnOrderState }
     | { type: 'SET_COLUMN_PINNING'; payload: ColumnPinningState }
+    | { type: 'SET_ROW_PINNING'; payload: RowPinningState }
     | { type: 'SET_COLUMN_VISIBILITY'; payload: Record<string, boolean> }
     | { type: 'SET_COLUMN_SIZING'; payload: Record<string, number> }
     | { type: 'RESET_ALL'; payload: Partial<EngineUIState> }
@@ -130,6 +139,8 @@ function uiReducer(state: EngineUIState, action: EngineAction): EngineUIState {
             return { ...state, columnOrder: action.payload };
         case 'SET_COLUMN_PINNING':
             return { ...state, columnPinning: action.payload };
+        case 'SET_ROW_PINNING':
+            return { ...state, rowPinning: action.payload };
         case 'SET_COLUMN_VISIBILITY':
             return { ...state, columnVisibility: action.payload };
         case 'SET_COLUMN_SIZING':
@@ -177,6 +188,9 @@ export interface UseDataTableResult<T = any> {
         tableTotalRow: number;
         tableLoading: boolean;
         rows: ReturnType<ReturnType<typeof useReactTable<T>>['getRowModel']>['rows'];
+        /** Pinned-row bands (empty unless row pinning is active in client mode). */
+        topRows: ReturnType<ReturnType<typeof useReactTable<T>>['getRowModel']>['rows'];
+        bottomRows: ReturnType<ReturnType<typeof useReactTable<T>>['getRowModel']>['rows'];
         visibleLeafColumns: ReturnType<typeof useReactTable<T>>['getVisibleLeafColumns'];
         fitToScreen: boolean;
         density: DataTableDensity;
@@ -230,6 +244,8 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
 
         enableColumnPinning = false,
         onColumnPinningChange,
+        enableRowPinning = false,
+        onRowPinningChange,
 
         onColumnVisibilityChange,
         enableColumnVisibility = true,
@@ -320,6 +336,10 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
     const isServerPagination = paginationMode === 'server' || isServerMode;
     const isServerFiltering = filterMode === 'server' || isServerMode;
     const isServerSorting = sortingMode === 'server' || isServerMode;
+    // Row pinning is client-data-mode only: under manualPagination TanStack's
+    // getRow(id, true) searches only the loaded page and throws for off-page pinned
+    // ids. Hard-gate so server-mode grids simply ignore it.
+    const rowPinningActive = enableRowPinning && !isServerPagination;
 
     // Persistence: read the saved snapshot once on mount (storage is synchronous),
     // then seed the engine from it on top of the caller's `initialState`.
@@ -355,6 +375,12 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
         return { left: [...autoLeft, ...left], right: [...right, ...autoRight] };
     }, [initialState, persistedInitial, enableColumnPinning, enableRowSelection, expandEnabled, hasRowActions]);
 
+    // Row pinning has no special-column analog — just the caller's seed (persisted wins).
+    const initialRowPinning = useMemo<RowPinningState>(
+        () => persistedInitial.rowPinning ?? initialState?.rowPinning ?? DEFAULT_INITIAL_STATE.rowPinning,
+        [initialState, persistedInitial],
+    );
+
     const initialUIState: EngineUIState = useMemo(
         () => ({
             sorting: initialStateConfig.sorting ?? DEFAULT_INITIAL_STATE.sorting,
@@ -366,10 +392,11 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
             density: initialDensity,
             columnOrder: initialStateConfig.columnOrder ?? DEFAULT_INITIAL_STATE.columnOrder,
             columnPinning: initialColumnPinning,
+            rowPinning: initialRowPinning,
             columnVisibility: initialStateConfig.columnVisibility ?? DEFAULT_INITIAL_STATE.columnVisibility,
             columnSizing: initialStateConfig.columnSizing ?? DEFAULT_INITIAL_STATE.columnSizing,
         }),
-        [initialStateConfig, initialDensity, initialColumnPinning],
+        [initialStateConfig, initialDensity, initialColumnPinning, initialRowPinning],
     );
 
     const [ui, dispatch] = useReducer(uiReducer, initialUIState);
@@ -402,6 +429,8 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
     const onColumnFilterChangeRef = useLatestRef(onColumnFilterChange);
     const onColumnOrderChangeRef = useLatestRef(onColumnOrderChange);
     const onColumnPinningChangeRef = useLatestRef(onColumnPinningChange);
+    const onRowPinningChangeRef = useLatestRef(onRowPinningChange);
+    const rowPinningActiveRef = useLatestRef(rowPinningActive);
     const onColumnVisibilityChangeRef = useLatestRef(onColumnVisibilityChange);
     const onColumnSizingChangeRef = useLatestRef(onColumnSizingChange);
     const onSelectionChangeRef = useLatestRef(onSelectionChange);
@@ -435,6 +464,19 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
             getRowIdProp ? getRowIdProp(row, index) : generateRowId(row, index, idKey, parent?.id),
         [getRowIdProp, idKey],
     );
+
+    // Feed the table only pinned ids that exist in the current data — TanStack's
+    // getRow(id, true) throws for an unknown id, so a stale initialState/persisted pin
+    // or a deleted/swapped row would otherwise hard-crash the render. (Top-level ids;
+    // row pinning is top-level + client-mode only.)
+    const sanitizedRowPinning = useMemo<RowPinningState>(() => {
+        if (!rowPinningActive) return ui.rowPinning;
+        const top = ui.rowPinning.top ?? [];
+        const bottom = ui.rowPinning.bottom ?? [];
+        if (!top.length && !bottom.length) return ui.rowPinning;
+        const validIds = new Set<string>(tableData.map((row, i) => getRowId(row, i)));
+        return sanitizeRowPinning(ui.rowPinning, validIds);
+    }, [rowPinningActive, ui.rowPinning, tableData, getRowId]);
 
     const enhancedColumns = useMemo(() => {
         // Normalize user columns first (valueGetter → accessorFn, default type/format cells).
@@ -515,6 +557,7 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
             ...(expandEnabled ? { expanded: ui.expanded } : {}),
             ...(enableColumnReordering ? { columnOrder: ui.columnOrder } : {}),
             ...(enableColumnPinning ? { columnPinning: ui.columnPinning } : {}),
+            ...(rowPinningActive ? { rowPinning: sanitizedRowPinning } : {}),
             ...(enableColumnVisibility ? { columnVisibility: ui.columnVisibility } : {}),
             ...(enableColumnResizing ? { columnSizing: ui.columnSizing } : {}),
             ...(enableColumnFilter ? { columnFilter: ui.columnFilter } : {}),
@@ -614,6 +657,16 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
                   },
               }
             : {}),
+        ...(rowPinningActive
+            ? {
+                  onRowPinningChange: (u: any) => {
+                      const prev = uiRef.current.rowPinning;
+                      const next = typeof u === 'function' ? u(prev) : u;
+                      onRowPinningChangeRef.current?.(next);
+                      dispatch({ type: 'SET_ROW_PINNING', payload: next });
+                  },
+              }
+            : {}),
         ...(enableColumnVisibility
             ? {
                   onColumnVisibilityChange: (u: any) => {
@@ -657,6 +710,9 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
         columnResizeDirection: theme.direction,
 
         enableColumnPinning,
+        // Row pinning (client-data only). keepPinnedRows stays at its default (true) —
+        // that's what re-hydrates pinned rows by id so they survive sort/filter/pagination.
+        enableRowPinning: rowPinningActive,
         // Expansion: tree rows are expandable only when they have children; detail-panel
         // rows default to expandable (callers can override via getRowCanExpand).
         ...(expandEnabled
@@ -674,7 +730,11 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
         getRowId,
     });
 
-    const rows = table.getRowModel().rows;
+    // When row pinning is active, the scrolling/virtualized list is the CENTER rows
+    // (getRowModel still contains the pinned rows, so rendering it would double them).
+    const rows = rowPinningActive ? table.getCenterRows() : table.getRowModel().rows;
+    const topRows = rowPinningActive ? table.getTopRows() : EMPTY_ROWS;
+    const bottomRows = rowPinningActive ? table.getBottomRows() : EMPTY_ROWS;
 
     // Single source of truth for the "total rows" count: server modes use the pinned
     // rowCount option; client mode falls back (via the unset option) to the filtered,
@@ -767,12 +827,13 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
             columnSizing: live.columnSizing,
             columnOrder: live.columnOrder,
             columnPinning: live.columnPinning,
+            rowPinning: live.rowPinning,
         };
         const key = JSON.stringify(payload);
         if (key === lastSentRef.current) return;
         lastSentRef.current = key;
         cb(payload as Partial<TableState>);
-    }, [table, ui.sorting, ui.pagination, ui.globalFilter, ui.columnFilter, ui.columnVisibility, ui.columnSizing, ui.columnOrder, ui.columnPinning, onDataStateChangeRef]);
+    }, [table, ui.sorting, ui.pagination, ui.globalFilter, ui.columnFilter, ui.columnVisibility, ui.columnSizing, ui.columnOrder, ui.columnPinning, ui.rowPinning, onDataStateChangeRef]);
 
     // Persistence: write the whitelisted state to storage on change (debounced).
     const persistInclude = useMemo(() => persist?.include ?? DEFAULT_PERSIST_KEYS, [persist]);
@@ -792,6 +853,7 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
             columnSizing: live.columnSizing,
             columnOrder: live.columnOrder,
             columnPinning: live.columnPinning,
+            rowPinning: live.rowPinning,
             density: controlledDensity ?? uiRef.current.density,
             // ExpandedState is `true | Record` — persist faithfully (true = expand-all).
             expanded: live.expanded,
@@ -802,7 +864,7 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
         }, persist?.debounceMs ?? 300);
         return () => { if (persistTimerRef.current) clearTimeout(persistTimerRef.current); };
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [stateKey, persistStorage, persistInclude, table, ui.sorting, ui.pagination, ui.globalFilter, ui.columnFilter, ui.columnVisibility, ui.columnSizing, ui.columnOrder, ui.columnPinning, ui.density, persistsExpanded ? ui.expanded : 0]);
+    }, [stateKey, persistStorage, persistInclude, table, ui.sorting, ui.pagination, ui.globalFilter, ui.columnFilter, ui.columnVisibility, ui.columnSizing, ui.columnOrder, ui.columnPinning, ui.rowPinning, ui.density, persistsExpanded ? ui.expanded : 0]);
 
     const normalizeRefreshOptions = useCallback(
         (options?: boolean | DataRefreshOptions, fallbackReason = 'refresh') => {
@@ -853,8 +915,9 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
             columnSizing: initialStateConfig.columnSizing || {},
             columnOrder: initialStateConfig.columnOrder || [],
             columnPinning: initialColumnPinning,
+            rowPinning: initialRowPinning,
         };
-    }, [enablePagination, initialStateConfig, uiRef]);
+    }, [enablePagination, initialStateConfig, initialRowPinning, uiRef]);
 
     const resetAllAndReload = useCallback(() => {
         const payload = getResetPayload();
@@ -1081,6 +1144,7 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
                     columnOrder: s.columnOrder ?? [],
                     columnSizing: s.columnSizing ?? {},
                     columnPinning: s.columnPinning ?? { left: [], right: [] },
+                    rowPinning: s.rowPinning ?? { top: [], bottom: [] },
                     pagination: s.pagination ?? { pageIndex: 0, pageSize: 10 },
                     globalFilter: s.globalFilter ?? '',
                     columnFilter: s.columnFilter,
@@ -1100,6 +1164,10 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
                     dispatch({ type: 'SET_COLUMN_PINNING', payload: layout.columnPinning });
                     onColumnPinningChangeRef.current?.(layout.columnPinning);
                 }
+                if (layout.rowPinning) {
+                    dispatch({ type: 'SET_ROW_PINNING', payload: layout.rowPinning });
+                    onRowPinningChangeRef.current?.(layout.rowPinning);
+                }
                 if (layout.pagination && enablePagination) dispatch({ type: 'SET_PAGINATION', payload: layout.pagination });
                 if (layout.globalFilter !== undefined) dispatch({ type: 'SET_GLOBAL_FILTER_RESET_PAGE', payload: layout.globalFilter });
                 if (layout.columnFilter) dispatch({ type: 'SET_COLUMN_FILTER', payload: layout.columnFilter });
@@ -1109,6 +1177,7 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
                 dispatch({ type: 'SET_COLUMN_ORDER', payload: initialStateConfig.columnOrder || [] });
                 dispatch({ type: 'SET_COLUMN_SIZING', payload: initialStateConfig.columnSizing || {} });
                 dispatch({ type: 'SET_COLUMN_PINNING', payload: initialColumnPinning });
+                dispatch({ type: 'SET_ROW_PINNING', payload: initialRowPinning });
                 dispatch({ type: 'SET_GLOBAL_FILTER_RESET_PAGE', payload: '' });
                 dispatch({ type: 'SET_COLUMN_FILTER', payload: (initialStateConfig.columnFilter || DEFAULT_INITIAL_STATE.columnFilter) as ColumnFilterState });
                 dispatch({ type: 'SET_SORTING_RESET_PAGE', payload: initialStateConfig.sorting || [] });
@@ -1279,6 +1348,41 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
                 onColumnPinningChangeRef.current?.(next);
             },
             resetColumnPinning: () => dispatch({ type: 'SET_COLUMN_PINNING', payload: initialColumnPinning }),
+        };
+
+        // Row pinning — plain controlled array edits (mirrors columnPinning), so a row
+        // can only ever be in one band. No-ops unless rowPinningActive (client mode), so
+        // a server-mode grid neither writes dead state nor fires a spurious callback.
+        const applyRowPinning = (next: RowPinningState) => {
+            if (!rowPinningActiveRef.current) return;
+            dispatch({ type: 'SET_ROW_PINNING', payload: next });
+            onRowPinningChangeRef.current?.(next);
+        };
+        api.rowPinning = {
+            pinRowTop: (rowId) => {
+                const cur = uiRef.current.rowPinning;
+                applyRowPinning({
+                    top: [...(cur.top ?? []).filter((id) => id !== rowId), rowId],
+                    bottom: (cur.bottom ?? []).filter((id) => id !== rowId),
+                });
+            },
+            pinRowBottom: (rowId) => {
+                const cur = uiRef.current.rowPinning;
+                applyRowPinning({
+                    top: (cur.top ?? []).filter((id) => id !== rowId),
+                    bottom: [...(cur.bottom ?? []).filter((id) => id !== rowId), rowId],
+                });
+            },
+            unpinRow: (rowId) => {
+                const cur = uiRef.current.rowPinning;
+                applyRowPinning({
+                    top: (cur.top ?? []).filter((id) => id !== rowId),
+                    bottom: (cur.bottom ?? []).filter((id) => id !== rowId),
+                });
+            },
+            setRowPinning: (next) => applyRowPinning(next),
+            resetRowPinning: () => applyRowPinning(initialRowPinning),
+            getPinnedRowIds: () => uiRef.current.rowPinning,
         };
 
         // Auto-fit: measure the widest rendered content for a column and return a
@@ -1511,6 +1615,8 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
             tableTotalRow: effectiveTotalRow,
             tableLoading,
             rows,
+            topRows,
+            bottomRows,
             visibleLeafColumns: table.getVisibleLeafColumns,
             fitToScreen,
             density: controlledDensity ?? ui.density,

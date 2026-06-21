@@ -1,9 +1,10 @@
 ---
-title: Column pinning
+title: Pinning — columns & rows
+sidebar_label: Pinning
 ---
 
 import LiveDemo from '@site/src/demo/LiveDemo';
-import { PinningDemo } from '@site/src/demo/demos';
+import { PinningDemo, PinnedRowsDemo } from '@site/src/demo/demos';
 
 # Column pinning
 
@@ -81,3 +82,63 @@ Listen for changes with the `onColumnPinningChange` prop.
 
 > The detail-panel row from [row expansion](/features/expansion) always spans the full width and is not
 > affected by pinning.
+
+# Row pinning
+
+Pin individual **rows** to the top and/or bottom so they stay visible while the rest scroll — pinned rows
+survive sort, filter, and pagination. Turn it on with `enableRowPinning`. Below, *Liam* starts pinned to
+the top and *Zoe* to the bottom; use the **pushpin buttons** in each row's actions to pin/unpin.
+
+<LiveDemo>{() => <PinnedRowsDemo />}</LiveDemo>
+
+:::note Client data mode only
+Row pinning re-hydrates pinned rows by id from the full local dataset, so it requires **client-side data**
+(like [footer aggregation](/features/aggregation)). It's ignored under server pagination, where the engine
+holds only one page. Top-level rows only — tree sub-rows can't be pinned. Give rows a stable
+[`getRowId`](/features/server-side) so pins track the right record.
+:::
+
+## Pin rows
+
+There's no built-in pin button (the grid has no per-row gutter), so pin via the imperative
+[`apiRef`](/api/api-ref) or the exported **`createRowPinAction`** helper, which returns a
+[row action](/features/columns#row-actions) you spread into `getRowActions`:
+
+```tsx
+import { DataTable, createRowPinAction } from '@ackplus/mui-tanstack-data-grid';
+
+const apiRef = useRef(null);
+
+<DataTable
+  apiRef={apiRef}
+  columns={columns}
+  data={rows}
+  enableRowPinning
+  initialState={{ rowPinning: { top: ['1'], bottom: ['8'] } }}   // pre-pin by row id
+  getRowActions={(row) => [
+    createRowPinAction(apiRef, row, 'top'),     // label/icon flip to "Unpin" when pinned
+    createRowPinAction(apiRef, row, 'bottom'),
+  ]}
+/>;
+```
+
+Or drive it directly:
+
+```tsx
+apiRef.current?.rowPinning.pinRowTop('1');
+apiRef.current?.rowPinning.pinRowBottom('8');
+apiRef.current?.rowPinning.unpinRow('1');
+apiRef.current?.rowPinning.resetRowPinning();      // back to initialState.rowPinning
+apiRef.current?.rowPinning.getPinnedRowIds();       // { top: [...], bottom: [...] }
+```
+
+Listen with `onRowPinningChange`. Pins are included in `saveLayout()`/`restoreLayout()`; to persist them
+across reloads add `'rowPinning'` to `persist.include` **and** supply a stable `getRowId`.
+
+## Row-pinning props
+
+| Prop | Type | Description |
+| --- | --- | --- |
+| `enableRowPinning` | `boolean` | Enable top/bottom row pinning (client data mode only) |
+| `initialState.rowPinning` | `{ top?: string[]; bottom?: string[] }` | Initial (and reset) pinned row ids |
+| `onRowPinningChange` | `(state) => void` | Fires when row pinning changes |
