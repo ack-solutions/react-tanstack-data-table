@@ -70,7 +70,12 @@ export function getColumnType(column: Column<any, unknown>): ColumnType {
 }
 
 export function getCustomFilterComponent(column: Column<any, unknown>): any {
-    return column?.columnDef?.filterComponent || column?.columnDef?.editComponent;
+    return column?.columnDef?.filterComponent;
+}
+
+/** A column's custom cell editor (`columnDef.editComponent`), if any. */
+export function getCustomEditComponent(column: Column<any, unknown>): any {
+    return column?.columnDef?.editComponent;
 }
 
 export function getColumnOptions(column: Column<any, unknown>): any[] {

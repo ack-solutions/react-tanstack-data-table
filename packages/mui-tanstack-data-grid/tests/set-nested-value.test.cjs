@@ -2,7 +2,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { setNestedValue } = require('../dist/cjs/utils/table-helpers.js');
+const { setNestedValue, coerceEditValue } = require('../dist/cjs/utils/table-helpers.js');
 
 test('setNestedValue — plain key behaves like a shallow spread', () => {
     const row = { id: 1, name: 'Liam' };
@@ -28,6 +28,27 @@ test('setNestedValue — creates intermediate objects when missing', () => {
 
 test('setNestedValue — replaces a non-object intermediate rather than crashing', () => {
     assert.deepEqual(setNestedValue({ a: 5 }, 'a.b', 9), { a: { b: 9 } });
+});
+
+test('coerceEditValue — an untouched Date coerces to an EQUAL-but-new Date (so commit must compare by value, not ===)', () => {
+    const original = new Date('2026-06-12');
+    const coerced = coerceEditValue(original, 'date', original);
+    assert.ok(coerced instanceof Date);
+    assert.notEqual(coerced, original, 'a fresh Date object — reference compare would wrongly read as changed');
+    assert.equal(coerced.getTime(), original.getTime(), 'value is equal — commitRow skips it via getTime()');
+});
+
+test('coerceEditValue — number/date/empty/text coercion (shared by cell + row commit)', () => {
+    assert.equal(coerceEditValue('42', 'number', 0), 42, 'number string → Number');
+    assert.equal(coerceEditValue('', 'number', 5), null, 'empty number → null');
+    assert.equal(coerceEditValue('', 'date', new Date()), null, 'empty date → null');
+    assert.equal(coerceEditValue('', 'text', 'x'), '', 'empty text → empty string');
+    assert.equal(coerceEditValue('abc', 'text', 'x'), 'abc', 'text passes through');
+    assert.equal(coerceEditValue('a', undefined, 'x'), 'a', 'no type passes through');
+    // date stays a Date only when the original was a Date
+    const out = coerceEditValue('2026-06-12', 'date', new Date('2020-01-01'));
+    assert.ok(out instanceof Date, 'date with Date original → Date');
+    assert.equal(coerceEditValue('2026-06-12', 'date', '2020-01-01'), '2026-06-12', 'date with string original → string');
 });
 
 test('setNestedValue — preserves arrays in the path (index segment stays an array)', () => {

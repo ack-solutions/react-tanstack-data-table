@@ -53,6 +53,7 @@ import {
     writeToClipboard,
     generateRowId,
     sanitizeRowPinning,
+    createRowEditAction,
     withIdsDeep,
     useDebouncedFetch,
     runExport,
@@ -338,6 +339,10 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
     getRowActionsRef.current = props.getRowActions;
     const hasRowActions = !!props.getRowActions;
     const rowActionsDisplay = props.rowActionsDisplay;
+    // Whole-row edit mode forces an actions column (to host Edit/Save/Cancel) and
+    // wraps getRowActions so those actions show even with zero consumer wiring.
+    const editRowMode = props.editMode === 'row';
+    const actionsColumnEnabled = hasRowActions || editRowMode;
 
     // Merge the consumer's localeText over the English defaults (once).
     const localeText = useMemo(() => resolveLocaleText(props.localeText), [props.localeText]);
@@ -393,9 +398,9 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
         if (enableRowSelection && !pinned.has(DEFAULT_SELECTION_COLUMN_ID)) autoLeft.push(DEFAULT_SELECTION_COLUMN_ID);
         if (expandEnabled && !pinned.has(DEFAULT_EXPAND_COLUMN_ID)) autoLeft.push(DEFAULT_EXPAND_COLUMN_ID);
         const autoRight: string[] = [];
-        if (hasRowActions && !pinned.has(DEFAULT_ACTIONS_COLUMN_ID)) autoRight.push(DEFAULT_ACTIONS_COLUMN_ID);
+        if (actionsColumnEnabled && !pinned.has(DEFAULT_ACTIONS_COLUMN_ID)) autoRight.push(DEFAULT_ACTIONS_COLUMN_ID);
         return { left: [...autoLeft, ...left], right: [...right, ...autoRight] };
-    }, [initialState, persistedInitial, enableColumnPinning, enableRowSelection, expandEnabled, hasRowActions]);
+    }, [initialState, persistedInitial, enableColumnPinning, enableRowSelection, expandEnabled, hasRowActions, actionsColumnEnabled]);
 
     // Row pinning has no special-column analog — just the caller's seed (persisted wins).
     const initialRowPinning = useMemo<RowPinningState>(
@@ -531,12 +536,15 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
                 ...cols,
             ];
         }
-        if (hasRowActions) {
+        if (actionsColumnEnabled) {
             cols = [
                 ...cols,
                 createActionsColumn<T>({
                     ...(slotProps?.actionsColumn && typeof slotProps.actionsColumn === 'object' ? slotProps.actionsColumn : {}),
-                    getRowActions: (row: any) => getRowActionsRef.current!(row),
+                    // In row-edit mode prepend Edit/Save/Cancel (lazy api) to any consumer actions.
+                    getRowActions: editRowMode
+                        ? (row: any) => [...createRowEditAction(apiRef, row, localeText), ...(getRowActionsRef.current?.(row) ?? [])]
+                        : (row: any) => getRowActionsRef.current!(row),
                     display: rowActionsDisplay,
                     moreIcon: slots?.moreActionsIcon,
                 }),
@@ -547,7 +555,7 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
         // Depend on the two strings the columns actually consume — not the whole
         // localeText object, which is a fresh reference each render for inline
         // partial overrides and would otherwise rebuild every column.
-    }, [columns, expandEnabled, enableRowSelection, enableMultiRowSelection, hasRowActions, rowActionsDisplay, slotProps?.expandColumn, slotProps?.selectionColumn, slotProps?.actionsColumn, slots?.expandIcon, slots?.collapseIcon, slots?.moreActionsIcon, localeText.expandRow, localeText.collapseRow]);
+    }, [columns, expandEnabled, enableRowSelection, enableMultiRowSelection, hasRowActions, actionsColumnEnabled, editRowMode, rowActionsDisplay, slotProps?.expandColumn, slotProps?.selectionColumn, slotProps?.actionsColumn, slots?.expandIcon, slots?.collapseIcon, slots?.moreActionsIcon, localeText.expandRow, localeText.collapseRow, localeText.editRow, localeText.editSave, localeText.editCancel]);
 
     const fetchData = useEvent(
         async (overrides: Partial<TableState> = {}, options?: { delay?: number; meta?: DataFetchMeta }) => {
@@ -1068,6 +1076,9 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
     // --- stable API (created once, methods read latest via refs)
     if (!apiRef.current) {
         apiRef.current = {} as DataTableApi<T>;
+        // Pre-seed the editing namespace — whole-row edit state lives in GridView, which
+        // registers the handlers; pre-seeding keeps createRowEditAction's lazy reads safe.
+        apiRef.current.editing = {} as DataTableApi<T>['editing'];
     }
     const tableRef = useLatestRef(table);
 

@@ -82,6 +82,18 @@ export interface DataTableApi<T = any> {
         resetColumnPinning: () => void;
     };
 
+    /** Whole-row edit mode (`editMode: 'row'`). */
+    editing: {
+        /** Open a row for editing (all its editable cells). */
+        startRowEdit: (rowId: string) => void;
+        /** Commit the row being edited — fires `processRowUpdate` once. */
+        saveRowEdit: () => void;
+        /** Discard the row being edited. */
+        cancelRowEdit: () => void;
+        getEditingRowId: () => string | null;
+        isRowInEditMode: (rowId: string) => boolean;
+    };
+
     rowPinning: {
         pinRowTop: (rowId: string) => void;
         pinRowBottom: (rowId: string) => void;

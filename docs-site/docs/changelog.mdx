@@ -16,6 +16,29 @@ format: each release groups changes as **Added** (new features), **Changed** (be
 
 ---
 
+## [1.17.0](https://www.npmjs.com/package/@ackplus/mui-tanstack-data-grid/v/1.17.0) — 2026-06-21
+
+Editing gains whole-row mode and custom editors. Backward compatible (`editMode` defaults to `'cell'`).
+
+### Added
+- **Whole-row edit mode.** Set `editMode="row"` and a row's editable cells open **together** with explicit
+  **Save** / **Cancel** in the actions column (auto-added — no wiring needed); `processRowUpdate` fires
+  **once** per row with the fully-updated row. Start via double-click / Enter / `apiRef.current.editing.startRowEdit(id)`;
+  `onRowEditStart` / `onRowEditStop` callbacks; the actions are also exported as `createRowEditAction` to mix
+  with your own `getRowActions`.
+- **Custom cell editors.** `columnDef.editComponent` now actually drives the inline editor (it was previously
+  dead). It receives `DataTableEditComponentProps` (`value` / `onChange` / `onCommit` / `onCancel` / `row` /
+  `column` / `align` / `editMode`) and works in both cell and row mode.
+
+### Changed
+- `columnDef.editComponent` is no longer a fallback for the column **filter** input — use `filterComponent`
+  for that. (No known consumers relied on the fallback.)
+
+### Docs
+- [Editing](/features/editing) documents row mode, the `editComponent` editor, and `apiRef.current.editing`.
+
+---
+
 ## [1.16.1](https://www.npmjs.com/package/@ackplus/mui-tanstack-data-grid/v/1.16.1) — 2026-06-21
 
 Inline-editing fixes + much fuller docs.

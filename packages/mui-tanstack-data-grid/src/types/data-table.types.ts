@@ -220,6 +220,16 @@ export interface DataTableProps<T> {
     processRowUpdate?: (newRow: T, oldRow: T) => T | Promise<T>;
     /** Called when `processRowUpdate` throws/rejects (the edit is reverted). */
     onProcessRowUpdateError?: (error: unknown) => void;
+    /**
+     * `'cell'` (default) edits one cell at a time (commit on Enter/blur). `'row'` opens
+     * all of a row's editable cells together with explicit **Save** / **Cancel** in the
+     * actions column; `processRowUpdate` then fires **once** with the fully-updated row.
+     */
+    editMode?: 'cell' | 'row';
+    /** Row entered edit mode (`editMode: 'row'`). */
+    onRowEditStart?: (params: { row: Row<T> }) => void;
+    /** Row left edit mode — `reason` is `'save'` or `'cancel'`. */
+    onRowEditStop?: (params: { row: Row<T>; reason: 'save' | 'cancel' }) => void;
 
     // ── Bulk actions ──────────────────────────────────────────────────────
     enableBulkActions?: boolean;

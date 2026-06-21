@@ -79,6 +79,9 @@ export interface DataTableLocaleText {
     pinRowTop: string;
     pinRowBottom: string;
     unpinRow: string;
+    editRow: string;
+    editSave: string;
+    editCancel: string;
 
     // Column menu (header kebab)
     columnMenuLabel: string;

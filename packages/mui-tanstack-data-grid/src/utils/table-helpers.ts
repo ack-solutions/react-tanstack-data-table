@@ -46,6 +46,19 @@ export function setNestedValue<T extends Record<string, any>>(obj: T, path: stri
     return next;
 }
 
+/**
+ * Coerce a raw editor value to the column's type on commit. Empty → `null` for
+ * number/date (else the empty string); numbers via `Number`; a date stays a `Date`
+ * only when the original value was a `Date` (so a date column doesn't mix types).
+ * Shared by single-cell commit and whole-row Save so both coerce identically.
+ */
+export function coerceEditValue(value: any, type: string | undefined, originalValue: any): any {
+    if (value === '' || value == null) return type === 'number' || type === 'date' ? null : value;
+    if (type === 'number') return Number(value);
+    if (type === 'date') return originalValue instanceof Date ? new Date(value) : value;
+    return value;
+}
+
 /** Default value formatting by column type. */
 export function formatCellValue(value: any, type: string): string {
     if (value === null || value === undefined) return '-';

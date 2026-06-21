@@ -94,6 +94,9 @@ export const DEFAULT_LOCALE_TEXT: DataTableLocaleText = {
     pinRowTop: 'Pin to top',
     pinRowBottom: 'Pin to bottom',
     unpinRow: 'Unpin row',
+    editRow: 'Edit',
+    editSave: 'Save',
+    editCancel: 'Cancel',
 
     // Column menu (header kebab)
     columnMenuLabel: 'Column menu',

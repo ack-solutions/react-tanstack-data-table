@@ -1,4 +1,4 @@
-import type { ColumnDef, ColumnDefBase, RowData, Column } from '@tanstack/react-table';
+import type { ColumnDef, ColumnDefBase, RowData, Column, Row } from '@tanstack/react-table';
 import type { ComponentType } from 'react';
 
 import type { ColumnFilterRule } from './filter.types';
@@ -24,6 +24,28 @@ interface ColumnInputProps<TData extends RowData, TValue> {
     onChange: (value: any) => void;
     filter: ColumnFilterRule;
     column: Column<TData, TValue>;
+}
+
+/**
+ * Props a custom cell editor (`columnDef.editComponent`) receives. In **cell** edit
+ * mode call `onCommit(value)` to save (or `onCancel()` to discard); in **row** edit
+ * mode push every change up with `onChange(value)` — the row's Save button commits
+ * the buffered values together.
+ */
+export interface DataTableEditComponentProps<TData extends RowData = any, TValue = unknown> {
+    value: any;
+    /** Buffer a change (row mode) — also fine to call in cell mode before onCommit. */
+    onChange: (value: any) => void;
+    /** Commit this cell (cell mode). */
+    onCommit: (value: any) => void;
+    /** Discard the edit. */
+    onCancel: () => void;
+    row: Row<TData>;
+    column: Column<TData, TValue>;
+    align: 'left' | 'center' | 'right';
+    editMode: 'cell' | 'row';
+    /** Focus this editor on mount — in row mode, only the row's first editable cell. */
+    autoFocus: boolean;
 }
 
 /**
@@ -74,7 +96,7 @@ declare module '@tanstack/react-table' {
         exportValue?: (context: ColumnExportContext<TData, TValue>) => any;
         exportFormat?: 'auto' | 'string' | 'number' | 'boolean' | 'json' | 'date' | ((context: ColumnExportContext<TData, TValue>) => any);
         // Custom inputs
-        editComponent?: ComponentType<ColumnInputProps<TData, TValue>>;
+        editComponent?: ComponentType<DataTableEditComponentProps<TData, TValue>>;
         filterComponent?: ComponentType<ColumnInputProps<TData, TValue>>;
     }
 }

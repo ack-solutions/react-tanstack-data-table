@@ -4,7 +4,7 @@ sidebar_label: Editing
 ---
 
 import LiveDemo from '@site/src/demo/LiveDemo';
-import { EditingDemo } from '@site/src/demo/demos';
+import { EditingDemo, RowEditingDemo } from '@site/src/demo/demos';
 
 # Inline cell editing
 
@@ -104,6 +104,51 @@ apiRef.current?.data.getAllData();                                 // read all r
 apiRef.current?.data.updateMultipleRows([{ rowId, data: {…} }]);   // batch
 ```
 
+## Whole-row edit mode
+
+Set `editMode="row"` and a row's editable cells open **together**, with explicit **Save** / **Cancel** in
+the actions column (added automatically — no wiring). `processRowUpdate` fires **once** with the
+fully-updated row:
+
+<LiveDemo>{() => <RowEditingDemo />}</LiveDemo>
+
+```tsx
+<DataTable
+  columns={columns}
+  data={rows}
+  editMode="row"
+  processRowUpdate={(newRow, oldRow) => save(newRow)}   // called once per row on Save
+  onRowEditStart={({ row }) => {}}
+  onRowEditStop={({ row, reason }) => {}}               // reason: 'save' | 'cancel'
+/>
+```
+
+Start a row edit by clicking its **Edit** action, double-clicking an editable cell, pressing **Enter**, or
+`apiRef.current.editing.startRowEdit(rowId)`. **Enter** saves the row, **Escape** cancels. Drive it from
+`apiRef.current.editing` (`startRowEdit` / `saveRowEdit` / `cancelRowEdit` / `getEditingRowId` /
+`isRowInEditMode`). The Edit/Save/Cancel actions are also exported as `createRowEditAction(apiRef, row)` to
+combine with your own `getRowActions`. (Client-data, top-level rows; a page change cancels the in-flight edit.)
+
+## Custom cell editors
+
+Render your own editor for a column with `editComponent`. It receives `DataTableEditComponentProps` and works
+in both cell and row mode — call `onCommit(value)` to save (cell mode) or `onChange(value)` to buffer
+(row mode):
+
+```tsx
+import { Rating } from '@mui/material';
+
+const columns = [
+  { id: 'score', header: 'Score', accessorKey: 'score', editable: true,
+    editComponent: ({ value, onChange, onCommit, editMode }) => (
+      <Rating
+        value={Number(value) || 0}
+        onChange={(_, v) => (editMode === 'row' ? onChange(v) : onCommit(v))}
+      />
+    ) },
+];
+```
+
 ## Type-aware editors
 
 | Column `type` | Editor |
@@ -123,7 +168,6 @@ apiRef.current?.data.updateMultipleRows([{ rowId, data: {…} }]);   // batch
 | `onProcessRowUpdateError` | `(error) => void` | Fires when `processRowUpdate` throws/rejects |
 
 :::note
-Editing is single-cell, and in [tree data](/features/tree-data) only top-level rows are editable. **Whole-row
-edit mode** (open a row's cells together with explicit Save / Cancel) and **custom cell editors** are the next
-editing enhancements.
+In [tree data](/features/tree-data) only top-level rows are editable. Whole-row edit mode is client-data +
+top-level rows (not virtualized); a page change cancels the in-flight row edit.
 :::

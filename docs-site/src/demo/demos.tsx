@@ -544,6 +544,22 @@ export function EditingDemo() {
     );
 }
 
+export function RowEditingDemo() {
+    // editMode="row": click the Edit (pencil) action → all editable cells open together;
+    // Save (✓) commits the whole row at once, Cancel (✕) discards. No extra wiring needed.
+    return (
+        <DataTable
+            columns={editableColumns}
+            data={makeUsers(6)}
+            editMode="row"
+            enableColumnPinning
+            enablePagination
+            initialState={page5}
+            processRowUpdate={(newRow) => newRow}
+        />
+    );
+}
+
 interface FileNode {
     id: number;
     name: string;

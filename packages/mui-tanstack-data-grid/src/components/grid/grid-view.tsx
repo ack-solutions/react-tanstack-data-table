@@ -9,7 +9,7 @@
 import { Box, Skeleton, TablePagination } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { flexRender, type Column, type Row } from '@tanstack/react-table';
-import { Fragment, useCallback, useMemo, useState, type CSSProperties, type ReactNode } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 
 import { SortAscFeatherIcon, SortDescFeatherIcon } from '../icons';
 import { useDataTableTokens } from '../../theme/use-data-table-tokens';
@@ -22,7 +22,7 @@ import { EditCell } from './edit-cell';
 import { ColumnMenu } from './column-menu';
 import { GridAnnouncer } from './grid-announcer';
 import { computeColumnTotals, formatAggregation } from '../../utils/aggregation';
-import { setNestedValue } from '../../utils/table-helpers';
+import { setNestedValue, coerceEditValue } from '../../utils/table-helpers';
 import { LocaleTextProvider } from '../../locale/locale-context';
 import { DataTableToolbar } from '../toolbar/data-table-toolbar';
 import { BulkActionsToolbar } from '../toolbar/bulk-actions-toolbar';
@@ -123,6 +123,9 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
         slots,
         processRowUpdate,
         onProcessRowUpdateError,
+        editMode = 'cell',
+        onRowEditStart,
+        onRowEditStop,
     } = props;
 
     const showToolbar = !!(enableGlobalFilter || enableColumnFilter || enableColumnVisibility || enableColumnPinning || enableExport || enableDensitySelector || enableReset || enableRefresh || enableSavedViews || extraFilter);
@@ -230,6 +233,87 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
         }
     };
 
+    // ── Whole-row edit mode (editMode: 'row') ──────────────────────────────
+    // pendingValues are RAW (uncoerced) per columnId — coerced at Save, like cell mode.
+    const [rowEditing, setRowEditing] = useState<{ rowId: string; pendingValues: Record<string, any> } | null>(null);
+    const rowEditingRef = useRef(rowEditing);
+    rowEditingRef.current = rowEditing;
+
+    const enterRowEdit = (rowObj: any) => {
+        if (!rowObj || (rowObj.depth ?? 0) > 0) return;
+        const pendingValues: Record<string, any> = {};
+        for (const cell of rowObj.getVisibleCells()) {
+            if (isColEditable(cell.column, rowObj)) pendingValues[cell.column.id] = rowObj.getValue(cell.column.id);
+        }
+        if (Object.keys(pendingValues).length === 0) return; // nothing editable → no-op
+        setEditing(null); // leave any single-cell edit
+        setRowEditing({ rowId: rowObj.id, pendingValues });
+        onRowEditStart?.({ row: rowObj });
+    };
+    // Latest enterRowEdit for the memoized handleCellActivate to call without going stale.
+    const enterRowEditRef = useRef(enterRowEdit);
+    enterRowEditRef.current = enterRowEdit;
+
+    const cancelRowEdit = () => {
+        const re = rowEditingRef.current;
+        setRowEditing(null);
+        if (re) {
+            const rowObj = allRenderedRows.find((r) => r.id === re.rowId);
+            if (rowObj) onRowEditStop?.({ row: rowObj as any, reason: 'cancel' });
+        }
+    };
+
+    const commitRow = () => {
+        const re = rowEditingRef.current;
+        if (!re) return;
+        const rowObj = allRenderedRows.find((r) => r.id === re.rowId);
+        if (!rowObj) { setRowEditing(null); return; }
+        const oldRow = rowObj.original;
+        let newRow: any = oldRow;
+        let dirty = false;
+        for (const [colId, raw] of Object.entries(re.pendingValues)) {
+            const col = table.getColumn(colId);
+            const original = rowObj.getValue(colId);
+            // Untouched fields hold the original (same object) — skip before coercing so a
+            // date column (coerce makes a fresh Date) doesn't read as a phantom change.
+            if (raw === original) continue;
+            const coerced = coerceEditValue(raw, (col?.columnDef as any)?.type, original);
+            const sameValue = coerced === original || (coerced instanceof Date && original instanceof Date && coerced.getTime() === original.getTime());
+            if (sameValue) continue;
+            const field = ((col?.columnDef as any)?.accessorKey as string) ?? colId;
+            newRow = setNestedValue(newRow, field, coerced);
+            dirty = true;
+        }
+        const finishStop = () => { setRowEditing(null); onRowEditStop?.({ row: rowObj as any, reason: 'save' }); };
+        if (!dirty) { finishStop(); return; }
+        if (processRowUpdate) {
+            Promise.resolve(processRowUpdate(newRow, oldRow))
+                .then((result) => { engine.api.data.updateRow(rowObj.id, (result ?? newRow) as any); finishStop(); })
+                .catch((err) => onProcessRowUpdateError?.(err)); // keep the row in edit on reject
+        } else {
+            engine.api.data.updateRow(rowObj.id, newRow as any);
+            finishStop();
+        }
+    };
+
+    // Register the api.editing handlers (engine pre-seeds the namespace). No deps → each
+    // render re-points to fresh closures; getters read the ref so they're always current.
+    useEffect(() => {
+        const ed = refs.apiRef.current?.editing;
+        if (!ed) return;
+        ed.startRowEdit = (rowId: string) => { const r = allRenderedRows.find((x) => x.id === rowId); if (r) enterRowEdit(r); };
+        ed.saveRowEdit = () => commitRow();
+        ed.cancelRowEdit = () => cancelRowEdit();
+        ed.getEditingRowId = () => rowEditingRef.current?.rowId ?? null;
+        ed.isRowInEditMode = (rowId: string) => rowEditingRef.current?.rowId === rowId;
+    });
+
+    // A page change can move the editing row off-page — cancel the in-flight row edit.
+    useEffect(() => {
+        if (rowEditingRef.current) cancelRowEdit();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [state.pagination.pageIndex]);
+
     // Keyboard navigation (WCAG grid): roving tabindex over header(row 0) + data rows.
     // Enter/F2 on an editable cell starts editing; otherwise it activates the cell's control.
     const handleCellActivate = useCallback((cell: FocusedCell) => {
@@ -237,7 +321,11 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
             // data-r is the monotonic display index (+1), so index the combined band array.
             const r = allRenderedRows[cell.row - 1];
             const col = table.getVisibleLeafColumns()[cell.col];
-            if (r && col && isColEditable(col, r)) { setEditing({ rowId: r.id, columnId: col.id }); return; }
+            if (r && col && isColEditable(col, r)) {
+                if (editMode === 'row') enterRowEditRef.current(r);
+                else setEditing({ rowId: r.id, columnId: col.id });
+                return;
+            }
         }
         const container = refs.tableContainerRef.current;
         const el = container?.querySelector<HTMLElement>(`[data-r="${cell.row}"][data-c="${cell.col}"]`);
@@ -246,7 +334,7 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
         if (interactive) interactive.click();
         else el.click();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [allRenderedRows, table, refs.tableContainerRef]);
+    }, [allRenderedRows, table, refs.tableContainerRef, editMode]);
 
     const kbd = useKeyboardNav({
         rowCount: allRenderedRows.length,
@@ -404,6 +492,11 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
         // Pinned rows live in a sticky band, so suppress their detail panel (deferred).
         const isExpanded = !isTree && !!renderDetailPanel && (row.getIsExpanded?.() ?? false) && !pinned;
         const rowClassName = getRowClassName?.({ row, index: displayIndex });
+        // Whole-row edit: this row is open, and its first editable cell takes initial focus.
+        const isEditingRow = !!rowEditing && rowEditing.rowId === row.id;
+        const firstEditableColId = isEditingRow
+            ? row.getVisibleCells().find((c) => isColEditable(c.column, row))?.column.id
+            : undefined;
         // Pinned rows float across pages, so report their true data position (stable) rather
         // than a page-relative index that would change per page and collide with center rows.
         // +1 is 1-based; +headerRowCount skips the (possibly multiple, grouped) header rows.
@@ -443,6 +536,8 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
                     );
                     const editable = isColEditable(column, row);
                     const cellEditing = !!editing && editing.rowId === row.id && editing.columnId === column.id;
+                    const cellInRowEdit = isEditingRow && editable;
+                    const cellOpen = cellEditing || cellInRowEdit;
                     return (
                         <GridCell
                             key={cell.id}
@@ -453,28 +548,33 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
                             tabIndex={kbd.isFocused(displayIndex + 1, colIndex) ? 0 : -1}
                             aria-colindex={colIndex + 1}
                             onFocus={() => kbd.setFocused({ row: displayIndex + 1, col: colIndex })}
-                            onDoubleClick={editable ? (e) => { e.stopPropagation(); setEditing({ rowId: row.id, columnId: column.id }); } : undefined}
-                            onClick={editable || cellEditing ? (e) => e.stopPropagation() : undefined}
+                            onDoubleClick={editable ? (e) => { e.stopPropagation(); if (editMode === 'row') enterRowEdit(row); else setEditing({ rowId: row.id, columnId: column.id }); } : undefined}
+                            onClick={editable || cellOpen ? (e) => e.stopPropagation() : undefined}
                             className={cellClassName}
                             style={{
                                 flex: flexFor(column),
                                 width: `var(--col-${column.id}-size)`,
-                                justifyContent: cellEditing ? 'stretch' : align === 'right' ? 'flex-end' : align === 'center' ? 'center' : 'flex-start',
-                                cursor: editable && !cellEditing ? 'text' : undefined,
+                                justifyContent: cellOpen ? 'stretch' : align === 'right' ? 'flex-end' : align === 'center' ? 'center' : 'flex-start',
+                                cursor: editable && !cellOpen ? 'text' : undefined,
                                 ...getPinnedStyle(column, isRtl),
                                 // Edit mode: a clean full-cell ring (no stray underline), after
                                 // getPinnedStyle so it wins over a pinned cell's shadow.
-                                ...(cellEditing ? { boxShadow: 'inset 0 0 0 2px var(--dt-resize-handle)', backgroundColor: 'var(--dt-row-bg)' } : {}),
+                                ...(cellOpen ? { boxShadow: 'inset 0 0 0 2px var(--dt-resize-handle)', backgroundColor: 'var(--dt-row-bg)' } : {}),
                             }}
                         >
-                            {cellEditing ? (
+                            {cellOpen ? (
                                 <EditCell
                                     column={column}
                                     row={row}
                                     initialValue={value}
                                     align={align}
                                     onCommit={(v) => commitEdit(row, column, v)}
-                                    onCancel={() => setEditing(null)}
+                                    onCancel={cellInRowEdit ? cancelRowEdit : () => setEditing(null)}
+                                    editMode={cellInRowEdit ? 'row' : 'cell'}
+                                    value={cellInRowEdit ? rowEditing!.pendingValues[column.id] : undefined}
+                                    onChange={cellInRowEdit ? (v) => setRowEditing((re) => (re ? { ...re, pendingValues: { ...re.pendingValues, [column.id]: v } } : re)) : undefined}
+                                    onEnter={cellInRowEdit ? commitRow : undefined}
+                                    autoFocusEditor={cellInRowEdit ? column.id === firstEditableColId : true}
                                 />
                             ) : (
                                 <Box component="span" data-cell-content sx={{ minWidth: 0, width: '100%', overflow: 'hidden', ...textWrapSx(wrapText), textAlign: logicalTextAlign(align), ...(isTree && column.id === firstDataColId && row.depth ? { marginInlineStart: `${row.depth * 16}px` } : {}) }}>
