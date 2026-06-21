@@ -81,7 +81,9 @@ export function EditCell<T>({ column, row, initialValue, align, onCommit, onCanc
                 variant="standard"
                 disableUnderline
                 autoFocus={autoFocusEditor}
-                open={!isRowMode}
+                // Cell mode auto-opens (controlled) and commits on choice. Row mode must be
+                // UNCONTROLLED so a click opens it — a controlled `open={false}` never would.
+                {...(isRowMode ? {} : { open: true })}
                 fullWidth
                 value={shown}
                 onChange={(e) => { if (isRowMode) update(e.target.value); else { setLocalValue(e.target.value); commitValue(e.target.value); } }}

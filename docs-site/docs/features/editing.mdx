@@ -112,22 +112,43 @@ fully-updated row:
 
 <LiveDemo>{() => <RowEditingDemo />}</LiveDemo>
 
+Click the **Edit** (pencil) action on a row → every editable cell becomes an input together. Text/number/date
+columns show a field; a `type: 'select'` or `type: 'boolean'` column shows a **dropdown — click it to choose**.
+Then **Save** (✓) commits the whole row at once, or **Cancel** (✕) discards it.
+
 ```tsx
+const columns = [
+  { id: 'name',  header: 'Name',  accessorKey: 'name',  editable: true },
+  { id: 'email', header: 'Email', accessorKey: 'email', editable: true },
+  // a dropdown editor in the row — opens on click, the choice is saved with the row
+  { id: 'role',  header: 'Role',  accessorKey: 'role',  editable: true,
+    type: 'select', options: [
+      { label: 'Admin',  value: 'Admin' },
+      { label: 'Editor', value: 'Editor' },
+      { label: 'Viewer', value: 'Viewer' },
+    ] },
+];
+
 <DataTable
   columns={columns}
   data={rows}
-  editMode="row"
-  processRowUpdate={(newRow, oldRow) => save(newRow)}   // called once per row on Save
+  editMode="row"                                         // ← the only required change
+  processRowUpdate={(newRow, oldRow) => save(newRow)}    // called ONCE per row, on Save
   onRowEditStart={({ row }) => {}}
-  onRowEditStop={({ row, reason }) => {}}               // reason: 'save' | 'cancel'
-/>
+  onRowEditStop={({ row, reason }) => {}}                // reason: 'save' | 'cancel'
+/>;
 ```
 
-Start a row edit by clicking its **Edit** action, double-clicking an editable cell, pressing **Enter**, or
-`apiRef.current.editing.startRowEdit(rowId)`. **Enter** saves the row, **Escape** cancels. Drive it from
-`apiRef.current.editing` (`startRowEdit` / `saveRowEdit` / `cancelRowEdit` / `getEditingRowId` /
-`isRowInEditMode`). The Edit/Save/Cancel actions are also exported as `createRowEditAction(apiRef, row)` to
-combine with your own `getRowActions`. (Client-data, top-level rows; a page change cancels the in-flight edit.)
+The Edit / Save / Cancel actions are added to the actions column **automatically** — no `getRowActions` needed.
+You can also start/stop a row edit from [`apiRef`](/api/api-ref): `apiRef.current.editing.startRowEdit(rowId)`
+/ `saveRowEdit()` / `cancelRowEdit()` / `getEditingRowId()` / `isRowInEditMode(rowId)`. Other ways to start:
+double-click a cell, or focus a cell and press **Enter**; **Enter** saves the open row, **Escape** cancels. To
+mix the edit actions with your own, spread the exported `createRowEditAction(apiRef, row)` into `getRowActions`.
+
+:::note
+Row edit mode is client-data and top-level rows only (not under virtualization or in tree sub-rows). A page
+change cancels the in-flight edit.
+:::
 
 ## Custom cell editors
 

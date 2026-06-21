@@ -16,6 +16,16 @@ format: each release groups changes as **Added** (new features), **Changed** (be
 
 ---
 
+## [1.17.1](https://www.npmjs.com/package/@ackplus/mui-tanstack-data-grid/v/1.17.1) — 2026-06-21
+
+### Fixed
+- **Select/boolean editors in whole-row edit mode** wouldn't open — the dropdown was rendered with a
+  controlled `open={false}`, so clicking it did nothing. It's now uncontrolled in row mode (click to open,
+  pick to buffer, Save commits with the row). The [Editing](/features/editing#whole-row-edit-mode) row-mode
+  example now shows a `select` column end-to-end.
+
+---
+
 ## [1.17.0](https://www.npmjs.com/package/@ackplus/mui-tanstack-data-grid/v/1.17.0) — 2026-06-21
 
 Editing gains whole-row mode and custom editors. Backward compatible (`editMode` defaults to `'cell'`).
