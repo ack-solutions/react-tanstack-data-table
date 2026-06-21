@@ -22,6 +22,7 @@ import { EditCell } from './edit-cell';
 import { ColumnMenu } from './column-menu';
 import { GridAnnouncer } from './grid-announcer';
 import { computeColumnTotals, formatAggregation } from '../../utils/aggregation';
+import { setNestedValue } from '../../utils/table-helpers';
 import { LocaleTextProvider } from '../../locale/locale-context';
 import { DataTableToolbar } from '../toolbar/data-table-toolbar';
 import { BulkActionsToolbar } from '../toolbar/bulk-actions-toolbar';
@@ -215,10 +216,11 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
         setEditing(null);
         // Write to the column's accessor field (falling back to id) and compare via the
         // accessor, so columns where id !== accessorKey commit to the right field.
+        // setNestedValue handles dot-path accessorKeys (e.g. 'address.city') by deep-setting.
         const field = ((column.columnDef as any).accessorKey as string) ?? column.id;
         if (value === rowObj.getValue(column.id)) return;
         const oldRow = rowObj.original;
-        const newRow = { ...oldRow, [field]: value };
+        const newRow = setNestedValue(oldRow, field, value);
         if (processRowUpdate) {
             Promise.resolve(processRowUpdate(newRow, oldRow))
                 .then((result) => engine.api.data.updateRow(rowObj.id, (result ?? newRow) as any))
@@ -460,6 +462,9 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
                                 justifyContent: cellEditing ? 'stretch' : align === 'right' ? 'flex-end' : align === 'center' ? 'center' : 'flex-start',
                                 cursor: editable && !cellEditing ? 'text' : undefined,
                                 ...getPinnedStyle(column, isRtl),
+                                // Edit mode: a clean full-cell ring (no stray underline), after
+                                // getPinnedStyle so it wins over a pinned cell's shadow.
+                                ...(cellEditing ? { boxShadow: 'inset 0 0 0 2px var(--dt-resize-handle)', backgroundColor: 'var(--dt-row-bg)' } : {}),
                             }}
                         >
                             {cellEditing ? (

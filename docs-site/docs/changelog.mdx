@@ -16,6 +16,24 @@ format: each release groups changes as **Added** (new features), **Changed** (be
 
 ---
 
+## [1.16.1](https://www.npmjs.com/package/@ackplus/mui-tanstack-data-grid/v/1.16.1) — 2026-06-21
+
+Inline-editing fixes + much fuller docs.
+
+### Fixed
+- **Nested-key edits.** Committing an edit to a dot-nested `accessorKey` (e.g. `address.city`) now
+  **deep-sets** the nested field instead of creating a stray flat `"address.city"` key, so the change
+  actually takes effect. New `setNestedValue` util (immutable, clones only along the path).
+- **Editor UI.** Dropped the inline editor's underline (it rendered as a stray line across the middle of the
+  cell); the cell now shows a clean full-cell ring while editing.
+
+### Docs
+- [Editing](/features/editing) is rewritten to cover getting the updated data (`processRowUpdate`), which
+  field is written (accessorKey / nested keys / row identity), server-side persistence, validation, the
+  imperative `apiRef.current.data` API, and the type-aware editors.
+
+---
+
 ## [1.16.0](https://www.npmjs.com/package/@ackplus/mui-tanstack-data-grid/v/1.16.0) — 2026-06-21
 
 Last remaining backlog slice — two rendering-correctness fixes. Backward compatible.

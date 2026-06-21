@@ -47,6 +47,7 @@ export function EditCell<T>({ column, initialValue, align, onCommit, onCancel }:
             <Select
                 size="small"
                 variant="standard"
+                disableUnderline
                 autoFocus
                 open
                 fullWidth
@@ -74,9 +75,12 @@ export function EditCell<T>({ column, initialValue, align, onCommit, onCancel }:
             onChange={(e) => setValue(e.target.value)}
             onKeyDown={onKeyDown}
             onBlur={() => commitValue(value)}
+            // No underline — the editing cell shows a full-cell ring instead (a stray
+            // mid-cell baseline line reads as a rendering glitch). Fill the cell height.
+            InputProps={{ disableUnderline: true }}
             // Logical alignment (matches the display cell) so it doesn't jump under RTL.
             inputProps={{ style: { textAlign: align === 'center' ? 'center' : align === 'right' ? 'end' : 'start', padding: 0, fontSize: 'inherit' } }}
-            sx={{ '& .MuiInput-underline:before': { borderColor: 'var(--dt-resize-handle)' } }}
+            sx={{ '& .MuiInputBase-root': { height: '100%', fontSize: 'inherit' } }}
         />
     );
 }

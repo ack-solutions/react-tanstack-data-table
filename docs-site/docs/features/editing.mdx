@@ -21,23 +21,109 @@ const columns = [
     type: 'select', options: [{ label: 'Admin', value: 'Admin' }, { label: 'Editor', value: 'Editor' }] },
 ];
 
+<DataTable columns={columns} data={rows} editable /* per-column */ />
+```
+
+`editable` can also be a function — `editable: (row) => boolean` — to allow editing per row.
+
+## Getting the updated data
+
+On commit the grid calls **`processRowUpdate(newRow, oldRow)`**, then applies the row you **return** to its
+data. This is the one hook you need — it's where you persist and where you can transform or validate:
+
+```tsx
 <DataTable
   columns={columns}
   data={rows}
-  processRowUpdate={async (newRow, oldRow) => {
-    const saved = await api.save(newRow);  // persist
-    return saved;                          // grid applies the returned row
+  processRowUpdate={(newRow, oldRow) => {
+    // newRow = oldRow with the edited field changed; return the row to apply
+    return newRow;
   }}
   onProcessRowUpdateError={(err) => toast.error(String(err))}
 />
 ```
 
-On commit the grid calls **`processRowUpdate(newRow, oldRow)`** and applies the returned row to its data.
-If it **throws/rejects**, `onProcessRowUpdateError` fires and the edit is reverted. Without a
-`processRowUpdate`, edits update the grid's local data directly. `editable` can be a function
-(`(row) => boolean`) to allow editing per-row.
+- **Return a row** → the grid applies it (you can normalise/derive fields here, e.g. recompute a `total`).
+- **Throw / reject** → `onProcessRowUpdateError` fires and the edit is **reverted**.
+- **No `processRowUpdate`** → edits update the grid's **local data** directly (handy for prototypes).
+
+Prefer to listen rather than intercept? Use `onDataStateChange` for view state, or read the data at any time
+from [`apiRef`](#read--write-data-imperatively).
+
+## Which field gets written
+
+The grid writes to the column's **`accessorKey`** (falling back to `id`), so a column whose `id` differs from
+its `accessorKey` still updates the right field. **Dot-nested** accessor keys are deep-set immutably — only the
+path is cloned, siblings are preserved:
+
+```tsx
+// accessorKey: 'address.city' → newRow.address.city is updated (address.zip untouched)
+{ id: 'city', header: 'City', accessorKey: 'address.city', editable: true }
+```
+
+The edited row keeps its **identity** via your `getRowId` (or the `idKey` prop, default `'id'`) — that's the id
+passed to `apiRef.current.data.updateRow`, so make it stable if you persist.
+
+## Server-side persistence
+
+`processRowUpdate` may be **async** — `await` your API and return the saved row (so server-computed fields flow
+back into the grid). Throw to reject and revert:
+
+```tsx
+processRowUpdate={async (newRow, oldRow) => {
+  const saved = await api.users.update(newRow.id, newRow); // PATCH/PUT
+  return saved;                                             // grid applies the server's row
+}}
+```
+
+This works in [server data mode](/features/server-side) too: the returned row updates the **loaded page** in
+place. If a server-side edit changes sorting/filtering/paging membership, trigger a refetch with
+`apiRef.current.data.refresh()` after it resolves.
+
+## Validation
+
+Validate inside `processRowUpdate` and **throw** to reject — the grid reverts and surfaces the error:
+
+```tsx
+processRowUpdate={(newRow) => {
+  if (!newRow.email.includes('@')) throw new Error('Invalid email');
+  return newRow;
+}}
+onProcessRowUpdateError={(err) => setError(String(err))}
+```
+
+## Read & write data imperatively
+
+Drive data from your own UI through [`apiRef`](/api/api-ref) — the same `data` API the editor commits through:
+
+```tsx
+apiRef.current?.data.updateRow(rowId, { role: 'Admin' });          // patch one row
+apiRef.current?.data.updateField(rowId, 'status', 'active');       // patch one field
+apiRef.current?.data.getRowData(rowId);                            // read a row
+apiRef.current?.data.getAllData();                                 // read all rows
+apiRef.current?.data.updateMultipleRows([{ rowId, data: {…} }]);   // batch
+```
+
+## Type-aware editors
+
+| Column `type` | Editor |
+| --- | --- |
+| `text` (default) | text input |
+| `number` | numeric input (commits a `Number`) |
+| `date` | date input (keeps `Date` vs string to match the source) |
+| `select` (with `options`) | dropdown — commits on choice |
+| `boolean` | True / False dropdown |
+
+## Props
+
+| Prop | Type | Description |
+| --- | --- | --- |
+| `editable` (column) | `boolean \| (row) => boolean` | Make a column's cells editable |
+| `processRowUpdate` | `(newRow, oldRow) => Row \| Promise<Row>` | Commit hook — return the row to apply (or throw to revert) |
+| `onProcessRowUpdateError` | `(error) => void` | Fires when `processRowUpdate` throws/rejects |
 
 :::note
-Phase-1 editing is single-cell, and in [tree data](/features/tree-data) only top-level rows are editable.
-Whole-row edit mode, sub-row editing, and edit-while-virtualized-scrolling are future enhancements.
+Editing is single-cell, and in [tree data](/features/tree-data) only top-level rows are editable. **Whole-row
+edit mode** (open a row's cells together with explicit Save / Cancel) and **custom cell editors** are the next
+editing enhancements.
 :::
