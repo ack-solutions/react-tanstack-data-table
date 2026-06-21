@@ -11,12 +11,24 @@ export const DEFAULT_LOCALE_TEXT: DataTableLocaleText = {
     toolbarExport: 'Export',
     toolbarRefresh: 'Refresh',
     toolbarReset: 'Reset',
+    toolbarViews: 'Views',
     exportAs: 'Export as',
     exportCSV: 'CSV',
     exportExcel: 'Excel',
     densityCompact: 'Compact',
     densityStandard: 'Standard',
     densityComfortable: 'Comfortable',
+
+    // Saved views
+    viewsDefault: 'Default',
+    viewsSaveAs: 'Save current as…',
+    viewsUpdate: 'Update current view',
+    viewsDelete: 'Delete',
+    viewsResetToDefault: 'Reset to default',
+    viewsNamePlaceholder: 'View name',
+    viewsUnsaved: 'Unsaved changes',
+    viewsSave: 'Save',
+    viewsCancel: 'Cancel',
 
     // Columns panel
     columnsManageTitle: 'Columns',

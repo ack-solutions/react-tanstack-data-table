@@ -40,6 +40,7 @@ import {
 import { GridToolbar } from '../grid/styled';
 import { ColumnFilterControl } from './column-filter-control';
 import { ColumnsPanel } from './columns-panel';
+import { ViewsControl } from './views-control';
 import { useLocaleText } from '../../locale/locale-context';
 
 export interface DataTableToolbarProps<T> {
@@ -53,6 +54,7 @@ export interface DataTableToolbarProps<T> {
     enableDensitySelector?: boolean;
     enableReset?: boolean;
     enableRefresh?: boolean;
+    enableSavedViews?: boolean;
     extraFilter?: ReactNode;
     searchPlaceholder?: string;
     slots?: Partial<DataTableSlots>;
@@ -140,6 +142,7 @@ export function DataTableToolbar<T extends Record<string, any>>(props: DataTable
         enableDensitySelector,
         enableReset,
         enableRefresh,
+        enableSavedViews,
         extraFilter,
         searchPlaceholder,
         slots,
@@ -180,6 +183,8 @@ export function DataTableToolbar<T extends Record<string, any>>(props: DataTable
     ) : null;
 
     const extraFilterEl = extraFilter ? <Box sx={{ display: 'inline-flex', alignItems: 'center' }}>{extraFilter}</Box> : null;
+
+    const viewsEl = enableSavedViews ? <ViewsControl engine={engine} slots={slots} /> : null;
 
     const filterEl = enableColumnFilter ? <ColumnFilterControl engine={engine} slots={slots} /> : null;
 
@@ -273,6 +278,7 @@ export function DataTableToolbar<T extends Record<string, any>>(props: DataTable
     if (renderToolbar) {
         const controls: DataTableToolbarControls = {
             search: searchEl,
+            views: viewsEl,
             filter: filterEl,
             columns: columnsEl,
             density: densityEl,
@@ -287,6 +293,7 @@ export function DataTableToolbar<T extends Record<string, any>>(props: DataTable
     return (
         <GridToolbar>
             {searchEl}
+            {viewsEl}
             <Box sx={{ flex: 1 }} />
             {extraFilterEl}
             {filterEl}

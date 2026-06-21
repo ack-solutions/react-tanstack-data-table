@@ -16,6 +16,28 @@ format: each release groups changes as **Added** (new features), **Changed** (be
 
 ---
 
+## [1.15.0](https://www.npmjs.com/package/@ackplus/mui-tanstack-data-grid/v/1.15.0) — 2026-06-21
+
+Third remaining backlog slice. Backward compatible.
+
+### Added
+- **Saved / named views.** `enableSavedViews` adds a toolbar **Views** control that captures the current
+  layout (search, filters, sort, column visibility/order/width, pinning, density, page size) as a named
+  preset the user can switch between, update, and delete. A dot marks unsaved changes against the active
+  view. Stored under `dt:<stateKey>:views` (uncontrolled) or driven via `views` / `onViewsChange` /
+  `activeViewId` / `onActiveViewChange` (controlled). Full `apiRef.current.views` namespace (`saveView` /
+  `applyView` / `updateView` / `renameView` / `deleteView` / `resetView` / `listViews` / `getActiveView` /
+  `isDirty`) and a `viewsIcon` slot.
+
+### Changed
+- `apiRef.current.layout.saveLayout()` / `restoreLayout()` now also capture and restore **sorting** and
+  **density** (so a layout snapshot — and a saved view — round-trips the full user-visible layout).
+
+### Docs
+- New [Saved views](/features/saved-views) page with a live demo.
+
+---
+
 ## [1.14.0](https://www.npmjs.com/package/@ackplus/mui-tanstack-data-grid/v/1.14.0) — 2026-06-21
 
 Second remaining backlog slice. Backward compatible.

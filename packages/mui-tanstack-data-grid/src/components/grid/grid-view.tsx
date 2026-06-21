@@ -102,6 +102,7 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
         enableDensitySelector,
         enableReset,
         enableRefresh,
+        enableSavedViews,
         extraFilter,
         enableColumnReordering,
         renderBulkActions,
@@ -112,7 +113,7 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
         onProcessRowUpdateError,
     } = props;
 
-    const showToolbar = !!(enableGlobalFilter || enableColumnFilter || enableColumnVisibility || enableColumnPinning || enableExport || enableDensitySelector || enableReset || enableRefresh || extraFilter);
+    const showToolbar = !!(enableGlobalFilter || enableColumnFilter || enableColumnVisibility || enableColumnPinning || enableExport || enableDensitySelector || enableReset || enableRefresh || enableSavedViews || extraFilter);
     // `slots.toolbar` fully replaces the toolbar; otherwise the built-in one
     // (which itself honours `renderToolbar` for rearranging controls).
     const ToolbarComponent = (slots?.toolbar ?? DataTableToolbar) as typeof DataTableToolbar;
@@ -533,6 +534,7 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
                     enableDensitySelector={enableDensitySelector}
                     enableReset={enableReset}
                     enableRefresh={enableRefresh}
+                    enableSavedViews={enableSavedViews}
                     extraFilter={extraFilter}
                     slots={slots}
                     renderToolbar={renderToolbar}

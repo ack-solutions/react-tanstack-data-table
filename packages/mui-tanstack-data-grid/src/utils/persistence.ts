@@ -5,6 +5,7 @@
  * to disabled/quota-exceeded storage.
  */
 import type { TableState } from '../types/state.types';
+import type { SavedViewsFile } from '../types/views.types';
 
 export interface StorageLike {
     getItem(key: string): string | null;
@@ -40,6 +41,11 @@ export const DEFAULT_PERSIST_KEYS: (keyof TableState)[] = [
 ];
 
 const storageKey = (key: string) => `dt:${key}`;
+// Saved views live under a SEPARATE key — the live state blob (storageKey) is
+// rewritten wholesale on every change and would otherwise clobber the views list.
+const viewsKey = (key: string) => `dt:${key}:views`;
+
+const EMPTY_VIEWS_FILE: SavedViewsFile = { version: 1, activeViewId: null, views: [] };
 
 export function resolveStorage(persist?: PersistOptions): StorageLike | null {
     const s = persist?.storage ?? 'local';
@@ -93,6 +99,44 @@ export function clearPersistedState(stateKey: string | undefined, persist?: Pers
     if (!storage || !stateKey) return;
     try {
         storage.removeItem(storageKey(stateKey));
+    } catch {
+        /* disabled — ignore */
+    }
+}
+
+// ── Saved/named views ──────────────────────────────────────────────────────
+// A separate list of named layout snapshots, stored under `dt:<key>:views`.
+
+export function readPersistedViews(storage: StorageLike | null, key: string | undefined): SavedViewsFile {
+    if (!storage || !key) return EMPTY_VIEWS_FILE;
+    try {
+        const raw = storage.getItem(viewsKey(key));
+        if (!raw) return EMPTY_VIEWS_FILE;
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === 'object' && Array.isArray(parsed.views)) {
+            return { version: 1, activeViewId: parsed.activeViewId ?? null, views: parsed.views };
+        }
+        return EMPTY_VIEWS_FILE;
+    } catch {
+        return EMPTY_VIEWS_FILE;
+    }
+}
+
+export function writePersistedViews(storage: StorageLike | null, key: string | undefined, file: SavedViewsFile): void {
+    if (!storage || !key) return;
+    try {
+        storage.setItem(viewsKey(key), JSON.stringify(file));
+    } catch {
+        /* quota exceeded / disabled — ignore */
+    }
+}
+
+/** Forget a grid's saved views (the `dt:<key>:views` entry). SSR-safe. */
+export function clearPersistedViews(stateKey: string | undefined, persist?: PersistOptions): void {
+    const storage = resolveStorage(persist);
+    if (!storage || !stateKey) return;
+    try {
+        storage.removeItem(viewsKey(stateKey));
     } catch {
         /* disabled — ignore */
     }

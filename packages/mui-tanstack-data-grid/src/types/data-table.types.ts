@@ -14,6 +14,7 @@ import type { ColumnFilterState } from './filter.types';
 import type { SelectionState, SelectMode } from './selection.types';
 import type { DataTableLoggingOptions } from './logging.types';
 import type { DataTableApi } from './api.types';
+import type { SavedView } from './views.types';
 import type { DataTableSlots, PartialSlotProps } from './slots.types';
 import type { DataTableLocaleText } from './locale.types';
 import type { PersistOptions } from '../utils/persistence';
@@ -45,6 +46,8 @@ import type {
 export interface DataTableToolbarControls {
     /** Collapsible global search. */
     search: ReactNode;
+    /** Saved-views control (picker + save/update/delete). */
+    views: ReactNode;
     /** Column-filter button + popover. */
     filter: ReactNode;
     /** Columns button + panel (show/hide, pin, reorder). */
@@ -125,6 +128,21 @@ export interface DataTableProps<T> {
      */
     stateKey?: string;
     persist?: PersistOptions;
+
+    // ── Saved / named views ───────────────────────────────────────────────
+    /**
+     * Show a toolbar **Views** control that captures the current layout (filters,
+     * sort, column visibility/order/size, pinning, density, page size) as a named
+     * preset the user can switch between, update, and delete. Uncontrolled views are
+     * stored under `dt:<stateKey>:views` (needs a `stateKey`; in-memory otherwise).
+     */
+    enableSavedViews?: boolean;
+    /** Controlled views list (presence switches the feature to controlled mode). */
+    views?: SavedView[];
+    onViewsChange?: (views: SavedView[]) => void;
+    /** Controlled active view id (`null` = the synthetic Default view). */
+    activeViewId?: string | null;
+    onActiveViewChange?: (id: string | null) => void;
     initialLoadData?: boolean;
     onDataStateChange?: (state: Partial<TableState>) => void;
     onFetchData?: (filters: Partial<TableFilters>, meta?: DataFetchMeta) => Promise<{ data: T[]; total: number }>;

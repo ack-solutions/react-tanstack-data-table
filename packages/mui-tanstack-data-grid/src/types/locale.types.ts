@@ -14,6 +14,18 @@ export interface DataTableLocaleText {
     toolbarExport: string;
     toolbarRefresh: string;
     toolbarReset: string;
+    toolbarViews: string;
+
+    // Saved views
+    viewsDefault: string;
+    viewsSaveAs: string;
+    viewsUpdate: string;
+    viewsDelete: string;
+    viewsResetToDefault: string;
+    viewsNamePlaceholder: string;
+    viewsUnsaved: string;
+    viewsSave: string;
+    viewsCancel: string;
     exportAs: string;
     exportCSV: string;
     exportExcel: string;

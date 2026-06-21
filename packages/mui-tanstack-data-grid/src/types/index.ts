@@ -8,4 +8,5 @@ export * from './column.types';
 export * from './slots.types';
 export * from './locale.types';
 export * from './api.types';
+export * from './views.types';
 export * from './data-table.types';

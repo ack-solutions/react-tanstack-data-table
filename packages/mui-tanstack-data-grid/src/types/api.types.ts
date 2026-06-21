@@ -11,6 +11,8 @@ import type { ColumnFilterState } from './filter.types';
 import type { SelectionState } from './selection.types';
 import type { ServerExportResult, ExportMode, ExportScope } from './export.types';
 import type { TableState, TableFilters, PaginationModel } from './state.types';
+import type { DataTableDensity } from '../theme/tokens';
+import type { SavedView } from './views.types';
 
 export interface DataRefreshApiOptions {
     resetPagination?: boolean;
@@ -47,6 +49,8 @@ export interface SavedLayout {
     pagination?: PaginationModel;
     globalFilter?: string;
     columnFilter?: ColumnFilterState;
+    sorting?: SortingState;
+    density?: DataTableDensity;
 }
 
 /** Imperative handle exposed via `apiRef`. */
@@ -174,6 +178,25 @@ export interface DataTableApi<T = any> {
         resetAll: () => void;
         saveLayout: () => SavedLayout;
         restoreLayout: (layout: Partial<SavedLayout>) => void;
+    };
+
+    /** Saved/named views — capture the current layout as a named preset and switch between them. */
+    views: {
+        listViews: () => SavedView[];
+        getActiveViewId: () => string | null;
+        getActiveView: () => SavedView | null;
+        /** Capture the current layout as a new named view and make it active. */
+        saveView: (name: string) => SavedView;
+        /** Overwrite a view's captured layout with the current one. */
+        updateView: (id: string) => void;
+        /** Apply a saved view's layout and make it active. */
+        applyView: (id: string) => void;
+        renameView: (id: string, name: string) => void;
+        deleteView: (id: string) => void;
+        /** Clear the active view and reset the layout to its initial state. */
+        resetView: () => void;
+        /** True when the current layout diverges from the active view (or any layout when none is active). */
+        isDirty: () => boolean;
     };
 
     state: {

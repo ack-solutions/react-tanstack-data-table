@@ -1,0 +1,98 @@
+---
+title: Saved views
+sidebar_label: Saved views
+---
+
+import LiveDemo from '@site/src/demo/LiveDemo';
+import { SavedViewsDemo } from '@site/src/demo/demos';
+
+# Saved views
+
+Capture the current layout — search, filters, sort, column visibility / order / width, pinning, density,
+and page size — as a **named view** the user can switch between, update, and delete from a toolbar control.
+Turn it on with `enableSavedViews`.
+
+<LiveDemo>{() => <SavedViewsDemo />}</LiveDemo>
+
+> Change the layout (type a search, sort a column, hide one via its header ⋮ menu, change density), then open
+> the **Views** control (the layers icon, top-left) → **Save current as…**. Switch between views from the
+> same menu; a **dot** on the icon marks unsaved changes against the active view, and **Update current view**
+> writes them back.
+
+## Enable it
+
+```tsx
+<DataTable
+  columns={columns}
+  data={data}
+  enableSavedViews
+  stateKey="users-grid"     // persists views under dt:users-grid:views (omit → in-memory)
+  enableGlobalFilter
+  enableColumnFilter
+  enableColumnVisibility
+  enableDensitySelector
+/>
+```
+
+A view captures everything `apiRef.current.layout.saveLayout()` snapshots **plus** sorting and density —
+i.e. the full user-visible layout. Selection and row expansion are intentionally excluded (transient).
+
+## Persistence
+
+With a **`stateKey`**, the built-in views list is stored in `localStorage` under `dt:<stateKey>:views`
+(separate from the grid's own `dt:<stateKey>` state blob), and restored on the next mount. Without a
+`stateKey` and without controlled `views`, the list is in-memory only (lost on remount). Storage is
+SSR-safe and resilient to disabled/quota-exceeded storage.
+
+## Controlled mode
+
+Own the list yourself (e.g. to sync per-user views to a backend) by passing `views` — its presence
+switches the feature to controlled mode, and the grid routes every change through your callbacks instead of
+touching storage:
+
+```tsx
+const [views, setViews] = useState<SavedView[]>([]);
+const [activeViewId, setActiveViewId] = useState<string | null>(null);
+
+<DataTable
+  columns={columns}
+  data={data}
+  enableSavedViews
+  views={views}
+  onViewsChange={setViews}
+  activeViewId={activeViewId}
+  onActiveViewChange={setActiveViewId}
+/>
+```
+
+## Imperative control
+
+Everything the toolbar does is on [`apiRef`](/api/api-ref):
+
+```tsx
+apiRef.current?.views.saveView('Active admins');   // capture current layout as a new view, make it active
+apiRef.current?.views.applyView(id);               // switch to a saved view
+apiRef.current?.views.updateView(id);              // overwrite a view with the current layout
+apiRef.current?.views.renameView(id, 'New name');
+apiRef.current?.views.deleteView(id);
+apiRef.current?.views.resetView();                 // clear the active view + reset layout to default
+apiRef.current?.views.listViews();                 // SavedView[]
+apiRef.current?.views.getActiveView();             // SavedView | null
+apiRef.current?.views.isDirty();                   // current layout diverges from the active view
+```
+
+## Props
+
+| Prop | Type | Description |
+| --- | --- | --- |
+| `enableSavedViews` | `boolean` | Show the toolbar Views control |
+| `views` | `SavedView[]` | Controlled views list (presence = controlled mode) |
+| `onViewsChange` | `(views) => void` | Views list changed (controlled) |
+| `activeViewId` | `string \| null` | Controlled active view id (`null` = Default) |
+| `onActiveViewChange` | `(id) => void` | Active view changed (controlled) |
+
+:::note Defaults & caveats
+The synthetic **Default** view (always shown first) equals `resetLayout()`. A view's page size is applied
+only when `enablePagination` is on, and its density is ignored when `density`/`tableSize` is a controlled
+prop. A view that pins rows requires a stable `getRowId` (and client-mode data) to re-pin the right records.
+:::

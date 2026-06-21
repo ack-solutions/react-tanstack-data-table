@@ -7,5 +7,6 @@ export * from './persistence';
 export * from './aggregation';
 export * from './clipboard';
 export * from './row-pin-action';
+export * from './view-snapshot';
 export * from './export-utils';
 export * from './export';

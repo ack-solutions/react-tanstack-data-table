@@ -32,6 +32,7 @@ import { useMemo, useReducer, useState, useRef, useCallback, useEffect, type Ref
 
 import type { DataTableProps } from '../types/data-table.types';
 import type { DataTableApi, DataRefreshApiInput, DataRefreshApiOptions, DataTableExportApiOptions } from '../types/api.types';
+import type { SavedView, ViewBody, SavedViewsFile } from '../types/views.types';
 import type { TableState, TableFilters, DataFetchMeta, DataRefreshOptions } from '../types/state.types';
 import type { ColumnFilterState } from '../types/filter.types';
 import type { SelectionState } from '../types/selection.types';
@@ -59,6 +60,10 @@ import {
     resolveStorage,
     readPersistedState,
     writePersistedState,
+    readPersistedViews,
+    writePersistedViews,
+    buildViewSnapshot,
+    stableStringify,
     DEFAULT_PERSIST_KEYS,
 } from '../utils';
 
@@ -200,6 +205,9 @@ export interface UseDataTableResult<T = any> {
         exportProgress: ExportProgressPayload;
         isSomeRowsSelected: boolean;
         selectedRowCount: number;
+        savedViews: SavedView[];
+        activeViewId: string | null;
+        viewsDirty: boolean;
     };
     state: EngineUIState;
     actions: {
@@ -246,6 +254,11 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
         onColumnPinningChange,
         enableRowPinning = false,
         onRowPinningChange,
+        enableSavedViews = false,
+        views: controlledViews,
+        onViewsChange,
+        activeViewId: controlledActiveViewId,
+        onActiveViewChange,
 
         onColumnVisibilityChange,
         enableColumnVisibility = true,
@@ -347,6 +360,15 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
     // eslint-disable-next-line react-hooks/exhaustive-deps -- read once on mount
     const persistedInitial = useMemo(() => readPersistedState(persistStorage, stateKey), []);
 
+    // Saved views: controlled when `views` is supplied; else a built-in store seeded
+    // once from `dt:<stateKey>:views` (in-memory when there's no stateKey).
+    const viewsControlled = controlledViews !== undefined;
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- read once on mount
+    const seededViews = useMemo<SavedViewsFile>(() => readPersistedViews(persistStorage, stateKey), []);
+    const [viewsFile, setViewsFile] = useState<SavedViewsFile>(seededViews);
+    const savedViews = viewsControlled ? controlledViews! : viewsFile.views;
+    const activeViewId = viewsControlled ? (controlledActiveViewId ?? null) : viewsFile.activeViewId;
+
     const initialStateConfig = useMemo(
         () => ({ ...DEFAULT_INITIAL_STATE, ...initialState, ...persistedInitial }),
         [initialState, persistedInitial],
@@ -431,6 +453,11 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
     const onColumnPinningChangeRef = useLatestRef(onColumnPinningChange);
     const onRowPinningChangeRef = useLatestRef(onRowPinningChange);
     const rowPinningActiveRef = useLatestRef(rowPinningActive);
+    const onViewsChangeRef = useLatestRef(onViewsChange);
+    const onActiveViewChangeRef = useLatestRef(onActiveViewChange);
+    const savedViewsRef = useLatestRef(savedViews);
+    const activeViewIdRef = useLatestRef(activeViewId);
+    const viewsControlledRef = useLatestRef(viewsControlled);
     const onColumnVisibilityChangeRef = useLatestRef(onColumnVisibilityChange);
     const onColumnSizingChangeRef = useLatestRef(onColumnSizingChange);
     const onSelectionChangeRef = useLatestRef(onSelectionChange);
@@ -742,6 +769,13 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
     // aria, selection counts, getSelectedRows(), and getSelectedCount() all agree.
     const effectiveTotalRow = table.getRowCount();
 
+    // Reactive dirty flag for the Views control (recomputes on every layout change, and
+    // on the render that populates the api — unlike an imperative api.views.isDirty() read).
+    const activeViewBody = savedViews.find((v) => v.id === activeViewId)?.state;
+    const viewsDirty = enableSavedViews && !!activeViewBody
+        ? stableStringify(buildViewSnapshot(table.getState(), controlledDensity !== undefined ? undefined : ui.density)) !== stableStringify(activeViewBody)
+        : false;
+
     const isSomeRowsSelected = useMemo(() => {
         if (!enableBulkActions || !enableRowSelection) return false;
         if (ui.selectionState.type === 'exclude') return ui.selectionState.ids.length < effectiveTotalRow;
@@ -865,6 +899,18 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
         return () => { if (persistTimerRef.current) clearTimeout(persistTimerRef.current); };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [stateKey, persistStorage, persistInclude, table, ui.sorting, ui.pagination, ui.globalFilter, ui.columnFilter, ui.columnVisibility, ui.columnSizing, ui.columnOrder, ui.columnPinning, ui.rowPinning, ui.density, persistsExpanded ? ui.expanded : 0]);
+
+    // Persist the built-in (uncontrolled) saved-views list under dt:<stateKey>:views.
+    const viewsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    useEffect(() => {
+        if (viewsControlled || !stateKey || !persistStorage) return;
+        if (viewsTimerRef.current) clearTimeout(viewsTimerRef.current);
+        viewsTimerRef.current = setTimeout(() => {
+            writePersistedViews(persistStorage, stateKey, viewsFile);
+        }, persist?.debounceMs ?? 300);
+        return () => { if (viewsTimerRef.current) clearTimeout(viewsTimerRef.current); };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [viewsControlled, stateKey, persistStorage, viewsFile]);
 
     const normalizeRefreshOptions = useCallback(
         (options?: boolean | DataRefreshOptions, fallbackReason = 'refresh') => {
@@ -1136,20 +1182,11 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
             findRowIndex: (predicate) => getBaseData().findIndex(predicate),
         };
 
+        // Density is captured only when the engine owns it (omit when controlled — the
+        // engine can't restore a controlled density prop, so a view must not claim to).
+        const snapshotDensity = () => (controlledDensity !== undefined ? undefined : uiRef.current.density);
         api.layout = {
-            saveLayout: () => {
-                const s = tableRef.current.getState();
-                return {
-                    columnVisibility: s.columnVisibility ?? {},
-                    columnOrder: s.columnOrder ?? [],
-                    columnSizing: s.columnSizing ?? {},
-                    columnPinning: s.columnPinning ?? { left: [], right: [] },
-                    rowPinning: s.rowPinning ?? { top: [], bottom: [] },
-                    pagination: s.pagination ?? { pageIndex: 0, pageSize: 10 },
-                    globalFilter: s.globalFilter ?? '',
-                    columnFilter: s.columnFilter,
-                };
-            },
+            saveLayout: () => buildViewSnapshot(tableRef.current.getState(), snapshotDensity()),
             restoreLayout: (layout) => {
                 if (layout.columnVisibility) dispatch({ type: 'SET_COLUMN_VISIBILITY', payload: layout.columnVisibility });
                 if (layout.columnOrder) {
@@ -1168,9 +1205,18 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
                     dispatch({ type: 'SET_ROW_PINNING', payload: layout.rowPinning });
                     onRowPinningChangeRef.current?.(layout.rowPinning);
                 }
-                if (layout.pagination && enablePagination) dispatch({ type: 'SET_PAGINATION', payload: layout.pagination });
                 if (layout.globalFilter !== undefined) dispatch({ type: 'SET_GLOBAL_FILTER_RESET_PAGE', payload: layout.globalFilter });
                 if (layout.columnFilter) dispatch({ type: 'SET_COLUMN_FILTER', payload: layout.columnFilter });
+                if (layout.sorting) {
+                    const cleaned = layout.sorting.filter((s: any) => s?.id);
+                    onSortingChangeRef.current?.(cleaned);
+                    dispatch({ type: 'SET_SORTING_RESET_PAGE', payload: cleaned });
+                }
+                // Inert when density is controlled (a controlled prop wins at render).
+                if (layout.density) dispatch({ type: 'SET_DENSITY', payload: layout.density });
+                // Pagination LAST: the *_RESET_PAGE dispatches above force pageIndex→0, so
+                // restoring the saved page must come after them or it gets clobbered.
+                if (layout.pagination && enablePagination) dispatch({ type: 'SET_PAGINATION', payload: layout.pagination });
             },
             resetLayout: () => {
                 dispatch({ type: 'SET_COLUMN_VISIBILITY', payload: initialStateConfig.columnVisibility || {} });
@@ -1182,10 +1228,67 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
                 dispatch({ type: 'SET_COLUMN_FILTER', payload: (initialStateConfig.columnFilter || DEFAULT_INITIAL_STATE.columnFilter) as ColumnFilterState });
                 dispatch({ type: 'SET_SORTING_RESET_PAGE', payload: initialStateConfig.sorting || [] });
                 dispatch({ type: 'SET_PAGINATION', payload: initialStateConfig.pagination || { pageIndex: 0, pageSize: 10 } });
+                dispatch({ type: 'SET_DENSITY', payload: initialDensity });
             },
             resetAll: () => {
                 api.layout.resetLayout();
                 resetAllAndReload();
+            },
+        };
+
+        // Saved/named views — thin wrapper over api.layout (capture/restore the full
+        // layout). Commits to the controlled callbacks or the built-in viewsFile state.
+        // Passing the SAME views ref when only the active id changes avoids a spurious
+        // onViewsChange in controlled mode.
+        const newViewId = () => `view-${Math.random().toString(36).slice(2, 10)}`;
+        const commitViewsState = (nextViews: SavedView[], nextActiveId: string | null) => {
+            const viewsChanged = nextViews !== savedViewsRef.current;
+            const activeChanged = nextActiveId !== activeViewIdRef.current;
+            if (viewsControlledRef.current) {
+                if (viewsChanged) onViewsChangeRef.current?.(nextViews);
+                if (activeChanged) onActiveViewChangeRef.current?.(nextActiveId);
+            } else {
+                setViewsFile({ version: 1, views: nextViews, activeViewId: nextActiveId });
+            }
+        };
+        api.views = {
+            listViews: () => savedViewsRef.current,
+            getActiveViewId: () => activeViewIdRef.current,
+            getActiveView: () => savedViewsRef.current.find((v) => v.id === activeViewIdRef.current) ?? null,
+            saveView: (name) => {
+                const view: SavedView = { id: newViewId(), name, state: api.layout.saveLayout() as ViewBody, createdAt: Date.now() };
+                commitViewsState([...savedViewsRef.current, view], view.id);
+                return view;
+            },
+            updateView: (id) => {
+                const body = api.layout.saveLayout() as ViewBody;
+                commitViewsState(
+                    savedViewsRef.current.map((v) => (v.id === id ? { ...v, state: body, updatedAt: Date.now() } : v)),
+                    activeViewIdRef.current,
+                );
+            },
+            applyView: (id) => {
+                const view = savedViewsRef.current.find((v) => v.id === id);
+                if (!view) return;
+                api.layout.restoreLayout(view.state);
+                commitViewsState(savedViewsRef.current, id); // only the active id changes
+            },
+            renameView: (id, name) => {
+                commitViewsState(savedViewsRef.current.map((v) => (v.id === id ? { ...v, name } : v)), activeViewIdRef.current);
+            },
+            deleteView: (id) => {
+                const wasActive = activeViewIdRef.current === id;
+                commitViewsState(savedViewsRef.current.filter((v) => v.id !== id), wasActive ? null : activeViewIdRef.current);
+                if (wasActive) api.layout.resetLayout(); // deleting the active view → back to Default
+            },
+            resetView: () => {
+                api.layout.resetLayout();
+                commitViewsState(savedViewsRef.current, null);
+            },
+            isDirty: () => {
+                const active = savedViewsRef.current.find((v) => v.id === activeViewIdRef.current);
+                if (!active) return false; // no active saved view → nothing to be dirty against
+                return stableStringify(buildViewSnapshot(tableRef.current.getState(), snapshotDensity())) !== stableStringify(active.state);
             },
         };
 
@@ -1626,6 +1729,9 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
             exportProgress,
             isSomeRowsSelected,
             selectedRowCount,
+            savedViews,
+            activeViewId,
+            viewsDirty,
         },
         state: ui,
         actions: {

@@ -54,6 +54,7 @@ export interface DataTableSlots {
     clearIcon?: ComponentType<any>; // clear search / remove a filter rule
     columnsIcon?: ComponentType<any>; // columns menu (visibility + pinning)
     densityIcon?: ComponentType<any>; // density selector
+    viewsIcon?: ComponentType<any>; // saved-views control
     exportIcon?: ComponentType<any>; // export button + menu
     refreshIcon?: ComponentType<any>; // refresh button
     resetIcon?: ComponentType<any>; // reset button

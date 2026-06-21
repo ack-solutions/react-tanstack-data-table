@@ -366,6 +366,25 @@ export function PinnedRowsDemo() {
     );
 }
 
+export function SavedViewsDemo() {
+    // Change the layout (search, filter, sort, hide a column, density), then open the
+    // Views control (layers icon, top-left) → "Save current as…". Switch between views;
+    // the dot marks unsaved changes. (No stateKey here → in-memory; add one to persist.)
+    return (
+        <DataTable
+            columns={columns}
+            data={users}
+            enableSavedViews
+            enableGlobalFilter
+            enableColumnFilter
+            enableColumnVisibility
+            enableDensitySelector
+            enablePagination
+            initialState={page5}
+        />
+    );
+}
+
 interface Sale {
     id: number;
     first: string;
