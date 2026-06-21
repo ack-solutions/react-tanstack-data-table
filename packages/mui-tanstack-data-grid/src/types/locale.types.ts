@@ -65,6 +65,14 @@ export interface DataTableLocaleText {
     rowActions: string;
     autoFitColumn: string;
 
+    // Column menu (header kebab)
+    columnMenuLabel: string;
+    columnMenuSortAsc: string;
+    columnMenuSortDesc: string;
+    columnMenuClearSort: string;
+    columnMenuHide: string;
+    columnMenuAutosize: string;
+
     // Pagination
     paginationRowsPerPage: string;
     paginationDisplayedRows: (params: { from: number; to: number; count: number }) => string;

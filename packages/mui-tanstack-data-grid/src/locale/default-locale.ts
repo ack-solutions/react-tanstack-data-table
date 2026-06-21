@@ -80,6 +80,14 @@ export const DEFAULT_LOCALE_TEXT: DataTableLocaleText = {
     rowActions: 'Row actions',
     autoFitColumn: 'Double-click to fit',
 
+    // Column menu (header kebab)
+    columnMenuLabel: 'Column menu',
+    columnMenuSortAsc: 'Sort ascending',
+    columnMenuSortDesc: 'Sort descending',
+    columnMenuClearSort: 'Clear sort',
+    columnMenuHide: 'Hide column',
+    columnMenuAutosize: 'Autosize this column',
+
     // Pagination
     paginationRowsPerPage: 'Rows per page:',
     paginationDisplayedRows: ({ from, to, count }) => `${from}–${to} of ${count}`,

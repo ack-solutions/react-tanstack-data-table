@@ -16,6 +16,29 @@ format: each release groups changes as **Added** (new features), **Changed** (be
 
 ---
 
+## [1.13.0](https://www.npmjs.com/package/@ackplus/mui-tanstack-data-grid/v/1.13.0) — 2026-06-21
+
+First of the remaining backlog slices. Backward compatible.
+
+### Added
+- **Column header menu.** Each column header gains a quiet **⋮** menu (revealed on hover or keyboard
+  focus) that surfaces the actions already wired into the grid — **sort** ascending/descending/clear,
+  **autosize this column** (needs `enableColumnResizing`), and **hide column** (needs
+  `enableColumnVisibility`). It only lists available actions (none → no kebab), marks the active sort,
+  disables redundant items, and won't hide the last visible column. Keyboard: focus a header and press
+  **Enter**. On by default — `enableColumnMenu={false}` removes it table-wide, `disableColumnMenu: true`
+  per column; swap the glyph with `slots.columnMenuIcon`.
+
+### Changed
+- With the column menu on (the default), pressing **Enter** on a focused sortable header now **opens its
+  column menu** instead of toggling the sort directly (the menu's first item is _Sort ascending_).
+  Mouse-clicking the header still toggles sort. Set `enableColumnMenu={false}` to restore the old behavior.
+
+### Docs
+- [Columns](/features/columns) gains a "Column menu" section + live demo.
+
+---
+
 ## [1.12.0](https://www.npmjs.com/package/@ackplus/mui-tanstack-data-grid/v/1.12.0) — 2026-06-21
 
 More admin power-user features from the deferred backlog. Backward compatible.

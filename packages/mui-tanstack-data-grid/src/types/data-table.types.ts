@@ -229,6 +229,15 @@ export interface DataTableProps<T> {
     enableColumnVisibility?: boolean;
     onColumnVisibilityChange?: (visibility: Record<string, boolean>) => void;
 
+    // ── Column menu (header kebab) ─────────────────────────────────────────
+    /**
+     * Per-column header "⋮" menu with sort (asc/desc/clear), hide column, and
+     * autosize — actions that reuse the existing engine APIs (so each item is
+     * gated by `enableSorting`/`enableColumnVisibility`/`enableColumnResizing`).
+     * Default `true`. Opt a single column out via `columnDef.disableColumnMenu`.
+     */
+    enableColumnMenu?: boolean;
+
     // ── Row expansion ─────────────────────────────────────────────────────
     enableRowExpansion?: boolean;
     getRowCanExpand?: (row: Row<T>) => boolean;

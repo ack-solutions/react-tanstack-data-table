@@ -58,6 +58,8 @@ declare module '@tanstack/react-table' {
         aggregation?: 'sum' | 'avg' | 'min' | 'max' | 'count' | ((rows: TData[]) => any);
         /** Mark the column as filterable in the column-filter UI. */
         filterable?: boolean;
+        /** Hide the per-column header ⋮ menu for just this column (needs `enableColumnMenu`). */
+        disableColumnMenu?: boolean;
         /** Wrap cell text instead of truncating with an ellipsis (default: false). */
         wrapText?: boolean;
         /** Allow inline editing of this column's cells (needs a `processRowUpdate` or local data). */

@@ -4,7 +4,7 @@ sidebar_label: Columns
 ---
 
 import LiveDemo from '@site/src/demo/LiveDemo';
-import { ColumnsDemo, CellRowStylingDemo, RowActionsDemo, ValueFormatterDemo } from '@site/src/demo/demos';
+import { ColumnsDemo, ColumnMenuDemo, CellRowStylingDemo, RowActionsDemo, ValueFormatterDemo } from '@site/src/demo/demos';
 
 # Columns
 
@@ -35,6 +35,34 @@ directly or from the **Columns panel** in the toolbar. Pinned columns are exclud
 | `onColumnOrderChange` | `(order) => void` | — | Columns reordered. |
 | `enableColumnPinning` | `boolean` | `false` | Sticky left/right columns. |
 | `enableColumnVisibility` | `boolean` | `true` | Show/hide (eye toggle) from the Columns panel. |
+| `enableColumnMenu` | `boolean` | `true` | Per-column header ⋮ menu (sort/hide/autosize). |
+
+## Column menu
+
+Each column header has a quiet **⋮** menu (revealed on hover, or when the header is focused) that surfaces
+the actions already wired into the grid — so users discover them without hunting:
+
+- **Sort ascending / descending / clear** — when the column is sortable (`enableSorting`). The current
+  direction is marked; redundant items are disabled. Sorting from the menu sorts by that **single column**
+  (replacing any shift-click multi-sort); **Clear sort** removes only this column's sort, leaving the rest.
+- **Autosize this column** — when `enableColumnResizing` is on (same as double-clicking the resize handle).
+- **Hide column** — when `enableColumnVisibility` is on (disabled for the last visible column).
+
+The menu only shows items that are actually available; if none are, no kebab renders. It's on by default —
+set `enableColumnMenu={false}` to remove it table-wide, or `disableColumnMenu: true` on a single column.
+Keyboard: focus a header cell and press **Enter** to open its menu. Swap the glyph with `slots.columnMenuIcon`.
+
+<LiveDemo>{() => <ColumnMenuDemo />}</LiveDemo>
+
+```tsx
+<DataTable
+  columns={columns}
+  data={data}
+  enableColumnMenu          // default true
+  enableColumnResizing      // unlocks "Autosize this column"
+  enableColumnVisibility    // unlocks "Hide column"
+/>
+```
 
 ## The Columns panel
 

@@ -60,6 +60,7 @@ export interface DataTableSlots {
     expandIcon?: ComponentType<any>; // collapsed row (expand)
     collapseIcon?: ComponentType<any>; // expanded row (collapse)
     moreActionsIcon?: ComponentType<any>; // row-actions overflow menu (defaults to ⋮)
+    columnMenuIcon?: ComponentType<any>; // header per-column ⋮ menu (defaults to ⋮)
 }
 
 /**

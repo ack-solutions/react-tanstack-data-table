@@ -18,6 +18,7 @@ import { GridRoot, GridScroller, GridHeader, GridHeaderRow, GridHeaderCell, Grid
 import { resolveScrollLayout } from './scroll-layout';
 import { useKeyboardNav, type FocusedCell } from './use-keyboard-nav';
 import { EditCell } from './edit-cell';
+import { ColumnMenu } from './column-menu';
 import { GridAnnouncer } from './grid-announcer';
 import { computeColumnTotals, formatAggregation } from '../../utils/aggregation';
 import { LocaleTextProvider } from '../../locale/locale-context';
@@ -95,6 +96,7 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
         enableGlobalFilter,
         enableColumnFilter,
         enableColumnVisibility,
+        enableColumnMenu = true,
         enableColumnPinning,
         enableExport,
         enableDensitySelector,
@@ -252,6 +254,14 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
                     // guard by id so it holds even when column pinning (their usual fence) is off.
                     const canDrag = !!enableColumnReordering && !column.getIsPinned() && !column.id.startsWith('_');
                     const sorted = column.getIsSorted();
+                    // Per-column ⋮ menu: leaf, non-placeholder, non-special columns only,
+                    // unless the column or table opts out.
+                    const showMenu =
+                        enableColumnMenu !== false &&
+                        !header.isPlaceholder &&
+                        (column.columns?.length ?? 0) === 0 &&
+                        !column.id.startsWith('_') &&
+                        (column.columnDef as any).disableColumnMenu !== true;
                     const isDropTarget = dragOverId === column.id && draggingId !== null && draggingId !== column.id;
                     return (
                         <GridHeaderCell
@@ -306,6 +316,15 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
                                 >
                                     {sorted === 'asc' ? <SortAscIcon /> : <SortDescIcon />}
                                 </Box>
+                            ) : null}
+                            {showMenu ? (
+                                <ColumnMenu
+                                    column={column}
+                                    engine={engine}
+                                    enableColumnResizing={enableColumnResizing}
+                                    enableColumnVisibility={enableColumnVisibility}
+                                    icon={slots?.columnMenuIcon}
+                                />
                             ) : null}
                             {canResize ? (
                                 <Box

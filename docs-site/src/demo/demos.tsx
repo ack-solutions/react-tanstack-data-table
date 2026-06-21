@@ -172,6 +172,21 @@ export function ColumnsDemo() {
     );
 }
 
+export function ColumnMenuDemo() {
+    // Hover a header (or focus it and press Enter) → the ⋮ menu: sort asc/desc/clear, autosize, hide.
+    return (
+        <DataTable
+            columns={columns}
+            data={users}
+            enableColumnMenu
+            enableColumnResizing
+            enableColumnVisibility
+            enablePagination
+            initialState={page5}
+        />
+    );
+}
+
 export function ExportDemo() {
     return <DataTable columns={columns} data={users} enableExport exportFilename="users" enablePagination initialState={page5} />;
 }
