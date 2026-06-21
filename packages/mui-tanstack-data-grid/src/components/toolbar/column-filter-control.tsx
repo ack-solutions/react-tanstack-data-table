@@ -20,6 +20,7 @@ import {
     Tooltip,
     Typography,
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import { useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
 
 import { getColumnType, isColumnFilterable } from '../../utils/column-helpers';
@@ -41,6 +42,7 @@ const NO_VALUE_OPS = ['isEmpty', 'isNotEmpty'];
 
 export function ColumnFilterControl<T extends Record<string, any>>({ engine, title, slots }: ColumnFilterControlProps<T>): ReactElement {
     const locale = useLocaleText();
+    const menuHoriz = useTheme().direction === 'rtl' ? 'left' : 'right';
     const heading = title ?? locale.filterTitle;
     const table = engine.table as any;
     const FilterIcon = slots?.filterIcon ?? FilterFeatherIcon;
@@ -139,8 +141,8 @@ export function ColumnFilterControl<T extends Record<string, any>>({ engine, tit
                 open={open}
                 anchorEl={anchor}
                 onClose={close}
-                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                anchorOrigin={{ vertical: 'bottom', horizontal: menuHoriz }}
+                transformOrigin={{ vertical: 'top', horizontal: menuHoriz }}
                 slotProps={{ paper: { elevation: 3, sx: { mt: 0.75, borderRadius: 2 } } }}
             >
                 <Box sx={{ p: 2, minWidth: 440, maxWidth: 640 }}>

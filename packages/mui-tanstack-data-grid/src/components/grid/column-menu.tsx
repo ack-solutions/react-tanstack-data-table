@@ -14,6 +14,7 @@ import VisibilityOffOutlined from '@mui/icons-material/VisibilityOffOutlined';
 import SyncAltOutlined from '@mui/icons-material/SyncAltOutlined';
 import MoreVertOutlined from '@mui/icons-material/MoreVertOutlined';
 import { Box, Divider, IconButton, ListItemIcon, ListItemText, Menu, MenuItem } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import { useState, type ComponentType, type MouseEvent, type ReactElement } from 'react';
 import type { Column } from '@tanstack/react-table';
 
@@ -34,6 +35,7 @@ export function ColumnMenu<T>({ column, engine, enableColumnResizing, enableColu
     const [anchor, setAnchor] = useState<HTMLElement | null>(null);
     const locale = useLocaleText();
     const api = engine.api;
+    const menuHoriz = useTheme().direction === 'rtl' ? 'left' : 'right';
 
     const canSort = column.getCanSort();
     const sorted = column.getIsSorted(); // 'asc' | 'desc' | false
@@ -143,8 +145,8 @@ export function ColumnMenu<T>({ column, engine, enableColumnResizing, enableColu
                 // Cap height so a long menu scrolls instead of overflowing (MUI's recommended
                 // "add a max-height"); a fixed px avoids collapsing in a degenerate viewport.
                 slotProps={{ paper: { sx: { maxHeight: 360 } } }}
-                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                anchorOrigin={{ vertical: 'bottom', horizontal: menuHoriz }}
+                transformOrigin={{ vertical: 'top', horizontal: menuHoriz }}
             >
                 {items}
             </Menu>

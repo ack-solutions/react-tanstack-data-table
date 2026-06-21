@@ -4,7 +4,7 @@ sidebar_label: Columns
 ---
 
 import LiveDemo from '@site/src/demo/LiveDemo';
-import { ColumnsDemo, ColumnMenuDemo, CellRowStylingDemo, RowActionsDemo, ValueFormatterDemo } from '@site/src/demo/demos';
+import { ColumnsDemo, ColumnMenuDemo, GroupedHeaderDemo, CellRowStylingDemo, RowActionsDemo, ValueFormatterDemo } from '@site/src/demo/demos';
 
 # Columns
 
@@ -75,6 +75,26 @@ The toolbar's **Columns** button (shown when any of `enableColumnVisibility`, `e
 - **Show all** · **Reset** · **Done** in the footer.
 
 Changes apply live. The built-in selection / expander columns are excluded.
+
+## Grouped headers
+
+Nest columns under a parent with `columns: [...]` to get a multi-level header. The group header spans its
+leaf columns and stays aligned with them and the body (group headers aren't sortable/resizable and have no
+⋮ menu). Grouped grids hold each column's width (so the group sums its leaves exactly) and scroll rather
+than stretch.
+
+<LiveDemo>{() => <GroupedHeaderDemo />}</LiveDemo>
+
+```tsx
+const columns = [
+  { id: 'name', header: 'Name', accessorKey: 'name' },
+  { id: 'contact', header: 'Contact', columns: [
+    { id: 'email', header: 'Email', accessorKey: 'email' },
+    { id: 'role', header: 'Role', accessorKey: 'role' },
+  ] },
+  { id: 'status', header: 'Status', accessorKey: 'status' },
+];
+```
 
 ## Column sizing
 

@@ -103,6 +103,12 @@ export const GridHeaderCell = styled('div', { name: 'MuiTanstackDataGrid', slot:
     '&:focus-visible': { outline: '2px solid var(--dt-resize-handle)', outlineOffset: '-2px', zIndex: 1 },
     // Subtle vertical separators between header columns (design reference).
     '&:not(:first-of-type)': { boxShadow: 'inset 1px 0 0 var(--dt-border-color)' },
+    // box-shadow isn't a logical property, so flip the separator side under RTL.
+    '[dir="rtl"] &:not(:first-of-type)': { boxShadow: 'inset -1px 0 0 var(--dt-border-color)' },
+    // Placeholder cells (empty slots under grouped headers) carry no separator. The RTL
+    // rule must match the RTL separator's specificity (and follow it) so it actually wins.
+    '&[data-placeholder]': { boxShadow: 'none' },
+    '[dir="rtl"] &[data-placeholder]': { boxShadow: 'none' },
 }) as unknown as DivSlot;
 
 export const GridBody = styled('div', { name: 'MuiTanstackDataGrid', slot: 'Body' })({}) as unknown as DivSlot;

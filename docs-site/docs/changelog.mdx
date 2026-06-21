@@ -16,6 +16,28 @@ format: each release groups changes as **Added** (new features), **Changed** (be
 
 ---
 
+## [1.16.0](https://www.npmjs.com/package/@ackplus/mui-tanstack-data-grid/v/1.16.0) — 2026-06-21
+
+Last remaining backlog slice — two rendering-correctness fixes. Backward compatible.
+
+### Added
+- **Right-to-left (RTL).** Set `direction: 'rtl'` on your theme and the grid mirrors itself — pinned
+  columns flip side, the resize handle and sort/⋮-menu move to the logical edge, text aligns to the start,
+  and tree indentation + column separators mirror. The grid sets `dir="rtl"` on its root, so it works with
+  no extra setup. See [Theming → RTL](/theming#6-right-to-left-rtl).
+
+### Fixed
+- **Grouped (multi-level) headers** now align correctly: a group header spans its leaf columns' combined
+  width and lines up with the leaf row and body cells (previously they could drift under `fitToScreen`).
+  Group headers carry no sort/resize/⋮-menu, only the leaf header row takes keyboard focus, and
+  `aria-rowindex`/`aria-rowcount`/`aria-colspan` account for the extra header rows. See
+  [Columns → Grouped headers](/features/columns#grouped-headers).
+
+### Docs
+- New Grouped headers ([Columns](/features/columns)) and RTL ([Theming](/theming)) sections + live demos.
+
+---
+
 ## [1.15.0](https://www.npmjs.com/package/@ackplus/mui-tanstack-data-grid/v/1.15.0) — 2026-06-21
 
 Third remaining backlog slice. Backward compatible.

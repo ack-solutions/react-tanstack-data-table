@@ -74,7 +74,8 @@ export function EditCell<T>({ column, initialValue, align, onCommit, onCancel }:
             onChange={(e) => setValue(e.target.value)}
             onKeyDown={onKeyDown}
             onBlur={() => commitValue(value)}
-            inputProps={{ style: { textAlign: align, padding: 0, fontSize: 'inherit' } }}
+            // Logical alignment (matches the display cell) so it doesn't jump under RTL.
+            inputProps={{ style: { textAlign: align === 'center' ? 'center' : align === 'right' ? 'end' : 'start', padding: 0, fontSize: 'inherit' } }}
             sx={{ '& .MuiInput-underline:before': { borderColor: 'var(--dt-resize-handle)' } }}
         />
     );

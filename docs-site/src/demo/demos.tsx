@@ -172,6 +172,42 @@ export function ColumnsDemo() {
     );
 }
 
+const groupedColumns: ColumnDef<(typeof users)[number], any>[] = [
+    { id: 'name', header: 'Name', accessorKey: 'name', size: 160 },
+    {
+        id: 'contact',
+        header: 'Contact',
+        columns: [
+            { id: 'email', header: 'Email', accessorKey: 'email', size: 200 },
+            { id: 'role', header: 'Role', accessorKey: 'role', size: 120 },
+        ],
+    },
+    { id: 'status', header: 'Status', accessorKey: 'status', size: 120 },
+] as ColumnDef<(typeof users)[number], any>[];
+
+export function GroupedHeaderDemo() {
+    // "Contact" spans Email + Role — the group header lines up exactly with its leaf columns.
+    return <DataTable columns={groupedColumns} data={users} enablePagination initialState={page5} />;
+}
+
+export function RtlDemo() {
+    // Flip direction to rtl on the theme; the grid mirrors layout (pinned side, resize
+    // handle, sort/menu placement, text alignment) automatically.
+    return (
+        <ThemeProvider theme={(outer) => createTheme(outer, { direction: 'rtl' })}>
+            <DataTable
+                columns={columns}
+                data={users}
+                enableColumnPinning
+                enableColumnResizing
+                enableSorting
+                enablePagination
+                initialState={{ pagination: page5.pagination, columnPinning: { left: ['name'] } }}
+            />
+        </ThemeProvider>
+    );
+}
+
 export function ColumnMenuDemo() {
     // Hover a header (or focus it and press Enter) → the ⋮ menu: sort asc/desc/clear, autosize, hide.
     return (

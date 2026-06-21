@@ -8,6 +8,7 @@ import AlignHorizontalLeftOutlined from '@mui/icons-material/AlignHorizontalLeft
 import AlignHorizontalRightOutlined from '@mui/icons-material/AlignHorizontalRightOutlined';
 import DragIndicatorOutlined from '@mui/icons-material/DragIndicatorOutlined';
 import { Box, Button, Divider, IconButton, Popover, Tooltip, Typography } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import { useState, type ReactElement } from 'react';
 
 import { EyeFeatherIcon, EyeOffFeatherIcon } from '../icons';
@@ -33,6 +34,7 @@ export function ColumnsPanel<T extends Record<string, any>>(props: ColumnsPanelP
     const { engine, anchorEl, open, onClose, enableColumnVisibility, enableColumnPinning, enableColumnReordering } = props;
     const { table, api } = engine;
     const locale = engine.localeText;
+    const menuHoriz = useTheme().direction === 'rtl' ? 'left' : 'right';
 
     const dataCols = table.getAllLeafColumns().filter((c: any) => !c.id.startsWith('_'));
     const [dragId, setDragId] = useState<string | null>(null);
@@ -86,8 +88,8 @@ export function ColumnsPanel<T extends Record<string, any>>(props: ColumnsPanelP
             open={open}
             anchorEl={anchorEl}
             onClose={onClose}
-            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-            transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+            anchorOrigin={{ vertical: 'bottom', horizontal: menuHoriz }}
+            transformOrigin={{ vertical: 'top', horizontal: menuHoriz }}
             slotProps={{ paper: { elevation: 3, sx: { mt: 0.75, borderRadius: 2, width: 320 } } }}
         >
             <Typography variant="subtitle2" sx={{ px: 2, py: 1.25 }}>

@@ -7,6 +7,7 @@
  * density come from the `--dt-*` tokens applied to the root.
  */
 import { Box, Skeleton, TablePagination } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import { flexRender, type Column, type Row } from '@tanstack/react-table';
 import { Fragment, useCallback, useMemo, useState, type CSSProperties, type ReactNode } from 'react';
 
@@ -33,6 +34,12 @@ function getAlign(column: Column<any, unknown>): 'left' | 'center' | 'right' {
     return (column.columnDef as any).align ?? 'left';
 }
 
+// Map physical align to a LOGICAL text-align so wrapped text flips under RTL
+// (start/end resolve by direction). Identity under LTR (start=left, end=right).
+function logicalTextAlign(align: 'left' | 'center' | 'right'): 'start' | 'center' | 'end' {
+    return align === 'center' ? 'center' : align === 'right' ? 'end' : 'start';
+}
+
 // Join class hooks (per-column + table-level), dropping falsy results; returns
 // `undefined` when empty so we never emit a bare `class=""`.
 function joinClassNames(...names: Array<string | undefined | null | false>): string | undefined {
@@ -47,23 +54,27 @@ function textWrapSx(wrapText: boolean): CSSProperties {
         : { whiteSpace: 'nowrap', textOverflow: 'ellipsis' };
 }
 
-function getPinnedStyle(column: Column<any, unknown>): CSSProperties {
+function getPinnedStyle(column: Column<any, unknown>, isRtl: boolean): CSSProperties {
     const pinned = column.getIsPinned();
     if (!pinned) return {};
     const isLastLeft = pinned === 'left' && column.getIsLastColumn('left');
     const isFirstRight = pinned === 'right' && column.getIsFirstColumn('right');
+    // Logical inset props auto-flip with `dir` (left pin → inline-start), so the
+    // pin offsets are correct under RTL with no JS flipping. The box-shadow x-offset
+    // is NOT a logical property, so its sign is flipped explicitly under RTL.
+    const sx = isRtl ? -1 : 1;
     return {
         position: 'sticky',
-        left: pinned === 'left' ? column.getStart('left') : undefined,
-        right: pinned === 'right' ? column.getAfter('right') : undefined,
+        insetInlineStart: pinned === 'left' ? column.getStart('left') : undefined,
+        insetInlineEnd: pinned === 'right' ? column.getAfter('right') : undefined,
         zIndex: 'var(--dt-z-pinned)' as unknown as number,
         // Opaque base + row-tint overlay so scrolling content never bleeds through.
         backgroundColor: 'var(--dt-pinned-bg)',
         backgroundImage: 'linear-gradient(var(--dt-row-bg), var(--dt-row-bg))',
         boxShadow: isLastLeft
-            ? '2px 0 4px -2px var(--dt-pinned-shadow)'
+            ? `${2 * sx}px 0 4px -2px var(--dt-pinned-shadow)`
             : isFirstRight
-                ? '-2px 0 4px -2px var(--dt-pinned-shadow)'
+                ? `${-2 * sx}px 0 4px -2px var(--dt-pinned-shadow)`
                 : undefined,
     };
 }
@@ -158,12 +169,18 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
 
     const totalSize = table.getTotalSize();
     const columnSizing = table.getState().columnSizing;
+    const isRtl = useTheme().direction === 'rtl';
+    // Multi-level (grouped) headers: when there's more than one header row, columns
+    // must hold their exact widths so a group header spans its leaves pixel-perfectly
+    // (flex-grow would stretch a group cell by less than its leaves and misalign them).
+    const headerRowCount = table.getHeaderGroups().length;
+    const isGrouped = headerRowCount > 1;
     // Full-width default: untouched columns grow to fill spare width (never shrinking
     // below their size, so wide tables scroll instead of cramming). A pinned, non-fit,
     // or user-sized column (manually resized or auto-fitted) instead holds its exact
     // width — so an auto-fit visibly snaps even under fitToScreen.
     const flexFor = (column: Column<any, unknown>): string => {
-        const holdWidth = !fitToScreen || column.getIsPinned() || columnSizing[column.id] != null;
+        const holdWidth = isGrouped || !fitToScreen || column.getIsPinned() || columnSizing[column.id] != null;
         return holdWidth ? `0 0 var(--col-${column.id}-size)` : `1 0 var(--col-${column.id}-size)`;
     };
 
@@ -251,16 +268,22 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
     });
     const emptyText = noRowsMessage ?? emptyMessage ?? locale.noRows;
 
-    const renderHeader = () =>
-        table.getHeaderGroups().map((hg) => (
-            <GridHeaderRow key={hg.id} role="row" aria-rowindex={1}>
+    const renderHeader = () => {
+        const headerGroups = table.getHeaderGroups();
+        return headerGroups.map((hg, hgIndex) => (
+            <GridHeaderRow key={hg.id} role="row" aria-rowindex={hgIndex + 1}>
                 {hg.headers.map((header, colIndex) => {
                     const column = header.column;
+                    // Only the LEAF header row (the last group) participates in the roving
+                    // tabindex / data-r-c grid; group header rows above it are decorative.
+                    const isLeafRow = hgIndex === headerGroups.length - 1;
+                    const isGroupHeader = (column.columns?.length ?? 0) > 0;
                     const align = getAlign(column);
                     const wrapText = !!(column.columnDef as any).wrapText;
                     const headerClassName = (column.columnDef as any).headerClassName as string | undefined;
                     const canSort = column.getCanSort();
-                    const canResize = enableColumnResizing && column.getCanResize();
+                    // Group headers never sort/resize/menu — operations target leaves.
+                    const canResize = enableColumnResizing && column.getCanResize() && !isGroupHeader;
                     // Special columns (_selection/_expanding/_actions) are never reorderable —
                     // guard by id so it holds even when column pinning (their usual fence) is off.
                     const canDrag = !!enableColumnReordering && !column.getIsPinned() && !column.id.startsWith('_');
@@ -279,11 +302,13 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
                             key={header.id}
                             role="columnheader"
                             data-col-id={column.id}
-                            data-r={0}
-                            data-c={colIndex}
-                            tabIndex={kbd.isFocused(0, colIndex) ? 0 : -1}
-                            aria-colindex={colIndex + 1}
-                            onFocus={() => kbd.setFocused({ row: 0, col: colIndex })}
+                            data-placeholder={header.isPlaceholder || undefined}
+                            aria-colspan={header.colSpan > 1 ? header.colSpan : undefined}
+                            data-r={isLeafRow ? 0 : undefined}
+                            data-c={isLeafRow ? colIndex : undefined}
+                            tabIndex={isLeafRow ? (kbd.isFocused(0, colIndex) ? 0 : -1) : undefined}
+                            aria-colindex={isLeafRow ? colIndex + 1 : undefined}
+                            onFocus={isLeafRow ? () => kbd.setFocused({ row: 0, col: colIndex }) : undefined}
                             className={headerClassName}
                             aria-sort={sorted === 'asc' ? 'ascending' : sorted === 'desc' ? 'descending' : 'none'}
                             onClick={canSort ? column.getToggleSortingHandler() : undefined}
@@ -297,14 +322,17 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
                                 setDraggingId(null);
                             } : undefined}
                             style={{
-                                flex: flexFor(column),
-                                width: `var(--col-${column.id}-size)`,
+                                // Group headers span their leaves: size from header.getSize() (sum of
+                                // leaves) inline — NOT the --col-<id> var, which is keyed by column.id
+                                // and collides when a partly-pinned group splits into two header cells.
+                                flex: isGroupHeader ? `0 0 ${header.getSize()}px` : flexFor(column),
+                                width: isGroupHeader ? `${header.getSize()}px` : `var(--col-${column.id}-size)`,
                                 justifyContent: align === 'right' ? 'flex-end' : align === 'center' ? 'center' : 'flex-start',
                                 cursor: canSort ? 'pointer' : 'default',
                                 gap: 4,
-                                ...getPinnedStyle(column),
+                                ...getPinnedStyle(column, isRtl),
                                 ...(column.getIsPinned() ? { backgroundColor: 'var(--dt-header-bg)', backgroundImage: 'none' } : {}),
-                                ...(isDropTarget ? { boxShadow: 'inset 2px 0 0 0 var(--dt-resize-handle)' } : {}),
+                                ...(isDropTarget ? { boxShadow: `inset ${isRtl ? -2 : 2}px 0 0 0 var(--dt-resize-handle)` } : {}),
                             }}
                         >
                             <Box
@@ -347,7 +375,7 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
                                     sx={{
                                         position: 'absolute',
                                         top: 0,
-                                        right: 0,
+                                        insetInlineEnd: 0, // logical → flips to the left edge under RTL
                                         height: '100%',
                                         width: '6px',
                                         cursor: 'col-resize',
@@ -363,6 +391,7 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
                 })}
             </GridHeaderRow>
         ));
+    };
 
     const renderRow = (row: Row<T> | undefined, displayIndex: number) => {
         if (!row) return null;
@@ -375,7 +404,8 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
         const rowClassName = getRowClassName?.({ row, index: displayIndex });
         // Pinned rows float across pages, so report their true data position (stable) rather
         // than a page-relative index that would change per page and collide with center rows.
-        const ariaRowIndex = pinned ? row.index + 2 : ariaRowStart + displayIndex + 2;
+        // +1 is 1-based; +headerRowCount skips the (possibly multiple, grouped) header rows.
+        const ariaRowIndex = (pinned ? row.index : ariaRowStart + displayIndex) + headerRowCount + 1;
         return (
             <Fragment key={row.id}>
             <GridRow
@@ -429,7 +459,7 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
                                 width: `var(--col-${column.id}-size)`,
                                 justifyContent: cellEditing ? 'stretch' : align === 'right' ? 'flex-end' : align === 'center' ? 'center' : 'flex-start',
                                 cursor: editable && !cellEditing ? 'text' : undefined,
-                                ...getPinnedStyle(column),
+                                ...getPinnedStyle(column, isRtl),
                             }}
                         >
                             {cellEditing ? (
@@ -442,7 +472,7 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
                                     onCancel={() => setEditing(null)}
                                 />
                             ) : (
-                                <Box component="span" data-cell-content sx={{ minWidth: 0, width: '100%', overflow: 'hidden', ...textWrapSx(wrapText), textAlign: align, ...(isTree && column.id === firstDataColId && row.depth ? { marginLeft: `${row.depth * 16}px` } : {}) }}>
+                                <Box component="span" data-cell-content sx={{ minWidth: 0, width: '100%', overflow: 'hidden', ...textWrapSx(wrapText), textAlign: logicalTextAlign(align), ...(isTree && column.id === firstDataColId && row.depth ? { marginInlineStart: `${row.depth * 16}px` } : {}) }}>
                                     {flexRender(column.columnDef.cell, cell.getContext())}
                                 </Box>
                             )}
@@ -462,7 +492,7 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
             return Array.from({ length: skeletonRows }).map((_, i) => (
                 <GridRow key={`sk-${i}`} role="row">
                     {table.getVisibleLeafColumns().map((column) => (
-                        <GridCell key={column.id} role="cell" style={{ flex: flexFor(column), width: `var(--col-${column.id}-size)`, ...getPinnedStyle(column) }}>
+                        <GridCell key={column.id} role="cell" style={{ flex: flexFor(column), width: `var(--col-${column.id}-size)`, ...getPinnedStyle(column, isRtl) }}>
                             <Skeleton width="80%" />
                         </GridCell>
                     ))}
@@ -507,7 +537,7 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
                             flex: flexFor(column),
                             width: `var(--col-${column.id}-size)`,
                             justifyContent: align === 'right' ? 'flex-end' : align === 'center' ? 'center' : 'flex-start',
-                            ...getPinnedStyle(column),
+                            ...getPinnedStyle(column, isRtl),
                             ...(column.getIsPinned() ? { backgroundColor: 'var(--dt-header-bg)', backgroundImage: 'none' } : {}),
                         }}
                     >
@@ -520,7 +550,7 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
 
     return (
         <LocaleTextProvider value={locale}>
-        <GridRoot style={{ ...tokens, ...rootStyle }} className={props.className}>
+        <GridRoot dir={isRtl ? 'rtl' : undefined} style={{ ...tokens, ...rootStyle }} className={props.className}>
             <GridAnnouncer engine={engine} />
             {showToolbar ? (
                 <ToolbarComponent
@@ -552,7 +582,7 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
             <GridScroller
                 ref={refs.tableContainerRef}
                 role={isTree ? 'treegrid' : 'grid'}
-                aria-rowcount={isTree ? -1 : derived.tableTotalRow + 1}
+                aria-rowcount={isTree ? -1 : derived.tableTotalRow + headerRowCount}
                 aria-colcount={table.getVisibleLeafColumns().length}
                 onKeyDown={kbd.onKeyDown}
                 style={scrollerStyle}

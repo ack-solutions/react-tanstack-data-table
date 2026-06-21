@@ -4,7 +4,7 @@ title: Theming
 ---
 
 import LiveDemo from '@site/src/demo/LiveDemo';
-import { ThemingDemo, DarkModeDemo } from '@site/src/demo/demos';
+import { ThemingDemo, DarkModeDemo, RtlDemo } from '@site/src/demo/demos';
 
 # Theming
 
@@ -92,3 +92,20 @@ const theme = createTheme({
 To customise grid colours **per scheme**, merge [`createDataTableTheme`](#2-theme-it-like-a-mui-component)
 (`palette` + optional `darkPalette`) — it emits `colorSchemes` overrides that compose cleanly with a
 `cssVariables` theme (no flat top-level `palette`).
+
+## 6. Right-to-left (RTL)
+
+Set `direction: 'rtl'` on your theme and the grid mirrors itself — **no extra setup**. Pinned columns flip
+side, the resize handle and sort/⋮-menu move to the logical edge, text aligns to the start, and tree
+indentation and the column separators mirror. The grid sets `dir="rtl"` on its root, so it works even
+without a `dir` attribute on a parent.
+
+<LiveDemo>{() => <RtlDemo />}</LiveDemo>
+
+```tsx
+import { ThemeProvider, createTheme } from '@mui/material/styles';
+
+<ThemeProvider theme={(outer) => createTheme(outer, { direction: 'rtl' })}>
+  <DataTable columns={columns} data={data} enableColumnPinning enableColumnResizing />
+</ThemeProvider>
+```

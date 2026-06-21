@@ -6,6 +6,7 @@
  */
 import MoreVertOutlined from '@mui/icons-material/MoreVertOutlined';
 import { Box, IconButton, ListItemIcon, ListItemText, Menu, MenuItem, Tooltip } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import { createElement, useState, type ComponentType, type MouseEvent, type ReactElement } from 'react';
 import type { Row } from '@tanstack/react-table';
 
@@ -22,6 +23,7 @@ export interface ActionsCellProps<T> {
 export function ActionsCell<T>({ row, getRowActions, display = 'auto', moreIcon }: ActionsCellProps<T>): ReactElement | null {
     const [anchor, setAnchor] = useState<HTMLElement | null>(null);
     const locale = useLocaleText();
+    const menuHoriz = useTheme().direction === 'rtl' ? 'left' : 'right';
     const actions = (getRowActions(row) || []).filter((a) => !a.hidden);
     if (!actions.length) return null;
 
@@ -78,8 +80,8 @@ export function ActionsCell<T>({ row, getRowActions, display = 'auto', moreIcon 
                 onClose={() => setAnchor(null)}
                 onClick={(e) => e.stopPropagation()}
                 MenuListProps={{ 'aria-label': locale.rowActions }}
-                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                anchorOrigin={{ vertical: 'bottom', horizontal: menuHoriz }}
+                transformOrigin={{ vertical: 'top', horizontal: menuHoriz }}
             >
                 {actions.map((a) => (
                     <MenuItem
