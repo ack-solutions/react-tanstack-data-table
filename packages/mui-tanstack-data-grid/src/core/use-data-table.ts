@@ -498,18 +498,6 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
         },
     );
 
-    const isSomeRowsSelected = useMemo(() => {
-        if (!enableBulkActions || !enableRowSelection) return false;
-        if (ui.selectionState.type === 'exclude') return ui.selectionState.ids.length < tableTotalRow;
-        return ui.selectionState.ids.length > 0;
-    }, [enableBulkActions, enableRowSelection, ui.selectionState, tableTotalRow]);
-
-    const selectedRowCount = useMemo(() => {
-        if (!enableBulkActions || !enableRowSelection) return 0;
-        if (ui.selectionState.type === 'exclude') return tableTotalRow - ui.selectionState.ids.length;
-        return ui.selectionState.ids.length;
-    }, [enableBulkActions, enableRowSelection, ui.selectionState, tableTotalRow]);
-
     const table = useReactTable<T>({
         _features: [ColumnFilterFeature, SelectionFeature],
         data: tableData,
@@ -666,11 +654,36 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
         manualPagination: isServerPagination,
         autoResetPageIndex: false,
 
-        rowCount: enablePagination ? tableTotalRow ?? tableData.length : tableData.length,
+        // Only pin rowCount in server pagination (where TanStack needs the total it can't
+        // derive). In client mode leave it unset so table.getRowCount() falls back to the
+        // filtered pre-pagination model — keeping SelectionFeature counts consistent with
+        // the filtered footer/selection totals.
+        rowCount: isServerPagination ? (tableTotalRow ?? tableData.length) : undefined,
         getRowId,
     });
 
     const rows = table.getRowModel().rows;
+
+    // Single source of truth for the "total rows" count: server modes use the pinned
+    // rowCount option; client mode falls back (via the unset option) to the filtered,
+    // pre-pagination model. This is the SAME value SelectionFeature reads, so the footer,
+    // aria, selection counts, getSelectedRows(), and getSelectedCount() all agree.
+    const effectiveTotalRow = table.getRowCount();
+
+    const isSomeRowsSelected = useMemo(() => {
+        if (!enableBulkActions || !enableRowSelection) return false;
+        if (ui.selectionState.type === 'exclude') return ui.selectionState.ids.length < effectiveTotalRow;
+        return ui.selectionState.ids.length > 0;
+    }, [enableBulkActions, enableRowSelection, ui.selectionState, effectiveTotalRow]);
+
+    const selectedRowCount = useMemo(() => {
+        if (!enableBulkActions || !enableRowSelection) return 0;
+        // Clamp: the exclude `ids` accumulate across the full dataset and can exceed the
+        // filtered total, so never report a negative count (matches SelectionFeature).
+        if (ui.selectionState.type === 'exclude') return Math.max(0, effectiveTotalRow - ui.selectionState.ids.length);
+        return ui.selectionState.ids.length;
+    }, [enableBulkActions, enableRowSelection, ui.selectionState, effectiveTotalRow]);
+
     const shouldVirtualize = enableVirtualization && rows.length > 0;
     const rowVirtualizer = useVirtualizer({
         count: rows.length,
@@ -1131,7 +1144,7 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
             },
             nextPage: () => {
                 const prev = uiRef.current.pagination;
-                api.pagination.goToPage(Math.min(prev.pageIndex + 1, Math.max(0, Math.ceil((tableTotalRow ?? 0) / prev.pageSize) - 1)));
+                api.pagination.goToPage(Math.min(prev.pageIndex + 1, Math.max(0, Math.ceil((effectiveTotalRow ?? 0) / prev.pageSize) - 1)));
             },
             previousPage: () => {
                 const prev = uiRef.current.pagination;
@@ -1146,7 +1159,7 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
             goToFirstPage: () => api.pagination.goToPage(0),
             goToLastPage: () => {
                 const prev = uiRef.current.pagination;
-                api.pagination.goToPage(Math.max(0, Math.ceil((tableTotalRow ?? 0) / prev.pageSize) - 1));
+                api.pagination.goToPage(Math.max(0, Math.ceil((effectiveTotalRow ?? 0) / prev.pageSize) - 1));
             },
             resetPagination: () => {
                 const next = (initialStateConfig.pagination || { pageIndex: 0, pageSize: 10 }) as any;
@@ -1465,7 +1478,7 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
             isServerFiltering,
             isServerSorting,
             tableData,
-            tableTotalRow,
+            tableTotalRow: effectiveTotalRow,
             tableLoading,
             rows,
             visibleLeafColumns: table.getVisibleLeafColumns,

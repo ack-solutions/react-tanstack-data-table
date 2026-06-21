@@ -16,6 +16,16 @@ format: each release groups changes as **Added** (new features), **Changed** (be
 
 ---
 
+## [1.11.1](https://www.npmjs.com/package/@ackplus/mui-tanstack-data-grid/v/1.11.1) — 2026-06-21
+
+### Fixed
+- **Client-mode counts now respect active filters.** When filtering client-side, the pagination footer
+  ("of N"), `aria-rowcount`, the select-all / exclude-mode count, and the last-page math used the
+  **unfiltered** total. They now reflect the filtered (pre-pagination) row count. Server mode, the
+  `rowCount` table option, and the export pipeline are unchanged.
+
+---
+
 ## [1.11.0](https://www.npmjs.com/package/@ackplus/mui-tanstack-data-grid/v/1.11.0) — 2026-06-20
 
 Polishes the Tier C features — the documented follow-ups. Backward compatible.
