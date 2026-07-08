@@ -549,9 +549,10 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
                                         '&::before': {
                                             content: '""',
                                             position: 'absolute',
-                                            top: 0,
+                                            top: '50%',
+                                            transform: 'translateY(-50%)',
                                             insetInlineEnd: 0, // flush at the column boundary (flips under RTL)
-                                            height: '100%',
+                                            height: '75%',
                                             width: column.getIsResizing() ? '2px' : '1px',
                                             background: column.getIsResizing() ? 'var(--dt-resize-handle)' : 'var(--dt-border-color)',
                                             transition: 'background 120ms, width 120ms',

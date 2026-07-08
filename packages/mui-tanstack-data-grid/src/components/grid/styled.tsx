@@ -16,7 +16,6 @@ import { DT_VARS } from '../../theme/tokens';
 type DivSlot = ForwardRefExoticComponent<
     HTMLAttributes<HTMLDivElement> & { sx?: SxProps<Theme> } & RefAttributes<HTMLDivElement>
 >;
-
 export const GridRoot = styled('div', { name: 'MuiTanstackDataGrid', slot: 'Root' })(({ theme }) => {
     const p = theme.palette as any;
     // Mode-dependent token defaults. Emitted scheme-conditionally so the grid

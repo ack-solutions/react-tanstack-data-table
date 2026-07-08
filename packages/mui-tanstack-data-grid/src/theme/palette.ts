@@ -34,7 +34,7 @@ export function resolveDataGridPalette(theme: Theme): TanstackDataGridPalette {
         // emitted by the GridRoot styled (via `applyStyles('dark')`). The values
         // below are only used by direct callers of this helper.
         headerBg: user.headerBg ?? (dark ? p.grey[900] : p.grey[50]),
-        headerColor: user.headerColor ?? p.text.secondary,
+        headerColor: user.headerColor ?? p.text.primary,
         borderColor: user.borderColor ?? p.divider,
         pinnedBg: user.pinnedBg ?? p.background.paper,
         rowHoverBg: user.rowHoverBg ?? p.action.hover,
