@@ -86,8 +86,9 @@ Every prop, grouped by area. Use the **search** (top right) to find a setting fa
 | --- | --- | --- | --- |
 | `enableDensitySelector` | `boolean` | `false` | Density menu. |
 | `enableExport` | `boolean` | `false` | Export menu. |
-| `enableReset` | `boolean` | `false` | Reset button. |
-| `enableRefresh` | `boolean` | `false` | Refresh button. |
+| `enableReset` | `boolean` | `false` | "Reset layout" button — restores the column layout only (no data reload). |
+| `resetActions` | `ResetLayoutAction[]` | `['columnOrder','columnPinning','columnSizing']` | What Reset restores. Add `'columnVisibility'`, `'rowPinning'`, `'filters'`, `'sorting'`, `'pagination'`. |
+| `enableRefresh` | `boolean` | `false` | "Refresh data" button — re-fetches data (`onFetchData` in server mode). |
 | `extraFilter` | `ReactNode` | — | Custom toolbar content (right side by default). |
 | `renderToolbar` | `(controls) => ReactNode` | — | Rearrange the built-in toolbar controls ([guide](/features/toolbar#reorder--reposition-the-controls)). |
 

@@ -101,14 +101,10 @@ export const GridHeaderCell = styled('div', { name: 'MuiTanstackDataGrid', slot:
     userSelect: 'none',
     outline: 'none',
     '&:focus-visible': { outline: '2px solid var(--dt-resize-handle)', outlineOffset: '-2px', zIndex: 1 },
-    // Subtle vertical separators between header columns (design reference).
-    '&:not(:first-of-type)': { boxShadow: 'inset 1px 0 0 var(--dt-border-color)' },
-    // box-shadow isn't a logical property, so flip the separator side under RTL.
-    '[dir="rtl"] &:not(:first-of-type)': { boxShadow: 'inset -1px 0 0 var(--dt-border-color)' },
-    // Placeholder cells (empty slots under grouped headers) carry no separator. The RTL
-    // rule must match the RTL separator's specificity (and follow it) so it actually wins.
-    '&[data-placeholder]': { boxShadow: 'none' },
-    '[dir="rtl"] &[data-placeholder]': { boxShadow: 'none' },
+    // No box-shadow column separator here — the per-column resize handle (rendered in
+    // GridView) is the single vertical divider, so resizable columns don't show a double
+    // line and non-resizable/pinned columns read cleanly. Column boundaries otherwise come
+    // from the row borders + (for pinned columns) the pinned-edge shadow.
 }) as unknown as DivSlot;
 
 export const GridBody = styled('div', { name: 'MuiTanstackDataGrid', slot: 'Body' })({}) as unknown as DivSlot;

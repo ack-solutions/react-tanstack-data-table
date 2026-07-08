@@ -19,7 +19,7 @@ export interface DensityTokens {
 
 export const DENSITY_PRESETS: Record<DataTableDensity, DensityTokens> = {
     compact: { rowHeight: 36, headerHeight: 40, cellPaddingX: 8, cellPaddingY: 4, fontSize: '0.8125rem' },
-    standard: { rowHeight: 48, headerHeight: 52, cellPaddingX: 12, cellPaddingY: 8, fontSize: '0.875rem' },
+    standard: { rowHeight: 48, headerHeight: 52, cellPaddingX: 16, cellPaddingY: 8, fontSize: '0.875rem' },
     comfortable: { rowHeight: 60, headerHeight: 64, cellPaddingX: 16, cellPaddingY: 12, fontSize: '0.9375rem' },
 };
 

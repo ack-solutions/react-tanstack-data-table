@@ -28,6 +28,7 @@ import type { SxProps, Theme } from '@mui/material/styles';
 import type { DataTableDensity } from '../../theme/tokens';
 import type { DataTableSlots, DataTableSlotProps } from '../../types/slots.types';
 import type { DataTableToolbarControls } from '../../types/data-table.types';
+import type { ResetLayoutAction } from '../../types/api.types';
 import type { UseDataTableResult } from '../../core/use-data-table';
 import { resolveSlotProps, mergeSx, joinClassNames } from '../grid/slot-utils';
 import {
@@ -55,6 +56,7 @@ export interface DataTableToolbarProps<T> {
     enableExport?: boolean;
     enableDensitySelector?: boolean;
     enableReset?: boolean;
+    resetActions?: ResetLayoutAction[];
     enableRefresh?: boolean;
     enableSavedViews?: boolean;
     extraFilter?: ReactNode;
@@ -149,6 +151,7 @@ export function DataTableToolbar<T extends Record<string, any>>(props: DataTable
         enableExport,
         enableDensitySelector,
         enableReset,
+        resetActions,
         enableRefresh,
         enableSavedViews,
         extraFilter,
@@ -297,10 +300,10 @@ export function DataTableToolbar<T extends Record<string, any>>(props: DataTable
 
     const resetEl = enableReset ? (
         slots?.resetButton ? (
-            <slots.resetButton onReset={() => api.layout.resetAll()} icon={ResetIcon} label={locale.toolbarReset} {...slotProps?.resetButton} />
+            <slots.resetButton onReset={() => api.layout.reset(resetActions)} resetActions={resetActions} icon={ResetIcon} label={locale.toolbarReset} {...slotProps?.resetButton} />
         ) : (
         <Tooltip title={locale.toolbarReset}>
-            <IconButton size="small" onClick={() => api.layout.resetAll()} {...slotProps?.resetButton}>
+            <IconButton size="small" onClick={() => api.layout.reset(resetActions)} {...slotProps?.resetButton}>
                 <ResetIcon fontSize="small" />
             </IconButton>
         </Tooltip>

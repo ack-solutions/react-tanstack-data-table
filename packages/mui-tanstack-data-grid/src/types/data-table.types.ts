@@ -13,7 +13,7 @@ import type { DataTableDensity } from '../theme/tokens';
 import type { ColumnFilterState } from './filter.types';
 import type { SelectionState, SelectMode } from './selection.types';
 import type { DataTableLoggingOptions } from './logging.types';
-import type { DataTableApi } from './api.types';
+import type { DataTableApi, ResetLayoutAction } from './api.types';
 import type { SavedView } from './views.types';
 import type { DataTableSlots, PartialSlotProps } from './slots.types';
 import type { DataTableLocaleText } from './locale.types';
@@ -377,7 +377,19 @@ export interface DataTableProps<T> {
     // ── Toolbar ───────────────────────────────────────────────────────────
     enableDensitySelector?: boolean;
     enableExport?: boolean;
+    /**
+     * Show the toolbar "Reset layout" button. It restores the column layout to its
+     * initial state **without touching data** (no reload) — see {@link resetActions}
+     * to configure exactly what it resets.
+     */
     enableReset?: boolean;
+    /**
+     * What the "Reset layout" button restores. Defaults to column layout only:
+     * `['columnOrder', 'columnPinning', 'columnSizing']`. Add `'columnVisibility'`,
+     * `'rowPinning'`, `'filters'`, `'sorting'`, and/or `'pagination'` to widen it.
+     */
+    resetActions?: ResetLayoutAction[];
+    /** Show the toolbar "Refresh data" button — re-fetches the data (calls `onFetchData` in server mode). */
     enableRefresh?: boolean;
     /** @deprecated Renamed to `enableDensitySelector`. */
     enableTableSizeControl?: boolean;

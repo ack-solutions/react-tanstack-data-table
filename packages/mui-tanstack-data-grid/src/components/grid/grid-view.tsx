@@ -107,6 +107,7 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
         enableExport,
         enableDensitySelector,
         enableReset,
+        resetActions,
         enableRefresh,
         enableSavedViews,
         extraFilter,
@@ -526,9 +527,10 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
                                 />
                             ) : null}
                             {canResize ? (
-                                // Full-height hit area (easy to grab / double-click to autofit), but the
-                                // VISIBLE divider is a short centered line (::before) — revealed on cell
-                                // hover, highlighted while hovering the handle or actively resizing.
+                                // Full-height hit area (easy to grab / double-click to autofit). The VISIBLE
+                                // divider (::before) is the column's single vertical separator: a full-height
+                                // line flush at the trailing edge, ALWAYS shown for resizable columns — subtle
+                                // (border colour) at rest, accented + thicker on hover / while resizing.
                                 <Box
                                     onMouseDown={header.getResizeHandler()}
                                     onTouchStart={header.getResizeHandler()}
@@ -541,24 +543,20 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
                                         insetInlineEnd: 0, // logical → flips to the left edge under RTL
                                         height: '100%',
                                         width: '11px',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
                                         cursor: 'col-resize',
                                         userSelect: 'none',
                                         touchAction: 'none',
                                         '&::before': {
                                             content: '""',
-                                            width: '2px',
-                                            height: '60%',
-                                            maxHeight: '22px',
-                                            borderRadius: '1px',
+                                            position: 'absolute',
+                                            top: 0,
+                                            insetInlineEnd: 0, // flush at the column boundary (flips under RTL)
+                                            height: '100%',
+                                            width: column.getIsResizing() ? '2px' : '1px',
                                             background: column.getIsResizing() ? 'var(--dt-resize-handle)' : 'var(--dt-border-color)',
-                                            opacity: column.getIsResizing() ? 1 : 0,
-                                            transition: 'opacity 120ms, background 120ms',
+                                            transition: 'background 120ms, width 120ms',
                                         },
-                                        '[role="columnheader"]:hover &::before': { opacity: 1 },
-                                        '&:hover::before': { background: 'var(--dt-resize-handle)', opacity: 1 },
+                                        '&:hover::before': { background: 'var(--dt-resize-handle)', width: '2px' },
                                     }}
                                 />
                             ) : null}
@@ -790,6 +788,7 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
                     enableExport={enableExport}
                     enableDensitySelector={enableDensitySelector}
                     enableReset={enableReset}
+                    resetActions={resetActions}
                     enableRefresh={enableRefresh}
                     enableSavedViews={enableSavedViews}
                     extraFilter={extraFilter}

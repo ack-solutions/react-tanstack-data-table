@@ -21,9 +21,15 @@ only appears when you enable at least one.
 | `enableColumnVisibility` | Columns panel — show/hide (also pin & reorder when those are enabled) |
 | `enableDensitySelector` | Density menu (compact / standard / comfortable) |
 | `enableExport` | Export menu (CSV / Excel) |
-| `enableRefresh` | Refresh button (re-runs `onFetchData`) |
-| `enableReset` | Reset layout + filters |
+| `enableRefresh` | "Refresh data" button (re-runs `onFetchData`) |
+| `enableReset` | "Reset layout" button — restores column order / pinning / sizing (configure via `resetActions`) |
 | `extraFilter` | Render any custom node on the **right** of the toolbar |
+
+The **Reset layout** button resets the **column layout only** — `columnOrder`, `columnPinning`, and
+`columnSizing` by default — and never reloads data or clears filters / sorting / pagination. Widen it with
+`resetActions={['columnOrder','columnPinning','columnSizing','columnVisibility','rowPinning','filters','sorting','pagination']}`
+(any subset), or call `apiRef.current.layout.reset(actions?)` yourself. For a full "reset everything and
+reload" use `apiRef.current.layout.resetAll()`.
 
 ## Layout
 

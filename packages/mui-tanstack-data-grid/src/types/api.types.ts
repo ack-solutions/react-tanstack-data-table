@@ -22,6 +22,24 @@ export interface DataRefreshApiOptions {
 
 export type DataRefreshApiInput = boolean | DataRefreshApiOptions;
 
+/**
+ * Which pieces `api.layout.reset()` (and the toolbar "Reset layout" button) restores
+ * to their initial values. The default set is column-layout only —
+ * `['columnOrder', 'columnPinning', 'columnSizing']` — so a reset never touches the
+ * user's data, filters, sorting, or page. Opt into more by passing `resetActions`.
+ */
+export type ResetLayoutAction =
+    | 'columnOrder'
+    | 'columnPinning'
+    | 'columnSizing'
+    | 'columnVisibility'
+    | 'rowPinning'
+    | 'filters'
+    | 'sorting'
+    | 'pagination';
+
+export const DEFAULT_RESET_ACTIONS: ResetLayoutAction[] = ['columnOrder', 'columnPinning', 'columnSizing'];
+
 export interface DataTableExportApiOptions {
     filename?: string;
     /** Override the table's `exportMode` for this one export. */
@@ -186,7 +204,16 @@ export interface DataTableApi<T = any> {
     };
 
     layout: {
+        /**
+         * Reset a configurable subset of the layout to its initial values, without
+         * touching data (no reload). Defaults to {@link DEFAULT_RESET_ACTIONS}
+         * (`columnOrder` + `columnPinning` + `columnSizing`). This backs the toolbar
+         * "Reset layout" button.
+         */
+        reset: (actions?: ResetLayoutAction[]) => void;
+        /** Reset the ENTIRE view state (columns, filters, sorting, pagination, density). */
         resetLayout: () => void;
+        /** `resetLayout()` + reload the data. */
         resetAll: () => void;
         saveLayout: () => SavedLayout;
         restoreLayout: (layout: Partial<SavedLayout>) => void;

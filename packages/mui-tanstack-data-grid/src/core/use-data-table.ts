@@ -31,7 +31,8 @@ import { useTheme } from '@mui/material/styles';
 import { useMemo, useReducer, useState, useRef, useCallback, useEffect, type RefObject } from 'react';
 
 import type { DataTableProps } from '../types/data-table.types';
-import type { DataTableApi, DataRefreshApiInput, DataRefreshApiOptions, DataTableExportApiOptions } from '../types/api.types';
+import type { DataTableApi, DataRefreshApiInput, DataRefreshApiOptions, DataTableExportApiOptions, ResetLayoutAction } from '../types/api.types';
+import { DEFAULT_RESET_ACTIONS } from '../types/api.types';
 import type { SavedView, ViewBody, SavedViewsFile } from '../types/views.types';
 import type { TableState, TableFilters, DataFetchMeta, DataRefreshOptions } from '../types/state.types';
 import type { ColumnFilterState } from '../types/filter.types';
@@ -1228,6 +1229,20 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
                 // Pagination LAST: the *_RESET_PAGE dispatches above force pageIndex→0, so
                 // restoring the saved page must come after them or it gets clobbered.
                 if (layout.pagination && enablePagination) dispatch({ type: 'SET_PAGINATION', payload: layout.pagination });
+            },
+            // Layout-only reset of a configurable subset — never reloads data. Backs the
+            // toolbar "Reset layout" button. `api.*` namespaces are all populated on this
+            // same `api` object before any handler fires, so referencing them here is safe.
+            reset: (actions?: ResetLayoutAction[]) => {
+                const acts = actions && actions.length ? actions : DEFAULT_RESET_ACTIONS;
+                if (acts.includes('columnOrder')) api.columnOrdering.resetColumnOrder();
+                if (acts.includes('columnPinning')) api.columnPinning.resetColumnPinning();
+                if (acts.includes('columnSizing')) api.columnResizing.resetColumnSizing();
+                if (acts.includes('columnVisibility')) api.columnVisibility.resetColumnVisibility();
+                if (acts.includes('rowPinning')) api.rowPinning.resetRowPinning();
+                if (acts.includes('filters')) api.filtering.clearAllFilters();
+                if (acts.includes('sorting')) api.sorting.resetSorting();
+                if (acts.includes('pagination')) api.pagination.resetPagination();
             },
             resetLayout: () => {
                 dispatch({ type: 'SET_COLUMN_VISIBILITY', payload: initialStateConfig.columnVisibility || {} });

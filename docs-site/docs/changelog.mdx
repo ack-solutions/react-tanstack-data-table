@@ -16,6 +16,36 @@ format: each release groups changes as **Added** (new features), **Changed** (be
 
 ---
 
+## [1.18.1](https://www.npmjs.com/package/@ackplus/mui-tanstack-data-grid/v/1.18.1) — 2026-07-08
+
+Column-header/separator polish and a clearer, safer toolbar **Reset**. Builds on 1.18.0.
+
+### Fixed
+- **Column separators are a single divider (no more double line).** Removed the header cell's box-shadow
+  separator that doubled up with the resize handle. Each resizable column now shows **one** full-height
+  divider at its trailing edge — subtle (border colour) at rest, accented and thicker on hover / while
+  resizing — and it's still the resize grab area (double-click auto-fits).
+- **Pinned columns no longer show a broken "dashed" separator.** With the header box-shadow gone, a pinned
+  column (e.g. the selection / checkbox column) reads cleanly with just its soft pinned-edge shadow instead
+  of a header sharp line that didn't line up with the body.
+
+### Changed
+- **Roomier cells.** Standard (medium) density cell padding is now **16px** (was 12px) on header and body
+  cells, matching the MUI reference spacing. Compact (8px) and comfortable (16px) are unchanged.
+- **"Reset" is now "Reset layout" and resets layout only.** The reset button restores the **column layout**
+  (`columnOrder` + `columnPinning` + `columnSizing` by default) and **no longer** wipes filters, sorting, or
+  pagination, nor reloads the data — a behaviour change from 1.18.0. Widen it with the new **`resetActions`**
+  prop (add `'columnVisibility'` / `'rowPinning'` / `'filters'` / `'sorting'` / `'pagination'`), or call it
+  imperatively via **`api.layout.reset(actions?)`**. The old "reset everything + reload" is still available
+  as `api.layout.resetAll()`. The refresh button is relabelled **"Refresh data"** and continues to re-fetch
+  data only (calls `onFetchData` in server mode).
+
+### Docs
+- [Props → Toolbar](/api/props) and [Toolbar](/features/toolbar) document `resetActions` and the layout-only
+  Reset semantics.
+
+---
+
 ## [1.18.0](https://www.npmjs.com/package/@ackplus/mui-tanstack-data-grid/v/1.18.0) — 2026-07-08
 
 Three things: makes the `slots` / `slotProps` / `sx` customization surface **honest** (declared parts that
