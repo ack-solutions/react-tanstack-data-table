@@ -27,9 +27,10 @@ only appears when you enable at least one.
 
 ## Layout
 
-The search sits on the **left** as an icon and expands into a field when clicked — it auto-focuses, shows
-a clear button while it has text, and collapses again when emptied. Everything else (your `extraFilter`,
-then the filter / columns / density / export controls, then refresh / reset) is grouped on the **right**.
+All built-in controls are **left-aligned** in a stable order — search, saved views, filter, columns,
+density, export, then refresh / reset — mirroring the MUI DataGrid toolbar. The search sits first as an
+icon and expands into a field when clicked (auto-focuses, shows a clear button while it has text, and
+collapses again when emptied). Only your `extraFilter` node is pushed to the **right**.
 
 Restyle the whole bar through the themeable `toolbar` slot:
 

@@ -6,7 +6,9 @@
  * reactive list from engine.derived and drives everything through engine.api.views.
  */
 import CheckOutlined from '@mui/icons-material/CheckOutlined';
-import DeleteOutline from '@mui/icons-material/DeleteOutline';
+// The standard `Outlined` theme variant (not the standalone `DeleteOutline`, which
+// MUI 8/9 dropped) — visually identical and present across @mui/icons-material v5–v9.
+import DeleteOutlined from '@mui/icons-material/DeleteOutlined';
 import {
     Badge,
     Box,
@@ -99,7 +101,7 @@ export function ViewsControl<T>({ engine, slots }: ViewsControlProps<T>): ReactE
                                 sx={{ ml: 0.5 }}
                                 onClick={(e) => { e.stopPropagation(); api.views.deleteView(v.id); }}
                             >
-                                <DeleteOutline fontSize="small" />
+                                <DeleteOutlined fontSize="small" />
                             </IconButton>
                         </MenuItem>
                     )),

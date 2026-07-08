@@ -16,6 +16,62 @@ format: each release groups changes as **Added** (new features), **Changed** (be
 
 ---
 
+## [1.18.0](https://www.npmjs.com/package/@ackplus/mui-tanstack-data-grid/v/1.18.0) — 2026-07-08
+
+Three things: makes the `slots` / `slotProps` / `sx` customization surface **honest** (declared parts that
+the render layer never read now genuinely apply), polishes the default column header and toolbar to match
+the MUI DataGrid reference, and adds support for **MUI 8 & 9**. Backward compatible — MUI 5/6/7 keep working
+unchanged.
+
+### Compatibility
+- **MUI 8 & 9 support.** The `@mui/material` / `@mui/icons-material` peer range now spans
+  `^5 || ^6 || ^7 || ^8 || ^9`. The one icon that MUI 8/9 dropped — `@mui/icons-material/DeleteOutline`
+  (the standalone outline variant), used by the saved-views delete button — is replaced with the standard
+  `DeleteOutlined` theme variant (visually identical, present in every `@mui/icons-material` v5–v9). This
+  fixes the Vite build error `Failed to resolve import @mui/icons-material/DeleteOutline` on MUI 9. Verified
+  end-to-end against MUI 9.2.0 (install, icon resolution, SSR render, and a strict `tsc` pass of the grid's
+  component API).
+
+### Fixed
+- **Root `sx` and `slotProps.root` were never applied.** The root rendered with only `className`, silently
+  dropping `sx`, `slotProps.root`, and even the caller's own `className` when combined. All three now apply
+  and **merge** — the `--dt-*` design tokens and scroll-layout height can no longer be clobbered by an
+  injected `style`, and nested `sx` arrays flatten correctly.
+- **~20 dead `slots` / `slotProps` keys are now wired.** `scroller`, `grid`, `header`, `headerRow`,
+  `headerCell`, `body`, `row`, `cell`, `detailPanel`, `footer`, `loadingOverlay`, `noRowsOverlay`, and every
+  toolbar control (`searchInput`, `columnFilterControl`, `columnVisibilityControl`, `densityControl`,
+  `viewsControl`, `exportButton`, `refreshButton`, `resetButton`, plus the `toolbar` container) are read by
+  the render layer. Structural parts spread your props under their required roles/refs/keyboard wiring (never
+  clobbered); leaf controls take your props last (overrides win).
+- **Resize handle is no longer a full-height bar.** The column resize divider is now a short, vertically
+  centered line (like MUI's column separator) — invisible at rest, revealed on header hover, and highlighted
+  while you hover the handle or actively resize. The full-height area remains grabbable (and double-click
+  still auto-fits).
+
+### Changed
+- **Column header layout matches MUI.** The title and sort icon now grow to fill the cell, so the per-column
+  **⋮ menu is pinned to the trailing (right) edge** instead of sitting next to the label. Alignment
+  (`left` / `center` / `right`) is preserved.
+- **Sort affordance on hover.** Sortable columns now show a faint sort arrow when you hover the header
+  (previously the arrow appeared only once a column was sorted), so it's discoverable that the column sorts.
+  A sorted column still shows its solid up/down arrow.
+- **Toolbar is left-aligned.** All built-in controls now sit together on the leading edge in a stable order
+  — search, saved views, filter, columns, density, export, then refresh / reset — mirroring the MUI DataGrid
+  toolbar. Only the caller-provided `extraFilter` slot stays on the trailing edge.
+- The no-rows overlay's emitted class is now `MuiTanstackDataGrid-noRowsOverlay` (was `-overlay`), matching
+  the documented `styleOverrides.noRowsOverlay` key. `loadingOverlay`, `grid`, and `pagination` gained their
+  own `styleOverrides` slots.
+- `slots.columnPinningControl` is deprecated — it was never read. Column pinning lives in the Columns panel
+  (`columnVisibilityControl`) and the per-column header ⋮ menu; drive it programmatically via
+  `apiRef.current.columnPinning`.
+
+### Docs
+- [Theming → Per-instance overrides](/theming) and [Props → Slots & slotProps](/api/props) now show a
+  working `sx` + `slotProps` example and document the merge semantics (yours wins per-property; required
+  behavior props are protected).
+
+---
+
 ## [1.17.1](https://www.npmjs.com/package/@ackplus/mui-tanstack-data-grid/v/1.17.1) — 2026-06-21
 
 ### Fixed

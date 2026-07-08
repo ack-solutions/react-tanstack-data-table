@@ -15,7 +15,8 @@ import { SortAscFeatherIcon, SortDescFeatherIcon } from '../icons';
 import { useDataTableTokens } from '../../theme/use-data-table-tokens';
 import type { DataTableProps } from '../../types/data-table.types';
 import type { UseDataTableResult } from '../../core/use-data-table';
-import { GridRoot, GridScroller, GridHeader, GridHeaderRow, GridHeaderCell, GridBody, GridRow, GridCell, GridDetailPanel, GridFooter, GridFooterRow, GridOverlay, GridPinnedTopBand, GridPinnedBottomBand } from './styled';
+import { GridRoot, GridScroller, GridGrid, GridHeader, GridHeaderRow, GridHeaderCell, GridBody, GridRow, GridCell, GridDetailPanel, GridFooter, GridFooterRow, GridOverlay, GridLoadingOverlay, GridPagination, GridPinnedTopBand, GridPinnedBottomBand } from './styled';
+import { resolveSlotProps, mergeSx, joinClassNames } from './slot-utils';
 import { resolveScrollLayout } from './scroll-layout';
 import { useKeyboardNav, type FocusedCell } from './use-keyboard-nav';
 import { EditCell } from './edit-cell';
@@ -39,13 +40,6 @@ function getAlign(column: Column<any, unknown>): 'left' | 'center' | 'right' {
 // (start/end resolve by direction). Identity under LTR (start=left, end=right).
 function logicalTextAlign(align: 'left' | 'center' | 'right'): 'start' | 'center' | 'end' {
     return align === 'center' ? 'center' : align === 'right' ? 'end' : 'start';
-}
-
-// Join class hooks (per-column + table-level), dropping falsy results; returns
-// `undefined` when empty so we never emit a bare `class=""`.
-function joinClassNames(...names: Array<string | undefined | null | false>): string | undefined {
-    const joined = names.filter(Boolean).join(' ');
-    return joined || undefined;
 }
 
 // Cells/headers wrap (instead of ellipsis-truncating) when the column opts in.
@@ -121,6 +115,8 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
         renderDetailPanel,
         renderToolbar,
         slots,
+        slotProps,
+        sx,
         processRowUpdate,
         onProcessRowUpdateError,
         editMode = 'cell',
@@ -135,6 +131,37 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
 
     const SortAscIcon = slots?.sortIconAsc ?? SortAscFeatherIcon;
     const SortDescIcon = slots?.sortIconDesc ?? SortDescFeatherIcon;
+
+    // Structural slot swaps + their slotProps — resolved ONCE here (never inside
+    // render loops; row/cell run per cell per render). See slot-utils.ts for the
+    // canonical wiring order.
+    const RootSlot = slots?.root ?? GridRoot;
+    const ScrollerSlot = slots?.scroller ?? GridScroller;
+    const GridTrackSlot = slots?.grid ?? GridGrid;
+    const HeaderSlot = slots?.header ?? GridHeader;
+    const HeaderRowSlot = slots?.headerRow ?? GridHeaderRow;
+    const HeaderCellSlot = slots?.headerCell ?? GridHeaderCell;
+    const BodySlot = slots?.body ?? GridBody;
+    const RowSlot = slots?.row ?? GridRow;
+    const CellSlot = slots?.cell ?? GridCell;
+    const DetailPanelSlot = slots?.detailPanel ?? GridDetailPanel;
+    const FooterSlot = slots?.footer ?? GridFooter;
+    const BulkToolbarSlot = slots?.bulkActionsToolbar ?? BulkActionsToolbar;
+    const LoadingOverlaySlot = slots?.loadingOverlay; // default stays skeleton rows
+    const NoRowsOverlaySlot = slots?.noRowsOverlay; // default stays the localized text
+    const rootSlotProps = resolveSlotProps(slotProps, 'root');
+    const scrollerSlotProps = resolveSlotProps(slotProps, 'scroller');
+    const gridSlotProps = resolveSlotProps(slotProps, 'grid');
+    const headerSlotProps = resolveSlotProps(slotProps, 'header');
+    const headerRowSlotProps = resolveSlotProps(slotProps, 'headerRow');
+    const headerCellSlotProps = resolveSlotProps(slotProps, 'headerCell');
+    const bodySlotProps = resolveSlotProps(slotProps, 'body');
+    const rowSlotProps = resolveSlotProps(slotProps, 'row');
+    const cellSlotProps = resolveSlotProps(slotProps, 'cell');
+    const detailPanelSlotProps = resolveSlotProps(slotProps, 'detailPanel');
+    const footerSlotProps = resolveSlotProps(slotProps, 'footer');
+    const loadingOverlaySlotProps = resolveSlotProps(slotProps, 'loadingOverlay');
+    const noRowsOverlaySlotProps = resolveSlotProps(slotProps, 'noRowsOverlay');
 
     const { table, refs, derived, state, actions } = engine;
     const locale = engine.localeText;
@@ -361,7 +388,15 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
     const renderHeader = () => {
         const headerGroups = table.getHeaderGroups();
         return headerGroups.map((hg, hgIndex) => (
-            <GridHeaderRow key={hg.id} role="row" aria-rowindex={hgIndex + 1}>
+            <HeaderRowSlot
+                key={hg.id}
+                {...headerRowSlotProps.rest}
+                role="row"
+                aria-rowindex={hgIndex + 1}
+                className={headerRowSlotProps.className}
+                style={headerRowSlotProps.style}
+                sx={headerRowSlotProps.sx}
+            >
                 {hg.headers.map((header, colIndex) => {
                     const column = header.column;
                     // Only the LEAF header row (the last group) participates in the roving
@@ -388,29 +423,36 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
                         (column.columnDef as any).disableColumnMenu !== true;
                     const isDropTarget = dragOverId === column.id && draggingId !== null && draggingId !== column.id;
                     return (
-                        <GridHeaderCell
+                        <HeaderCellSlot
                             key={header.id}
+                            // slotProps rest FIRST — the behavior props below can't be clobbered.
+                            {...headerCellSlotProps.rest}
                             role="columnheader"
                             data-col-id={column.id}
                             data-placeholder={header.isPlaceholder || undefined}
                             aria-colspan={header.colSpan > 1 ? header.colSpan : undefined}
-                            data-r={isLeafRow ? 0 : undefined}
-                            data-c={isLeafRow ? colIndex : undefined}
-                            tabIndex={isLeafRow ? (kbd.isFocused(0, colIndex) ? 0 : -1) : undefined}
-                            aria-colindex={isLeafRow ? colIndex + 1 : undefined}
-                            onFocus={isLeafRow ? () => kbd.setFocused({ row: 0, col: colIndex }) : undefined}
-                            className={headerClassName}
+                            {...(isLeafRow ? {
+                                'data-r': 0,
+                                'data-c': colIndex,
+                                tabIndex: kbd.isFocused(0, colIndex) ? 0 : -1,
+                                'aria-colindex': colIndex + 1,
+                                onFocus: () => kbd.setFocused({ row: 0, col: colIndex }),
+                            } : {})}
+                            className={joinClassNames(headerClassName, headerCellSlotProps.className)}
                             aria-sort={sorted === 'asc' ? 'ascending' : sorted === 'desc' ? 'descending' : 'none'}
-                            onClick={canSort ? column.getToggleSortingHandler() : undefined}
-                            onDragOver={canDrag ? (e) => { e.preventDefault(); if (dragOverId !== column.id) setDragOverId(column.id); } : undefined}
-                            onDragLeave={canDrag ? () => setDragOverId((cur) => (cur === column.id ? null : cur)) : undefined}
-                            onDrop={canDrag ? (e) => {
-                                e.preventDefault();
-                                const dragged = e.dataTransfer.getData('text/plain');
-                                if (dragged && dragged !== column.id) actions.handleColumnReorder(dragged, column.id);
-                                setDragOverId(null);
-                                setDraggingId(null);
-                            } : undefined}
+                            {...(canSort ? { onClick: column.getToggleSortingHandler() } : {})}
+                            {...(canDrag ? {
+                                onDragOver: (e: any) => { e.preventDefault(); if (dragOverId !== column.id) setDragOverId(column.id); },
+                                onDragLeave: () => setDragOverId((cur) => (cur === column.id ? null : cur)),
+                                onDrop: (e: any) => {
+                                    e.preventDefault();
+                                    const dragged = e.dataTransfer.getData('text/plain');
+                                    if (dragged && dragged !== column.id) actions.handleColumnReorder(dragged, column.id);
+                                    setDragOverId(null);
+                                    setDraggingId(null);
+                                },
+                            } : {})}
+                            sx={headerCellSlotProps.sx}
                             style={{
                                 // Group headers span their leaves: size from header.getSize() (sum of
                                 // leaves) inline — NOT the --col-<id> var, which is keyed by column.id
@@ -423,29 +465,57 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
                                 ...getPinnedStyle(column, isRtl),
                                 ...(column.getIsPinned() ? { backgroundColor: 'var(--dt-header-bg)', backgroundImage: 'none' } : {}),
                                 ...(isDropTarget ? { boxShadow: `inset ${isRtl ? -2 : 2}px 0 0 0 var(--dt-resize-handle)` } : {}),
+                                // Slot style LAST — the only channel that can beat inline styles
+                                // (sx can't). Overriding flex/width is at-your-own-risk (documented).
+                                ...headerCellSlotProps.style,
                             }}
                         >
+                            {/* Title + sort icon grow to fill (flex:1) so the ⋮ menu and the
+                                resize handle are pushed to the trailing edge — matching MUI. */}
                             <Box
                                 component="span"
-                                data-cell-content
-                                draggable={canDrag || undefined}
-                                onDragStart={canDrag ? (e) => { e.dataTransfer.setData('text/plain', column.id); e.dataTransfer.effectAllowed = 'move'; setDraggingId(column.id); } : undefined}
-                                onDragEnd={canDrag ? () => { setDraggingId(null); setDragOverId(null); } : undefined}
-                                sx={{ overflow: 'hidden', ...textWrapSx(wrapText), cursor: canDrag ? 'grab' : undefined }}
+                                data-header-main
+                                sx={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: 0.5,
+                                    flex: 1,
+                                    minWidth: 0,
+                                    justifyContent: align === 'right' ? 'flex-end' : align === 'center' ? 'center' : 'flex-start',
+                                }}
                             >
-                                {header.isPlaceholder ? null : flexRender(column.columnDef.header, header.getContext())}
-                            </Box>
-                            {sorted ? (
-                                // Size via CSS on the child icon (not props) so MUI *and* custom
-                                // non-MUI icons (lucide/SVG) both render at 16px without receiving an `sx` prop.
                                 <Box
                                     component="span"
-                                    aria-hidden
-                                    sx={{ display: 'inline-flex', alignItems: 'center', '& > svg': { fontSize: 16, width: 16, height: 16 } }}
+                                    data-cell-content
+                                    draggable={canDrag || undefined}
+                                    onDragStart={canDrag ? (e) => { e.dataTransfer.setData('text/plain', column.id); e.dataTransfer.effectAllowed = 'move'; setDraggingId(column.id); } : undefined}
+                                    onDragEnd={canDrag ? () => { setDraggingId(null); setDragOverId(null); } : undefined}
+                                    sx={{ overflow: 'hidden', ...textWrapSx(wrapText), cursor: canDrag ? 'grab' : undefined }}
                                 >
-                                    {sorted === 'asc' ? <SortAscIcon /> : <SortDescIcon />}
+                                    {header.isPlaceholder ? null : flexRender(column.columnDef.header, header.getContext())}
                                 </Box>
-                            ) : null}
+                                {/* Sort indicator: shown for any sortable column. Faint on cell hover
+                                    when unsorted (an affordance that clicking sorts), solid once sorted.
+                                    Size via CSS on the child icon (not props) so MUI *and* custom non-MUI
+                                    icons (lucide/SVG) both render at 16px without receiving an `sx` prop. */}
+                                {canSort ? (
+                                    <Box
+                                        component="span"
+                                        aria-hidden
+                                        sx={{
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            flexShrink: 0,
+                                            '& > svg': { fontSize: 16, width: 16, height: 16 },
+                                            opacity: sorted ? 1 : 0,
+                                            transition: 'opacity 120ms',
+                                            ...(sorted ? {} : { '[role="columnheader"]:hover &': { opacity: 0.45 } }),
+                                        }}
+                                    >
+                                        {sorted === 'desc' ? <SortDescIcon /> : <SortAscIcon />}
+                                    </Box>
+                                ) : null}
+                            </Box>
                             {showMenu ? (
                                 <ColumnMenu
                                     column={column}
@@ -456,6 +526,9 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
                                 />
                             ) : null}
                             {canResize ? (
+                                // Full-height hit area (easy to grab / double-click to autofit), but the
+                                // VISIBLE divider is a short centered line (::before) — revealed on cell
+                                // hover, highlighted while hovering the handle or actively resizing.
                                 <Box
                                     onMouseDown={header.getResizeHandler()}
                                     onTouchStart={header.getResizeHandler()}
@@ -467,19 +540,32 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
                                         top: 0,
                                         insetInlineEnd: 0, // logical → flips to the left edge under RTL
                                         height: '100%',
-                                        width: '6px',
+                                        width: '11px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
                                         cursor: 'col-resize',
                                         userSelect: 'none',
                                         touchAction: 'none',
-                                        '&:hover': { background: 'var(--dt-resize-handle)' },
-                                        ...(column.getIsResizing() ? { background: 'var(--dt-resize-handle)' } : {}),
+                                        '&::before': {
+                                            content: '""',
+                                            width: '2px',
+                                            height: '60%',
+                                            maxHeight: '22px',
+                                            borderRadius: '1px',
+                                            background: column.getIsResizing() ? 'var(--dt-resize-handle)' : 'var(--dt-border-color)',
+                                            opacity: column.getIsResizing() ? 1 : 0,
+                                            transition: 'opacity 120ms, background 120ms',
+                                        },
+                                        '[role="columnheader"]:hover &::before': { opacity: 1 },
+                                        '&:hover::before': { background: 'var(--dt-resize-handle)', opacity: 1 },
                                     }}
                                 />
                             ) : null}
-                        </GridHeaderCell>
+                        </HeaderCellSlot>
                     );
                 })}
-            </GridHeaderRow>
+            </HeaderRowSlot>
         ));
     };
 
@@ -503,15 +589,17 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
         const ariaRowIndex = (pinned ? row.index : ariaRowStart + displayIndex) + headerRowCount + 1;
         return (
             <Fragment key={row.id}>
-            <GridRow
+            <RowSlot
+                {...rowSlotProps.rest}
                 role="row"
                 aria-rowindex={ariaRowIndex}
                 aria-level={isTree ? row.depth + 1 : undefined}
                 aria-expanded={isTree && (row.getCanExpand?.() ?? false) ? row.getIsExpanded() : undefined}
-                className={rowClassName}
+                className={joinClassNames(rowClassName, rowSlotProps.className)}
                 aria-selected={isSelected || undefined}
-                onClick={onRowClick ? (e) => onRowClick(e as any, row) : undefined}
-                sx={{
+                onClick={onRowClick ? (e: any) => onRowClick(e, row) : undefined}
+                style={rowSlotProps.style}
+                sx={mergeSx({
                     '--dt-row-bg': isSelected
                         ? 'var(--dt-row-bg-selected)'
                         : striped && isOdd
@@ -520,7 +608,7 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
                     background: 'var(--dt-row-bg)',
                     cursor: onRowClick ? 'pointer' : 'default',
                     ...(hover ? { '&:hover': { '--dt-row-bg': 'var(--dt-row-bg-hover)' } } : {}),
-                }}
+                }, rowSlotProps.sx)}
             >
                 {row.getVisibleCells().map((cell, colIndex) => {
                     const column = cell.column;
@@ -539,8 +627,10 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
                     const cellInRowEdit = isEditingRow && editable;
                     const cellOpen = cellEditing || cellInRowEdit;
                     return (
-                        <GridCell
+                        <CellSlot
                             key={cell.id}
+                            // slotProps rest FIRST — keyboard/edit/aria props below can't be clobbered.
+                            {...cellSlotProps.rest}
                             role="gridcell"
                             data-col-id={column.id}
                             data-r={displayIndex + 1}
@@ -548,9 +638,10 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
                             tabIndex={kbd.isFocused(displayIndex + 1, colIndex) ? 0 : -1}
                             aria-colindex={colIndex + 1}
                             onFocus={() => kbd.setFocused({ row: displayIndex + 1, col: colIndex })}
-                            onDoubleClick={editable ? (e) => { e.stopPropagation(); if (editMode === 'row') enterRowEdit(row); else setEditing({ rowId: row.id, columnId: column.id }); } : undefined}
-                            onClick={editable || cellOpen ? (e) => e.stopPropagation() : undefined}
-                            className={cellClassName}
+                            onDoubleClick={editable ? (e: any) => { e.stopPropagation(); if (editMode === 'row') enterRowEdit(row); else setEditing({ rowId: row.id, columnId: column.id }); } : undefined}
+                            onClick={editable || cellOpen ? (e: any) => e.stopPropagation() : undefined}
+                            className={joinClassNames(cellClassName, cellSlotProps.className)}
+                            {...(cellSlotProps.sx ? { sx: cellSlotProps.sx } : {})}
                             style={{
                                 flex: flexFor(column),
                                 width: `var(--col-${column.id}-size)`,
@@ -560,6 +651,7 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
                                 // Edit mode: a clean full-cell ring (no stray underline), after
                                 // getPinnedStyle so it wins over a pinned cell's shadow.
                                 ...(cellOpen ? { boxShadow: 'inset 0 0 0 2px var(--dt-resize-handle)', backgroundColor: 'var(--dt-row-bg)' } : {}),
+                                ...cellSlotProps.style,
                             }}
                         >
                             {cellOpen ? (
@@ -581,12 +673,18 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
                                     {flexRender(column.columnDef.cell, cell.getContext())}
                                 </Box>
                             )}
-                        </GridCell>
+                        </CellSlot>
                     );
                 })}
-            </GridRow>
+            </RowSlot>
             {isExpanded ? (
-                <GridDetailPanel role="row">{renderDetailPanel!(row)}</GridDetailPanel>
+                <DetailPanelSlot
+                    {...detailPanelSlotProps.rest}
+                    role="row"
+                    className={detailPanelSlotProps.className}
+                    style={detailPanelSlotProps.style}
+                    sx={detailPanelSlotProps.sx}
+                >{renderDetailPanel!(row)}</DetailPanelSlot>
             ) : null}
             </Fragment>
         );
@@ -594,6 +692,14 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
 
     const renderBody = () => {
         if (loading) {
+            // A custom loadingOverlay replaces the skeleton rows; else the default skeletons.
+            if (LoadingOverlaySlot) {
+                return (
+                    <GridLoadingOverlay {...loadingOverlaySlotProps.rest} role="row" className={loadingOverlaySlotProps.className} style={loadingOverlaySlotProps.style} sx={loadingOverlaySlotProps.sx}>
+                        <LoadingOverlaySlot />
+                    </GridLoadingOverlay>
+                );
+            }
             return Array.from({ length: skeletonRows }).map((_, i) => (
                 <GridRow key={`sk-${i}`} role="row">
                     {table.getVisibleLeafColumns().map((column) => (
@@ -605,7 +711,11 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
             ));
         }
         if (rows.length === 0) {
-            return <GridOverlay role="row">{emptyText}</GridOverlay>;
+            return (
+                <GridOverlay {...noRowsOverlaySlotProps.rest} role="row" className={noRowsOverlaySlotProps.className} style={noRowsOverlaySlotProps.style} sx={noRowsOverlaySlotProps.sx}>
+                    {NoRowsOverlaySlot ? <NoRowsOverlaySlot emptyText={emptyText} /> : emptyText}
+                </GridOverlay>
+            );
         }
         if (isVirtual) {
             const virtualRows = rowVirtualizer.getVirtualItems();
@@ -655,7 +765,19 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
 
     return (
         <LocaleTextProvider value={locale}>
-        <GridRoot dir={isRtl ? 'rtl' : undefined} style={{ ...tokens, ...rootStyle }} className={props.className}>
+        <RootSlot
+            // dir first so slotProps.root can deliberately override it.
+            dir={isRtl ? 'rtl' : undefined}
+            {...rootSlotProps.rest}
+            className={joinClassNames(props.className, rootSlotProps.className)}
+            // Merge (not replace) so slotProps.root.style adds properties without
+            // nuking the whole style. The --dt-* tokens and scroll-layout height are
+            // required, so they win per-property (spread LAST) — matching the scroller
+            // and grid-track sites. Override tokens via `sx`/theme and height via the
+            // `height` prop, not by racing this inline style.
+            style={{ ...rootSlotProps.style, ...tokens, ...rootStyle }}
+            sx={mergeSx(sx, rootSlotProps.sx)}
+        >
             <GridAnnouncer engine={engine} />
             {showToolbar ? (
                 <ToolbarComponent
@@ -672,35 +794,48 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
                     enableSavedViews={enableSavedViews}
                     extraFilter={extraFilter}
                     slots={slots}
+                    slotProps={slotProps}
                     renderToolbar={renderToolbar}
                 />
             ) : null}
             {derived.isSomeRowsSelected ? (
-                <BulkActionsToolbar
+                <BulkToolbarSlot
+                    engine={engine}
                     selectedCount={derived.selectedRowCount}
                     selectionState={state.selectionState}
                     onClear={() => engine.api.selection.deselectAll()}
                     onCopy={enableClipboardCopy ? () => { void engine.api.clipboard.copySelectedRows(); } : undefined}
                     renderBulkActions={renderBulkActions}
+                    {...(slotProps?.bulkActionsToolbar ?? {})}
                 />
             ) : null}
-            <GridScroller
+            <ScrollerSlot
+                {...scrollerSlotProps.rest}
                 ref={refs.tableContainerRef}
                 role={isTree ? 'treegrid' : 'grid'}
                 aria-rowcount={isTree ? -1 : derived.tableTotalRow + headerRowCount}
                 aria-colcount={table.getVisibleLeafColumns().length}
                 onKeyDown={kbd.onKeyDown}
-                style={scrollerStyle}
+                className={scrollerSlotProps.className}
+                sx={scrollerSlotProps.sx}
+                // scrollerStyle is the required fixed-height layout — internal wins per-property.
+                style={{ ...scrollerSlotProps.style, ...scrollerStyle }}
             >
-                <div style={{ ...columnSizeVars, width: fitToScreen ? '100%' : totalSize, minWidth: totalSize } as CSSProperties}>
-                    <GridHeader role="rowgroup">{renderHeader()}</GridHeader>
+                <GridTrackSlot
+                    {...gridSlotProps.rest}
+                    className={gridSlotProps.className}
+                    sx={gridSlotProps.sx}
+                    // columnSizeVars/width/minWidth are required layout — spread AFTER slot style.
+                    style={{ ...gridSlotProps.style, ...columnSizeVars, width: fitToScreen ? '100%' : totalSize, minWidth: totalSize } as CSSProperties}
+                >
+                    <HeaderSlot {...headerSlotProps.rest} role="rowgroup" className={headerSlotProps.className} style={headerSlotProps.style} sx={headerSlotProps.sx}>{renderHeader()}</HeaderSlot>
                     {!loading && topRows.length ? (
                         // Parks just under the always-sticky header.
                         <GridPinnedTopBand role="rowgroup" style={{ top: 'var(--dt-header-height)' }}>
                             {renderPinnedBand(topRows, 0)}
                         </GridPinnedTopBand>
                     ) : null}
-                    <GridBody role="rowgroup">{renderBody()}</GridBody>
+                    <BodySlot {...bodySlotProps.rest} role="rowgroup" className={bodySlotProps.className} style={bodySlotProps.style} sx={bodySlotProps.sx}>{renderBody()}</BodySlot>
                     {!loading && bottomRows.length ? (
                         // Parks above the aggregation footer (when present), else at the viewport bottom.
                         <GridPinnedBottomBand role="rowgroup" style={{ bottom: showAggregation ? 'var(--dt-row-height)' : 0 }}>
@@ -708,11 +843,12 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
                         </GridPinnedBottomBand>
                     ) : null}
                     {showAggregation ? <div role="rowgroup">{renderAggregation()}</div> : null}
-                </div>
-            </GridScroller>
+                </GridTrackSlot>
+            </ScrollerSlot>
 
             {enablePagination ? (
-                <GridFooter>
+                <FooterSlot {...footerSlotProps.rest} className={footerSlotProps.className} style={footerSlotProps.style} sx={footerSlotProps.sx}>
+                    <GridPagination>
                     {(() => {
                         const PaginationComponent = slots?.pagination ?? TablePagination;
                         // Keep the current pageSize in the options so MUI's Select always has a
@@ -733,12 +869,15 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
                                 rowsPerPageOptions={pageSizeOptions}
                                 labelRowsPerPage={locale.paginationRowsPerPage}
                                 labelDisplayedRows={({ from, to, count }: { from: number; to: number; count: number }) => locale.paginationDisplayedRows({ from, to, count })}
+                                // slotProps.pagination LAST (leaf control) — deliberate overrides win.
+                                {...(slotProps?.pagination ?? {})}
                             />
                         );
                     })()}
-                </GridFooter>
+                    </GridPagination>
+                </FooterSlot>
             ) : null}
-        </GridRoot>
+        </RootSlot>
         </LocaleTextProvider>
     );
 }

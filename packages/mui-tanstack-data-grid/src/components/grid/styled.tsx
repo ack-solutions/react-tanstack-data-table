@@ -205,10 +205,28 @@ export const GridFooter = styled('div', { name: 'MuiTanstackDataGrid', slot: 'Fo
     },
 }) as unknown as DivSlot;
 
-export const GridOverlay = styled('div', { name: 'MuiTanstackDataGrid', slot: 'Overlay' })({
+// Centered message/content overlay. Base styles shared by the no-rows and loading
+// overlays (each a distinct MUI slot so styleOverrides.{noRowsOverlay,loadingOverlay}
+// target them independently).
+const overlayBase = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     minHeight: 120,
     color: 'var(--dt-header-color)',
+} as const;
+
+// NOTE (1.18.0): slot renamed 'Overlay' → 'NoRowsOverlay' so the emitted class matches
+// the declared styleOverrides key (the old class was never in the typed union).
+export const GridOverlay = styled('div', { name: 'MuiTanstackDataGrid', slot: 'NoRowsOverlay' })(overlayBase) as unknown as DivSlot;
+
+/** Wrapper for a custom `slots.loadingOverlay` (the default loading UI is skeleton rows). */
+export const GridLoadingOverlay = styled('div', { name: 'MuiTanstackDataGrid', slot: 'LoadingOverlay' })(overlayBase) as unknown as DivSlot;
+
+/** The column-sized track inside the scroller (hosts header/body/bands/aggregation). */
+export const GridGrid = styled('div', { name: 'MuiTanstackDataGrid', slot: 'Grid' })({}) as unknown as DivSlot;
+
+/** Wrapper around the pagination control inside the footer (its themeable part). */
+export const GridPagination = styled('div', { name: 'MuiTanstackDataGrid', slot: 'Pagination' })({
+    width: '100%',
 }) as unknown as DivSlot;

@@ -69,8 +69,27 @@ rounded corners — so you don't need to wrap it in your own `<Paper>`. Drop the
 
 ## 4. Per-instance overrides
 
-Use the `density` prop, `sx` on the root, or `slotProps` on any part. Slots replace a part entirely. The
-MUI theme, tokens, and `sx` compose — you never manage colours twice.
+Style one grid without touching the theme: the `density` prop, `sx` on the root, or `slotProps` on any
+part. `sx` and every `slotProps` entry **merge** with the built-in styling (yours wins per-property) — you
+never lose the grid's roles, refs, keyboard wiring, or `--dt-*` tokens, and you never manage colours twice.
+
+```tsx
+<DataTable
+  columns={columns}
+  data={rows}
+  // Root sx composes with the theme + tokens — e.g. drop the card frame just here:
+  sx={{ border: 0, borderRadius: 0 }}
+  slotProps={{
+    // Inject sx/props into any part; the built-in styles stay underneath.
+    row:  { sx: { '&:nth-of-type(even)': { bgcolor: 'action.hover' } } },
+    cell: { sx: { fontVariantNumeric: 'tabular-nums' } },
+    // Leaf controls (pagination, toolbar buttons) take your props last, so overrides win:
+    pagination: { rowsPerPageOptions: [10, 25, 100] },
+  }}
+/>
+```
+
+To replace a part outright instead of styling it, pass a component to `slots.<key>` (`slots={{ noRowsOverlay: MyEmptyState }}`).
 
 ## 5. Dark mode
 

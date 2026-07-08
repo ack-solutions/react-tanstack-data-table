@@ -128,9 +128,13 @@ to the built-in.
 | --- | --- |
 | `toolbar` | the whole toolbar |
 | `searchInput` | global search field |
-| `columnFilterControl`, `columnVisibilityControl`, `columnPinningControl`, `densityControl` | toolbar menus |
+| `columnFilterControl`, `columnVisibilityControl`, `densityControl` | toolbar menus |
+| `viewsControl` | saved-views control |
 | `exportButton`, `refreshButton`, `resetButton` | toolbar buttons |
 | `bulkActionsToolbar` | selection bulk-actions bar |
+
+Each control is both **swappable** (`slots.<key>`) and **injectable** (`slotProps.<key>`) — pass a
+component to replace it, or props/`sx` to style the built-in one.
 
 ### Icon slots
 
@@ -145,8 +149,14 @@ Swap in your own set (e.g. lucide); defaults are built-in line icons. See [Custo
 | `sortIconAsc`, `sortIconDesc` | header sort |
 | `expandIcon`, `collapseIcon` | row expand / collapse |
 
-`slotProps` accepts the same keys, plus **`selectionColumn`** / **`expandColumn`** to configure the
-auto-generated checkbox / expander columns — e.g. `slotProps={{ selectionColumn: { enablePinning: true } }}`.
+`slotProps` accepts the same keys, plus **`selectionColumn`** / **`expandColumn`** / **`actionsColumn`** to
+configure the auto-generated checkbox / expander / row-actions columns — e.g.
+`slotProps={{ selectionColumn: { enablePinning: true } }}`.
+
+Every `slotProps` entry's `sx`, `className`, and `style` **merge** with the built-in styling (yours wins
+per-property) — a structural part never loses its required roles, refs, or keyboard wiring, and the root's
+design tokens are never clobbered. Leaf controls (pagination, toolbar buttons) spread your props **last**,
+so a deliberate override wins.
 
 ## Height & scrolling
 

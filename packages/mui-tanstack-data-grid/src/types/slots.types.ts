@@ -32,11 +32,19 @@ export interface DataTableSlots {
 
     // ── Toolbar & controls ────────────────────────────────────
     toolbar?: ComponentType<any>;
+    /** Replaces the global search — receives `{ value, onChange, placeholder, SearchIcon, ClearIcon }`. */
     searchInput?: ComponentType<any>;
+    /** Replaces the combined Columns control (visibility + pinning + reordering panel). */
     columnVisibilityControl?: ComponentType<any>;
     columnFilterControl?: ComponentType<any>;
+    /**
+     * @deprecated No standalone pinning control exists — pinning lives inside the
+     * Columns panel ({@link columnVisibilityControl}) and the per-column header menu.
+     * This key was never read; use `columnVisibilityControl` or `apiRef.current.columnPinning`.
+     */
     columnPinningControl?: ComponentType<any>;
     densityControl?: ComponentType<any>;
+    viewsControl?: ComponentType<any>;
     resetButton?: ComponentType<any>;
     refreshButton?: ComponentType<any>;
     exportButton?: ComponentType<any>;
@@ -65,8 +73,13 @@ export interface DataTableSlots {
 }
 
 /**
- * Props injected into each slot, keyed by slot name (MUI `slotProps`). Three extra
- * keys configure the auto-generated special columns:
+ * Props injected into each slot, keyed by slot name (MUI `slotProps`). Structural
+ * parts merge `sx`/`className`/`style` with the built-in styles (yours wins) and
+ * spread the rest — required behavior props (roles, refs, keyboard/aria wiring)
+ * can't be clobbered. Leaf controls (pagination, toolbar buttons) spread yours
+ * LAST, so deliberate prop overrides win. Icon keys are accepted but inert —
+ * icons are swap-only (use `slots.<icon>`). Three extra keys configure the
+ * auto-generated special columns:
  *  - `selectionColumn` — overrides spread into the checkbox column
  *  - `expandColumn` — overrides spread into the expander column
  *  - `actionsColumn` — overrides spread into the row-actions column

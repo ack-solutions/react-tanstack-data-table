@@ -12,12 +12,12 @@
  *     },
  *   })
  */
-import type { ComponentsOverrides, ComponentsPropsList } from '@mui/material/styles';
+import type { ComponentsOverrides } from '@mui/material/styles';
 
 import type { TanstackDataGridPalette } from './palette';
 import type { DataTableProps } from '../types/data-table.types';
 
-/** styleOverrides slot keys (the grid's themeable parts). */
+/** styleOverrides slot keys — exactly the styled slots in components/grid/styled.tsx. */
 export type DataTableClassKey =
     | 'root'
     | 'scroller'
@@ -29,6 +29,9 @@ export type DataTableClassKey =
     | 'body'
     | 'row'
     | 'cell'
+    | 'footerRow'
+    | 'pinnedTopBand'
+    | 'pinnedBottomBand'
     | 'detailPanel'
     | 'footer'
     | 'pagination'
