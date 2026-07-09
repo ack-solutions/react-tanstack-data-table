@@ -16,6 +16,43 @@ format: each release groups changes as **Added** (new features), **Changed** (be
 
 ---
 
+## [1.18.3](https://www.npmjs.com/package/@ackplus/mui-tanstack-data-grid/v/1.18.3) — 2026-07-09
+
+Deeper MUI-theme integration for **typography and spacing**, plus roomier cells. No API changes; the grid now
+follows a custom theme's fonts and spacing.
+
+### Changed
+- **Typography follows the theme.** Data cells use `theme.typography.body2` and header / aggregation cells use
+  `theme.typography.subtitle2` (family, weight, line-height, letter-spacing) — the hardcoded `fontSize: 0.8125rem`
+  / `fontWeight: 600` are gone. Font **size** stays density-scaled via the `--dt-font-size` token, which now
+  derives from `theme.typography.body2.fontSize`. Applied directly on the styled cell/header primitives — **no
+  extra `<Typography>` wrappers**. *Side effect: the header font now scales with density (it was previously
+  pinned at the compact size).*
+- **Spacing follows `theme.spacing()`.** Density presets express cell padding — and the toolbar / footer gaps —
+  in spacing **units**, so `--dt-cell-padding-*` and the built-in gaps track a custom `theme.spacing`.
+- **Roomier cells with vertical padding.** Cells gained density-based **top/bottom** padding, and the padding
+  was retuned to be near-square and more generous (default theme: compact ≈ 8/6px, standard 16px, comfortable
+  20px, horizontal × vertical). Wrapped or tall content now gets proper breathing room and the row grows with
+  it instead of the text touching the row edges. `rowHeight` stays a **min** floor, so ordinary single-line
+  rows keep a consistent density height.
+
+### Notes
+- The `--dt-*` tokens remain the fast per-instance / `sx` override channel — they just **default** from
+  `theme.spacing` / `theme.typography` now instead of hardcoded values. Colours and radius were already
+  theme-derived. The div render layer is unchanged: it is 18 `styled('div', { name, slot })` MUI primitives
+  (themeable via `styleOverrides`), not raw divs — only three intentional 0-height spacers remain plain.
+
+---
+
+## [1.18.2](https://www.npmjs.com/package/@ackplus/mui-tanstack-data-grid/v/1.18.2) — 2026-07-09
+
+### Fixed
+- **Header text contrast.** The header text colour now derives from `palette.text.primary` (was
+  `text.secondary`) for a darker, higher-contrast header. Override via `palette.tanstackDataGrid.headerColor`
+  or the `--dt-header-color` variable.
+
+---
+
 ## [1.18.1](https://www.npmjs.com/package/@ackplus/mui-tanstack-data-grid/v/1.18.1) — 2026-07-08
 
 Column-header/separator polish and a clearer, safer toolbar **Reset**. Builds on 1.18.0.

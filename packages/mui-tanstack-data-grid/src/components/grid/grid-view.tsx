@@ -201,7 +201,8 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
 
     const totalSize = table.getTotalSize();
     const columnSizing = table.getState().columnSizing;
-    const isRtl = useTheme().direction === 'rtl';
+    const theme = useTheme();
+    const isRtl = theme.direction === 'rtl';
     // Multi-level (grouped) headers: when there's more than one header row, columns
     // must hold their exact widths so a group header spans its leaves pixel-perfectly
     // (flex-grow would stretch a group cell by less than its leaves and misalign them).
@@ -462,7 +463,7 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
                                 width: isGroupHeader ? `${header.getSize()}px` : `var(--col-${column.id}-size)`,
                                 justifyContent: align === 'right' ? 'flex-end' : align === 'center' ? 'center' : 'flex-start',
                                 cursor: canSort ? 'pointer' : 'default',
-                                gap: 4,
+                                gap: theme.spacing(0.5),
                                 ...getPinnedStyle(column, isRtl),
                                 ...(column.getIsPinned() ? { backgroundColor: 'var(--dt-header-bg)', backgroundImage: 'none' } : {}),
                                 ...(isDropTarget ? { boxShadow: `inset ${isRtl ? -2 : 2}px 0 0 0 var(--dt-resize-handle)` } : {}),

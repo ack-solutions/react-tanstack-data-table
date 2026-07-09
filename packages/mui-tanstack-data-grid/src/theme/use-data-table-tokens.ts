@@ -20,6 +20,11 @@ export function useDataTableTokens(density: DataTableDensity = 'standard'): CSSP
         // GridRoot styled's scheme-aware default instead of pinning to one mode).
         const userPal = (theme.palette as unknown as { tanstackDataGrid?: Record<string, string> }).tanstackDataGrid ?? {};
         const d = DENSITY_PRESETS[density] ?? DENSITY_PRESETS.standard;
+        // Font size follows the theme's body2 size, scaled per density (via CSS calc so
+        // any unit — rem/px/em — works). A numeric fontSize is normalised to px first.
+        const baseFont = theme.typography.body2?.fontSize ?? '0.875rem';
+        const baseFontStr = typeof baseFont === 'number' ? `${baseFont}px` : baseFont;
+        const fontSize = d.fontScale === 1 ? baseFontStr : `calc(${baseFontStr} * ${d.fontScale})`;
         const vars: Record<string, string | number> = {
             [DT_VARS.borderColor]: pal.borderColor,
             [DT_VARS.headerColor]: pal.headerColor,
@@ -34,9 +39,10 @@ export function useDataTableTokens(density: DataTableDensity = 'standard'): CSSP
             ...(userPal.stripeBg ? { [DT_VARS.rowBgStripe]: userPal.stripeBg } : {}),
             [DT_VARS.rowHeight]: `${d.rowHeight}px`,
             [DT_VARS.headerHeight]: `${d.headerHeight}px`,
-            [DT_VARS.cellPaddingX]: `${d.cellPaddingX}px`,
-            [DT_VARS.cellPaddingY]: `${d.cellPaddingY}px`,
-            [DT_VARS.fontSize]: d.fontSize,
+            // Padding tracks the theme's spacing scale (units → theme.spacing()).
+            [DT_VARS.cellPaddingX]: theme.spacing(d.cellPaddingX),
+            [DT_VARS.cellPaddingY]: theme.spacing(d.cellPaddingY),
+            [DT_VARS.fontSize]: fontSize,
             // Outer card radius. Derives from the theme but floors at 8px so the
             // default reads modern; consumers can drop it via --dt-radius / sx.
             [DT_VARS.radius]: `${Math.max(Number(theme.shape.borderRadius) || 0, 8)}px`,

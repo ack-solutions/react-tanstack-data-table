@@ -53,17 +53,17 @@ export const GridRoot = styled('div', { name: 'MuiTanstackDataGrid', slot: 'Root
     };
 }) as unknown as DivSlot;
 
-export const GridToolbar = styled('div', { name: 'MuiTanstackDataGrid', slot: 'Toolbar' })({
+export const GridToolbar = styled('div', { name: 'MuiTanstackDataGrid', slot: 'Toolbar' })(({ theme }) => ({
     display: 'flex',
     alignItems: 'center',
-    gap: 4,
+    gap: theme.spacing(0.5),
     flexWrap: 'wrap',
     flexShrink: 0,
     minHeight: 52,
-    paddingInline: 12,
-    paddingBlock: 8,
+    paddingInline: theme.spacing(1.5),
+    paddingBlock: theme.spacing(1),
     borderBottom: '1px solid var(--dt-border-color)',
-}) as unknown as DivSlot;
+})) as unknown as DivSlot;
 
 export const GridScroller = styled('div', { name: 'MuiTanstackDataGrid', slot: 'Scroller' })({
     position: 'relative',
@@ -88,14 +88,18 @@ export const GridHeaderRow = styled('div', { name: 'MuiTanstackDataGrid', slot: 
     borderBottom: '1px solid var(--dt-border-color)',
 }) as unknown as DivSlot;
 
-export const GridHeaderCell = styled('div', { name: 'MuiTanstackDataGrid', slot: 'HeaderCell' })({
+export const GridHeaderCell = styled('div', { name: 'MuiTanstackDataGrid', slot: 'HeaderCell' })(({ theme }) => ({
+    // Header typography follows the theme's `subtitle2` variant (family / weight /
+    // line-height / letter-spacing); only the size is density-driven via the token.
+    ...theme.typography.subtitle2,
+    fontSize: 'var(--dt-font-size)',
     boxSizing: 'border-box',
     display: 'flex',
     alignItems: 'center',
     position: 'relative',
+    // Matches the body cell so header + data align; headerHeight is only a min floor.
+    paddingBlock: 'var(--dt-cell-padding-y)',
     paddingInline: 'var(--dt-cell-padding-x)',
-    fontSize: '0.8125rem',
-    fontWeight: 600,
     color: 'var(--dt-header-color)',
     userSelect: 'none',
     outline: 'none',
@@ -104,7 +108,7 @@ export const GridHeaderCell = styled('div', { name: 'MuiTanstackDataGrid', slot:
     // GridView) is the single vertical divider, so resizable columns don't show a double
     // line and non-resizable/pinned columns read cleanly. Column boundaries otherwise come
     // from the row borders + (for pinned columns) the pinned-edge shadow.
-}) as unknown as DivSlot;
+})) as unknown as DivSlot;
 
 export const GridBody = styled('div', { name: 'MuiTanstackDataGrid', slot: 'Body' })({}) as unknown as DivSlot;
 
@@ -118,20 +122,30 @@ export const GridRow = styled('div', { name: 'MuiTanstackDataGrid', slot: 'Row' 
     '&:last-of-type': { borderBottom: 'none' },
 }) as unknown as DivSlot;
 
-export const GridCell = styled('div', { name: 'MuiTanstackDataGrid', slot: 'Cell' })({
+export const GridCell = styled('div', { name: 'MuiTanstackDataGrid', slot: 'Cell' })(({ theme }) => ({
+    // Body typography follows the theme's `body2` variant; size stays density-driven.
+    ...theme.typography.body2,
+    fontSize: 'var(--dt-font-size)',
     boxSizing: 'border-box',
     display: 'flex',
     alignItems: 'center',
     minWidth: 0,
+    // Vertical padding is density-based too (like the horizontal): with `rowHeight` only a
+    // MIN floor, single-line rows keep their density height, while wrapped / tall content
+    // grows the row and keeps proper top/bottom breathing room instead of touching the edges.
+    paddingBlock: 'var(--dt-cell-padding-y)',
     paddingInline: 'var(--dt-cell-padding-x)',
     outline: 'none',
     '&:focus-visible': { outline: '2px solid var(--dt-resize-handle)', outlineOffset: '-2px', zIndex: 1 },
-}) as unknown as DivSlot;
+})) as unknown as DivSlot;
 
 // Aggregation summary row — sticks to the bottom of the scroll viewport, above
 // the (out-of-scroller) pagination footer. Sits inside the column-sized track so
 // its cells align with the data columns and honour pinning.
-export const GridFooterRow = styled('div', { name: 'MuiTanstackDataGrid', slot: 'FooterRow' })({
+export const GridFooterRow = styled('div', { name: 'MuiTanstackDataGrid', slot: 'FooterRow' })(({ theme }) => ({
+    // Same theme-driven `subtitle2` treatment as the header (it's a summary/header-like row).
+    ...theme.typography.subtitle2,
+    fontSize: 'var(--dt-font-size)',
     display: 'flex',
     position: 'sticky',
     bottom: 0,
@@ -139,10 +153,8 @@ export const GridFooterRow = styled('div', { name: 'MuiTanstackDataGrid', slot: 
     minHeight: 'var(--dt-row-height)',
     background: 'var(--dt-header-bg)',
     borderTop: '1px solid var(--dt-border-color)',
-    fontWeight: 600,
-    fontSize: '0.8125rem',
     color: 'var(--dt-header-color)',
-}) as unknown as DivSlot;
+})) as unknown as DivSlot;
 
 // Pinned-row bands — sticky rowgroups inside the single scroller. The top band
 // parks just under the (always-sticky) header; the bottom band parks above the
@@ -171,7 +183,7 @@ export const GridDetailPanel = styled('div', { name: 'MuiTanstackDataGrid', slot
     borderBottom: '1px solid var(--dt-border-color)',
 }) as unknown as DivSlot;
 
-export const GridFooter = styled('div', { name: 'MuiTanstackDataGrid', slot: 'Footer' })({
+export const GridFooter = styled('div', { name: 'MuiTanstackDataGrid', slot: 'Footer' })(({ theme }) => ({
     borderTop: '1px solid var(--dt-border-color)',
     // Held at its natural height so it pins to the bottom while the scroller flexes.
     flexShrink: 0,
@@ -190,15 +202,15 @@ export const GridFooter = styled('div', { name: 'MuiTanstackDataGrid', slot: 'Fo
         paddingInline: 'var(--dt-cell-padding-x)',
         flexWrap: 'wrap',
         justifyContent: 'flex-end',
-        rowGap: 4,
+        rowGap: theme.spacing(0.5),
     },
     // Global `p { margin }` (Docusaurus/WordPress/Tailwind) leaks into the
-    // pagination labels and balloons the row height — pin them flush.
+    // pagination labels and balloons the row height — pin them flush (theme body2 line-height).
     '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': {
         margin: 0,
-        lineHeight: 1.43,
+        lineHeight: theme.typography.body2.lineHeight,
     },
-}) as unknown as DivSlot;
+})) as unknown as DivSlot;
 
 // Centered message/content overlay. Base styles shared by the no-rows and loading
 // overlays (each a distinct MUI slot so styleOverrides.{noRowsOverlay,loadingOverlay}

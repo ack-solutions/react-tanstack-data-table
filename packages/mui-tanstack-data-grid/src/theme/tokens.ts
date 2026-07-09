@@ -10,17 +10,23 @@
 export type DataTableDensity = 'compact' | 'standard' | 'comfortable';
 
 export interface DensityTokens {
+    /** Row / header heights are intrinsic layout dimensions, kept in px. */
     rowHeight: number;
     headerHeight: number;
+    /** Cell padding, expressed in `theme.spacing()` UNITS (resolver multiplies by the theme's spacing). */
     cellPaddingX: number;
     cellPaddingY: number;
-    fontSize: string;
+    /** Font-size multiplier applied to `theme.typography.body2.fontSize` (so size follows the theme). */
+    fontScale: number;
 }
 
+// Padding is in spacing units and font-size is a scale on the theme's body2 size, so
+// both track the MUI theme (`spacing` = 8px and `body2` = 0.875rem by default reproduce
+// the previous 8/16px padding and 0.8125/0.875/0.9375rem sizes).
 export const DENSITY_PRESETS: Record<DataTableDensity, DensityTokens> = {
-    compact: { rowHeight: 36, headerHeight: 40, cellPaddingX: 8, cellPaddingY: 4, fontSize: '0.8125rem' },
-    standard: { rowHeight: 48, headerHeight: 52, cellPaddingX: 16, cellPaddingY: 8, fontSize: '0.875rem' },
-    comfortable: { rowHeight: 60, headerHeight: 64, cellPaddingX: 16, cellPaddingY: 12, fontSize: '0.9375rem' },
+    compact: { rowHeight: 36, headerHeight: 40, cellPaddingX: 1, cellPaddingY: 0.75, fontScale: 0.9286 },
+    standard: { rowHeight: 48, headerHeight: 52, cellPaddingX: 2, cellPaddingY: 2, fontScale: 1 },
+    comfortable: { rowHeight: 60, headerHeight: 64, cellPaddingX: 2.5, cellPaddingY: 2.5, fontScale: 1.0714 },
 };
 
 /**

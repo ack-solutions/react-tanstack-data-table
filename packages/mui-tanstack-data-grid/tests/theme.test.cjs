@@ -30,7 +30,7 @@ const mkPalette = (tag, mode = 'light') => ({
     mode,
     divider: `${tag}_divider`,
     grey: { 50: `${tag}_g50`, 900: `${tag}_g900` },
-    text: { secondary: `${tag}_ts` },
+    text: { primary: `${tag}_tp`, secondary: `${tag}_ts` },
     background: { paper: `${tag}_bp` },
     action: { hover: `${tag}_ah`, selected: `${tag}_as` },
     primary: { main: `${tag}_pm` },
@@ -43,7 +43,7 @@ test('resolveDataGridPalette prefers theme.vars (cssVariables) over resolved pal
     assert.equal(pal.pinnedBg, 'VAR_bp');
     assert.equal(pal.rowHoverBg, 'VAR_ah');
     assert.equal(pal.selectedBg, 'VAR_as');
-    assert.equal(pal.headerColor, 'VAR_ts');
+    assert.equal(pal.headerColor, 'VAR_tp', 'headerColor derives from text.primary');
 });
 
 test('resolveDataGridPalette falls back to resolved palette for classic themes (no vars)', () => {
