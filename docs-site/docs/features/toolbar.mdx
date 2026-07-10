@@ -31,6 +31,20 @@ The **Reset layout** button resets the **column layout only** — `columnOrder`,
 (any subset), or call `apiRef.current.layout.reset(actions?)` yourself. For a full "reset everything and
 reload" use `apiRef.current.layout.resetAll()`.
 
+## Icon-only vs labelled (`toolbarVariant`)
+
+Controls default to compact **icon-only** buttons with a tooltip (`toolbarVariant="icon"`). If your users
+don't recognise an icon at a glance, switch to **icon + label** buttons:
+
+```tsx
+<DataTable columns={columns} data={rows} enableColumnVisibility enableExport toolbarVariant="text" />
+```
+
+`"text"` applies to every built-in control (search, filter, columns, density, export, refresh, reset, saved
+views, list-view toggle). The filter's active-count badge and the saved-views "unsaved changes" dot show in
+both variants. All controls share one internal `ToolbarButton` (a standard MUI `IconButton` / `Button`), so
+`slots.<control>` / `slotProps.<control>` overrides behave identically in either variant.
+
 ## Layout
 
 All built-in controls are **left-aligned** in a stable order — search, saved views, filter, columns,

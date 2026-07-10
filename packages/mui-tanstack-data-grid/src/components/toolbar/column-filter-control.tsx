@@ -6,7 +6,6 @@
 import AddOutlined from '@mui/icons-material/AddOutlined';
 import CloseOutlined from '@mui/icons-material/CloseOutlined';
 import {
-    Badge,
     Box,
     Button,
     Divider,
@@ -17,14 +16,15 @@ import {
     Popover,
     Select,
     Stack,
-    Tooltip,
     Typography,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
 
 import { getColumnType, isColumnFilterable } from '../../utils/column-helpers';
+import { ToolbarButton } from './toolbar-button';
 import type { ColumnFilterRule } from '../../types/filter.types';
+import type { ToolbarVariant } from '../../types/data-table.types';
 import type { DataTableSlots } from '../../types/slots.types';
 import type { UseDataTableResult } from '../../core/use-data-table';
 import { FilterFeatherIcon } from '../icons';
@@ -36,11 +36,12 @@ export interface ColumnFilterControlProps<T> {
     engine: UseDataTableResult<T>;
     title?: string;
     slots?: Partial<DataTableSlots>;
+    variant?: ToolbarVariant;
 }
 
 const NO_VALUE_OPS = ['isEmpty', 'isNotEmpty'];
 
-export function ColumnFilterControl<T extends Record<string, any>>({ engine, title, slots }: ColumnFilterControlProps<T>): ReactElement {
+export function ColumnFilterControl<T extends Record<string, any>>({ engine, title, slots, variant = 'icon' }: ColumnFilterControlProps<T>): ReactElement {
     const locale = useLocaleText();
     const menuHoriz = useTheme().direction === 'rtl' ? 'left' : 'right';
     const heading = title ?? locale.filterTitle;
@@ -130,13 +131,7 @@ export function ColumnFilterControl<T extends Record<string, any>>({ engine, tit
 
     return (
         <>
-            <Tooltip title={locale.filterButton}>
-                <Badge badgeContent={activeCount} color="primary" invisible={activeCount === 0}>
-                    <IconButton size="small" onClick={(e) => setAnchor(e.currentTarget)}>
-                        <FilterIcon fontSize="small" />
-                    </IconButton>
-                </Badge>
-            </Tooltip>
+            <ToolbarButton variant={variant} icon={FilterIcon} label={locale.filterButton} badge={activeCount} onClick={(e: any) => setAnchor(e.currentTarget)} />
             <Popover
                 open={open}
                 anchorEl={anchor}

@@ -10,7 +10,6 @@ import CheckOutlined from '@mui/icons-material/CheckOutlined';
 // MUI 8/9 dropped) — visually identical and present across @mui/icons-material v5–v9.
 import DeleteOutlined from '@mui/icons-material/DeleteOutlined';
 import {
-    Badge,
     Box,
     Button,
     Divider,
@@ -20,23 +19,25 @@ import {
     Menu,
     MenuItem,
     TextField,
-    Tooltip,
 } from '@mui/material';
 import { useState, type ReactElement } from 'react';
 
 import type { DataTableSlots } from '../../types/slots.types';
+import type { ToolbarVariant } from '../../types/data-table.types';
 import type { UseDataTableResult } from '../../core/use-data-table';
 import { ViewsFeatherIcon } from '../icons';
+import { ToolbarButton } from './toolbar-button';
 import { useLocaleText } from '../../locale/locale-context';
 
 export interface ViewsControlProps<T> {
     engine: UseDataTableResult<T>;
     slots?: Partial<DataTableSlots>;
+    variant?: ToolbarVariant;
 }
 
 const menuSlotProps = { paper: { elevation: 3, sx: { mt: 0.75, borderRadius: 2, minWidth: 240, maxHeight: 420 } } } as const;
 
-export function ViewsControl<T>({ engine, slots }: ViewsControlProps<T>): ReactElement {
+export function ViewsControl<T>({ engine, slots, variant = 'icon' }: ViewsControlProps<T>): ReactElement {
     const locale = useLocaleText();
     const { api, derived } = engine;
     const views = derived.savedViews;
@@ -61,13 +62,7 @@ export function ViewsControl<T>({ engine, slots }: ViewsControlProps<T>): ReactE
 
     return (
         <>
-            <Tooltip title={locale.toolbarViews}>
-                <IconButton size="small" onClick={(e) => setAnchor(e.currentTarget)}>
-                    <Badge color="primary" variant="dot" invisible={!dirty} overlap="circular">
-                        <ViewsIcon fontSize="small" />
-                    </Badge>
-                </IconButton>
-            </Tooltip>
+            <ToolbarButton variant={variant} icon={ViewsIcon} label={locale.toolbarViews} badge={dirty} onClick={(e: any) => setAnchor(e.currentTarget)} />
             <Menu anchorEl={anchor} open={!!anchor} onClose={close} slotProps={menuSlotProps}>
                 {saving ? (
                     <Box sx={{ px: 1.5, py: 1, display: 'flex', flexDirection: 'column', gap: 1, minWidth: 220 }} onKeyDown={(e) => e.stopPropagation()}>

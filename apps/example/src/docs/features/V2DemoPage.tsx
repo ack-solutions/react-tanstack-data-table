@@ -68,6 +68,7 @@ export function V2DemoPage() {
 
     const [striped, setStriped] = useState(true);
     const [fitToScreen, setFitToScreen] = useState(true);
+    const [toolbarVariant, setToolbarVariant] = useState<'icon' | 'text'>('icon');
     const [selectedCount, setSelectedCount] = useState(0);
 
     const columns = useMemo<ColumnDef<Person, any>[]>(() => [
@@ -123,6 +124,10 @@ export function V2DemoPage() {
                 <Typography variant="caption" color="text.secondary">Density / columns / export are in the grid toolbar →</Typography>
                 <FormControlLabel control={<Switch checked={striped} onChange={(e) => setStriped(e.target.checked)} />} label="Striped" />
                 <FormControlLabel control={<Switch checked={fitToScreen} onChange={(e) => setFitToScreen(e.target.checked)} />} label="Fit to screen" />
+                <ToggleButtonGroup size="small" exclusive value={toolbarVariant} onChange={(_, v) => v && setToolbarVariant(v)}>
+                    <ToggleButton value="icon">Icon toolbar</ToggleButton>
+                    <ToggleButton value="text">Icon + label</ToggleButton>
+                </ToggleButtonGroup>
                 <Box sx={{ flex: 1 }} />
                 <Button size="small" variant="outlined" onClick={() => apiRef.current?.selection.selectAll()}>Select all</Button>
                 <Button size="small" variant="outlined" onClick={() => apiRef.current?.selection.deselectAll()}>Clear</Button>
@@ -135,6 +140,7 @@ export function V2DemoPage() {
                     columns={columns}
                     data={data}
                     striped={striped}
+                    toolbarVariant={toolbarVariant}
                     hover
                     fitToScreen={fitToScreen}
                     enableSorting

@@ -43,6 +43,9 @@ import type {
  * `enableGlobalFilter`). Each `columns`/`density`/`export` element already
  * includes its popover/menu, so it works wherever you place it.
  */
+/** How built-in toolbar controls render: `'icon'` (icon + tooltip) or `'text'` (icon + label). */
+export type ToolbarVariant = 'icon' | 'text';
+
 export interface DataTableToolbarControls {
     /** Collapsible global search. */
     search: ReactNode;
@@ -410,6 +413,12 @@ export interface DataTableProps<T> {
     estimateRowHeight?: number;
 
     // ── Toolbar ───────────────────────────────────────────────────────────
+    /**
+     * How the built-in toolbar controls render:
+     *  - `'icon'` (default) — icon-only buttons with a tooltip (compact).
+     *  - `'text'` — a labelled button (icon **+** text), clearer for new users.
+     */
+    toolbarVariant?: ToolbarVariant;
     enableDensitySelector?: boolean;
     enableExport?: boolean;
     /**

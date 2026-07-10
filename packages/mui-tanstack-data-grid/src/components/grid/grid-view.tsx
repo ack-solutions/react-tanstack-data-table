@@ -123,6 +123,7 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
         enableListView,
         renderListItem,
         rowHeight,
+        toolbarVariant,
         slots,
         slotProps,
         sx,
@@ -860,6 +861,7 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
                     enableListView={enableListView}
                     listView={listViewActive}
                     onToggleListView={setListViewMode}
+                    toolbarVariant={toolbarVariant}
                     extraFilter={extraFilter}
                     slots={slots}
                     slotProps={slotProps}
@@ -867,15 +869,22 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
                 />
             ) : null}
             {derived.isSomeRowsSelected ? (
-                <BulkToolbarSlot
-                    engine={engine}
-                    selectedCount={derived.selectedRowCount}
-                    selectionState={state.selectionState}
-                    onClear={() => engine.api.selection.deselectAll()}
-                    onCopy={enableClipboardCopy ? () => { void engine.api.clipboard.copySelectedRows(); } : undefined}
-                    renderBulkActions={renderBulkActions}
-                    {...(slotProps?.bulkActionsToolbar ?? {})}
-                />
+                // When there IS a toolbar, overlay it (absolute → no layout space, so selecting
+                // rows never changes the grid height, and the header + its select-all checkbox
+                // stay fully visible below). When there is NO toolbar, render the bar in normal
+                // flow at the very top so it sits ABOVE the header instead of covering it (the
+                // header + select-all must never be hidden — matching MUI X / AG Grid).
+                <Box sx={showToolbar ? { position: 'absolute', top: 0, insetInline: 0, zIndex: 4 } : { flexShrink: 0 }}>
+                    <BulkToolbarSlot
+                        engine={engine}
+                        selectedCount={derived.selectedRowCount}
+                        selectionState={state.selectionState}
+                        onClear={() => engine.api.selection.deselectAll()}
+                        onCopy={enableClipboardCopy ? () => { void engine.api.clipboard.copySelectedRows(); } : undefined}
+                        renderBulkActions={renderBulkActions}
+                        {...(slotProps?.bulkActionsToolbar ?? {})}
+                    />
+                </Box>
             ) : null}
             <ScrollerSlot
                 {...scrollerSlotProps.rest}

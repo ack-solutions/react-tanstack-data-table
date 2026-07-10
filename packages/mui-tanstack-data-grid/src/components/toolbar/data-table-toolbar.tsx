@@ -20,15 +20,15 @@ import {
     Menu,
     MenuItem,
     TextField,
-    Tooltip,
 } from '@mui/material';
 import { useEffect, useRef, useState, type ComponentType, type CSSProperties, type ReactNode } from 'react';
 import type { SxProps, Theme } from '@mui/material/styles';
 
 import type { DataTableDensity } from '../../theme/tokens';
 import type { DataTableSlots, DataTableSlotProps } from '../../types/slots.types';
-import type { DataTableToolbarControls } from '../../types/data-table.types';
+import type { DataTableToolbarControls, ToolbarVariant } from '../../types/data-table.types';
 import type { ResetLayoutAction } from '../../types/api.types';
+import { ToolbarButton } from './toolbar-button';
 import type { UseDataTableResult } from '../../core/use-data-table';
 import { resolveSlotProps, mergeSx, joinClassNames } from '../grid/slot-utils';
 import {
@@ -64,6 +64,7 @@ export interface DataTableToolbarProps<T> {
     enableListView?: boolean;
     listView?: boolean;
     onToggleListView?: (next: boolean) => void;
+    toolbarVariant?: ToolbarVariant;
     extraFilter?: ReactNode;
     searchPlaceholder?: string;
     slots?: Partial<DataTableSlots>;
@@ -87,13 +88,14 @@ function ToolbarSearch(props: {
     placeholder: string;
     SearchIcon: ComponentType<{ fontSize?: 'small' }>;
     ClearIcon: ComponentType<{ fontSize?: 'small' }>;
+    variant?: ToolbarVariant;
     sx?: SxProps<Theme>;
     className?: string;
     style?: CSSProperties;
 }): ReactNode {
     // sx/className/style come from `slotProps.searchInput` when the default search
     // is styled (not swapped) — forward them onto the root so that path isn't inert.
-    const { value, onChange, placeholder, SearchIcon, ClearIcon, sx, className, style } = props;
+    const { value, onChange, placeholder, SearchIcon, ClearIcon, variant = 'icon', sx, className, style } = props;
     const locale = useLocaleText();
     const [open, setOpen] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
@@ -110,11 +112,7 @@ function ToolbarSearch(props: {
     return (
         <Box className={className} style={style} sx={mergeSx({ display: 'inline-flex', alignItems: 'center' }, sx)}>
             {!expanded ? (
-                <Tooltip title={locale.toolbarSearch}>
-                    <IconButton size="small" onClick={() => setOpen(true)} aria-label={locale.toolbarSearch}>
-                        <SearchIcon fontSize="small" />
-                    </IconButton>
-                </Tooltip>
+                <ToolbarButton variant={variant} icon={SearchIcon} label={locale.toolbarSearch} onClick={() => setOpen(true)} />
             ) : null}
             <Collapse in={expanded} orientation="horizontal" timeout={200} unmountOnExit>
                 <TextField
@@ -162,6 +160,7 @@ export function DataTableToolbar<T extends Record<string, any>>(props: DataTable
         enableListView,
         listView,
         onToggleListView,
+        toolbarVariant = 'icon',
         extraFilter,
         searchPlaceholder,
         slots,
@@ -201,27 +200,23 @@ export function DataTableToolbar<T extends Record<string, any>>(props: DataTable
     // swappable via slots.<key> and stylable via slotProps.<key>.
     const SearchInputCtl = slots?.searchInput ?? ToolbarSearch;
     const searchEl = enableGlobalFilter ? (
-        <SearchInputCtl value={search} onChange={onSearch} placeholder={searchPlaceholder ?? locale.searchPlaceholder} SearchIcon={SearchIcon} ClearIcon={ClearIcon} {...slotProps?.searchInput} />
+        <SearchInputCtl value={search} onChange={onSearch} placeholder={searchPlaceholder ?? locale.searchPlaceholder} SearchIcon={SearchIcon} ClearIcon={ClearIcon} variant={toolbarVariant} {...slotProps?.searchInput} />
     ) : null;
 
     const extraFilterEl = extraFilter ? <Box sx={{ display: 'inline-flex', alignItems: 'center' }}>{extraFilter}</Box> : null;
 
     const ViewsCtl = slots?.viewsControl ?? ViewsControl;
-    const viewsEl = enableSavedViews ? <ViewsCtl engine={engine} slots={slots} {...slotProps?.viewsControl} /> : null;
+    const viewsEl = enableSavedViews ? <ViewsCtl engine={engine} slots={slots} variant={toolbarVariant} {...slotProps?.viewsControl} /> : null;
 
     const FilterCtl = slots?.columnFilterControl ?? ColumnFilterControl;
-    const filterEl = enableColumnFilter ? <FilterCtl engine={engine} slots={slots} {...slotProps?.columnFilterControl} /> : null;
+    const filterEl = enableColumnFilter ? <FilterCtl engine={engine} slots={slots} variant={toolbarVariant} {...slotProps?.columnFilterControl} /> : null;
 
     const columnsEl = enableColumnVisibility || enableColumnPinning || enableColumnReordering ? (
         slots?.columnVisibilityControl ? (
             <slots.columnVisibilityControl engine={engine} enableColumnVisibility={enableColumnVisibility} enableColumnPinning={enableColumnPinning} enableColumnReordering={enableColumnReordering} icon={ColumnsIcon} {...slotProps?.columnVisibilityControl} />
         ) : (
         <>
-            <Tooltip title={locale.toolbarColumns}>
-                <IconButton size="small" onClick={(e) => setColAnchor(e.currentTarget)} {...slotProps?.columnVisibilityControl}>
-                    <ColumnsIcon fontSize="small" />
-                </IconButton>
-            </Tooltip>
+            <ToolbarButton variant={toolbarVariant} icon={ColumnsIcon} label={locale.toolbarColumns} onClick={(e: any) => setColAnchor(e.currentTarget)} {...slotProps?.columnVisibilityControl} />
             <ColumnsPanel
                 engine={engine}
                 anchorEl={colAnchor}
@@ -240,11 +235,7 @@ export function DataTableToolbar<T extends Record<string, any>>(props: DataTable
             <slots.densityControl density={derived.density} onDensityChange={actions.setDensity} icon={DensityIcon} {...slotProps?.densityControl} />
         ) : (
         <>
-            <Tooltip title={locale.toolbarDensity}>
-                <IconButton size="small" onClick={(e) => setDensityAnchor(e.currentTarget)} {...slotProps?.densityControl}>
-                    <DensityIcon fontSize="small" />
-                </IconButton>
-            </Tooltip>
+            <ToolbarButton variant={toolbarVariant} icon={DensityIcon} label={locale.toolbarDensity} onClick={(e: any) => setDensityAnchor(e.currentTarget)} {...slotProps?.densityControl} />
             <Menu anchorEl={densityAnchor} open={!!densityAnchor} onClose={() => setDensityAnchor(null)} slotProps={menuSlotProps}>
                 {(['compact', 'standard', 'comfortable'] as DataTableDensity[]).map((d) => {
                     const Icon = DENSITY_ICON[d];
@@ -274,11 +265,7 @@ export function DataTableToolbar<T extends Record<string, any>>(props: DataTable
             <slots.exportButton onExportCSV={() => api.export.exportCSV()} onExportExcel={() => api.export.exportExcel()} icon={ExportIcon} {...slotProps?.exportButton} />
         ) : (
         <>
-            <Tooltip title={locale.toolbarExport}>
-                <IconButton size="small" onClick={(e) => setExportAnchor(e.currentTarget)} {...slotProps?.exportButton}>
-                    <ExportIcon fontSize="small" />
-                </IconButton>
-            </Tooltip>
+            <ToolbarButton variant={toolbarVariant} icon={ExportIcon} label={locale.toolbarExport} onClick={(e: any) => setExportAnchor(e.currentTarget)} {...slotProps?.exportButton} />
             <Menu anchorEl={exportAnchor} open={!!exportAnchor} onClose={() => setExportAnchor(null)} slotProps={menuSlotProps}>
                 <ListSubheader sx={{ lineHeight: '32px', bgcolor: 'transparent' }}>{locale.exportAs}</ListSubheader>
                 <MenuItem onClick={() => { void api.export.exportCSV(); setExportAnchor(null); }}>
@@ -298,11 +285,7 @@ export function DataTableToolbar<T extends Record<string, any>>(props: DataTable
         slots?.refreshButton ? (
             <slots.refreshButton onRefresh={() => api.data.refresh()} icon={RefreshIcon} label={locale.toolbarRefresh} {...slotProps?.refreshButton} />
         ) : (
-        <Tooltip title={locale.toolbarRefresh}>
-            <IconButton size="small" onClick={() => api.data.refresh()} {...slotProps?.refreshButton}>
-                <RefreshIcon fontSize="small" />
-            </IconButton>
-        </Tooltip>
+        <ToolbarButton variant={toolbarVariant} icon={RefreshIcon} label={locale.toolbarRefresh} onClick={() => api.data.refresh()} {...slotProps?.refreshButton} />
         )
     ) : null;
 
@@ -310,11 +293,7 @@ export function DataTableToolbar<T extends Record<string, any>>(props: DataTable
         slots?.resetButton ? (
             <slots.resetButton onReset={() => api.layout.reset(resetActions)} resetActions={resetActions} icon={ResetIcon} label={locale.toolbarReset} {...slotProps?.resetButton} />
         ) : (
-        <Tooltip title={locale.toolbarReset}>
-            <IconButton size="small" onClick={() => api.layout.reset(resetActions)} {...slotProps?.resetButton}>
-                <ResetIcon fontSize="small" />
-            </IconButton>
-        </Tooltip>
+        <ToolbarButton variant={toolbarVariant} icon={ResetIcon} label={locale.toolbarReset} onClick={() => api.layout.reset(resetActions)} {...slotProps?.resetButton} />
         )
     ) : null;
 
@@ -325,17 +304,14 @@ export function DataTableToolbar<T extends Record<string, any>>(props: DataTable
         slots?.viewModeToggle ? (
             <slots.viewModeToggle listView={listView} onToggle={onToggleListView} {...slotProps?.viewModeToggle} />
         ) : (
-        <Tooltip title={listView ? locale.toolbarGridView : locale.toolbarListView}>
-            <IconButton
-                size="small"
-                aria-label={listView ? locale.toolbarGridView : locale.toolbarListView}
-                aria-pressed={!!listView}
-                onClick={() => onToggleListView?.(!listView)}
-                {...slotProps?.viewModeToggle}
-            >
-                {listView ? <GridViewIcon fontSize="small" /> : <ListViewIcon fontSize="small" />}
-            </IconButton>
-        </Tooltip>
+        <ToolbarButton
+            variant={toolbarVariant}
+            icon={listView ? GridViewIcon : ListViewIcon}
+            label={listView ? locale.toolbarGridView : locale.toolbarListView}
+            aria-pressed={!!listView}
+            onClick={() => onToggleListView?.(!listView)}
+            {...slotProps?.viewModeToggle}
+        />
         )
     ) : null;
 
