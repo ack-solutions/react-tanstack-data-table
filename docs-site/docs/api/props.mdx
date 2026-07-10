@@ -89,6 +89,10 @@ Every prop, grouped by area. Use the **search** (top right) to find a setting fa
 | `enableReset` | `boolean` | `false` | "Reset layout" button — restores the column layout only (no data reload). |
 | `resetActions` | `ResetLayoutAction[]` | `['columnOrder','columnPinning','columnSizing']` | What Reset restores. Add `'columnVisibility'`, `'rowPinning'`, `'filters'`, `'sorting'`, `'pagination'`. |
 | `enableRefresh` | `boolean` | `false` | "Refresh data" button — re-fetches data (`onFetchData` in server mode). |
+| `enableListView` | `boolean` | `false` | Grid ⇄ list [view toggle](/features/list-view). |
+| `listView` / `onListViewChange` | `boolean` / `(next) => void` | — | Controlled list-view mode. |
+| `renderListItem` | `(params) => ReactNode` | — | Render a row as a full-width [list item](/features/list-view). |
+| `rowHeight` | `number` | — | Fixed row height in px (overrides density). |
 | `extraFilter` | `ReactNode` | — | Custom toolbar content (right side by default). |
 | `renderToolbar` | `(controls) => ReactNode` | — | Rearrange the built-in toolbar controls ([guide](/features/toolbar#reorder--reposition-the-controls)). |
 

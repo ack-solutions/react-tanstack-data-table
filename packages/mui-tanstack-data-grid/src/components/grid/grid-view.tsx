@@ -15,7 +15,7 @@ import { SortAscFeatherIcon, SortDescFeatherIcon } from '../icons';
 import { useDataTableTokens } from '../../theme/use-data-table-tokens';
 import type { DataTableProps } from '../../types/data-table.types';
 import type { UseDataTableResult } from '../../core/use-data-table';
-import { GridRoot, GridScroller, GridGrid, GridHeader, GridHeaderRow, GridHeaderCell, GridBody, GridRow, GridCell, GridDetailPanel, GridFooter, GridFooterRow, GridOverlay, GridLoadingOverlay, GridPagination, GridPinnedTopBand, GridPinnedBottomBand } from './styled';
+import { GridRoot, GridScroller, GridGrid, GridHeader, GridHeaderRow, GridHeaderCell, GridBody, GridRow, GridCell, GridListItem, GridDetailPanel, GridFooter, GridFooterRow, GridOverlay, GridLoadingOverlay, GridPagination, GridPinnedTopBand, GridPinnedBottomBand } from './styled';
 import { resolveSlotProps, mergeSx, joinClassNames } from './slot-utils';
 import { resolveScrollLayout } from './scroll-layout';
 import { useKeyboardNav, type FocusedCell } from './use-keyboard-nav';
@@ -74,6 +74,9 @@ function getPinnedStyle(column: Column<any, unknown>, isRtl: boolean): CSSProper
     };
 }
 
+// Stable empty band so list view (which has no pinned bands) doesn't allocate per render.
+const EMPTY_ROWS: Row<any>[] = [];
+
 export function GridView<T extends Record<string, any>>(props: GridViewProps<T>): ReactNode {
     const {
         engine,
@@ -115,6 +118,11 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
         renderBulkActions,
         renderDetailPanel,
         renderToolbar,
+        listView,
+        onListViewChange,
+        enableListView,
+        renderListItem,
+        rowHeight,
         slots,
         slotProps,
         sx,
@@ -125,7 +133,7 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
         onRowEditStop,
     } = props;
 
-    const showToolbar = !!(enableGlobalFilter || enableColumnFilter || enableColumnVisibility || enableColumnPinning || enableExport || enableDensitySelector || enableReset || enableRefresh || enableSavedViews || extraFilter);
+    const showToolbar = !!(enableGlobalFilter || enableColumnFilter || enableColumnVisibility || enableColumnPinning || enableExport || enableDensitySelector || enableReset || enableRefresh || enableSavedViews || enableListView || extraFilter);
     // `slots.toolbar` fully replaces the toolbar; otherwise the built-in one
     // (which itself honours `renderToolbar` for rearranging controls).
     const ToolbarComponent = (slots?.toolbar ?? DataTableToolbar) as typeof DataTableToolbar;
@@ -145,6 +153,7 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
     const BodySlot = slots?.body ?? GridBody;
     const RowSlot = slots?.row ?? GridRow;
     const CellSlot = slots?.cell ?? GridCell;
+    const ListItemSlot = slots?.listItem ?? GridListItem;
     const DetailPanelSlot = slots?.detailPanel ?? GridDetailPanel;
     const FooterSlot = slots?.footer ?? GridFooter;
     const BulkToolbarSlot = slots?.bulkActionsToolbar ?? BulkActionsToolbar;
@@ -159,6 +168,7 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
     const bodySlotProps = resolveSlotProps(slotProps, 'body');
     const rowSlotProps = resolveSlotProps(slotProps, 'row');
     const cellSlotProps = resolveSlotProps(slotProps, 'cell');
+    const listItemSlotProps = resolveSlotProps(slotProps, 'listItem');
     const detailPanelSlotProps = resolveSlotProps(slotProps, 'detailPanel');
     const footerSlotProps = resolveSlotProps(slotProps, 'footer');
     const loadingOverlaySlotProps = resolveSlotProps(slotProps, 'loadingOverlay');
@@ -175,13 +185,23 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
     const ariaRowStart = isTree ? 0 : enablePagination ? state.pagination.pageIndex * state.pagination.pageSize : 0;
     const [draggingId, setDraggingId] = useState<string | null>(null);
     const [dragOverId, setDragOverId] = useState<string | null>(null);
+    // List view: controlled via `listView`/`onListViewChange`, else an internal (toolbar-toggled)
+    // state. Only actually renders as a list when `renderListItem` is provided.
+    const [internalListView, setInternalListView] = useState(!!listView);
+    const listViewActive = !!renderListItem && (listView ?? internalListView);
+    const setListViewMode = useCallback((next: boolean) => {
+        onListViewChange?.(next);
+        if (listView === undefined) setInternalListView(next);
+    }, [listView, onListViewChange]);
     const density = derived.density;
     const tokens = useDataTableTokens(density);
 
     const rows = derived.rows;
     // Pinned-row bands (center = `rows`). Empty unless row pinning is active (client mode).
-    const topRows = derived.topRows;
-    const bottomRows = derived.bottomRows;
+    // List view has no sticky bands (they're column-oriented), so keep the indices
+    // contiguous by treating every row as a center row there.
+    const topRows = listViewActive ? EMPTY_ROWS : derived.topRows;
+    const bottomRows = listViewActive ? EMPTY_ROWS : derived.bottomRows;
     // Monotonic display index across bands → contiguous data-r / aria-rowindex:
     // top rows 0..T-1, center T..T+C-1, bottom T+C..T+C+B-1.
     const topCount = topRows.length;
@@ -346,7 +366,9 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
     // Keyboard navigation (WCAG grid): roving tabindex over header(row 0) + data rows.
     // Enter/F2 on an editable cell starts editing; otherwise it activates the cell's control.
     const handleCellActivate = useCallback((cell: FocusedCell) => {
-        if (cell.row > 0) {
+        // List view has no editable per-column cells (renderListItem owns the row), so
+        // skip the edit path and fall through to activating an interactive child.
+        if (!listViewActive && cell.row > 0) {
             // data-r is the monotonic display index (+1), so index the combined band array.
             const r = allRenderedRows[cell.row - 1];
             const col = table.getVisibleLeafColumns()[cell.col];
@@ -363,11 +385,13 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
         if (interactive) interactive.click();
         else el.click();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [allRenderedRows, table, refs.tableContainerRef, editMode]);
+    }, [allRenderedRows, table, refs.tableContainerRef, editMode, listViewActive]);
 
     const kbd = useKeyboardNav({
         rowCount: allRenderedRows.length,
-        colCount: table.getVisibleLeafColumns().length,
+        colCount: listViewActive ? 1 : table.getVisibleLeafColumns().length,
+        // No header row in list view → the first data row (1) is the home/tab-stop cell.
+        minRow: listViewActive ? 1 : 0,
         containerRef: refs.tableContainerRef,
         // The virtualizer counts only center rows; keyboard row indices are display
         // indices (top band offsets them by topCount), so map back before scrolling.
@@ -586,7 +610,43 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
         // Pinned rows float across pages, so report their true data position (stable) rather
         // than a page-relative index that would change per page and collide with center rows.
         // +1 is 1-based; +headerRowCount skips the (possibly multiple, grouped) header rows.
-        const ariaRowIndex = (pinned ? row.index : ariaRowStart + displayIndex) + headerRowCount + 1;
+        const ariaRowIndex = (pinned ? row.index : ariaRowStart + displayIndex) + (listViewActive ? 0 : headerRowCount) + 1;
+        // List view: one full-width item per row (the caller's renderListItem owns the content).
+        if (listViewActive) {
+            return (
+                <RowSlot
+                    key={row.id}
+                    {...rowSlotProps.rest}
+                    role="row"
+                    aria-rowindex={ariaRowIndex}
+                    aria-selected={isSelected || undefined}
+                    className={joinClassNames(rowClassName, rowSlotProps.className)}
+                    onClick={onRowClick ? (e: any) => onRowClick(e, row) : undefined}
+                    style={rowSlotProps.style}
+                    sx={mergeSx({
+                        '--dt-row-bg': isSelected ? 'var(--dt-row-bg-selected)' : striped && isOdd ? 'var(--dt-row-bg-stripe)' : 'var(--dt-pinned-bg)',
+                        background: 'var(--dt-row-bg)',
+                        cursor: onRowClick ? 'pointer' : 'default',
+                        ...(hover ? { '&:hover': { '--dt-row-bg': 'var(--dt-row-bg-hover)' } } : {}),
+                    }, rowSlotProps.sx)}
+                >
+                    <ListItemSlot
+                        {...listItemSlotProps.rest}
+                        role="gridcell"
+                        data-r={displayIndex + 1}
+                        data-c={0}
+                        aria-colindex={1}
+                        tabIndex={kbd.isFocused(displayIndex + 1, 0) ? 0 : -1}
+                        onFocus={() => kbd.setFocused({ row: displayIndex + 1, col: 0 })}
+                        className={listItemSlotProps.className}
+                        style={listItemSlotProps.style}
+                        sx={listItemSlotProps.sx}
+                    >
+                        {renderListItem!({ row: row.original, rowNode: row, api: engine.api, index: displayIndex, isSelected })}
+                    </ListItemSlot>
+                </RowSlot>
+            );
+        }
         return (
             <Fragment key={row.id}>
             <RowSlot
@@ -702,11 +762,15 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
             }
             return Array.from({ length: skeletonRows }).map((_, i) => (
                 <GridRow key={`sk-${i}`} role="row">
-                    {table.getVisibleLeafColumns().map((column) => (
-                        <GridCell key={column.id} role="cell" style={{ flex: flexFor(column), width: `var(--col-${column.id}-size)`, ...getPinnedStyle(column, isRtl) }}>
-                            <Skeleton width="80%" />
-                        </GridCell>
-                    ))}
+                    {listViewActive ? (
+                        <GridListItem role="cell"><Skeleton width="60%" /></GridListItem>
+                    ) : (
+                        table.getVisibleLeafColumns().map((column) => (
+                            <GridCell key={column.id} role="cell" style={{ flex: flexFor(column), width: `var(--col-${column.id}-size)`, ...getPinnedStyle(column, isRtl) }}>
+                                <Skeleton width="80%" />
+                            </GridCell>
+                        ))
+                    )}
                 </GridRow>
             ));
         }
@@ -775,7 +839,7 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
             // required, so they win per-property (spread LAST) — matching the scroller
             // and grid-track sites. Override tokens via `sx`/theme and height via the
             // `height` prop, not by racing this inline style.
-            style={{ ...rootSlotProps.style, ...tokens, ...rootStyle }}
+            style={{ ...rootSlotProps.style, ...tokens, ...(rowHeight != null ? { '--dt-row-height': `${rowHeight}px` } : {}), ...rootStyle }}
             sx={mergeSx(sx, rootSlotProps.sx)}
         >
             <GridAnnouncer engine={engine} />
@@ -793,6 +857,9 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
                     resetActions={resetActions}
                     enableRefresh={enableRefresh}
                     enableSavedViews={enableSavedViews}
+                    enableListView={enableListView}
+                    listView={listViewActive}
+                    onToggleListView={setListViewMode}
                     extraFilter={extraFilter}
                     slots={slots}
                     slotProps={slotProps}
@@ -814,8 +881,8 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
                 {...scrollerSlotProps.rest}
                 ref={refs.tableContainerRef}
                 role={isTree ? 'treegrid' : 'grid'}
-                aria-rowcount={isTree ? -1 : derived.tableTotalRow + headerRowCount}
-                aria-colcount={table.getVisibleLeafColumns().length}
+                aria-rowcount={isTree ? -1 : derived.tableTotalRow + (listViewActive ? 0 : headerRowCount)}
+                aria-colcount={listViewActive ? 1 : table.getVisibleLeafColumns().length}
                 onKeyDown={kbd.onKeyDown}
                 className={scrollerSlotProps.className}
                 sx={scrollerSlotProps.sx}
@@ -827,23 +894,23 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
                     className={gridSlotProps.className}
                     sx={gridSlotProps.sx}
                     // columnSizeVars/width/minWidth are required layout — spread AFTER slot style.
-                    style={{ ...gridSlotProps.style, ...columnSizeVars, width: fitToScreen ? '100%' : totalSize, minWidth: totalSize } as CSSProperties}
+                    style={{ ...gridSlotProps.style, ...(listViewActive ? { width: '100%' } : { ...columnSizeVars, width: fitToScreen ? '100%' : totalSize, minWidth: totalSize }) } as CSSProperties}
                 >
-                    <HeaderSlot {...headerSlotProps.rest} role="rowgroup" className={headerSlotProps.className} style={headerSlotProps.style} sx={headerSlotProps.sx}>{renderHeader()}</HeaderSlot>
-                    {!loading && topRows.length ? (
+                    {listViewActive ? null : <HeaderSlot {...headerSlotProps.rest} role="rowgroup" className={headerSlotProps.className} style={headerSlotProps.style} sx={headerSlotProps.sx}>{renderHeader()}</HeaderSlot>}
+                    {!listViewActive && !loading && topRows.length ? (
                         // Parks just under the always-sticky header.
                         <GridPinnedTopBand role="rowgroup" style={{ top: 'var(--dt-header-height)' }}>
                             {renderPinnedBand(topRows, 0)}
                         </GridPinnedTopBand>
                     ) : null}
                     <BodySlot {...bodySlotProps.rest} role="rowgroup" className={bodySlotProps.className} style={bodySlotProps.style} sx={bodySlotProps.sx}>{renderBody()}</BodySlot>
-                    {!loading && bottomRows.length ? (
+                    {!listViewActive && !loading && bottomRows.length ? (
                         // Parks above the aggregation footer (when present), else at the viewport bottom.
                         <GridPinnedBottomBand role="rowgroup" style={{ bottom: showAggregation ? 'var(--dt-row-height)' : 0 }}>
                             {renderPinnedBand(bottomRows, topCount + rows.length)}
                         </GridPinnedBottomBand>
                     ) : null}
-                    {showAggregation ? <div role="rowgroup">{renderAggregation()}</div> : null}
+                    {!listViewActive && showAggregation ? <div role="rowgroup">{renderAggregation()}</div> : null}
                 </GridTrackSlot>
             </ScrollerSlot>
 

@@ -11,6 +11,8 @@ export const DEFAULT_LOCALE_TEXT: DataTableLocaleText = {
     toolbarExport: 'Export',
     toolbarRefresh: 'Refresh data',
     toolbarReset: 'Reset layout',
+    toolbarListView: 'List view',
+    toolbarGridView: 'Grid view',
     toolbarViews: 'Views',
     exportAs: 'Export as',
     exportCSV: 'CSV',

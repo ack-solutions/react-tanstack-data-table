@@ -13,34 +13,43 @@ test('auto height by default — no bound, no scroll viewport', () => {
     assert.equal(r.scrollerStyle, undefined);
 });
 
-test('stickyHeader alone bounds the body at the default cap', () => {
+// The height bound lives on the ROOT (not the scroller) so chrome — toolbar, the
+// selection/bulk-actions bar, footer — stays inside the budget and the body flexes.
+test('stickyHeader alone bounds the ROOT at the default cap', () => {
     const r = resolveScrollLayout({ stickyHeader: true });
     assert.equal(r.scrollable, true);
-    assert.deepEqual(r.scrollerStyle, { maxHeight: DEFAULT_MAX_HEIGHT });
-    assert.equal(r.rootStyle, undefined);
+    assert.deepEqual(r.rootStyle, { maxHeight: DEFAULT_MAX_HEIGHT });
+    assert.equal(r.scrollerStyle, undefined, 'the scroller has no cap — it flexes within the root');
 });
 
-test('stickyFooter alone also bounds the body (footer pins to bottom)', () => {
+test('stickyFooter alone also bounds the root (footer pins to bottom)', () => {
     const r = resolveScrollLayout({ stickyFooter: true });
     assert.equal(r.scrollable, true);
-    assert.deepEqual(r.scrollerStyle, { maxHeight: DEFAULT_MAX_HEIGHT });
+    assert.deepEqual(r.rootStyle, { maxHeight: DEFAULT_MAX_HEIGHT });
 });
 
-test('virtualization bounds the body so the virtualizer has a scroll parent', () => {
+test('virtualization bounds the root so the virtualizer has a scroll parent', () => {
     const r = resolveScrollLayout({ enableVirtualization: true });
     assert.equal(r.scrollable, true);
-    assert.deepEqual(r.scrollerStyle, { maxHeight: DEFAULT_MAX_HEIGHT });
+    assert.deepEqual(r.rootStyle, { maxHeight: DEFAULT_MAX_HEIGHT });
 });
 
-test('maxHeight is active on its own (number and CSS string)', () => {
-    assert.deepEqual(resolveScrollLayout({ maxHeight: 300 }).scrollerStyle, { maxHeight: 300 });
-    assert.deepEqual(resolveScrollLayout({ maxHeight: '50vh' }).scrollerStyle, { maxHeight: '50vh' });
+test('maxHeight bounds the root (number and CSS string); scroller never gets a cap', () => {
+    assert.deepEqual(resolveScrollLayout({ maxHeight: 300 }).rootStyle, { maxHeight: 300 });
+    assert.deepEqual(resolveScrollLayout({ maxHeight: '50vh' }).rootStyle, { maxHeight: '50vh' });
+    assert.equal(resolveScrollLayout({ maxHeight: 300 }).scrollerStyle, undefined);
     assert.equal(resolveScrollLayout({ maxHeight: 300 }).scrollable, true);
 });
 
 test('explicit maxHeight beats the default cap when sticky is also set', () => {
     const r = resolveScrollLayout({ stickyHeader: true, maxHeight: 240 });
-    assert.deepEqual(r.scrollerStyle, { maxHeight: 240 });
+    assert.deepEqual(r.rootStyle, { maxHeight: 240 });
+});
+
+test('maxHeight + minHeight both land on the root', () => {
+    const r = resolveScrollLayout({ maxHeight: 400, minHeight: 200 });
+    assert.deepEqual(r.rootStyle, { minHeight: 200, maxHeight: 400 });
+    assert.equal(r.scrollerStyle, undefined);
 });
 
 test('height fixes the grid and fills via flex — no scroller maxHeight', () => {

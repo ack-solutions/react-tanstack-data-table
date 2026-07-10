@@ -15,6 +15,8 @@ export interface DataTableLocaleText {
     toolbarRefresh: string;
     toolbarReset: string;
     toolbarViews: string;
+    toolbarListView: string;
+    toolbarGridView: string;
 
     // Saved views
     viewsDefault: string;

@@ -17,6 +17,9 @@ export interface FocusedCell {
 export interface KeyboardNavOptions {
     rowCount: number;
     colCount: number;
+    /** Lowest focusable row. `0` = the header is a tab stop (grid mode); `1` = no header
+     *  (list view), so the first data row is the home cell instead. */
+    minRow?: number;
     containerRef: RefObject<HTMLElement | null>;
     /** Bring a data row (0-based) into view before focusing (virtualization). */
     scrollToRow?: (dataIndex: number) => void;
@@ -36,18 +39,18 @@ export interface KeyboardNav {
 const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(max, n));
 
 export function useKeyboardNav(opts: KeyboardNavOptions): KeyboardNav {
-    const { rowCount, colCount, containerRef, scrollToRow, pageSize = 10, onActivate, enabled = true } = opts;
-    const [focused, setFocusedState] = useState<FocusedCell>({ row: 0, col: 0 });
+    const { rowCount, colCount, minRow = 0, containerRef, scrollToRow, pageSize = 10, onActivate, enabled = true } = opts;
+    const [focused, setFocusedState] = useState<FocusedCell>({ row: minRow, col: 0 });
     const moveByKeyRef = useRef(false);
-    const maxRow = rowCount; // header(0) + data rows
+    const maxRow = rowCount; // header(0) + data rows (or, in list view, minRow=1 → data only)
     const maxCol = Math.max(0, colCount - 1);
 
     // Keep focus in range as the grid changes (filtering, paging, column visibility).
-    const safe = { row: clamp(focused.row, 0, maxRow), col: clamp(focused.col, 0, maxCol) };
+    const safe = { row: clamp(focused.row, minRow, maxRow), col: clamp(focused.col, 0, maxCol) };
 
     const setFocused = useCallback((cell: FocusedCell) => {
-        setFocusedState({ row: clamp(cell.row, 0, rowCount), col: clamp(cell.col, 0, Math.max(0, colCount - 1)) });
-    }, [rowCount, colCount]);
+        setFocusedState({ row: clamp(cell.row, minRow, rowCount), col: clamp(cell.col, 0, Math.max(0, colCount - 1)) });
+    }, [rowCount, colCount, minRow]);
 
     const focusCell = useCallback((row: number, col: number, viaKey: boolean) => {
         moveByKeyRef.current = viaKey;
@@ -86,14 +89,14 @@ export function useKeyboardNav(opts: KeyboardNavOptions): KeyboardNav {
         const col = cellEl ? Number(cellEl.getAttribute('data-c')) : safe.col;
         let next: FocusedCell | null = null;
         switch (e.key) {
-            case 'ArrowDown': next = { row: clamp(row + 1, 0, maxRow), col }; break;
-            case 'ArrowUp': next = { row: clamp(row - 1, 0, maxRow), col }; break;
+            case 'ArrowDown': next = { row: clamp(row + 1, minRow, maxRow), col }; break;
+            case 'ArrowUp': next = { row: clamp(row - 1, minRow, maxRow), col }; break;
             case 'ArrowRight': next = { row, col: clamp(col + 1, 0, maxCol) }; break;
             case 'ArrowLeft': next = { row, col: clamp(col - 1, 0, maxCol) }; break;
-            case 'Home': next = e.ctrlKey ? { row: 0, col: 0 } : { row, col: 0 }; break;
+            case 'Home': next = e.ctrlKey ? { row: minRow, col: 0 } : { row, col: 0 }; break;
             case 'End': next = e.ctrlKey ? { row: maxRow, col: maxCol } : { row, col: maxCol }; break;
-            case 'PageDown': next = { row: clamp(row + pageSize, 0, maxRow), col }; break;
-            case 'PageUp': next = { row: clamp(row - pageSize, 0, maxRow), col }; break;
+            case 'PageDown': next = { row: clamp(row + pageSize, minRow, maxRow), col }; break;
+            case 'PageUp': next = { row: clamp(row - pageSize, minRow, maxRow), col }; break;
             case 'Enter':
             case 'F2':
                 if (onActivate) { onActivate({ row, col }); e.preventDefault(); }

@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
-import { Box, Button } from '@mui/material';
+import { Avatar, Box, Button, Chip, Stack, Typography } from '@mui/material';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import EditOutlined from '@mui/icons-material/EditOutlined';
 import DeleteOutline from '@mui/icons-material/DeleteOutline';
@@ -85,6 +85,27 @@ export function HeightFillDemo() {
 
 export function BasicDemo() {
     return <DataTable columns={columns} data={users} enableSorting enableColumnResizing enablePagination initialState={page5} />;
+}
+
+export function ListViewDemo() {
+    return (
+        <DataTable
+            columns={columns}
+            data={users}
+            enableGlobalFilter
+            enableListView
+            renderListItem={({ row }) => (
+                <Stack direction="row" sx={{ alignItems: 'center', gap: 2, width: '100%' }}>
+                    <Avatar sx={{ width: 36, height: 36, bgcolor: 'primary.main', fontSize: 15 }}>{row.name.charAt(0)}</Avatar>
+                    <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                        <Typography variant="body2" fontWeight={600} noWrap>{row.name}</Typography>
+                        <Typography variant="body2" color="text.secondary" noWrap>{row.email} · {row.role}</Typography>
+                    </Box>
+                    <Chip size="small" label={row.status} color={row.status === 'active' ? 'success' : 'default'} />
+                </Stack>
+            )}
+        />
+    );
 }
 
 export function RowsPerPageDemo() {

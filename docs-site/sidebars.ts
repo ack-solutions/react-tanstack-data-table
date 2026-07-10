@@ -17,6 +17,7 @@ const sidebars: SidebarsConfig = {
                 'features/selection',
                 'features/layout',
                 'features/columns',
+                'features/list-view',
                 'features/editing',
                 'features/localization',
                 'features/pinning',

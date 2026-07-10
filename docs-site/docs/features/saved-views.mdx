@@ -81,6 +81,101 @@ apiRef.current?.views.getActiveView();             // SavedView | null
 apiRef.current?.views.isDirty();                   // current layout diverges from the active view
 ```
 
+## Combine with external filters (own the whole view)
+
+Saved views capture what's **inside** the grid. If you also have filters **outside** the table — a date
+range, a status select, anything app-specific — you don't need the grid to manage them. Keep them in your app
+and pair them with the grid's view state, which is already exposed on [`apiRef`](/api/api-ref):
+
+- **`apiRef.current.layout.saveLayout()`** → the full table view (`SavedLayout`: column visibility / order /
+  width / pinning, row pinning, sorting, column + global filters, pagination, density).
+- **`apiRef.current.layout.restoreLayout(state)`** → applies it back (and refetches in server mode).
+
+So a "view" in your app is simply `{ table: SavedLayout, filters: YourFilters }` — **persist it however you
+like** (localStorage, your API, Redux) and restore both halves together. No per-filter API, no duplicate
+fetch logic, no limits on what a filter can be.
+
+:::tip Which one to use
+Use the built-in **`enableSavedViews`** for quick, table-only views. When a view must also span **external**
+filters, own it yourself with `saveLayout` / `restoreLayout` (below) — the built-in control snapshots the
+table state only.
+:::
+
+### Client-side data
+
+Your external filters filter your own array; the grid just renders it. Save and restore are trivial:
+
+```tsx
+import { useRef, useState, useMemo } from 'react';
+import type { SavedLayout, DataTableApi } from '@ackplus/mui-tanstack-data-grid';
+
+type Filters = { dateRange: [string, string] | null; status: string };
+type MyView = { name: string; table: SavedLayout; filters: Filters };
+
+function OrdersGrid() {
+  const apiRef = useRef<DataTableApi<Order>>(null);
+  const [filters, setFilters] = useState<Filters>({ dateRange: null, status: 'all' });
+
+  const rows = useMemo(() => applyMyFilters(allOrders, filters), [filters]); // your own filtering
+
+  const saveView = (name: string): MyView =>
+    ({ name, table: apiRef.current!.layout.saveLayout(), filters });          // capture BOTH halves
+
+  const applyView = (view: MyView) => {
+    setFilters(view.filters);                          // your filter components restore
+    apiRef.current!.layout.restoreLayout(view.table);  // the table restores
+  };
+
+  return (
+    <>
+      <DateRangePicker value={filters.dateRange} onChange={(dr) => setFilters((f) => ({ ...f, dateRange: dr }))} />
+      <StatusSelect     value={filters.status}    onChange={(s)  => setFilters((f) => ({ ...f, status: s }))} />
+      <DataTable apiRef={apiRef} columns={columns} data={rows} />
+    </>
+  );
+}
+```
+
+### Server-side data
+
+With `onFetchData`, read your external filters in the **same** fetch function — one place, no duplication.
+Keep a ref for the latest values, and refetch when they change with `apiRef.current.data.refresh()`.
+Restoring a view refetches automatically (with the restored filters):
+
+```tsx
+const filtersRef = useRef(filters);                     // always-latest values for onFetchData
+
+// The one place external filters change: ref (for the fetch) → state (for the UI) → refetch.
+const changeFilters = (next: Filters) => {
+  filtersRef.current = next;
+  setFilters(next);
+  apiRef.current?.data.refresh();
+};
+
+<DataTable
+  apiRef={apiRef}
+  columns={columns}
+  onFetchData={(tableState) => api.getOrders({ ...tableState, ...filtersRef.current })} // ONE fetch, both halves
+/>
+
+// Save / apply a view:
+const saveView = (name: string) =>
+  myStore.add({ name, table: apiRef.current!.layout.saveLayout(), filters });
+
+const applyView = (view: MyView) => {
+  filtersRef.current = view.filters;                    // restore external values first…
+  setFilters(view.filters);
+  apiRef.current!.layout.restoreLayout(view.table);     // …restoring the table triggers one refetch
+};
+```
+
+:::note One refetch, not two
+`restoreLayout` refetches only when the table state actually changes — so applying a view runs a **single**
+request that already carries your restored external filters (they're read from the ref). If a view changes
+*only* the external filters (identical table layout), call `apiRef.current.data.refresh()` after restoring.
+Values you save must be JSON-serializable to persist (e.g. store dates as ISO strings).
+:::
+
 ## Props
 
 | Prop | Type | Description |

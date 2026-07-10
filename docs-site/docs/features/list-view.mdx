@@ -1,0 +1,122 @@
+---
+title: List view
+sidebar_label: List view
+---
+
+import LiveDemo from '@site/src/demo/LiveDemo';
+import { ListViewDemo } from '@site/src/demo/demos';
+
+# List view
+
+Render each row as a single, full-width **list item** instead of a columnar row — ideal for narrow or
+mobile layouts, or any card-style list. The **engine is unchanged**: sorting, filtering, pagination, row
+selection, saved views, and virtualization all keep working; only the row rendering switches. (In MUI X this
+is a **Pro** feature — here it's free.)
+
+<LiveDemo>{() => <ListViewDemo />}</LiveDemo>
+
+> Use the **grid ⇄ list toggle** at the top-right of the toolbar to switch. Type in the search to see the
+> engine still filtering the list.
+
+## Enable it
+
+Two props: turn it on with `listView`, and render each row with `renderListItem`. Your callback owns the
+whole row (avatar, text, actions — anything).
+
+```tsx
+import { Avatar, Box, Chip, Stack, Typography } from '@mui/material';
+
+<DataTable
+  columns={columns}
+  data={rows}
+  listView
+  renderListItem={({ row }) => (
+    <Stack direction="row" sx={{ alignItems: 'center', gap: 2, width: '100%' }}>
+      <Avatar sx={{ bgcolor: 'primary.main' }}>{row.name.charAt(0)}</Avatar>
+      <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+        <Typography variant="body2" fontWeight={600} noWrap>{row.name}</Typography>
+        <Typography variant="body2" color="text.secondary" noWrap>{row.email} · {row.role}</Typography>
+      </Box>
+      <Chip size="small" label={row.status} />
+    </Stack>
+  )}
+/>
+```
+
+`renderListItem` still needs `columns` — the grid sorts, filters, and exports through them even though it
+doesn't render column cells in list view.
+
+### `renderListItem` params
+
+```ts
+renderListItem={({ row, rowNode, api, index, isSelected }) => …}
+```
+
+| Param | Type | What |
+| --- | --- | --- |
+| `row` | `T` | The row's data. |
+| `rowNode` | `Row<T>` | The TanStack row node (`getIsSelected`, `depth`, …). |
+| `api` | `DataTableApi<T>` | The imperative grid API (selection, editing, data CRUD). |
+| `index` | `number` | The row's display index on the current page. |
+| `isSelected` | `boolean` | Whether the row is selected. |
+
+## Toolbar toggle
+
+Add `enableListView` to render a built-in grid ⇄ list toggle button in the toolbar — no wiring needed:
+
+```tsx
+<DataTable columns={columns} data={rows} enableListView renderListItem={…} />
+```
+
+Control it yourself with `listView` + `onListViewChange` (e.g. to persist the choice or drive it from
+elsewhere):
+
+```tsx
+const [listView, setListView] = useState(false);
+<DataTable listView={listView} onListViewChange={setListView} enableListView renderListItem={…} />
+```
+
+## Responsive: table on desktop, list on mobile
+
+The most common use — one component, two layouts, driven by a breakpoint:
+
+```tsx
+import { useMediaQuery, useTheme } from '@mui/material';
+
+const theme = useTheme();
+const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
+<DataTable columns={columns} data={rows} listView={isMobile} renderListItem={…} />
+```
+
+## What carries over (and what's off)
+
+| Still works | Off in list view (column concepts) |
+| --- | --- |
+| global search, column filters, sorting, pagination, row selection, virtualization, saved views, loading / empty states | column headers, resize, reorder, pinning, grouped headers, the aggregation footer |
+
+Sorting and filtering happen through the **toolbar** and `api` in list view (there are no column headers to
+click). Everything else — row actions, expansion, selection — you compose inside `renderListItem` (call
+`api.selection.*`, add your own buttons, etc.).
+
+## Props
+
+| Prop | Type | Description |
+| --- | --- | --- |
+| `renderListItem` | `(params) => ReactNode` | Renders each row in list view. Required for list mode. |
+| `listView` | `boolean` | Controlled current mode. |
+| `onListViewChange` | `(next: boolean) => void` | Called by the toolbar toggle (for controlled mode). |
+| `enableListView` | `boolean` | Show the grid ⇄ list toggle in the toolbar. |
+| `rowHeight` | `number` | Fixed row height in px (overrides the density row height). |
+
+:::note Theming & slots
+The list item is a themeable part: `styleOverrides.listItem`, `slots.listItem`, and
+`slotProps.listItem`. The toggle icons are `slots.gridViewIcon` / `slots.listViewIcon`, and the whole
+control is `slots.viewModeToggle`.
+:::
+
+:::tip Virtualization + item height
+The row virtualizer estimates a **uniform** row height. If you virtualize a list whose items vary in height,
+give it an accurate estimate — set a fixed **`rowHeight`** (used as the estimate), or **`estimatedRowHeight`**
+— so scroll positioning stays precise.
+:::

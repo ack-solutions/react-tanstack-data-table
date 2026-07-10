@@ -29,6 +29,7 @@ export type DataTableClassKey =
     | 'body'
     | 'row'
     | 'cell'
+    | 'listItem'
     | 'footerRow'
     | 'pinnedTopBand'
     | 'pinnedBottomBand'

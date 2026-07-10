@@ -22,6 +22,8 @@ export interface DataTableSlots {
     body?: ComponentType<any>;
     row?: ComponentType<any>;
     cell?: ComponentType<any>;
+    /** The full-width row wrapper in list view (hosts `renderListItem`). */
+    listItem?: ComponentType<any>;
     detailPanel?: ComponentType<any>;
     footer?: ComponentType<any>;
     pagination?: ComponentType<any>;
@@ -45,6 +47,8 @@ export interface DataTableSlots {
     columnPinningControl?: ComponentType<any>;
     densityControl?: ComponentType<any>;
     viewsControl?: ComponentType<any>;
+    /** The grid ⇄ list view toggle (shown when `enableListView`). */
+    viewModeToggle?: ComponentType<any>;
     resetButton?: ComponentType<any>;
     refreshButton?: ComponentType<any>;
     exportButton?: ComponentType<any>;
@@ -63,6 +67,8 @@ export interface DataTableSlots {
     columnsIcon?: ComponentType<any>; // columns menu (visibility + pinning)
     densityIcon?: ComponentType<any>; // density selector
     viewsIcon?: ComponentType<any>; // saved-views control
+    gridViewIcon?: ComponentType<any>; // list/grid toggle — grid mode
+    listViewIcon?: ComponentType<any>; // list/grid toggle — list mode
     exportIcon?: ComponentType<any>; // export button + menu
     refreshIcon?: ComponentType<any>; // refresh button
     resetIcon?: ComponentType<any>; // reset button

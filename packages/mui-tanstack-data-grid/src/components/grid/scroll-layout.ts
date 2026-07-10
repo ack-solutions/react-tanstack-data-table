@@ -60,17 +60,22 @@ export function resolveScrollLayout(input: ScrollLayoutInput): ScrollLayout {
     if (hasHeight) rootStyle.height = height;
     if (hasMin) rootStyle.minHeight = minHeight;
 
-    const scrollerStyle: CSSProperties = {};
-    // With a fixed `height` the scroller fills the remaining space via flex; a
-    // `maxHeight` would fight that, so it is ignored. Otherwise cap the scroller.
+    // Bound the ROOT (not the scroller) and let the scroller flex to fill what's left
+    // (it is `flex: 1 1 auto; min-height: 0; overflow: auto`). This matches MUI X / AG Grid
+    // — bound the container, the body flexes — so ALL chrome (toolbar, the selection /
+    // bulk-actions bar, footer) lives INSIDE the height budget. A selection bar therefore
+    // shrinks the body instead of growing the whole grid (and the body grows back when the
+    // selection clears — no fixed reduced height, no empty space, no second scrollbar).
+    // A fixed `height` already bounds the root; a `maxHeight` would fight it, so it's ignored.
     if (!hasHeight) {
-        if (hasMax) scrollerStyle.maxHeight = maxHeight;
-        else if (scrollable) scrollerStyle.maxHeight = DEFAULT_MAX_HEIGHT;
+        if (hasMax) rootStyle.maxHeight = maxHeight;
+        else if (scrollable) rootStyle.maxHeight = DEFAULT_MAX_HEIGHT;
     }
 
     return {
         scrollable,
         rootStyle: Object.keys(rootStyle).length ? rootStyle : undefined,
-        scrollerStyle: Object.keys(scrollerStyle).length ? scrollerStyle : undefined,
+        // The scroller carries no height bound — it flexes within the bounded root.
+        scrollerStyle: undefined,
     };
 }

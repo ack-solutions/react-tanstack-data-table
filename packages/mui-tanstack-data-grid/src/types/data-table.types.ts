@@ -60,6 +60,8 @@ export interface DataTableToolbarControls {
     refresh: ReactNode;
     /** Reset button. */
     reset: ReactNode;
+    /** Grid ⇄ list view toggle. */
+    viewToggle: ReactNode;
     /** Your `extraFilter` node. */
     extraFilter: ReactNode;
 }
@@ -85,6 +87,20 @@ export interface DataTableRowAction<T = any> {
     hidden?: boolean;
     /** MUI colour for the icon button / menu item. */
     color?: 'inherit' | 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning';
+}
+
+/** Params passed to `renderListItem` for each row in list view. */
+export interface DataTableListItemParams<T> {
+    /** The row's original data. */
+    row: T;
+    /** The underlying TanStack row node (for `getIsSelected`, `depth`, …). */
+    rowNode: Row<T>;
+    /** The imperative grid API (selection, editing, data CRUD, …). */
+    api: DataTableApi<T>;
+    /** The row's display index on the current page. */
+    index: number;
+    /** Whether the row is currently selected. */
+    isSelected: boolean;
 }
 
 export interface DataTableProps<T> {
@@ -293,6 +309,25 @@ export interface DataTableProps<T> {
     enableExpanding?: boolean;
     /** @deprecated Renamed to `renderDetailPanel`. */
     renderSubComponent?: (row: Row<T>) => ReactNode;
+
+    // ── List view ─────────────────────────────────────────────────────────
+    /**
+     * Render each row as a single full-width **list item** instead of a columnar
+     * row — great for narrow/mobile layouts. The engine is unchanged (sorting,
+     * filtering, pagination, selection, virtualization all still apply); only the
+     * row rendering switches. Requires {@link renderListItem}. Controlled: pair
+     * with {@link onListViewChange}, or omit and use {@link enableListView} for an
+     * uncontrolled toolbar toggle.
+     */
+    listView?: boolean;
+    /** Called when the built-in toolbar toggle switches modes (for controlled `listView`). */
+    onListViewChange?: (listView: boolean) => void;
+    /** Show a grid ⇄ list toggle in the toolbar. */
+    enableListView?: boolean;
+    /** Renders a row's content in list view. Owns the whole row (avatar, text, actions, …). */
+    renderListItem?: (params: DataTableListItemParams<T>) => ReactNode;
+    /** Fixed row height in px (overrides the density row height). Handy for list items. */
+    rowHeight?: number;
 
     // ── Pagination ────────────────────────────────────────────────────────
     enablePagination?: boolean;

@@ -166,6 +166,19 @@ export function V2DemoPage() {
                     enableDensitySelector
                     enableExport
                     enableReset
+                    enableListView
+                    renderListItem={({ row }) => (
+                        <Stack direction="row" sx={{ alignItems: 'center', gap: 2, width: '100%' }}>
+                            <Box sx={{ width: 40, height: 40, borderRadius: '50%', bgcolor: 'primary.main', color: 'primary.contrastText', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, flexShrink: 0 }}>
+                                {row.name.charAt(0)}
+                            </Box>
+                            <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                                <Typography variant="body2" fontWeight={600} noWrap>{row.name}</Typography>
+                                <Typography variant="body2" color="text.secondary" noWrap>{row.email} · {row.company}</Typography>
+                            </Box>
+                            <Chip size="small" label={row.status} color={row.status === 'active' ? 'success' : row.status === 'pending' ? 'warning' : 'default'} />
+                        </Stack>
+                    )}
                     stickyHeader
                     maxHeight={520}
                     onSelectionChange={(s) => setSelectedCount(s.type === 'exclude' ? data.length - s.ids.length : s.ids.length)}

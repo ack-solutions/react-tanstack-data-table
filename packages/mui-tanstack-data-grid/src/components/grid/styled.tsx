@@ -139,6 +139,22 @@ export const GridCell = styled('div', { name: 'MuiTanstackDataGrid', slot: 'Cell
     '&:focus-visible': { outline: '2px solid var(--dt-resize-handle)', outlineOffset: '-2px', zIndex: 1 },
 })) as unknown as DivSlot;
 
+// List view: one full-width cell per row hosting `renderListItem`. Body typography +
+// density padding like a normal cell, but spans the whole row (no columns).
+export const GridListItem = styled('div', { name: 'MuiTanstackDataGrid', slot: 'ListItem' })(({ theme }) => ({
+    ...theme.typography.body2,
+    fontSize: 'var(--dt-font-size)',
+    boxSizing: 'border-box',
+    display: 'flex',
+    alignItems: 'center',
+    width: '100%',
+    minWidth: 0,
+    paddingBlock: 'var(--dt-cell-padding-y)',
+    paddingInline: 'var(--dt-cell-padding-x)',
+    outline: 'none',
+    '&:focus-visible': { outline: '2px solid var(--dt-resize-handle)', outlineOffset: '-2px', zIndex: 1 },
+})) as unknown as DivSlot;
+
 // Aggregation summary row — sticks to the bottom of the scroll viewport, above
 // the (out-of-scroller) pagination footer. Sits inside the column-sized track so
 // its cells align with the data columns and honour pinning.

@@ -331,7 +331,8 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
     // otherwise it's uncontrolled (driven by the toolbar's density selector → ui.density).
     const controlledDensity: DataTableDensity | undefined =
         props.density ?? (props.tableSize === 'small' ? 'compact' : props.tableSize === 'medium' ? 'standard' : undefined);
-    const estimateRowHeight = props.estimatedRowHeight ?? props.estimateRowHeight ?? 52;
+    // A fixed `rowHeight` is the exact virtualizer estimate; else the explicit estimate, else 52.
+    const estimateRowHeight = props.estimatedRowHeight ?? props.estimateRowHeight ?? props.rowHeight ?? 52;
 
     // Row actions: keep the latest callback in a ref so an inline `getRowActions`
     // doesn't change column identity every render; `hasRowActions` (a stable bool)

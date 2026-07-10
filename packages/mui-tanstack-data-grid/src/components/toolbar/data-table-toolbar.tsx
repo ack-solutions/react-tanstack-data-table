@@ -36,6 +36,8 @@ import {
     ColumnsFeatherIcon,
     DensityFeatherIcon,
     ExportFeatherIcon,
+    GridViewFeatherIcon,
+    ListViewFeatherIcon,
     RefreshFeatherIcon,
     ResetFeatherIcon,
     SearchFeatherIcon,
@@ -59,6 +61,9 @@ export interface DataTableToolbarProps<T> {
     resetActions?: ResetLayoutAction[];
     enableRefresh?: boolean;
     enableSavedViews?: boolean;
+    enableListView?: boolean;
+    listView?: boolean;
+    onToggleListView?: (next: boolean) => void;
     extraFilter?: ReactNode;
     searchPlaceholder?: string;
     slots?: Partial<DataTableSlots>;
@@ -154,6 +159,9 @@ export function DataTableToolbar<T extends Record<string, any>>(props: DataTable
         resetActions,
         enableRefresh,
         enableSavedViews,
+        enableListView,
+        listView,
+        onToggleListView,
         extraFilter,
         searchPlaceholder,
         slots,
@@ -310,6 +318,27 @@ export function DataTableToolbar<T extends Record<string, any>>(props: DataTable
         )
     ) : null;
 
+    // Grid ⇄ list toggle: shows the icon for the mode you'd switch TO.
+    const GridViewIcon = slots?.gridViewIcon ?? GridViewFeatherIcon;
+    const ListViewIcon = slots?.listViewIcon ?? ListViewFeatherIcon;
+    const viewToggleEl = enableListView ? (
+        slots?.viewModeToggle ? (
+            <slots.viewModeToggle listView={listView} onToggle={onToggleListView} {...slotProps?.viewModeToggle} />
+        ) : (
+        <Tooltip title={listView ? locale.toolbarGridView : locale.toolbarListView}>
+            <IconButton
+                size="small"
+                aria-label={listView ? locale.toolbarGridView : locale.toolbarListView}
+                aria-pressed={!!listView}
+                onClick={() => onToggleListView?.(!listView)}
+                {...slotProps?.viewModeToggle}
+            >
+                {listView ? <GridViewIcon fontSize="small" /> : <ListViewIcon fontSize="small" />}
+            </IconButton>
+        </Tooltip>
+        )
+    ) : null;
+
     // `slotProps.toolbar` styles the built-in toolbar container (slots.toolbar,
     // which replaces the whole toolbar, is handled one level up in GridView).
     const tb = resolveSlotProps(slotProps, 'toolbar');
@@ -325,6 +354,7 @@ export function DataTableToolbar<T extends Record<string, any>>(props: DataTable
             export: exportEl,
             refresh: refreshEl,
             reset: resetEl,
+            viewToggle: viewToggleEl,
             extraFilter: extraFilterEl,
         };
         return (
@@ -350,9 +380,10 @@ export function DataTableToolbar<T extends Record<string, any>>(props: DataTable
             ) : null}
             {refreshEl}
             {resetEl}
-            {extraFilterEl ? (
+            {viewToggleEl || extraFilterEl ? (
                 <>
                     <Box sx={{ flex: 1 }} />
+                    {viewToggleEl}
                     {extraFilterEl}
                 </>
             ) : null}

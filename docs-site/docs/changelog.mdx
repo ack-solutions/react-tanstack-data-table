@@ -16,6 +16,34 @@ format: each release groups changes as **Added** (new features), **Changed** (be
 
 ---
 
+## [1.19.0](https://www.npmjs.com/package/@ackplus/mui-tanstack-data-grid/v/1.19.0) — 2026-07-10
+
+Adds **List view** — render rows as full-width list items instead of a columnar table, great for narrow /
+mobile layouts (a **Pro-only** feature in MUI X, free here) — and fixes a `maxHeight` scroll bug. Backward
+compatible.
+
+### Fixed
+- **`maxHeight` no longer double-scrolls when a selection bar appears.** The height bound now sits on the
+  **root** (not the scroll viewport), so all chrome — toolbar, the bulk-actions bar, footer — lives inside
+  the budget and the body flexes. Selecting rows shrinks the body instead of growing the whole grid (and it
+  grows back on clear — no fixed reduced height, no empty space, no second scrollbar). Matches how MUI X /
+  AG Grid bound the container and flex the body. `height` / `100%` modes were already correct.
+
+### Added
+- **List view.** Set `listView` + `renderListItem` to render each row as one full-width item you fully
+  control (avatar, text, actions, …). The engine is unchanged — **sorting, filtering, pagination, selection,
+  saved views, and virtualization all keep working**; only the row rendering switches.
+  - **`renderListItem({ row, rowNode, api, index, isSelected })`** owns the row content.
+  - **`enableListView`** adds a built-in **grid ⇄ list toggle** to the toolbar; control it yourself with
+    `listView` + `onListViewChange`. The classic responsive pattern is `listView={isMobile}`.
+  - New **`rowHeight`** prop (fixed px, overrides the density row height).
+  - Themeable: `styleOverrides.listItem`, `slots.listItem` / `slotProps.listItem`, plus
+    `slots.gridViewIcon` / `slots.listViewIcon` / `slots.viewModeToggle` for the toggle.
+  - Column-only concepts (headers, resize / reorder / pinning, grouped headers, the aggregation footer) turn
+    off in list view; sort / filter run through the toolbar and `api`. See [List view](/features/list-view).
+
+---
+
 ## [1.18.3](https://www.npmjs.com/package/@ackplus/mui-tanstack-data-grid/v/1.18.3) — 2026-07-09
 
 Deeper MUI-theme integration for **typography and spacing**, plus roomier cells. No API changes; the grid now
