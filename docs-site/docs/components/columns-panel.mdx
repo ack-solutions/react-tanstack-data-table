@@ -1,0 +1,41 @@
+---
+title: Columns Panel
+sidebar_label: Columns Panel
+---
+
+# Columns Panel
+
+:::info[Coming soon]
+A **standalone, embeddable Columns Panel** component — the show/hide · pin · reorder UI as a component you
+can mount **outside** the grid (in a drawer, a settings dialog, your own toolbar) — is on the roadmap.
+The same panel already ships **inside the toolbar** today.
+:::
+
+## Available today
+
+The columns panel is built in — enable it and it appears in the [toolbar](/features/toolbar) as a
+**Columns** button that opens a popover to toggle visibility (and pin / reorder when those features are on):
+
+```tsx
+<DataTable
+  columns={columns}
+  data={rows}
+  enableColumnVisibility   // show/hide checkboxes
+  enableColumnPinning      // + pin left / right
+  enableColumnReordering   // + drag to reorder
+/>
+```
+
+Drive the same actions programmatically through [`apiRef`](/api/api-ref) — e.g.
+`apiRef.current.columnVisibility.hideColumn('email')`,
+`apiRef.current.columnPinning.pinColumnLeft('name')` — so you can already build a custom panel against the
+public API. The planned component will package that panel for reuse without wiring it yourself.
+
+## What the standalone component will add
+
+```tsx
+// Planned API (subject to change)
+import { ColumnsPanel } from '@ackplus/mui-tanstack-data-grid';
+
+<ColumnsPanel apiRef={apiRef} />   // mount anywhere, driven by the grid's apiRef
+```

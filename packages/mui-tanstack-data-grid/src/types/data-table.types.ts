@@ -118,7 +118,10 @@ export interface DataTableProps<T> {
     getRowId?: (row: T, index: number) => string;
     /** Shorthand for `getRowId` when the id is a single field (default: `'id'`). */
     idKey?: keyof T;
+    /** Custom node rendered on the **right** of the toolbar. */
     extraFilter?: ReactNode | null;
+    /** Custom node rendered on the **left of the footer** (opposite pagination) — e.g. a
+     *  "show deleted" toggle. The footer appears whenever this or `enablePagination` is set. */
     footerFilter?: ReactNode | null;
     /** Show a sticky footer **summary row** with per-column `aggregation` totals (client mode). */
     enableAggregation?: boolean;

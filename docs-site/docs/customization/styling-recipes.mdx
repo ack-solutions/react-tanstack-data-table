@@ -1,0 +1,104 @@
+---
+title: Styling recipes
+sidebar_label: Styling recipes
+---
+
+import LiveDemo from '@site/src/demo/LiveDemo';
+import { CellRowStylingDemo } from '@site/src/demo/demos';
+
+# Styling recipes
+
+Practical patterns for styling individual rows and cells. For the theme-level surface (palette, tokens,
+dark mode, RTL) start with [Theming](/theming); this page is the row/cell layer on top.
+
+<LiveDemo>{() => <CellRowStylingDemo />}</LiveDemo>
+
+## Conditional row / cell classes
+
+Emit a CSS class per row or cell, then style it however you like (theme `styleOverrides`, a wrapper `sx`,
+or global CSS). All four hooks compose:
+
+| Hook | Scope | Signature |
+| --- | --- | --- |
+| `getRowClassName` | table → row | `({ row, index }) => string` |
+| `getCellClassName` | table → cell | `({ row, columnId, value }) => string` |
+| `column.cellClassName` | column → cell | `string \| (({ row, value }) => string)` |
+| `column.headerClassName` | column → header | `string` |
+
+```tsx
+<Box sx={{ '& .dt-admin': { fontWeight: 700, color: 'success.main' },
+           '& .dt-viewer-row': { fontStyle: 'italic', color: 'text.secondary' } }}>
+  <DataTable
+    columns={[
+      { id: 'role', accessorKey: 'role',
+        cellClassName: ({ value }) => (value === 'Admin' ? 'dt-admin' : '') },
+    ]}
+    data={rows}
+    getRowClassName={({ row }) => (row.original.role === 'Viewer' ? 'dt-viewer-row' : '')}
+  />
+</Box>
+```
+
+## Zebra stripes & hover
+
+Built-in visual modifiers — no CSS needed:
+
+```tsx
+<DataTable columns={columns} data={rows} striped hover />
+```
+
+Both read `--dt-row-bg-stripe` / `--dt-row-bg-hover`, which default from `palette.action`. Override a token
+to recolour just the grid:
+
+```tsx
+<DataTable columns={columns} data={rows} striped sx={{ '--dt-row-bg-stripe': '#f5f3ff' }} />
+```
+
+## Wrapping long text
+
+By default a cell truncates with `…`. Let a column wrap (and rows grow) with `wrapText`:
+
+```tsx
+{ id: 'bio', header: 'Bio', accessorKey: 'bio', wrapText: true }
+```
+
+## Style a part with `slotProps`
+
+Inject `sx` into any part — it **merges** with the built-in styling, so you never lose the grid's roles or
+tokens (see [Custom subcomponents](/customization/custom-subcomponents)):
+
+```tsx
+<DataTable
+  columns={columns}
+  data={rows}
+  slotProps={{
+    row:  { sx: { '&:nth-of-type(even)': { bgcolor: 'action.hover' } } },
+    cell: { sx: { fontVariantNumeric: 'tabular-nums' } },   // aligned figures for numbers
+  }}
+/>
+```
+
+## Theme every grid at once
+
+Put shared rules in the theme so all grids inherit them — see [Theming](/theming#2-theme-it-like-a-mui-component):
+
+```tsx
+createTheme({
+  components: {
+    MuiTanstackDataGrid: {
+      styleOverrides: {
+        header: { textTransform: 'uppercase', letterSpacing: '0.04em' },
+        cell:   { borderRight: '1px solid var(--dt-border-color)' },
+      },
+    },
+  },
+});
+```
+
+## Drop the card frame
+
+The grid frames itself with a border + rounded corners. Remove it per-instance:
+
+```tsx
+<DataTable columns={columns} data={rows} sx={{ border: 0, borderRadius: 0 }} />
+```

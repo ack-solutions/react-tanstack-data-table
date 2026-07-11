@@ -1,0 +1,90 @@
+---
+title: Events
+sidebar_label: Events
+---
+
+# Events
+
+The grid is **uncontrolled by default** — it manages its own state and tells you about changes through
+`onXChange` callbacks. Listen to sync a URL, persist to your backend, fire analytics, or lift a slice of
+state into a controlled prop.
+
+```tsx
+<DataTable
+  columns={columns}
+  data={rows}
+  enableSorting
+  onSortingChange={(sorting) => console.log('sort →', sorting)}
+/>
+```
+
+## State-change events
+
+| Event | Signature | Fires when |
+| --- | --- | --- |
+| `onSortingChange` | `(sorting: SortingState) => void` | The sort model changes. |
+| `onGlobalFilterChange` | `(value: string) => void` | The [quick-filter](/components/quick-filter) term changes. |
+| `onColumnFilterChange` | `(state, isApplied?) => void` | A [column filter](/features/filtering) rule changes (`isApplied` = committed vs. draft). |
+| `onPaginationChange` | `(pagination: PaginationState) => void` | Page index or page size changes. |
+| `onSelectionChange` | `(selection: SelectionState) => void` | Row [selection](/features/selection) changes (include / exclude sets). |
+| `onColumnVisibilityChange` | `(visibility: Record<string, boolean>) => void` | A column is shown / hidden. |
+| `onColumnOrderChange` | `(order: string[]) => void` | Columns are [reordered](/features/columns). |
+| `onColumnPinningChange` | `(pinning: ColumnPinningState) => void` | A column is [pinned / unpinned](/features/pinning). |
+| `onColumnSizingChange` | `(sizing: Record<string, number>) => void` | A column is resized. |
+| `onRowPinningChange` | `(pinning: RowPinningState) => void` | A row is [pinned](/features/expansion) top / bottom. |
+| `onListViewChange` | `(listView: boolean) => void` | The grid ⇄ [list](/features/list-view) toggle flips. |
+
+## Interaction events
+
+| Event | Signature | Fires when |
+| --- | --- | --- |
+| `onRowClick` | `(event, row) => void` | A row is clicked (`selectOnRowClick` also toggles selection). |
+| `onClipboardCopy` | `(rowCount: number) => void` | Selected rows are copied ([Cells](/features/cells#copy-cells-to-the-clipboard)). |
+
+## Editing events
+
+| Event | Signature | Fires when |
+| --- | --- | --- |
+| `processRowUpdate` | `(newRow, oldRow) => T \| Promise<T>` | An [edit](/features/editing) commits — return the row to persist, or throw to reject. |
+| `onProcessRowUpdateError` | `(error) => void` | `processRowUpdate` throws / rejects (the edit reverts). |
+| `onRowEditStart` | `({ row }) => void` | A row enters edit mode (`editMode: 'row'`). |
+| `onRowEditStop` | `({ row, reason }) => void` | A row leaves edit mode (`reason`: `'save'` \| `'cancel'`). |
+
+## Data / server events
+
+Used in [server mode](/features/server-side):
+
+| Event | Signature | Fires when |
+| --- | --- | --- |
+| `onFetchData` | `(filters, meta?) => Promise<{ data, total }>` | The grid needs a page (sort / filter / page changed). |
+| `onRefreshData` | `(context) => void \| Promise<void>` | The toolbar **Refresh** button is pressed. |
+| `onDataStateChange` | `(state: Partial<TableState>) => void` | Any data-affecting state changes (one aggregate hook). |
+| `onFetchStateChange` | `(filters, options?) => void` | The fetch parameters change (before the fetch). |
+
+## Export events
+
+See [Export](/features/export) for the full lifecycle:
+
+`onExportProgress` · `onExportComplete` · `onExportError` · `onExportStateChange` — plus the server-side
+handlers `onServerExport` / `onExportStream` / `onExportPoll` / `onExportCancel`.
+
+## Seed, observe, control
+
+Most state (sorting, filters, pagination, selection, column layout) is **seed-and-observe**: give it a
+starting value with `initialState` and watch changes with the `onXChange` callback — the grid owns the live
+value.
+
+```tsx
+<DataTable
+  columns={columns}
+  data={rows}
+  initialState={{ sorting: [{ id: 'name', desc: false }] }}   // seed
+  onSortingChange={(s) => syncUrl(s)}                          // observe
+/>
+```
+
+A few features are **fully controlled** — pass the value prop and its callback to own them outright:
+`density`, `listView`, and saved `views` / `activeViewId`. In [server mode](/features/server-side) you
+control the data itself by returning it from `onFetchData`.
+
+See [State](/resources/state) for the full model.

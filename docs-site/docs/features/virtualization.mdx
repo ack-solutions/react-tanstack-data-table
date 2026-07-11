@@ -1,0 +1,60 @@
+---
+title: Virtualization
+sidebar_label: Virtualization
+---
+
+# Virtualization
+
+**Row virtualization** renders only the rows currently in (and near) the viewport instead of the whole
+dataset, so a grid backed by tens of thousands of client-side rows stays smooth to scroll. It's powered by
+[`@tanstack/react-virtual`](https://tanstack.com/virtual).
+
+## Enable it
+
+```tsx
+<DataTable
+  columns={columns}
+  data={rows}            // thousands of rows
+  enableVirtualization
+  height={520}           // virtualization needs a bounded scroll area
+  estimatedRowHeight={52}
+/>
+```
+
+Virtualization only kicks in when the body **scrolls**, so pair it with a bounded height — `height`,
+`maxHeight`, or `stickyHeader` (see [Layout](/features/layout)). In an auto-height grid every row is laid
+out anyway, so there's nothing to virtualize.
+
+## Props
+
+| Prop | Type | Default | Use case |
+| --- | --- | --- | --- |
+| `enableVirtualization` | `boolean` | `false` | Turn on windowed rendering for large client datasets. |
+| `estimatedRowHeight` | `number` | density row height | Seed the virtualizer's size estimate. Set it close to your real row height so the scrollbar is accurate before rows measure. |
+| `rowHeight` | `number` | — | **Fixed** row height (px). When every row is the same height, this is faster and steadier than estimation. |
+
+Rows are measured after render, so variable-height rows (e.g. [`wrapText`](/features/cells#alignment--wrapping)
+or a [detail panel](/features/expansion)) still work — `estimatedRowHeight` just reduces scroll jitter until
+they measure.
+
+## When to use it
+
+| Situation | Recommendation |
+| --- | --- |
+| Hundreds of client rows | Optional — the grid is fine without it. |
+| Thousands+ of client rows | **Enable it** with a bounded height. |
+| Server pagination | Not needed — you only hold one page in memory ([Server-side data](/features/server-side)). |
+| Uniform row height | Add `rowHeight` for the steadiest scrolling. |
+
+:::note[What's virtualized]
+Only **rows** are virtualized. Column virtualization (windowing very wide grids horizontally) is
+[coming soon](/features/row-grouping). Pinned rows and columns, sorting, filtering, selection, and list
+view all work with virtualization on.
+:::
+
+## Interaction with other features
+
+- **Selection / keyboard nav** track the underlying row model, so selecting or arrow-keying to an
+  off-screen row works — it scrolls into view.
+- **Sticky header / footer** stay pinned while the virtual window scrolls between them.
+- **List view** ([List view](/features/list-view)) virtualizes its items the same way.

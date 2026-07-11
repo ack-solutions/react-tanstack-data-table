@@ -1,0 +1,43 @@
+---
+title: Row grouping
+sidebar_label: Row grouping
+---
+
+# Row grouping
+
+:::info[Coming soon]
+Interactive **client-side row grouping** — group by one or more columns at runtime, with collapsible
+group headers and per-group subtotals — is on the roadmap and **not yet available**. This page describes
+the planned API and what you can use in the meantime.
+:::
+
+## What it will do
+
+Group rows by a column's value into collapsible bands, each with an aggregated summary row:
+
+```tsx
+// Planned API (subject to change)
+<DataTable
+  columns={columns}
+  data={rows}
+  enableRowGrouping
+  initialState={{ grouping: ['country', 'city'] }}
+/>
+```
+
+- Drag a column to a **“group by”** drop zone, or set `grouping` in state.
+- Collapsible **group headers** with a count and per-column [aggregation](/features/aggregation) subtotals.
+- Works with sorting, filtering, selection, and pagination.
+
+## Available today
+
+You don't have to wait to ship grouped data:
+
+| Need | Use today |
+| --- | --- |
+| Hierarchical / pre-grouped data | **[Tree data](/features/tree-data)** — supply `getSubRows` and the grid renders an expandable tree with depth indentation. |
+| Group **totals** | **[Aggregation](/features/aggregation)** — a sticky footer summary row with per-column totals over the filtered rows. |
+| Group on the server | Return already-grouped rows from **[`onFetchData`](/features/server-side)** and render them as tree data. |
+
+If you group on your backend and hand the grid a parent/child shape, **Tree data** covers most grouping
+use cases now. Native in-grid grouping will layer on top of the same engine.

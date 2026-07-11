@@ -95,7 +95,7 @@ So a "view" in your app is simply `{ table: SavedLayout, filters: YourFilters }`
 like** (localStorage, your API, Redux) and restore both halves together. No per-filter API, no duplicate
 fetch logic, no limits on what a filter can be.
 
-:::tip Which one to use
+:::tip[Which one to use]
 Use the built-in **`enableSavedViews`** for quick, table-only views. When a view must also span **external**
 filters, own it yourself with `saveLayout` / `restoreLayout` (below) — the built-in control snapshots the
 table state only.
@@ -169,7 +169,7 @@ const applyView = (view: MyView) => {
 };
 ```
 
-:::note One refetch, not two
+:::note[One refetch, not two]
 `restoreLayout` refetches only when the table state actually changes — so applying a view runs a **single**
 request that already carries your restored external filters (they're read from the ref). If a view changes
 *only* the external filters (identical table layout), call `apiRef.current.data.refresh()` after restoring.
@@ -186,7 +186,7 @@ Values you save must be JSON-serializable to persist (e.g. store dates as ISO st
 | `activeViewId` | `string \| null` | Controlled active view id (`null` = Default) |
 | `onActiveViewChange` | `(id) => void` | Active view changed (controlled) |
 
-:::note Defaults & caveats
+:::note[Defaults & caveats]
 The synthetic **Default** view (always shown first) equals `resetLayout()`. A view's page size is applied
 only when `enablePagination` is on, and its density is ignored when `density`/`tableSize` is a controlled
 prop. A view that pins rows requires a stable `getRowId` (and client-mode data) to re-pin the right records.

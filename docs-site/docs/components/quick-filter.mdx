@@ -1,0 +1,58 @@
+---
+title: Quick Filter
+sidebar_label: Quick Filter
+---
+
+import LiveDemo from '@site/src/demo/LiveDemo';
+import { FilteringDemo } from '@site/src/demo/demos';
+
+# Quick Filter
+
+The **quick filter** is a single global search box that matches the term against every column at once — the
+fastest way to let users find a row. Turn it on with `enableGlobalFilter`:
+
+```tsx
+<DataTable columns={columns} data={rows} enableGlobalFilter />
+```
+
+It appears in the [toolbar](/features/toolbar) as a **search icon** that expands into a field when clicked
+(auto-focuses, shows a clear button while it has text, and collapses again when emptied).
+
+<LiveDemo>{() => <FilteringDemo />}</LiveDemo>
+
+## Client vs server
+
+`filterMode` decides where matching happens — it's shared with [column filters](/features/filtering):
+
+| `filterMode` | Behaviour |
+| --- | --- |
+| `'client'` (default) | The grid filters the in-memory `data` as the user types. |
+| `'server'` | The term is handed to `onFetchData` (as `globalFilter`) so your backend filters — see [Server-side data](/features/server-side). |
+
+## Props & callbacks
+
+| Prop | Type | Default | Use case |
+| --- | --- | --- | --- |
+| `enableGlobalFilter` | `boolean` | `false` | Show the quick-search control. |
+| `onGlobalFilterChange` | `(value: string) => void` | — | Observe the term (analytics, syncing a URL param). |
+| `localeText.searchPlaceholder` | `string` | `'Search…'` | Change the field placeholder — see [Localization](/features/localization). |
+
+## Control it imperatively
+
+Drive the search from your own UI through [`apiRef`](/api/api-ref):
+
+```tsx
+apiRef.current?.filtering.setGlobalFilter('acme');
+apiRef.current?.filtering.clearGlobalFilter();
+apiRef.current?.state.getGlobalFilter();     // read the current term
+```
+
+## Quick filter vs column filters
+
+| | Quick filter | [Column filters](/features/filtering) |
+| --- | --- | --- |
+| Scope | All columns at once | One rule per column (field · operator · value) |
+| UI | One search box | Rule-builder popover with an active-count badge |
+| Prop | `enableGlobalFilter` | `enableColumnFilter` |
+
+They're independent — enable one, the other, or both.

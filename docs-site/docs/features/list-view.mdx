@@ -109,13 +109,13 @@ click). Everything else — row actions, expansion, selection — you compose in
 | `enableListView` | `boolean` | Show the grid ⇄ list toggle in the toolbar. |
 | `rowHeight` | `number` | Fixed row height in px (overrides the density row height). |
 
-:::note Theming & slots
+:::note[Theming & slots]
 The list item is a themeable part: `styleOverrides.listItem`, `slots.listItem`, and
 `slotProps.listItem`. The toggle icons are `slots.gridViewIcon` / `slots.listViewIcon`, and the whole
 control is `slots.viewModeToggle`.
 :::
 
-:::tip Virtualization + item height
+:::tip[Virtualization + item height]
 The row virtualizer estimates a **uniform** row height. If you virtualize a list whose items vary in height,
 give it an accurate estimate — set a fixed **`rowHeight`** (used as the estimate), or **`estimatedRowHeight`**
 — so scroll positioning stays precise.

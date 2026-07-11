@@ -28,3 +28,87 @@
   --ifm-color-primary-lightest: #4fddbf;
   --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
 }
+
+/* ───────────────────────────────────────────────────────────────────────────
+ * Sidebar section headers + badges (MUI-X-style docs nav)
+ * `type:'html'` items carry `.sidebar-section-title`; doc/link items carry a
+ * `.badge-*` className whose ::after renders a small pill.
+ * ─────────────────────────────────────────────────────────────────────────── */
+
+/* Non-clickable uppercase group label, e.g. "MAIN FEATURES". */
+.sidebar-section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 1.15rem 0 0.15rem;
+  padding: 0 0.75rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ifm-color-emphasis-600);
+  cursor: default;
+  user-select: none;
+}
+/* The very first section sits right under the top links — trim its lead. */
+.sidebar-section-title:first-child {
+  margin-top: 0.35rem;
+}
+
+/* Inline pills — reused by section titles (HTML) and item badges (::after). */
+.pill,
+.badge-soon > .menu__link::after,
+.badge-new > .menu__link::after,
+.badge-pro > .menu__link::after {
+  display: inline-block;
+  padding: 0.02rem 0.4rem;
+  font-size: 0.6rem;
+  font-weight: 700;
+  line-height: 1.5;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  border-radius: 999px;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+/* Item badges: Docusaurus puts the item className on the <li>, so target its link. */
+.badge-soon > .menu__link {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.badge-soon > .menu__link::after {
+  content: 'Soon';
+  margin-inline-start: 0.5rem;
+  background: var(--dt-pill-soon-bg, #fff4e5);
+  color: var(--dt-pill-soon-fg, #b26a00);
+}
+.badge-new > .menu__link {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.badge-new > .menu__link::after {
+  content: 'New';
+  margin-inline-start: 0.5rem;
+  background: var(--dt-pill-new-bg, #e6f4ea);
+  color: var(--dt-pill-new-fg, #1e7e34);
+}
+
+/* Section-title pills (inline HTML in the label). */
+.pill-new {
+  background: var(--dt-pill-new-bg, #e6f4ea);
+  color: var(--dt-pill-new-fg, #1e7e34);
+}
+.pill-soon {
+  background: var(--dt-pill-soon-bg, #fff4e5);
+  color: var(--dt-pill-soon-fg, #b26a00);
+}
+
+[data-theme='dark'] {
+  --dt-pill-soon-bg: rgba(255, 167, 38, 0.16);
+  --dt-pill-soon-fg: #ffb74d;
+  --dt-pill-new-bg: rgba(37, 194, 160, 0.16);
+  --dt-pill-new-fg: #4fddbf;
+}

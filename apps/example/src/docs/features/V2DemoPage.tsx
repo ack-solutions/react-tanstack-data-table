@@ -165,6 +165,13 @@ export function V2DemoPage() {
                         </Button>
                     )}
                     enablePagination
+                    footerFilter={
+                        <FormControlLabel
+                            control={<Switch size="small" defaultChecked={false} />}
+                            label="Show deleted"
+                            sx={{ m: 0 }}
+                        />
+                    }
                     enableGlobalFilter
                     enableColumnFilter
                     filterMode="client"

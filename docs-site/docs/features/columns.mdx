@@ -141,7 +141,7 @@ const columns = [
 | `getRowClassName` | `({ row, index }) => string` | table | Class for each row. |
 | `getCellClassName` | `({ row, columnId, value }) => string` | table | Class for each cell (merges with `cellClassName`). |
 
-:::note Virtualization
+:::note[Virtualization]
 `wrapText` grows rows in the standard grid. Under `enableVirtualization` the row height is a fixed estimate,
 so wrapped content is clipped — per-row measurement for virtualized auto-height is a separate enhancement.
 :::

@@ -68,7 +68,7 @@ through a dedicated **`apiRef`** prop instead.
 Once wired, `apiRef.current` gives you the same API as before (`apiRef.current?.selection.selectAll()`,
 `apiRef.current?.export.toCsv()`, etc.).
 
-:::note State persistence
+:::note[State persistence]
 v1's `stateKey` lived on the example app's `DataGrid` wrapper. **Since 1.5.0 `stateKey` is a first-class
 `<DataTable>` prop** — pass it directly and the grid persists view state for you (see
 [State persistence](/api/props#state-persistence)). For v1's `defaultHiddenColumns`, map the hidden names

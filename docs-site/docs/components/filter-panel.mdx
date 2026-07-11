@@ -1,0 +1,42 @@
+---
+title: Filter Panel
+sidebar_label: Filter Panel
+---
+
+# Filter Panel
+
+:::info[Coming soon]
+A **standalone, embeddable Filter Panel** component — the column-filter rule builder as a component you can
+mount **outside** the grid — is on the roadmap. The rule builder already ships **inside the toolbar** today.
+:::
+
+## Available today
+
+Turn on column filtering and the grid renders a **Filter** button in the [toolbar](/features/toolbar) that
+opens a rule builder (field · operator · value) with an active-count badge:
+
+```tsx
+<DataTable
+  columns={columns}
+  data={rows}
+  enableColumnFilter    // rule-builder popover in the toolbar
+  enableGlobalFilter    // + collapsible quick search
+  filterMode="client"   // or "server" — see Server-side data
+/>
+```
+
+See **[Filtering](/features/filtering)** for operators and per-type controls, and
+**[Quick Filter](/components/quick-filter)** for the global search box.
+
+Drive filters imperatively through [`apiRef`](/api/api-ref) —
+`apiRef.current.filtering.addColumnFilter('status', 'equals', 'active')`,
+`apiRef.current.filtering.clearAllFilters()` — so a custom panel against the public API is possible today.
+
+## What the standalone component will add
+
+```tsx
+// Planned API (subject to change)
+import { FilterPanel } from '@ackplus/mui-tanstack-data-grid';
+
+<FilterPanel apiRef={apiRef} />   // mount in a drawer / sidebar, driven by apiRef
+```

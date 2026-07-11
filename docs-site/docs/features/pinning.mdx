@@ -91,7 +91,7 @@ the top and *Zoe* to the bottom; use the **pushpin buttons** in each row's actio
 
 <LiveDemo>{() => <PinnedRowsDemo />}</LiveDemo>
 
-:::note Client data mode only
+:::note[Client data mode only]
 Row pinning re-hydrates pinned rows by id from the full local dataset, so it requires **client-side data**
 (like [footer aggregation](/features/aggregation)). It's ignored under server pagination, where the engine
 holds only one page. Top-level rows only — tree sub-rows can't be pinned. Give rows a stable

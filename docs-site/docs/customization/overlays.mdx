@@ -1,0 +1,77 @@
+---
+title: Overlays
+sidebar_label: Overlays
+---
+
+# Overlays
+
+Overlays cover the grid body for the two states where there are no rows to show: **loading** and **empty**.
+Both have sensible defaults and are fully replaceable.
+
+## Loading
+
+Set `loading` and the body shows shimmering **skeleton rows** (the header, toolbar, and footer stay put so
+the layout doesn't jump):
+
+```tsx
+<DataTable columns={columns} data={rows} loading={isFetching} enablePagination />
+```
+
+| Prop | Type | Default | Use case |
+| --- | --- | --- | --- |
+| `loading` | `boolean` | `false` | Toggle the loading overlay (e.g. from a query's `isLoading`). |
+| `skeletonRows` | `number` | `5` | How many skeleton rows to draw — match your typical page size to avoid a jump. |
+
+In [server mode](/features/server-side) the grid manages `loading` itself around `onFetchData`; wire the
+prop yourself only for client-side async.
+
+## Empty (no rows)
+
+When there are zero rows (no data, or a filter matched nothing), the body shows an empty-state message:
+
+```tsx
+<DataTable columns={columns} data={[]} noRowsMessage="No expenses match your filters" />
+```
+
+`noRowsMessage` takes a **string or any React node**, so you can render an illustration, a "Clear filters"
+button, or a call to action:
+
+```tsx
+<DataTable
+  columns={columns}
+  data={rows}
+  noRowsMessage={
+    <Stack alignItems="center" spacing={1} sx={{ py: 4 }}>
+      <InboxOutlined color="disabled" />
+      <Typography color="text.secondary">Nothing here yet</Typography>
+      <Button size="small" onClick={addFirst}>Add the first row</Button>
+    </Stack>
+  }
+/>
+```
+
+## Replace the overlay component
+
+For full control over markup and animation, swap the overlay [slot](/customization/custom-subcomponents)
+entirely:
+
+```tsx
+<DataTable
+  columns={columns}
+  data={rows}
+  slots={{
+    loadingOverlay: MyLinearProgressOverlay,
+    noRowsOverlay: MyEmptyState,
+  }}
+/>
+```
+
+| Slot | Replaces |
+| --- | --- |
+| `loadingOverlay` | the skeleton/loading overlay |
+| `noRowsOverlay` | the empty-state overlay (`noRowsMessage` is the default's content) |
+
+:::tip[Keep the height stable]
+Give your custom overlay a min-height (or render inside a fixed [`height`](/features/layout) grid) so the
+card doesn't collapse when it has no rows.
+:::

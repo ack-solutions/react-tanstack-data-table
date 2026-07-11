@@ -16,6 +16,28 @@ format: each release groups changes as **Added** (new features), **Changed** (be
 
 ---
 
+## [1.20.1](https://www.npmjs.com/package/@ackplus/mui-tanstack-data-grid/v/1.20.1) — 2026-07-11
+
+Backward compatible.
+
+### Fixed
+- **`footerFilter` now renders.** The prop was declared on `DataTableProps` (and documented) but the render
+  layer never read it — a **dead prop** since it was introduced. It now renders on the **left of the footer**,
+  opposite pagination (mirroring how `extraFilter` sits on the right of the toolbar), so a "show deleted"
+  soft-delete toggle or any custom footer control appears as intended. The footer now shows whenever
+  **`footerFilter`** *or* **`enablePagination`** is set (previously footer chrome required pagination).
+
+### Docs
+- **Documentation site rebuilt in the MUI-X layout.** The nav is now grouped into labelled sections —
+  **Main features · Server-side data · Components · Customization · Resources** — with **New** and
+  **Coming soon** badges. New pages: **Cells, Virtualization, Usage, Quick Filter, Styling recipes,
+  Overlays, Custom subcomponents, Events, State, Performance**, plus roadmap stubs (Row grouping, Pivoting,
+  Columns/Filter Panel). The props reference gained a reading guide (type = possible values · default ·
+  use-case) and richer per-prop notes. Also fixed a site-wide bug where admonition callouts with a custom
+  title rendered as literal `:::` text.
+
+---
+
 ## [1.20.0](https://www.npmjs.com/package/@ackplus/mui-tanstack-data-grid/v/1.20.0) — 2026-07-10
 
 Backward compatible.
@@ -485,7 +507,7 @@ a range filter operator. Backward compatible: every new hook is opt-in and unset
   `wrapText` and the class-name hooks, and a note on double-click auto-fit. The [Filtering](/features/filtering)
   page documents the `between` range operator.
 
-:::note Virtualization + auto-height
+:::note[Virtualization + auto-height]
 `wrapText` grows rows in the standard (non-virtualized) grid. Under `enableVirtualization` the virtualizer
 uses a fixed row-height estimate, so wrapped rows are clipped to the estimate; per-row measurement for
 virtualized auto-height is a separate, future enhancement.

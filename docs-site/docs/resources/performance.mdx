@@ -1,0 +1,68 @@
+---
+title: Performance
+sidebar_label: Performance
+---
+
+# Performance
+
+The grid is built on the headless [TanStack Table](https://tanstack.com/table) engine and renders with
+`<div>` + CSS Grid, so it's fast by default. These are the levers for large datasets and heavy cells.
+
+## Big datasets
+
+| Rows | Strategy |
+| --- | --- |
+| Up to ~1,000 client-side | Nothing special — client sorting / filtering / pagination is fine. |
+| Thousands+ client-side | Turn on [**virtualization**](/features/virtualization) with a bounded height. |
+| Very large / remote | Use [**server mode**](/features/server-side) — hold one page in memory, let the backend sort / filter / page. |
+
+```tsx
+// Large client dataset:
+<DataTable columns={columns} data={rows} enableVirtualization height={560} rowHeight={48} />
+```
+
+## Keep references stable
+
+Re-creating `columns` or `data` every render forces the engine to rebuild. Memoise them:
+
+```tsx
+const columns = useMemo(() => [...], []);          // stable unless the shape changes
+const data = useMemo(() => transform(raw), [raw]); // only when the source changes
+```
+
+- **`columns`** should be defined once (module scope or `useMemo`), never inline in JSX.
+- **`data`** should keep the same reference until it actually changes.
+- Provide **`getRowId`** (or `idKey`) so row identity survives re-sorts and refetches — selection, expansion,
+  and editing all track rows by id.
+
+```tsx
+<DataTable columns={columns} data={rows} getRowId={(row) => row.uuid} />
+```
+
+## Cheap cells
+
+Cells render often (scroll, sort, select). Keep them light:
+
+- Prefer column [`type`](/features/cells#column-type--zero-config-formatting) and `valueFormatter` over a
+  custom `cell` when you only need formatting — no React node is created.
+- If you do write `cell`, avoid heavy work and new object/array literals inside it.
+- Reach for `wrapText` / variable heights only where needed — uniform `rowHeight` scrolls the smoothest
+  under virtualization.
+
+## Fixed vs. estimated row height
+
+Under virtualization, a fixed `rowHeight` skips per-row measurement and gives the steadiest scrollbar. Use
+`estimatedRowHeight` only when rows genuinely vary (e.g. `wrapText`, detail panels) — set it close to the
+real height to minimise scroll jitter until rows measure.
+
+## Server mode tips
+
+- Debounce user input before calling `onFetchData` if your API is rate-limited.
+- Return an accurate `total` so pagination and [export](/features/export) can page correctly.
+- Tune export paging with `exportChunkSize` / `exportInterPageDelayMs` for large server exports.
+
+## Persistence writes
+
+[State persistence](/resources/state#4-persist-across-reloads) is **debounced** (300 ms default). Raise
+`persist.debounceMs` for very chatty interactions, or narrow `persist.include` so only the slices you care
+about are written.

@@ -1,0 +1,83 @@
+---
+title: Usage
+sidebar_label: Usage
+---
+
+import LiveDemo from '@site/src/demo/LiveDemo';
+import { BasicDemo } from '@site/src/demo/demos';
+
+# Usage
+
+`<DataTable>` is the one component you render. Every feature is opt-in through props, so the smallest useful
+grid is just **columns + data**:
+
+```tsx
+import { DataTable } from '@ackplus/mui-tanstack-data-grid';
+
+const columns = [
+  { id: 'name', header: 'Name', accessorKey: 'name' },
+  { id: 'email', header: 'Email', accessorKey: 'email' },
+];
+
+<DataTable columns={columns} data={rows} />;
+```
+
+<LiveDemo>{() => <BasicDemo />}</LiveDemo>
+
+## Anatomy
+
+The grid renders as a self-framing card with up to four regions, each a themeable, replaceable
+[slot](/customization/custom-subcomponents):
+
+| Region | Appears when | Slot |
+| --- | --- | --- |
+| **Toolbar** | any toolbar control is enabled | `toolbar` — see [Toolbar](/features/toolbar) |
+| **Header** | always | `header` / `headerCell` |
+| **Body** (rows/cells) | always | `row` / `cell`, or `renderListItem` in [list view](/features/list-view) |
+| **Footer** | `enablePagination` or `footerFilter` | `footer` / `pagination` |
+
+## Prop groups
+
+Props fall into a few consistent naming conventions — learn the pattern, not 100 names:
+
+| Convention | Meaning | Examples |
+| --- | --- | --- |
+| `enableX` | Turn a feature on | `enableSorting`, `enablePagination`, `enableColumnPinning` |
+| `xMode` | Client vs server for a feature | `filterMode`, `sortingMode`, `paginationMode` |
+| `onXChange` | State-change callback ([Events](/resources/events)) | `onSortingChange`, `onSelectionChange` |
+| `renderX` | Custom render function | `renderDetailPanel`, `renderBulkActions`, `renderListItem` |
+| adjectives | Visual modifiers | `striped`, `hover`, `fitToScreen` |
+
+The full list with types, defaults, and possible values is in the [Props reference](/api/props).
+
+## Controlling the grid
+
+Two ways to drive the grid, use either or both:
+
+1. **Declarative** — pass `initialState` for a starting point, or controlled props (`sorting` +
+   `onSortingChange`, …) to own the [state](/resources/state).
+2. **Imperative** — pass `apiRef` and call methods like `apiRef.current.export.exportCSV()` or
+   `apiRef.current.selection.selectAll()`. See the [apiRef reference](/api/api-ref).
+
+```tsx
+const apiRef = useRef<DataTableApi<User>>(null);
+
+<>
+  <Button onClick={() => apiRef.current?.export.exportCSV()}>Export</Button>
+  <DataTable apiRef={apiRef} columns={columns} data={rows} enableExport />
+</>;
+```
+
+## TypeScript
+
+`DataTable` is generic over your row type — pass it for typed columns, callbacks, and `apiRef`:
+
+```tsx
+<DataTable<User> columns={columns} data={users} />
+```
+
+## Where to next
+
+- [Columns](/features/columns) · [Cells](/features/cells) — define and render your data
+- [Sorting](/features/sorting) · [Filtering](/features/filtering) · [Pagination](/features/pagination) — the data essentials
+- [Theming](/theming) · [Custom subcomponents](/customization/custom-subcomponents) — make it yours

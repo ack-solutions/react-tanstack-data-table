@@ -1,0 +1,42 @@
+---
+title: Pivoting
+sidebar_label: Pivoting
+---
+
+# Pivoting
+
+:::info[Coming soon]
+**Pivoting** — turn row values into columns and aggregate at the intersections (a spreadsheet-style pivot
+table) — is on the roadmap and **not yet available**. This page describes the planned direction.
+:::
+
+## What it will do
+
+Summarise a flat dataset across two dimensions, aggregating a measure at each cell:
+
+```tsx
+// Planned API (subject to change)
+<DataTable
+  columns={columns}
+  data={sales}
+  enablePivoting
+  initialState={{
+    pivot: {
+      rows: ['region'],       // one row group per region
+      columns: ['quarter'],   // one column per quarter
+      values: [{ field: 'amount', aggregation: 'sum' }],
+    },
+  }}
+/>
+```
+
+## Available today
+
+| Need | Use today |
+| --- | --- |
+| Column **totals** | **[Aggregation](/features/aggregation)** footer summary row. |
+| Pre-computed pivots | Shape the pivot on your backend and render the result as a normal grid, or as **[tree data](/features/tree-data)** for a drill-down. |
+| Reusable summaries | Save a configured view with **[Saved views](/features/saved-views)**. |
+
+For now, compute the pivot server-side (or with a small client transform) and feed the grid the resulting
+matrix — pivoting will automate that step against the same aggregation engine.

@@ -114,6 +114,7 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
         enableRefresh,
         enableSavedViews,
         extraFilter,
+        footerFilter,
         enableColumnReordering,
         renderBulkActions,
         renderDetailPanel,
@@ -923,9 +924,21 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
                 </GridTrackSlot>
             </ScrollerSlot>
 
-            {enablePagination ? (
-                <FooterSlot {...footerSlotProps.rest} className={footerSlotProps.className} style={footerSlotProps.style} sx={footerSlotProps.sx}>
-                    <GridPagination>
+            {enablePagination || footerFilter ? (
+                <FooterSlot
+                    {...footerSlotProps.rest}
+                    className={footerSlotProps.className}
+                    style={footerSlotProps.style}
+                    // With a footerFilter the footer is a flex row: filter on the left, pagination on the right.
+                    sx={mergeSx(footerFilter ? { display: 'flex', alignItems: 'center' } : undefined, footerSlotProps.sx)}
+                >
+                    {footerFilter ? (
+                        <Box sx={{ flex: '1 1 auto', minWidth: 0, display: 'flex', alignItems: 'center', gap: 1, paddingInline: 'var(--dt-cell-padding-x)' }}>
+                            {footerFilter}
+                        </Box>
+                    ) : null}
+                    {enablePagination ? (
+                    <GridPagination sx={footerFilter ? { width: 'auto', flexShrink: 0 } : undefined}>
                     {(() => {
                         const PaginationComponent = slots?.pagination ?? TablePagination;
                         // Keep the current pageSize in the options so MUI's Select always has a
@@ -952,6 +965,7 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
                         );
                     })()}
                     </GridPagination>
+                    ) : null}
                 </FooterSlot>
             ) : null}
         </RootSlot>

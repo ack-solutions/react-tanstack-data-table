@@ -1,0 +1,102 @@
+---
+title: Custom subcomponents
+sidebar_label: Custom subcomponents
+---
+
+# Custom subcomponents
+
+Every part of the grid is a **slot**. Two props drive them — the standard MUI pattern:
+
+- **`slots`** — **replace** a part with your own component.
+- **`slotProps`** — **inject** props / `sx` / `className` into the built-in part.
+
+```tsx
+<DataTable
+  columns={columns}
+  data={rows}
+  slots={{ noRowsOverlay: MyEmptyState }}                 // replace
+  slotProps={{ cell: { sx: { fontVariantNumeric: 'tabular-nums' } } }}  // restyle
+/>
+```
+
+Slots are a **flat** map of descriptive keys (not nested by section) — pass only what you override; each
+falls back to the built-in.
+
+## Replace vs. restyle — which to reach for
+
+| You want to… | Use | Why |
+| --- | --- | --- |
+| Recolour / space / align a part | `slotProps.<key>.sx` | Merges with built-in styling; you keep roles, refs, tokens. |
+| Add a `className` or leaf prop | `slotProps.<key>` | Spread onto the part (leaf controls take yours last, so overrides win). |
+| Swap the markup entirely | `slots.<key>` | Full control of the element. |
+
+**Prefer `slotProps` first.** A structural part (row, cell, header) never loses its required ARIA roles,
+refs, or keyboard wiring when you only inject `sx`/props — and the root's `--dt-*` design tokens are never
+clobbered. Reach for `slots` only when you truly need different markup.
+
+## Slot catalogue
+
+The keys, grouped. The full table lives in the [Props reference](/api/props#slots--slotprops):
+
+### Structure
+
+`root` · `scroller` · `grid` · `header` · `headerRow` · `headerCell` · `body` · `row` · `cell` ·
+`detailPanel` · `footer` · `pagination` · `loadingOverlay` · `noRowsOverlay`
+
+### Toolbar & controls
+
+`toolbar` · `searchInput` · `columnFilterControl` · `columnVisibilityControl` · `densityControl` ·
+`viewsControl` · `exportButton` · `refreshButton` · `resetButton` · `bulkActionsToolbar`
+
+### Icons
+
+`searchIcon` · `clearIcon` · `filterIcon` · `addFilterIcon` · `columnsIcon` · `densityIcon` ·
+`exportIcon` · `refreshIcon` · `resetIcon` · `sortIconAsc` · `sortIconDesc` · `expandIcon` ·
+`collapseIcon` — swap in any icon set (e.g. lucide). See [Custom icons](/features/toolbar#custom-icons).
+
+## Auto-generated columns
+
+The grid injects checkbox, expander, and row-actions columns when you enable those features. Configure them
+through **`slotProps`** with these three keys:
+
+| Key | Configures |
+| --- | --- |
+| `selectionColumn` | the checkbox column ([Selection](/features/selection)) |
+| `expandColumn` | the expander column ([Row expansion](/features/expansion)) |
+| `actionsColumn` | the auto row-actions column (`getRowActions`) |
+
+```tsx
+<DataTable
+  columns={columns}
+  data={rows}
+  enableRowSelection
+  enableColumnPinning
+  slotProps={{ selectionColumn: { enablePinning: true } }}  // pin the checkboxes with the left band
+/>
+```
+
+## Merge semantics
+
+Every `slotProps` entry's `sx`, `className`, and `style` **merge** with the built-in styling — yours wins
+per property, and nothing structural is lost. Leaf controls (pagination, toolbar buttons) spread your props
+**last**, so a deliberate override always wins:
+
+```tsx
+slotProps={{ pagination: { rowsPerPageOptions: [10, 25, 100] } }}
+```
+
+## Replace a whole region
+
+For a bespoke toolbar or footer, replace the region and drive the grid through [`apiRef`](/api/api-ref):
+
+```tsx
+<DataTable
+  columns={columns}
+  data={rows}
+  slots={{ toolbar: MyToolbar }}   // MyToolbar calls apiRef.current.filtering.setGlobalFilter(…), etc.
+/>
+```
+
+To only **rearrange** the built-in toolbar controls (not replace them), use
+[`renderToolbar`](/features/toolbar#reorder--reposition-the-controls) instead — it hands you each ready-made
+control element.

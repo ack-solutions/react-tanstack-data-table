@@ -1,0 +1,97 @@
+---
+title: Cells
+sidebar_label: Cells
+---
+
+import LiveDemo from '@site/src/demo/LiveDemo';
+import { ValueFormatterDemo, ClipboardDemo } from '@site/src/demo/demos';
+
+# Cells
+
+A cell renders one column's value for one row. You control **what value** a cell reads, **how** it's
+formatted, and **how** it looks — from zero-config column types up to a fully custom React renderer.
+
+## Value pipeline
+
+Each cell resolves its value through three optional column hooks, in order:
+
+| Column field | Type | Purpose | Feeds sort / filter / export? |
+| --- | --- | --- | --- |
+| `accessorKey` / `accessorFn` | `keyof T` / `(row) => any` | Read the raw value from the row. | ✅ Yes |
+| `valueGetter` | `({ row }) => any` | Derive a value with **no** backing field (e.g. join first + last). | ✅ Yes |
+| `valueFormatter` | `({ value }) => string` | Format for **display only** (raw value still sorts/filters/exports). | ❌ Display only |
+
+```tsx
+const columns = [
+  // Computed column — no accessorKey; the derived value still sorts, filters, exports.
+  { id: 'name', header: 'Rep', valueGetter: ({ row }) => `${row.first} ${row.last}` },
+  // Raw number sorts numerically; only the display is formatted as currency.
+  { id: 'amount', header: 'Amount', accessorKey: 'amount', type: 'number',
+    valueFormatter: ({ value }) => `$${Number(value).toLocaleString()}`, align: 'right' },
+];
+```
+
+<LiveDemo>{() => <ValueFormatterDemo />}</LiveDemo>
+
+## Column `type` — zero-config formatting
+
+Set `type` and the cell gets a sensible default renderer and alignment — no hand-written cell needed:
+
+| `type` | Renders | Notes |
+| --- | --- | --- |
+| `'number'` | Right-aligned number | Numeric sort/filter operators. |
+| `'date'` | Localised date | Date operators; parses ISO strings. |
+| `'boolean'` | ✓ / ✗ check mark | Centered; boolean filter. |
+| `'select'` | Value as-is | Faceted filter — supply `options`, or omit them to auto-populate distinct values. See [Filtering](/features/filtering). |
+| _(default)_ | String | Text operators. |
+
+## Custom cell renderer
+
+For anything richer (a chip, an avatar, a progress bar), provide `cell` — a standard TanStack cell
+renderer. It receives the cell context and returns a React node:
+
+```tsx
+{
+  id: 'status',
+  header: 'Status',
+  accessorKey: 'status',
+  cell: (ctx) => {
+    const v = ctx.getValue() as 'active' | 'inactive';
+    return <Chip size="small" label={v} color={v === 'active' ? 'success' : 'default'} />;
+  },
+}
+```
+
+:::tip[Keep sorting/filtering working]
+`cell` only changes **display**. Sorting, filtering, and export use the underlying value (from
+`accessorKey` / `valueGetter`), so a custom-rendered cell still sorts and exports correctly.
+:::
+
+## Alignment & wrapping
+
+| Field | Values | Default | Use case |
+| --- | --- | --- | --- |
+| `align` | `'left' \| 'center' \| 'right'` | `'left'` (`'right'` for `type:'number'`) | Right-align money, center booleans/icons. |
+| `wrapText` | `boolean` | `false` | Let long text wrap and the row grow, instead of truncating with `…`. |
+
+## Per-cell styling
+
+Attach a class per cell or per column, then style it via theme / `sx` — see
+[Styling recipes](/customization/styling-recipes):
+
+```tsx
+{ id: 'role', accessorKey: 'role',
+  headerClassName: 'dt-role-header',                        // static, on the header
+  cellClassName: ({ value }) => (value === 'Admin' ? 'dt-admin' : '') }  // conditional, per cell
+```
+
+Table-level hooks `getCellClassName({ row, columnId, value })` and
+`getRowClassName({ row, index })` layer on top.
+
+## Copy cells to the clipboard
+
+`enableClipboardCopy` adds a **Copy** action to the [bulk-actions bar](/features/selection): select rows,
+Copy, and paste tab-separated values into a spreadsheet. `onClipboardCopy(rowCount)` fires on success, and
+`apiRef.current.clipboard.copySelectedRows()` does it programmatically.
+
+<LiveDemo>{() => <ClipboardDemo />}</LiveDemo>

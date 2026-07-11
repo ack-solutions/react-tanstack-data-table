@@ -1,0 +1,106 @@
+---
+title: State
+sidebar_label: State
+---
+
+import LiveDemo from '@site/src/demo/LiveDemo';
+import { PersistenceDemo } from '@site/src/demo/demos';
+
+# State
+
+The grid holds one view state: sorting, filters, pagination, selection, column order / size / visibility /
+pinning, density, and more. You interact with it four ways — **seed** it, **observe** it, **persist** it, or
+**read/drive** it imperatively.
+
+## 1. Seed with `initialState`
+
+Give any slice a starting value. The grid owns it from there (the user can change it):
+
+```tsx
+<DataTable
+  columns={columns}
+  data={rows}
+  enablePagination
+  enableColumnPinning
+  initialState={{
+    pagination: { pageIndex: 0, pageSize: 25 },
+    sorting: [{ id: 'name', desc: false }],
+    columnPinning: { left: ['name'], right: ['actions'] },
+    columnVisibility: { internalId: false },
+    density: 'compact',
+  }}
+/>
+```
+
+## 2. Observe with `onXChange`
+
+Watch a slice without owning it — see the full list in [Events](/resources/events):
+
+```tsx
+<DataTable columns={columns} data={rows}
+  onPaginationChange={(p) => console.log(p)}
+  onSelectionChange={(s) => setBanner(`${s.ids.length} selected`)} />
+```
+
+## 3. Control (a few features)
+
+Most state is seed-and-observe (above). These are **fully controllable** with a value prop + callback:
+
+| Feature | Value prop | Callback |
+| --- | --- | --- |
+| Density | `density` | via `enableDensitySelector` |
+| List view | `listView` | `onListViewChange` |
+| Saved views | `views`, `activeViewId` | `onViewsChange`, `onActiveViewChange` |
+
+In [server mode](/features/server-side) you control the **data** by returning it from `onFetchData`.
+
+## 4. Persist across reloads
+
+Give the grid a stable `stateKey` and it remembers its view — pagination, sort, quick-search, column
+filters, column order / width / visibility / pinning, and density — across reloads and remounts, with **no
+save/restore wiring**:
+
+```tsx
+<DataTable columns={columns} data={rows} stateKey="expenses" enablePagination enableColumnPinning />
+```
+
+<LiveDemo>{() => <PersistenceDemo />}</LiveDemo>
+
+It reads the snapshot into `initialState` on mount and writes (debounced) on change. **Selection and row
+expansion are excluded by default.** Tune with `persist`:
+
+```tsx
+<DataTable
+  stateKey="expenses"
+  persist={{
+    storage: 'session',                                   // 'local' (default) | 'session' | custom Storage
+    include: ['sorting', 'pagination', 'columnPinning'],  // whitelist (default: all but selection/expansion)
+    debounceMs: 500,                                      // write throttle (default 300)
+  }}
+/>
+```
+
+SSR-safe (no-ops without `window`). Keys are namespaced `dt:<stateKey>`. Clear a saved view with
+`clearPersistedState(stateKey, persist?)` then remount. Saved **views** build on this — see
+[Saved views](/features/saved-views).
+
+## 5. Read & drive imperatively
+
+Read the live state or a slice through [`apiRef`](/api/api-ref):
+
+```tsx
+apiRef.current?.state.getTableState();        // the whole snapshot
+apiRef.current?.state.getCurrentSorting();
+apiRef.current?.state.getCurrentPagination();
+apiRef.current?.state.getCurrentSelection();
+apiRef.current?.state.getGlobalFilter();
+```
+
+Capture and restore just the **column layout** (order, size, pinning, visibility) — e.g. to your own
+storage:
+
+```tsx
+const layout = apiRef.current?.layout.saveLayout();   // serializable snapshot
+apiRef.current?.layout.restoreLayout(layout);         // later
+apiRef.current?.layout.reset(['columnOrder', 'columnSizing']);  // back to initial
+```

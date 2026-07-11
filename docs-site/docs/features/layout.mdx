@@ -17,7 +17,7 @@ and the body scrolls between them. You only choose **how tall the grid is** — 
 | **Capped** | `maxHeight={400}` | Body grows to the cap, then scrolls. |
 | **Fixed / fill** | `height={400}` or `height="100%"` | Grid is exactly that tall; the body flexes to fill and scrolls. |
 
-:::tip No `minHeight` needed
+:::tip[No `minHeight` needed]
 For the body to scroll between a pinned header and footer, the grid just needs a **bounded height** —
 via `maxHeight`, `height`, or a fixed-height parent. `minHeight` is **not** required; it exists only as
 an optional floor so a near-empty grid doesn't collapse.
@@ -88,7 +88,7 @@ has a visible effect when there's a footer (i.e. `enablePagination`).
 ¹ `maxHeight` only defaults to `480` in a bounded mode (`stickyHeader` / `stickyFooter` /
 `enableVirtualization`). With no bound at all the grid stays auto-height.
 
-:::note Virtualization
+:::note[Virtualization]
 `enableVirtualization` needs a bounded height to know its viewport. Any of the modes above provides one —
 `maxHeight`, `height`, or `stickyHeader` (which applies the default cap).
 :::

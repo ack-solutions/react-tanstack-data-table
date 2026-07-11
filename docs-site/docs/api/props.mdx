@@ -11,6 +11,23 @@ import { PersistenceDemo } from '@site/src/demo/demos';
 
 Every prop, grouped by area. Use the **search** (top right) to find a setting fast.
 
+**How to read these tables** — the **Type** column doubles as the list of possible values (e.g. a union
+like `'client' | 'server'` _is_ the allowed set); **Default** is what you get when you omit the prop; the
+**Description** says what it does and when to reach for it. Naming follows a few conventions:
+
+| Pattern | Meaning | Example |
+| --- | --- | --- |
+| `enableX` | Feature toggle (boolean) | `enableSorting`, `enablePagination` |
+| `xMode` | Client-side vs server-side | `filterMode`, `paginationMode` |
+| `onXChange` | State-change callback — see [Events](/resources/events) | `onSortingChange` |
+| `renderX` | Custom render function | `renderDetailPanel`, `renderBulkActions` |
+| adjective | Visual modifier | `striped`, `hover`, `fitToScreen` |
+
+`T` is your row type — pass it as `<DataTable<User> …>` for typed columns, callbacks, and `apiRef`. Only
+the most-used props are listed here; deprecated v1 aliases and niche export/logging options live in the
+[TypeScript types](https://www.npmjs.com/package/@ackplus/mui-tanstack-data-grid). Feature deep-dives are
+linked from each section.
+
 ## Data
 
 | Prop | Type | Default | Description |
@@ -29,37 +46,48 @@ Every prop, grouped by area. Use the **search** (top right) to find a setting fa
 
 ## Sorting / Filtering / Pagination
 
+See [Sorting](/features/sorting) · [Filtering](/features/filtering) · [Quick Filter](/components/quick-filter) · [Pagination](/features/pagination).
+
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `enableSorting` | `boolean` | `true` | Column sorting. |
-| `sortingMode` | `'client' \| 'server'` | `'client'` | Sort locally or on the server. |
-| `enableGlobalFilter` | `boolean` | `true` | Toolbar search. |
-| `enableColumnFilter` | `boolean` | `false` | Column-filter rule builder. |
-| `filterMode` | `'client' \| 'server'` | `'client'` | Filter locally or on the server. |
-| `enablePagination` | `boolean` | `false` | Pagination footer. |
-| `paginationMode` | `'client' \| 'server'` | `'client'` | Paginate locally or on the server. |
+| `enableSorting` | `boolean` | `true` | Click headers to sort. Turn off for a fixed-order grid. |
+| `sortingMode` | `'client' \| 'server'` | `'client'` | `'client'` sorts in memory; `'server'` hands the sort model to `onFetchData` — use for datasets you don't hold locally. |
+| `onSortingChange` | `(sorting) => void` | — | Observe the sort model (sync a URL, analytics). |
+| `enableGlobalFilter` | `boolean` | `true` | Collapsible toolbar quick-search across all columns. |
+| `enableColumnFilter` | `boolean` | `false` | Per-column rule builder (field · operator · value) with an active-count badge. |
+| `filterMode` | `'client' \| 'server'` | `'client'` | Where matching happens (shared by global + column filters). `'server'` → filter via `onFetchData`. |
+| `enablePagination` | `boolean` | `false` | Show the footer pager. Off = render every row (pair with [virtualization](/features/virtualization) for big data). |
+| `paginationMode` | `'client' \| 'server'` | `'client'` | `'server'` requests one page at a time via `onFetchData` — needs `rowCount`. |
+| `rowsPerPageOptions` | `number[]` | `[5,10,25,50,100]` | Page-size choices; `[]` hides the selector. |
 
 ## Selection
 
+See [Selection](/features/selection).
+
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `enableRowSelection` | `boolean \| (row) => boolean` | `false` | Selection checkbox column. |
-| `enableMultiRowSelection` | `boolean` | `true` | Allow multiple selection. |
-| `selectMode` | `'page' \| 'all'` | `'page'` | Select-all scope. |
-| `isRowSelectable` | `({ row, id }) => boolean` | — | Disable specific rows. |
-| `enableBulkActions` | `boolean` | `false` | Bulk-actions bar. |
-| `renderBulkActions` | `(selection) => ReactNode` | — | Custom bulk actions. |
-| `onSelectionChange` | `(selection) => void` | — | Selection changed. |
+| `enableRowSelection` | `boolean \| (row) => boolean` | `false` | Add the checkbox column. Pass a predicate to allow selection only on some rows. |
+| `enableMultiRowSelection` | `boolean` | `true` | `false` = single-select (radio-like) — use for "pick one". |
+| `selectMode` | `'page' \| 'all'` | `'page'` | Whether "select all" spans the current page or the whole (filtered) dataset. |
+| `isRowSelectable` | `({ row, id }) => boolean` | — | Disable specific rows' checkboxes (e.g. locked records). |
+| `enableBulkActions` | `boolean` | `false` | Show the contextual bar (count + Clear) when rows are selected. |
+| `renderBulkActions` | `(selection) => ReactNode` | — | Your actions for the bulk bar (Delete, Assign…). `selection` carries include/exclude ids. |
+| `enableClipboardCopy` | `boolean` | `false` | Add a **Copy** action to the bulk bar (TSV to clipboard). |
+| `onSelectionChange` | `(selection) => void` | — | React to selection (enable a button, show a banner). |
 
 ## Columns
 
+See [Columns](/features/columns) · [Column pinning](/features/pinning) · [Cells](/features/cells).
+
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `enableColumnResizing` | `boolean` | `false` | Drag to resize. |
-| `columnResizeMode` | `'onChange' \| 'onEnd'` | `'onChange'` | Live vs on-release. |
-| `enableColumnReordering` | `boolean` | `false` | Drag headers to reorder. |
-| `enableColumnPinning` | `boolean` | `false` | Sticky left/right. |
-| `enableColumnVisibility` | `boolean` | `true` | Show/hide from toolbar. |
+| `enableColumnResizing` | `boolean` | `false` | Drag a header edge to resize; persists with `stateKey`. |
+| `columnResizeMode` | `'onChange' \| 'onEnd'` | `'onChange'` | `'onChange'` resizes live as you drag; `'onEnd'` waits for release (steadier for very wide grids). |
+| `enableColumnReordering` | `boolean` | `false` | Drag headers to reorder (also exposed in the columns panel). |
+| `enableColumnPinning` | `boolean` | `false` | Freeze columns left/right; seed with `initialState.columnPinning`. |
+| `enableColumnVisibility` | `boolean` | `true` | Show/hide checkboxes in the toolbar columns panel. |
+| `enableColumnMenu` | `boolean` | `true` | Per-column header **⋮** menu (sort, hide, autosize). Opt one column out with `columnDef.disableColumnMenu`. |
+| `onColumnOrderChange` / `onColumnPinningChange` / `onColumnVisibilityChange` / `onColumnSizingChange` | `(state) => void` | — | Observe each column-layout change — see [Events](/resources/events). |
 
 ## Appearance & layout
 
@@ -95,6 +123,7 @@ Every prop, grouped by area. Use the **search** (top right) to find a setting fa
 | `renderListItem` | `(params) => ReactNode` | — | Render a row as a full-width [list item](/features/list-view). |
 | `rowHeight` | `number` | — | Fixed row height in px (overrides density). |
 | `extraFilter` | `ReactNode` | — | Custom toolbar content (right side by default). |
+| `footerFilter` | `ReactNode` | — | Custom content on the **left of the footer**, opposite pagination (e.g. a "show deleted" toggle). The footer appears whenever this or `enablePagination` is set. |
 | `renderToolbar` | `(controls) => ReactNode` | — | Rearrange the built-in toolbar controls ([guide](/features/toolbar#reorder--reposition-the-controls)). |
 
 ## States & customization
