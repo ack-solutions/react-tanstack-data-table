@@ -8,8 +8,9 @@
  */
 import { Box, Skeleton, TablePagination } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import { flexRender, type Column, type Row } from '@tanstack/react-table';
+import { flexRender, type Column, type Header, type Row } from '@tanstack/react-table';
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { flushSync } from 'react-dom';
 
 import { SortAscFeatherIcon, SortDescFeatherIcon } from '../icons';
 import { useDataTableTokens } from '../../theme/use-data-table-tokens';
@@ -237,6 +238,29 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
     const flexFor = (column: Column<any, unknown>): string => {
         const holdWidth = isGrouped || !fitToScreen || column.getIsPinned() || columnSizing[column.id] != null;
         return holdWidth ? `0 0 var(--col-${column.id}-size)` : `1 0 var(--col-${column.id}-size)`;
+    };
+
+    // Resize start. Under `fitToScreen` an untouched column is flex-grown *wider* than
+    // its `getSize()`; the instant a resize writes `columnSizing` the grow flips off
+    // (see `flexFor`) and the width snaps back to that base — a visible leftward jump on
+    // the first drag. Fix: seed the column's *rendered* width first, so `getSize()` (and
+    // thus the width the drag starts from) already matches what the user sees and the
+    // flex→fixed flip is a no-op. `flushSync` commits the seed before the native handler
+    // captures the start size. Only the resized column is frozen — its neighbours keep
+    // their share of the spare width, so nothing else moves. The native handler still
+    // owns the drag math, `onChange`/`onEnd` mode, touch, and RTL.
+    const beginColumnResize = (e: any, header: Header<any, unknown>) => {
+        const column = header.column;
+        const willFlex = fitToScreen && !isGrouped && !column.getIsPinned() && columnSizing[column.id] == null;
+        if (willFlex) {
+            const cell = (e.currentTarget as HTMLElement | null)?.closest('[role="columnheader"]') as HTMLElement | null;
+            const rendered = cell ? cell.getBoundingClientRect().width : 0;
+            // Only seed when the rendered width actually grew past the base size.
+            if (rendered > 0 && Math.abs(rendered - column.getSize()) > 1) {
+                flushSync(() => engine.api.columnResizing.resizeColumn(column.id, Math.round(rendered)));
+            }
+        }
+        header.getResizeHandler()(e);
     };
 
     // Footer aggregation — client mode only (in server mode the row model is just the
@@ -559,8 +583,8 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
                                 // line flush at the trailing edge, ALWAYS shown for resizable columns — subtle
                                 // (border colour) at rest, accented + thicker on hover / while resizing.
                                 <Box
-                                    onMouseDown={header.getResizeHandler()}
-                                    onTouchStart={header.getResizeHandler()}
+                                    onMouseDown={(e) => beginColumnResize(e, header)}
+                                    onTouchStart={(e) => beginColumnResize(e, header)}
                                     onClick={(e) => e.stopPropagation()}
                                     onDoubleClick={(e) => { e.stopPropagation(); engine.api.columnResizing.autoSizeColumn(column.id); }}
                                     title={locale.autoFitColumn}
