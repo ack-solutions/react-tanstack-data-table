@@ -137,8 +137,8 @@ See [Columns](/features/columns) · [Column pinning](/features/pinning) · [Cell
 | `slotProps` | `PartialSlotProps` | — | Inject props/`sx` into parts. |
 | `apiRef` | `RefObject<DataTableApi<T>>` | — | Imperative handle. |
 | `sx` | `SxProps` | — | Root styles. |
-| `onRowClick` | `(event, row) => void` | — | Row click. |
-| `selectOnRowClick` | `boolean` | `false` | Toggle selection on row click. |
+| `onRowClick` | `(event, row) => void` | — | Fires when a row is clicked (not when a checkbox / expander / action inside it is). |
+| `selectOnRowClick` | `boolean` | `false` | Clicking anywhere in a row toggles its selection (needs `enableRowSelection`; respects single/multi mode + per-row selectability). Composes with `onRowClick`. |
 | `logging` | `boolean \| DataTableLoggingOptions` | `false` | Debug logging. |
 
 ## Slots & slotProps

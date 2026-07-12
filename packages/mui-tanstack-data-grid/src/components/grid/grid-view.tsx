@@ -97,6 +97,8 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
         height,
         minHeight,
         onRowClick,
+        selectOnRowClick,
+        enableRowSelection,
         getRowClassName,
         getCellClassName,
         loading,
@@ -261,6 +263,18 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
             }
         }
         header.getResizeHandler()(e);
+    };
+
+    // Row click. `selectOnRowClick` toggles the row's selection on a click anywhere in the
+    // row (respecting single/multi mode + per-row selectability); interactive controls
+    // (checkbox, expander, actions, editable cells) stopPropagation, so this never
+    // double-fires with them. Composes with `onRowClick` — both run when both are set.
+    const rowClickable = !!onRowClick || !!selectOnRowClick;
+    const handleRowClick = (e: any, row: Row<any>) => {
+        if (selectOnRowClick && enableRowSelection && ((table as any).canSelectRow?.(row.id) ?? true)) {
+            engine.api.selection.toggleRowSelection(row.id);
+        }
+        onRowClick?.(e, row);
     };
 
     // Footer aggregation — client mode only (in server mode the row model is just the
@@ -647,12 +661,12 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
                     aria-rowindex={ariaRowIndex}
                     aria-selected={isSelected || undefined}
                     className={joinClassNames(rowClassName, rowSlotProps.className)}
-                    onClick={onRowClick ? (e: any) => onRowClick(e, row) : undefined}
+                    onClick={rowClickable ? (e: any) => handleRowClick(e, row) : undefined}
                     style={rowSlotProps.style}
                     sx={mergeSx({
                         '--dt-row-bg': isSelected ? 'var(--dt-row-bg-selected)' : striped && isOdd ? 'var(--dt-row-bg-stripe)' : 'var(--dt-pinned-bg)',
                         background: 'var(--dt-row-bg)',
-                        cursor: onRowClick ? 'pointer' : 'default',
+                        cursor: rowClickable ? 'pointer' : 'default',
                         ...(hover ? { '&:hover': { '--dt-row-bg': 'var(--dt-row-bg-hover)' } } : {}),
                     }, rowSlotProps.sx)}
                 >
@@ -683,7 +697,7 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
                 aria-expanded={isTree && (row.getCanExpand?.() ?? false) ? row.getIsExpanded() : undefined}
                 className={joinClassNames(rowClassName, rowSlotProps.className)}
                 aria-selected={isSelected || undefined}
-                onClick={onRowClick ? (e: any) => onRowClick(e, row) : undefined}
+                onClick={rowClickable ? (e: any) => handleRowClick(e, row) : undefined}
                 style={rowSlotProps.style}
                 sx={mergeSx({
                     '--dt-row-bg': isSelected
@@ -692,7 +706,7 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
                             ? 'var(--dt-row-bg-stripe)'
                             : 'var(--dt-pinned-bg)',
                     background: 'var(--dt-row-bg)',
-                    cursor: onRowClick ? 'pointer' : 'default',
+                    cursor: rowClickable ? 'pointer' : 'default',
                     ...(hover ? { '&:hover': { '--dt-row-bg': 'var(--dt-row-bg-hover)' } } : {}),
                 }, rowSlotProps.sx)}
             >

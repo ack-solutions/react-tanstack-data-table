@@ -147,6 +147,7 @@ export function V2DemoPage() {
                     enableColumnResizing
                     enableColumnPinning
                     enableRowSelection
+                    selectOnRowClick
                     enableBulkActions
                     enableColumnReordering
                     enableRowExpansion

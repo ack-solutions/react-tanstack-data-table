@@ -36,9 +36,24 @@ semantics so *select all* works across server pages without loading every row. W
 | `enableMultiRowSelection` | `boolean` | `true` | Allow selecting multiple rows. |
 | `selectMode` | `'page' \| 'all'` | `'page'` | Select-all scope (include/exclude). |
 | `isRowSelectable` | `({ row, id }) => boolean` | — | Disable selection for specific rows. |
+| `selectOnRowClick` | `boolean` | `false` | Toggle a row's selection by clicking anywhere in it. |
 | `enableBulkActions` | `boolean` | `false` | Show the bulk-actions bar. |
 | `renderBulkActions` | `(selection) => ReactNode` | — | Custom action buttons. |
 | `onSelectionChange` | `(selection) => void` | — | Selection changed. |
+
+## Select by clicking the row
+
+By default only the checkbox toggles selection. Set **`selectOnRowClick`** and a click **anywhere in the
+row** toggles its selection too:
+
+```tsx
+<DataTable columns={columns} data={rows} enableRowSelection selectOnRowClick />
+```
+
+It respects single vs. multi mode (`enableMultiRowSelection`) and per-row selectability
+(`isRowSelectable`), and clicks on interactive cell content — the checkbox, the row expander, action
+buttons, an editing cell — don't trigger it (they stop propagation). It **composes** with
+[`onRowClick`](/api/props): if you set both, a row click toggles selection **and** calls your handler.
 
 ## Clipboard copy
 
