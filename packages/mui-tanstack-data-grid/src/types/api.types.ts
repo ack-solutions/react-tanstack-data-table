@@ -84,6 +84,8 @@ export interface DataTableApi<T = any> {
         showAllColumns: () => void;
         hideAllColumns: () => void;
         resetColumnVisibility: () => void;
+        /** Open the toolbar "Columns" management panel (registered by the toolbar; no-op if it isn't mounted). */
+        openPanel: () => void;
     };
 
     columnOrdering: {
@@ -146,6 +148,10 @@ export interface DataTableApi<T = any> {
         removeColumnFilter: (filterId: string) => void;
         clearAllFilters: () => void;
         resetFilters: () => void;
+        /** Open the toolbar column-filter panel with a rule pre-targeting `columnId` (registered by the filter control; no-op if it isn't mounted). */
+        openColumnFilter: (columnId: string) => void;
+        /** Remove all applied + pending filter rules for a single column (used by the column menu's "Clear filter"). */
+        clearColumnFilter: (columnId: string) => void;
     };
 
     sorting: {

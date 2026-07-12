@@ -211,6 +211,17 @@ export interface UseDataTableResult<T = any> {
         activeViewId: string | null;
         viewsDirty: boolean;
     };
+    /**
+     * Ephemeral cross-component UI signals (NOT persisted — kept out of the reducer so
+     * they never leak into saved views / persistence). The header ⋮ column menu writes
+     * these via `api`; the toolbar filter/columns controls subscribe and open their panel.
+     */
+    signals: {
+        /** Open the toolbar filter panel pre-targeting a column (bumped nonce re-triggers the same column). */
+        filterPanelRequest: { columnId: string; nonce: number } | null;
+        /** Open the toolbar "Columns" panel (each bump re-opens). */
+        columnsPanelSignal: number;
+    };
     state: EngineUIState;
     actions: {
         fetchData: (overrides?: Partial<TableState>, options?: { delay?: number; meta?: DataFetchMeta }) => Promise<any>;
@@ -437,6 +448,13 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
     const [exportProgress, setExportProgress] = useState<ExportProgressPayload>({});
     const [exportController, setExportController] = useState<AbortController | null>(null);
     const [queuedExportCount, setQueuedExportCount] = useState(0);
+
+    // Ephemeral cross-component panel-open signals (see UseDataTableResult.signals). NOT in
+    // the reducer so they never leak into saved views / persistence. A monotonic nonce lets
+    // re-opening the SAME column re-fire the subscriber effect.
+    const [filterPanelRequest, setFilterPanelRequest] = useState<{ columnId: string; nonce: number } | null>(null);
+    const [columnsPanelSignal, setColumnsPanelSignal] = useState(0);
+    const panelNonceRef = useRef(0);
 
     const tableContainerRef = useRef<HTMLDivElement>(null);
     const apiRef = useRef<DataTableApi<T> | null>(null);
@@ -1399,6 +1417,20 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
                 const reset = (initialStateConfig.columnFilter ?? DEFAULT_INITIAL_STATE.columnFilter) as ColumnFilterState;
                 handleColumnFilterChangeHandler(reset, true);
             },
+            // Signal the toolbar filter control to open, pre-targeting this column (bumped nonce
+            // so re-opening the same column re-fires). No-op UI-wise if the control isn't mounted.
+            openColumnFilter: (columnId) => setFilterPanelRequest({ columnId, nonce: ++panelNonceRef.current }),
+            // Remove just this column's rules (applied + pending) and apply, so the page resets,
+            // server mode refetches, and the user's onColumnFilterChange(next, true) fires.
+            clearColumnFilter: (columnId) => {
+                const cur = (tableRef.current.getColumnFilterState?.() ?? DEFAULT_INITIAL_STATE.columnFilter) as ColumnFilterState;
+                // Default the arrays — a partial/legacy persisted columnFilter may omit them.
+                handleColumnFilterChangeHandler({
+                    ...cur,
+                    filters: (cur.filters ?? []).filter((f) => f.columnId !== columnId),
+                    pendingFilters: (cur.pendingFilters ?? []).filter((f) => f.columnId !== columnId),
+                }, true);
+            },
         };
 
         api.columnVisibility = {
@@ -1416,6 +1448,8 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
                 dispatch({ type: 'SET_COLUMN_VISIBILITY', payload: all });
             },
             resetColumnVisibility: () => dispatch({ type: 'SET_COLUMN_VISIBILITY', payload: initialStateConfig.columnVisibility || {} }),
+            // Signal the toolbar to open its "Columns" management panel (no-op if not mounted).
+            openPanel: () => setColumnsPanelSignal((n) => n + 1),
         };
 
         api.columnOrdering = {
@@ -1736,6 +1770,7 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
         table,
         localeText,
         refs: { tableContainerRef, apiRef, exportControllerRef },
+        signals: { filterPanelRequest, columnsPanelSignal },
         derived: {
             isServerMode,
             isServerPagination,

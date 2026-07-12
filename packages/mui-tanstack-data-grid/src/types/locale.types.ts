@@ -90,7 +90,14 @@ export interface DataTableLocaleText {
     columnMenuSortAsc: string;
     columnMenuSortDesc: string;
     columnMenuClearSort: string;
+    columnMenuPinLeft: string;
+    columnMenuPinRight: string;
+    columnMenuUnpin: string;
+    columnMenuFilter: string;
+    columnMenuClearFilter: string;
     columnMenuHide: string;
+    columnMenuManageColumns: string;
+    /** @deprecated Autosize was removed from the column menu (still available via double-click on the resize handle). */
     columnMenuAutosize: string;
 
     // Pagination

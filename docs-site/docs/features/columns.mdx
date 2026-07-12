@@ -35,22 +35,30 @@ directly or from the **Columns panel** in the toolbar. Pinned columns are exclud
 | `onColumnOrderChange` | `(order) => void` | — | Columns reordered. |
 | `enableColumnPinning` | `boolean` | `false` | Sticky left/right columns. |
 | `enableColumnVisibility` | `boolean` | `true` | Show/hide (eye toggle) from the Columns panel. |
-| `enableColumnMenu` | `boolean` | `true` | Per-column header ⋮ menu (sort/hide/autosize). |
+| `enableColumnMenu` | `boolean` | `true` | Per-column header ⋮ menu (sort · pin · filter · hide · manage). |
 
 ## Column menu
 
 Each column header has a quiet **⋮** menu (revealed on hover, or when the header is focused) that surfaces
-the actions already wired into the grid — so users discover them without hunting:
+the actions already wired into the grid — so users discover them without hunting. Items appear
+**dynamically** by state and only when the feature is enabled:
 
-- **Sort ascending / descending / clear** — when the column is sortable (`enableSorting`). The current
-  direction is marked; redundant items are disabled. Sorting from the menu sorts by that **single column**
-  (replacing any shift-click multi-sort); **Clear sort** removes only this column's sort, leaving the rest.
-- **Autosize this column** — when `enableColumnResizing` is on (same as double-clicking the resize handle).
-- **Hide column** — when `enableColumnVisibility` is on (disabled for the last visible column).
+1. **Sort** — *Sort ascending* / *Sort descending* when sortable (`enableSorting`). The **active** direction
+   is hidden and a **Clear sort** appears instead. Sorting from the menu sorts by that single column
+   (replacing any shift-click multi-sort); Clear sort removes only this column's sort. Disabled on
+   non-sortable columns.
+2. **Pin** (`enableColumnPinning`) — *Pin to left* / *Pin to right* when unpinned; a pinned column shows
+   *Unpin column* plus the opposite side.
+3. **Filter** (`enableColumnFilter`) — *Filter* opens the toolbar filter panel with **this column already
+   selected**, ready to configure. A filtered column shows a small **red dot** on its ⋮ and a **Clear
+   filter** item that removes only that column's filter.
+4. **Hide column** (`enableColumnVisibility`) — disabled for the last visible column.
+5. **Manage columns** — opens the toolbar Columns panel (show/hide · pin · reorder).
 
-The menu only shows items that are actually available; if none are, no kebab renders. It's on by default —
-set `enableColumnMenu={false}` to remove it table-wide, or `disableColumnMenu: true` on a single column.
-Keyboard: focus a header cell and press **Enter** to open its menu. Swap the glyph with `slots.columnMenuIcon`.
+The menu only shows items that are available; if none are, no kebab renders. It's on by default — set
+`enableColumnMenu={false}` to remove it table-wide, or `disableColumnMenu: true` on a single column.
+Keyboard: focus a header cell and press **Enter** to open its menu, then arrow-navigate. Swap the glyph
+with `slots.columnMenuIcon`. (Autosize lives on the resize handle — double-click it — not in this menu.)
 
 <LiveDemo>{() => <ColumnMenuDemo />}</LiveDemo>
 

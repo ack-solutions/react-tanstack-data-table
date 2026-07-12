@@ -187,6 +187,18 @@ export function DataTableToolbar<T extends Record<string, any>>(props: DataTable
     const [colAnchor, setColAnchor] = useState<HTMLElement | null>(null);
     const [densityAnchor, setDensityAnchor] = useState<HTMLElement | null>(null);
     const [exportAnchor, setExportAnchor] = useState<HTMLElement | null>(null);
+    // Anchor for opening the Columns panel on request from the header ⋮ "Manage columns" item.
+    // The lastSignal ref (seeded to the mount-time value) makes this fire only on a NEW bump,
+    // so the monotonic counter doesn't spuriously re-open the panel on remount.
+    const colBtnRef = useRef<HTMLElement | null>(null);
+    const lastColsSignal = useRef(engine.signals.columnsPanelSignal);
+    useEffect(() => {
+        if (engine.signals.columnsPanelSignal !== lastColsSignal.current) {
+            lastColsSignal.current = engine.signals.columnsPanelSignal;
+            if (engine.signals.columnsPanelSignal > 0) setColAnchor(colBtnRef.current);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [engine.signals.columnsPanelSignal]);
 
     const onSearch = (value: string) => {
         setSearch(value);
@@ -216,7 +228,9 @@ export function DataTableToolbar<T extends Record<string, any>>(props: DataTable
             <slots.columnVisibilityControl engine={engine} enableColumnVisibility={enableColumnVisibility} enableColumnPinning={enableColumnPinning} enableColumnReordering={enableColumnReordering} icon={ColumnsIcon} {...slotProps?.columnVisibilityControl} />
         ) : (
         <>
-            <ToolbarButton variant={toolbarVariant} icon={ColumnsIcon} label={locale.toolbarColumns} onClick={(e: any) => setColAnchor(e.currentTarget)} {...slotProps?.columnVisibilityControl} />
+            <Box component="span" ref={colBtnRef} sx={{ display: 'inline-flex' }}>
+                <ToolbarButton variant={toolbarVariant} icon={ColumnsIcon} label={locale.toolbarColumns} onClick={(e: any) => setColAnchor(e.currentTarget)} {...slotProps?.columnVisibilityControl} />
+            </Box>
             <ColumnsPanel
                 engine={engine}
                 anchorEl={colAnchor}

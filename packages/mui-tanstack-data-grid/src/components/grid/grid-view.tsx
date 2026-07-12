@@ -138,7 +138,7 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
         onRowEditStop,
     } = props;
 
-    const showToolbar = !!(enableGlobalFilter || enableColumnFilter || enableColumnVisibility || enableColumnPinning || enableExport || enableDensitySelector || enableReset || enableRefresh || enableSavedViews || enableListView || extraFilter);
+    const showToolbar = !!(enableGlobalFilter || enableColumnFilter || enableColumnVisibility || enableColumnPinning || enableColumnReordering || enableExport || enableDensitySelector || enableReset || enableRefresh || enableSavedViews || enableListView || extraFilter);
     // `slots.toolbar` fully replaces the toolbar; otherwise the built-in one
     // (which itself honours `renderToolbar` for rearranging controls).
     const ToolbarComponent = (slots?.toolbar ?? DataTableToolbar) as typeof DataTableToolbar;
@@ -587,8 +587,13 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
                                 <ColumnMenu
                                     column={column}
                                     engine={engine}
-                                    enableColumnResizing={enableColumnResizing}
                                     enableColumnVisibility={enableColumnVisibility}
+                                    enableColumnPinning={enableColumnPinning}
+                                    // Gate the panel-opening items on the BUILT-IN control being mounted
+                                    // (a custom slot replaces it and won't subscribe to the open signal),
+                                    // so they're never dead actions.
+                                    enableColumnFilter={enableColumnFilter && !slots?.columnFilterControl}
+                                    enableColumnsPanel={(enableColumnVisibility || enableColumnPinning || enableColumnReordering) && !slots?.columnVisibilityControl}
                                     icon={slots?.columnMenuIcon}
                                 />
                             ) : null}

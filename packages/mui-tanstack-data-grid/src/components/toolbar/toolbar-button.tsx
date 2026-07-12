@@ -29,9 +29,14 @@ export interface ToolbarButtonProps {
 export function ToolbarButton({ variant = 'icon', icon: Icon, label, badge, ...rest }: ToolbarButtonProps): ReactElement {
     const isDot = badge === true;
     const showBadge = isDot ? badge : typeof badge === 'number' && badge > 0;
+    // Compact badge: MUI's default (20px, 0.75rem) swamps a 20px toolbar icon. Shrink the
+    // count to ~15px / 10px and the dot to 8px so the icon stays legible under it.
+    const badgeSx = isDot
+        ? { '& .MuiBadge-badge': { minWidth: 8, height: 8 } }
+        : { '& .MuiBadge-badge': { height: 15, minWidth: 15, fontSize: '0.625rem', fontWeight: 700, padding: '0 3px' } };
     const withBadge = (node: ReactElement) =>
         badge === undefined ? node : (
-            <Badge color="primary" overlap="circular" variant={isDot ? 'dot' : 'standard'} badgeContent={isDot ? undefined : (badge as number)} invisible={!showBadge}>
+            <Badge color="primary" overlap="circular" variant={isDot ? 'dot' : 'standard'} badgeContent={isDot ? undefined : (badge as number)} invisible={!showBadge} sx={badgeSx}>
                 {node}
             </Badge>
         );

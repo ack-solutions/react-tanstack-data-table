@@ -16,6 +16,41 @@ format: each release groups changes as **Added** (new features), **Changed** (be
 
 ---
 
+## [1.21.0](https://www.npmjs.com/package/@ackplus/mui-tanstack-data-grid/v/1.21.0) — 2026-07-12
+
+Backward compatible.
+
+### Added
+- **Rebuilt the per-column ⋮ menu** into a full MUI-X/AG-Grid-style menu, with items that appear
+  **dynamically** by state:
+  - **Sort** — the active direction is hidden and **Clear sort** appears; disabled on non-sortable columns.
+  - **Pin** (`enableColumnPinning`) — **Pin to left** / **Pin to right**; a pinned column shows **Unpin
+    column** + the opposite side.
+  - **Filter** (`enableColumnFilter`) — **Filter** opens the toolbar filter panel with **this column
+    pre-selected**; a filtered column shows a **red dot** on its ⋮ and a **Clear filter** item that clears
+    only that column's filter.
+  - **Hide column** + **Manage columns** (opens the toolbar Columns panel).
+  - Structure: sort · pin · filter · ─── · hide · manage. Full keyboard nav, disabled states, and the menu
+    closes after each action.
+- New imperative API: **`api.filtering.openColumnFilter(columnId)`**, **`api.filtering.clearColumnFilter(columnId)`**,
+  and **`api.columnVisibility.openPanel()`** — the shared engine channels the menu uses (no duplicate state).
+
+### Changed
+- **Compact toolbar/menu badges.** The filter **count** badge and the saved-views / filter-active **dots**
+  are smaller, so they no longer overlap the icon glyph.
+
+### Fixed
+- The ⋮ **Filter** and **Manage columns** items are gated to the **built-in** toolbar controls, so they're
+  never dead actions — a reorder-only grid now mounts the toolbar, and a custom
+  `slots.columnFilterControl` / `slots.columnVisibilityControl` hides the item it can't drive (Clear filter
+  still works, since it goes straight through the API). Also hardened `clearColumnFilter` against a partial
+  persisted filter state.
+
+### Removed
+- **Autosize** is no longer in the ⋮ menu (still available by double-clicking the column resize handle).
+
+---
+
 ## [1.20.5](https://www.npmjs.com/package/@ackplus/mui-tanstack-data-grid/v/1.20.5) — 2026-07-12
 
 Backward compatible.

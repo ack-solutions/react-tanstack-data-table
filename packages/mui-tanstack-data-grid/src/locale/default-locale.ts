@@ -105,7 +105,13 @@ export const DEFAULT_LOCALE_TEXT: DataTableLocaleText = {
     columnMenuSortAsc: 'Sort ascending',
     columnMenuSortDesc: 'Sort descending',
     columnMenuClearSort: 'Clear sort',
+    columnMenuPinLeft: 'Pin to left',
+    columnMenuPinRight: 'Pin to right',
+    columnMenuUnpin: 'Unpin column',
+    columnMenuFilter: 'Filter',
+    columnMenuClearFilter: 'Clear filter',
     columnMenuHide: 'Hide column',
+    columnMenuManageColumns: 'Manage columns',
     columnMenuAutosize: 'Autosize this column',
 
     // Pagination

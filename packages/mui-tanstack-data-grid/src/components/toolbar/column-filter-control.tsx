@@ -52,6 +52,9 @@ export function ColumnFilterControl<T extends Record<string, any>>({ engine, tit
     const [anchor, setAnchor] = useState<HTMLElement | null>(null);
     const open = !!anchor;
     const didAutoAdd = useRef(false);
+    // Anchor for programmatic opens (the header ⋮ "Filter" item). ToolbarButton isn't a
+    // forwardRef component, so wrap it in a ref'd span to get a real anchor element.
+    const triggerRef = useRef<HTMLSpanElement | null>(null);
 
     const filterState = table.getColumnFilterState?.() ?? { filters: [], logic: 'AND', pendingFilters: [], pendingLogic: 'AND' };
     const filters: ColumnFilterRule[] = filterState.pendingFilters || [];
@@ -118,6 +121,29 @@ export function ColumnFilterControl<T extends Record<string, any>>({ engine, tit
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [open]);
 
+    // Open on request from the header ⋮ "Filter" item, pre-targeting its column. Declared
+    // AFTER the open-effect and sets didAutoAdd so it wins (no blank auto-row over the seed).
+    // The lastNonce ref (seeded to the mount-time nonce) makes this fire only on a NEW request,
+    // so a still-set request doesn't spuriously re-open on remount.
+    const filterRequest = engine.signals.filterPanelRequest;
+    const lastFilterNonce = useRef(filterRequest?.nonce);
+    useEffect(() => {
+        if (!filterRequest || filterRequest.nonce === lastFilterNonce.current) return;
+        lastFilterNonce.current = filterRequest.nonce;
+        const columnId = filterRequest.columnId;
+        const cur = table.getColumnFilterState?.() ?? { filters: [], pendingFilters: [] };
+        const pend: ColumnFilterRule[] = cur.pendingFilters || [];
+        if (!pend.some((f) => f.columnId === columnId)) {
+            // Pre-fill from an existing APPLIED rule for this column if any, else a fresh rule.
+            const applied = (cur.filters || []).find((f: ColumnFilterRule) => f.columnId === columnId);
+            if (applied) table.addPendingColumnFilter?.(applied.columnId, applied.operator, applied.value);
+            else addFilter(columnId, operatorsFor(columnId)[0]?.value);
+        }
+        didAutoAdd.current = true;
+        setAnchor(triggerRef.current);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [filterRequest?.nonce]);
+
     const close = () => setAnchor(null);
     const apply = () => {
         table.applyPendingColumnFilters?.();
@@ -131,7 +157,9 @@ export function ColumnFilterControl<T extends Record<string, any>>({ engine, tit
 
     return (
         <>
-            <ToolbarButton variant={variant} icon={FilterIcon} label={locale.filterButton} badge={activeCount} onClick={(e: any) => setAnchor(e.currentTarget)} />
+            <Box component="span" ref={triggerRef} sx={{ display: 'inline-flex' }}>
+                <ToolbarButton variant={variant} icon={FilterIcon} label={locale.filterButton} badge={activeCount} onClick={(e: any) => setAnchor(e.currentTarget)} />
+            </Box>
             <Popover
                 open={open}
                 anchorEl={anchor}
