@@ -16,6 +16,20 @@ format: each release groups changes as **Added** (new features), **Changed** (be
 
 ---
 
+## [1.20.3](https://www.npmjs.com/package/@ackplus/mui-tanstack-data-grid/v/1.20.3) — 2026-07-11
+
+Backward compatible.
+
+### Fixed
+- **Clicking a row's selection checkbox or expand toggle no longer also fires `onRowClick`.** The
+  auto-generated **selection** column (the row checkbox **and** the select-all header checkbox) and the
+  **row-expansion** button didn't stop click propagation — so on a grid with both row selection/expansion
+  and an `onRowClick` (e.g. one that navigates to a detail page), ticking the box or expanding a row also
+  triggered the row click. They now `stopPropagation` (matching the actions cell): the checkbox still
+  toggles selection, the button still expands, and clicking a **normal** cell still fires `onRowClick`.
+
+---
+
 ## [1.20.2](https://www.npmjs.com/package/@ackplus/mui-tanstack-data-grid/v/1.20.2) — 2026-07-11
 
 Backward compatible.

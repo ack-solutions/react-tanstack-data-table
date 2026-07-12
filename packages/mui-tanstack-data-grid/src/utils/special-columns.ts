@@ -73,6 +73,8 @@ export const createSelectionColumn = <T>(
             checked: allSelected,
             indeterminate: someSelected && !allSelected,
             onChange: () => table.toggleAllRowsSelected?.(),
+            // Header parity with the row checkbox — keep the click off any header handler.
+            onClick: (e: any) => e.stopPropagation(),
             size: 'small',
             sx: { p: 0 },
             tabIndex: -1, // roving tabindex lives on the cell; Enter activates this
@@ -89,6 +91,9 @@ export const createSelectionColumn = <T>(
             onChange: () => {
                 if (canSelect) table.toggleRowSelected?.(rowId);
             },
+            // Ticking the box must not also fire the row's `onRowClick` (e.g. navigate) —
+            // mirror the actions cell. onChange still toggles selection.
+            onClick: (e: any) => e.stopPropagation(),
             size: 'small',
             sx: { p: 0, opacity: canSelect ? 1 : 0.5 },
             tabIndex: -1,
@@ -121,10 +126,12 @@ export const createExpandingColumn = <T>(
             // Tree rows expose getCanExpand() = has children; detail-panel rows default true.
             if (row.getCanExpand && !row.getCanExpand()) return null;
             const expanded = row.getIsExpanded();
+            const toggleExpanded = row.getToggleExpandedHandler();
             return createElement(
                 IconButton,
                 {
-                    onClick: row.getToggleExpandedHandler(),
+                    // Expanding a row must not also fire the row's `onRowClick`.
+                    onClick: (e: any) => { e.stopPropagation(); toggleExpanded(); },
                     size: 'small',
                     sx: { p: 0 },
                     tabIndex: -1,

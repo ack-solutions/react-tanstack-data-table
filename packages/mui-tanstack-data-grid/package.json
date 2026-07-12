@@ -1,7 +1,7 @@
 {
   "name": "@ackplus/mui-tanstack-data-grid",
   "type": "commonjs",
-  "version": "1.20.2",
+  "version": "1.20.3",
   "description": "A lightweight, fully-featured React data grid built on TanStack Table and MUI — div/CSS-Grid rendering (no HTML table), themeable like a MUI component. Successor to @ackplus/react-tanstack-data-table.",
   "keywords": [
     "react",
