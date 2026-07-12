@@ -8,6 +8,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const React = require('react');
 const { renderToStaticMarkup } = require('react-dom/server');
+const { createTheme, ThemeProvider } = require('@mui/material/styles');
 const { DataTable } = require('../dist/cjs/index.js');
 
 const columns = [
@@ -130,4 +131,64 @@ test('slotProps.toolbar styles the built-in toolbar container', () => {
 test('slotProps.pagination reaches the pagination control (leaf: caller override wins)', () => {
     const html = render({ enablePagination: true, slotProps: { pagination: { 'data-pg': 'PG_OK' } } });
     assert.ok(html.includes('data-pg="PG_OK"'), 'slotProps.pagination spreads onto the pagination control');
+});
+
+// ── Bulk-actions bar theming (the reported "not themeable" bug) ──────────────
+// Seed selection via initialState so the bar renders in SSR (no click needed).
+const renderBulkBar = (props, theme) => {
+    const grid = React.createElement(DataTable, {
+        columns, data,
+        enableRowSelection: true, enableBulkActions: true,
+        initialState: { selectionState: { ids: ['1'], type: 'include' } },
+        ...props,
+    });
+    return renderToStaticMarkup(theme ? React.createElement(ThemeProvider, { theme }, grid) : grid);
+};
+
+test('bulk-actions bar renders as the themeable styled slot', () => {
+    const html = renderBulkBar({});
+    assert.ok(html.includes('MuiTanstackDataGrid-bulkActionsToolbar'),
+        'the bar carries the styled slot class, so styleOverrides.bulkActionsToolbar can target it');
+});
+
+test('slotProps.bulkActionsToolbar reaches the bar (className + rest + sx) — the reported drop', () => {
+    const html = renderBulkBar({
+        slotProps: { bulkActionsToolbar: { className: 'my-bulk-bar', 'data-bulk': 'BB_OK', sx: { backgroundColor: 'rgb(9, 8, 7)' } } },
+    });
+    assert.ok(html.includes('my-bulk-bar'), 'slotProps.bulkActionsToolbar.className is forwarded onto the bar');
+    assert.ok(html.includes('data-bulk="BB_OK"'), 'slotProps.bulkActionsToolbar rest props spread onto the bar');
+    assert.ok(html.includes('rgb(9, 8, 7)') || html.includes('rgb(9,8,7)'), 'slotProps.bulkActionsToolbar.sx override is present');
+});
+
+test('styleOverrides.bulkActionsToolbar retints the bar theme-wide', () => {
+    const theme = createTheme({
+        components: { MuiTanstackDataGrid: { styleOverrides: { bulkActionsToolbar: { backgroundColor: 'rgb(3, 2, 1)' } } } },
+    });
+    const html = renderBulkBar({}, theme);
+    assert.ok(html.includes('rgb(3, 2, 1)') || html.includes('rgb(3,2,1)'),
+        'theme styleOverrides.bulkActionsToolbar reaches the bar');
+});
+
+test('the bulk bar surface reads the --dt-bulkbar-* tokens (retint via a CSS var)', () => {
+    // Override the token on the root via sx; the bar inherits it through var().
+    const html = renderBulkBar({ sx: { '--dt-bulkbar-bg': 'rgb(4, 4, 4)' } });
+    assert.ok(html.includes('rgb(4, 4, 4)') || html.includes('rgb(4,4,4)'),
+        'a --dt-bulkbar-bg override on the root is emitted (the bar consumes it via var())');
+});
+
+test('slots.bulkActionsToolbar (custom bar) gets grid props + slotProps rest, but slotProps cannot clobber the grid props', () => {
+    // The render spreads slotProps rest FIRST and the grid-injected props AFTER, so a caller
+    // cannot override selectedCount/onClear/etc via slotProps — but their own extra props DO reach it.
+    const CustomBar = (props) => React.createElement('div', {
+        'data-custom-bar': 'CUSTOM',
+        'data-count': String(props.selectedCount), // grid-injected — must be the real count (1)
+        'data-extra': props['data-extra'],          // slotProps rest — must reach the custom bar
+    });
+    const html = renderBulkBar({
+        slots: { bulkActionsToolbar: CustomBar },
+        slotProps: { bulkActionsToolbar: { 'data-extra': 'EXTRA_OK', selectedCount: 999 } },
+    });
+    assert.ok(html.includes('data-custom-bar="CUSTOM"'), 'a custom slots.bulkActionsToolbar renders');
+    assert.ok(html.includes('data-extra="EXTRA_OK"'), 'slotProps.bulkActionsToolbar rest reaches the custom bar');
+    assert.ok(html.includes('data-count="1"'), 'grid-injected selectedCount wins — slotProps cannot clobber it (rest-first)');
 });

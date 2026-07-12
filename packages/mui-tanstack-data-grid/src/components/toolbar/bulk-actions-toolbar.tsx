@@ -5,12 +5,20 @@
  * changes on selection. It fits edge-to-edge and matches the toolbar's height.
  * Shows the selected count, a Clear action, and any custom actions from
  * `renderBulkActions(selectionState)`.
+ *
+ * The bar's surface is the themeable `bulkActionsToolbar` slot (GridBulkActionsToolbar),
+ * whose background/foreground read the `--dt-bulkbar-bg` / `--dt-bulkbar-fg` tokens
+ * (default: the primary palette). Retint it three ways — the tokens, theme
+ * `styleOverrides.bulkActionsToolbar`, or per-instance `slotProps.bulkActionsToolbar`
+ * (its `sx` / `className` / `style` / rest are forwarded onto the bar here).
  */
-import { Box, Button, Stack, Typography } from '@mui/material';
-import type { ReactNode } from 'react';
+import { Box, Button, Typography } from '@mui/material';
+import type { SxProps, Theme } from '@mui/material/styles';
+import type { CSSProperties, ReactNode } from 'react';
 
 import type { SelectionState } from '../../types/selection.types';
 import { useLocaleText } from '../../locale/locale-context';
+import { GridBulkActionsToolbar } from '../grid/styled';
 
 export interface BulkActionsToolbarProps {
     selectedCount: number;
@@ -18,25 +26,29 @@ export interface BulkActionsToolbarProps {
     onClear: () => void;
     onCopy?: () => void;
     renderBulkActions?: (selectionState: SelectionState) => ReactNode;
+    /** Injected by GridView; unused by the default bar (custom slots may use it). */
+    engine?: unknown;
+    /** Forwarded from `slotProps.bulkActionsToolbar` onto the bar root. */
+    sx?: SxProps<Theme>;
+    className?: string;
+    style?: CSSProperties;
 }
 
-export function BulkActionsToolbar({ selectedCount, selectionState, onClear, onCopy, renderBulkActions }: BulkActionsToolbarProps): ReactNode {
+export function BulkActionsToolbar({
+    selectedCount,
+    selectionState,
+    onClear,
+    onCopy,
+    renderBulkActions,
+    engine: _engine,
+    sx,
+    className,
+    style,
+    ...rest
+}: BulkActionsToolbarProps): ReactNode {
     const locale = useLocaleText();
     return (
-        <Stack
-            direction="row"
-            alignItems="center"
-            spacing={1.5}
-            sx={{
-                // Edge-to-edge, same height as the toolbar (52), so it overlays it exactly.
-                width: '100%',
-                minHeight: 52,
-                px: 1.5,
-                bgcolor: 'primary.main',
-                color: 'primary.contrastText',
-                borderBottom: '1px solid var(--dt-border-color)',
-            }}
-        >
+        <GridBulkActionsToolbar {...rest} className={className} style={style} sx={sx}>
             <Typography variant="body2" sx={{ fontWeight: 600 }}>
                 {locale.selectedRows(selectedCount)}
             </Typography>
@@ -50,6 +62,6 @@ export function BulkActionsToolbar({ selectedCount, selectionState, onClear, onC
             ) : null}
             <Box sx={{ flex: 1 }} />
             {renderBulkActions?.(selectionState)}
-        </Stack>
+        </GridBulkActionsToolbar>
     );
 }

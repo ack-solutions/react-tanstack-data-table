@@ -23,6 +23,7 @@ export type DataTableClassKey =
     | 'scroller'
     | 'grid'
     | 'toolbar'
+    | 'bulkActionsToolbar'
     | 'header'
     | 'headerRow'
     | 'headerCell'

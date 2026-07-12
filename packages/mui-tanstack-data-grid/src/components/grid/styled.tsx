@@ -65,6 +65,23 @@ export const GridToolbar = styled('div', { name: 'MuiTanstackDataGrid', slot: 'T
     borderBottom: '1px solid var(--dt-border-color)',
 })) as unknown as DivSlot;
 
+// Contextual selection ("bulk actions") bar. Overlays the toolbar (GridView applies the
+// absolute positioning — this slot must NOT), edge-to-edge and the same 52px height. Colours
+// read from the --dt-bulkbar-* tokens (default: the primary palette), so it's themeable via
+// the token, `styleOverrides.bulkActionsToolbar`, or `slotProps.bulkActionsToolbar` — like
+// every other part. Layout is flexbox (the styled-Stack equivalent) to keep the DivSlot type.
+export const GridBulkActionsToolbar = styled('div', { name: 'MuiTanstackDataGrid', slot: 'BulkActionsToolbar' })(({ theme }) => ({
+    display: 'flex',
+    alignItems: 'center',
+    gap: theme.spacing(1.5),
+    width: '100%',
+    minHeight: 52,
+    paddingInline: theme.spacing(1.5),
+    backgroundColor: 'var(--dt-bulkbar-bg)',
+    color: 'var(--dt-bulkbar-fg)',
+    borderBottom: '1px solid var(--dt-border-color)',
+})) as unknown as DivSlot;
+
 export const GridScroller = styled('div', { name: 'MuiTanstackDataGrid', slot: 'Scroller' })({
     position: 'relative',
     width: '100%',

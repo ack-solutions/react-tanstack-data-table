@@ -33,6 +33,12 @@ export function useDataTableTokens(density: DataTableDensity = 'standard'): CSSP
             [DT_VARS.rowBgSelected]: pal.selectedBg,
             [DT_VARS.pinnedBg]: pal.pinnedBg,
             [DT_VARS.resizeHandle]: p.primary.main,
+            // Selection ("bulk actions") bar. Defaults from the primary palette (like the
+            // resize handle) — self-flips per colorScheme via `p = (theme.vars ?? theme).palette`.
+            // Retint per-instance with `sx={{ '--dt-bulkbar-bg': … }}`, theme-wide via
+            // `styleOverrides.bulkActionsToolbar`, or per-instance via `slotProps.bulkActionsToolbar`.
+            [DT_VARS.bulkBarBg]: p.primary.main,
+            [DT_VARS.bulkBarFg]: p.primary.contrastText,
             // headerBg / stripe / pinnedShadow defaults are scheme-aware in the
             // GridRoot styled; only emit them inline when explicitly overridden.
             ...(userPal.headerBg ? { [DT_VARS.headerBg]: userPal.headerBg } : {}),

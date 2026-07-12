@@ -97,6 +97,23 @@ When `enableBulkActions` is set and rows are selected, a bulk-actions bar appear
 the selected count, a Clear action, and whatever you return from `renderBulkActions(selectionState)`. See
 [Selection](/features/selection).
 
+**Retint the bar** — its surface defaults to the primary palette but is fully themeable, three ways:
+
+```tsx
+// 1. per-instance via the CSS-variable tokens:
+<DataTable … sx={{ '--dt-bulkbar-bg': '#eef2ff', '--dt-bulkbar-fg': '#1e293b' }} />
+
+// 2. theme-wide via styleOverrides:
+createTheme({ components: { MuiTanstackDataGrid: {
+  styleOverrides: { bulkActionsToolbar: { backgroundColor: '#eef2ff', color: '#1e293b' } },
+} } });
+
+// 3. per-instance via slotProps:
+<DataTable … slotProps={{ bulkActionsToolbar: { sx: { bgcolor: 'grey.900' } } }} />
+```
+
+The bar **overlays** the toolbar, so keep the background **opaque**.
+
 ## Customising the toolbar
 
 Three levels, lightest first: [`renderToolbar`](#reorder--reposition-the-controls) to rearrange the

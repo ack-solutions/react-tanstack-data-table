@@ -44,6 +44,8 @@ export const DT_VARS = {
     pinnedBg: '--dt-pinned-bg',
     pinnedShadow: '--dt-pinned-shadow',
     resizeHandle: '--dt-resize-handle',
+    bulkBarBg: '--dt-bulkbar-bg',
+    bulkBarFg: '--dt-bulkbar-fg',
     rowHeight: '--dt-row-height',
     headerHeight: '--dt-header-height',
     cellPaddingX: '--dt-cell-padding-x',

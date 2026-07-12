@@ -176,6 +176,7 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
     const listItemSlotProps = resolveSlotProps(slotProps, 'listItem');
     const detailPanelSlotProps = resolveSlotProps(slotProps, 'detailPanel');
     const footerSlotProps = resolveSlotProps(slotProps, 'footer');
+    const bulkActionsToolbarSlotProps = resolveSlotProps(slotProps, 'bulkActionsToolbar');
     const loadingOverlaySlotProps = resolveSlotProps(slotProps, 'loadingOverlay');
     const noRowsOverlaySlotProps = resolveSlotProps(slotProps, 'noRowsOverlay');
 
@@ -915,13 +916,19 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
                 // header + select-all must never be hidden — matching MUI X / AG Grid).
                 <Box sx={showToolbar ? { position: 'absolute', top: 0, insetInline: 0, zIndex: 4 } : { flexShrink: 0 }}>
                     <BulkToolbarSlot
+                        // slotProps.bulkActionsToolbar rest FIRST so the required props below
+                        // (engine/selection handlers) can't be clobbered; sx/className/style are
+                        // split out and forwarded onto the bar root by BulkActionsToolbar.
+                        {...bulkActionsToolbarSlotProps.rest}
                         engine={engine}
                         selectedCount={derived.selectedRowCount}
                         selectionState={state.selectionState}
                         onClear={() => engine.api.selection.deselectAll()}
                         onCopy={enableClipboardCopy ? () => { void engine.api.clipboard.copySelectedRows(); } : undefined}
                         renderBulkActions={renderBulkActions}
-                        {...(slotProps?.bulkActionsToolbar ?? {})}
+                        className={bulkActionsToolbarSlotProps.className}
+                        style={bulkActionsToolbarSlotProps.style}
+                        sx={bulkActionsToolbarSlotProps.sx}
                     />
                 </Box>
             ) : null}

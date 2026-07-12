@@ -41,6 +41,10 @@ semantics so *select all* works across server pages without loading every row. W
 | `renderBulkActions` | `(selection) => ReactNode` | — | Custom action buttons. |
 | `onSelectionChange` | `(selection) => void` | — | Selection changed. |
 
+The bulk-actions bar defaults to the primary palette; **retint it** with the `--dt-bulkbar-bg` /
+`--dt-bulkbar-fg` tokens, `styleOverrides.bulkActionsToolbar`, or `slotProps.bulkActionsToolbar` — see
+[Toolbar → Bulk-actions bar](/features/toolbar#bulk-actions-bar).
+
 ## Select by clicking the row
 
 By default only the checkbox toggles selection. Set **`selectOnRowClick`** and a click **anywhere in the
