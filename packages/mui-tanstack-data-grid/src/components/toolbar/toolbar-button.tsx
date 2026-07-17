@@ -44,7 +44,34 @@ export function ToolbarButton({ variant = 'icon', icon: Icon, label, badge, ...r
 
     if (variant === 'text') {
         return (
-            <Button size="small" color="inherit" startIcon={withBadge(iconNode)} sx={{ textTransform: 'none', flexShrink: 0 }} {...rest}>
+            <Button
+                size="small"
+                color="inherit"
+                startIcon={withBadge(iconNode)}
+                sx={{
+                    textTransform: 'none',
+                    flexShrink: 0,
+                    // Even padding across labels — MUI's default 64px min-width makes a short
+                    // label (Views) pad differently from a long one (Refresh data).
+                    minWidth: 0,
+                    // Medium weight — the app theme's `button` weight is often bold; pin it here.
+                    fontWeight: 500,
+                    fontSize: '0.8125rem',
+                    lineHeight: 1.5,
+                    px: 1,
+                    py: 0.5,
+                    borderRadius: 1.5,
+                    color: 'text.primary',
+                    // Consistently-sized, slightly-muted icon aligned with the label.
+                    '& .MuiButton-startIcon': {
+                        marginInlineEnd: '6px',
+                        marginInlineStart: 0,
+                        color: 'text.secondary',
+                        '& > svg': { fontSize: 18 },
+                    },
+                }}
+                {...rest}
+            >
                 {label}
             </Button>
         );
