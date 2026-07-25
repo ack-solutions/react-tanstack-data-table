@@ -1,10 +1,12 @@
 /**
  * GridView — the div/CSS-Grid presentation layer (no HTML <table>).
  *
- * Column widths are CSS variables (`--col-<id>-size`) so resize updates one
- * variable instead of re-rendering every cell; pinned columns are sticky with
- * offsets from the same numbers; rows are virtualized when enabled. Theming and
- * density come from the `--dt-*` tokens applied to the root.
+ * Column widths are CSS variables (`--col-<css-safe-id>-size`) so resize updates
+ * one variable instead of re-rendering every cell. Dotted column ids (nested
+ * accessorKeys) are sanitized for the var name only — `column.id` is unchanged
+ * for filters/sort. Pinned columns are sticky with offsets from the same
+ * numbers; rows are virtualized when enabled. Theming and density come from the
+ * `--dt-*` tokens applied to the root.
  */
 import { Box, Skeleton, TablePagination } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
@@ -25,6 +27,7 @@ import { ColumnMenu } from './column-menu';
 import { GridAnnouncer } from './grid-announcer';
 import { computeColumnTotals, formatAggregation } from '../../utils/aggregation';
 import { setNestedValue, coerceEditValue } from '../../utils/table-helpers';
+import { columnSizeCssVar, columnSizeCssVarName } from '../../utils/column-helpers';
 import { LocaleTextProvider } from '../../locale/locale-context';
 import { DataTableToolbar } from '../toolbar/data-table-toolbar';
 import { BulkActionsToolbar } from '../toolbar/bulk-actions-toolbar';
@@ -216,10 +219,12 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
     const isVirtual = enableVirtualization && !enablePagination && rows.length > 0;
 
     // Publish column widths as CSS variables (recomputed only when sizing changes).
+    // Var names use a CSS-safe id (dots → `_`) so nested accessorKey columns
+    // like `unit.user.firstName` don't break `var(--col-…)` parsing.
     const columnSizeVars = useMemo(() => {
         const vars: Record<string, string> = {};
         for (const header of table.getFlatHeaders()) {
-            vars[`--col-${header.column.id}-size`] = `${header.getSize()}px`;
+            vars[columnSizeCssVarName(header.column.id)] = `${header.getSize()}px`;
         }
         return vars;
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -240,7 +245,8 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
     // width — so an auto-fit visibly snaps even under fitToScreen.
     const flexFor = (column: Column<any, unknown>): string => {
         const holdWidth = isGrouped || !fitToScreen || column.getIsPinned() || columnSizing[column.id] != null;
-        return holdWidth ? `0 0 var(--col-${column.id}-size)` : `1 0 var(--col-${column.id}-size)`;
+        const sizeVar = columnSizeCssVar(column.id);
+        return holdWidth ? `0 0 ${sizeVar}` : `1 0 ${sizeVar}`;
     };
 
     // Resize start. Under `fitToScreen` an untouched column is flex-grown *wider* than
@@ -525,7 +531,7 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
                                 // leaves) inline — NOT the --col-<id> var, which is keyed by column.id
                                 // and collides when a partly-pinned group splits into two header cells.
                                 flex: isGroupHeader ? `0 0 ${header.getSize()}px` : flexFor(column),
-                                width: isGroupHeader ? `${header.getSize()}px` : `var(--col-${column.id}-size)`,
+                                width: isGroupHeader ? `${header.getSize()}px` : columnSizeCssVar(column.id),
                                 justifyContent: align === 'right' ? 'flex-end' : align === 'center' ? 'center' : 'flex-start',
                                 cursor: canSort ? 'pointer' : 'default',
                                 gap: theme.spacing(0.5),
@@ -750,7 +756,7 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
                             {...(cellSlotProps.sx ? { sx: cellSlotProps.sx } : {})}
                             style={{
                                 flex: flexFor(column),
-                                width: `var(--col-${column.id}-size)`,
+                                width: columnSizeCssVar(column.id),
                                 justifyContent: cellOpen ? 'stretch' : align === 'right' ? 'flex-end' : align === 'center' ? 'center' : 'flex-start',
                                 cursor: editable && !cellOpen ? 'text' : undefined,
                                 ...getPinnedStyle(column, isRtl),
@@ -812,7 +818,7 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
                         <GridListItem role="cell"><Skeleton width="60%" /></GridListItem>
                     ) : (
                         table.getVisibleLeafColumns().map((column) => (
-                            <GridCell key={column.id} role="cell" style={{ flex: flexFor(column), width: `var(--col-${column.id}-size)`, ...getPinnedStyle(column, isRtl) }}>
+                            <GridCell key={column.id} role="cell" style={{ flex: flexFor(column), width: columnSizeCssVar(column.id), ...getPinnedStyle(column, isRtl) }}>
                                 <Skeleton width="80%" />
                             </GridCell>
                         ))
@@ -860,7 +866,7 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
                         data-col-id={column.id}
                         style={{
                             flex: flexFor(column),
-                            width: `var(--col-${column.id}-size)`,
+                            width: columnSizeCssVar(column.id),
                             justifyContent: align === 'right' ? 'flex-end' : align === 'center' ? 'center' : 'flex-start',
                             ...getPinnedStyle(column, isRtl),
                             ...(column.getIsPinned() ? { backgroundColor: 'var(--dt-header-bg)', backgroundImage: 'none' } : {}),

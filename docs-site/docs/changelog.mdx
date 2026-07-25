@@ -16,6 +16,20 @@ format: each release groups changes as **Added** (new features), **Changed** (be
 
 ---
 
+## [1.21.2](https://www.npmjs.com/package/@ackplus/mui-tanstack-data-grid/v/1.21.2) — 2026-07-25
+
+Backward compatible.
+
+### Fixed
+- **Nested `accessorKey` columns no longer misalign.** Columns that share a dotted path prefix
+  (e.g. `unit.user.firstName` and `unit.user.lastName`) used those ids in CSS width variables
+  (`--col-<id>-size`). CSS `var()` treats `.` as ending the property name, so sibling nested
+  columns collapsed onto the same broken width and headers/cells drifted. Width vars now sanitize
+  dots to underscores **for CSS only** — `column.id` / filter / sort / server payloads still use the
+  dotted path. No custom `id` remapping needed.
+
+---
+
 ## [1.21.1](https://www.npmjs.com/package/@ackplus/mui-tanstack-data-grid/v/1.21.1) — 2026-07-12
 
 Backward compatible.

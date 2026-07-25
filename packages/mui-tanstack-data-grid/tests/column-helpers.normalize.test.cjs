@@ -89,3 +89,14 @@ test('normalizeUserColumn — valueFormatter receives the row original', () => {
     const col = normalizeUserColumn({ id: 'f', accessorKey: 'amt', valueFormatter: ({ value, row }) => `${row.cur}${value}` });
     assert.equal(col.cell(ctx(9, { cur: '€' })), '€9');
 });
+
+test('column size CSS vars — dotted nested ids sanitize uniquely; flat ids unchanged', () => {
+    const { toColumnCssId, columnSizeCssVarName, columnSizeCssVar } = require('../dist/cjs/utils/column-helpers.js');
+    assert.equal(toColumnCssId('email'), 'email');
+    assert.equal(toColumnCssId('unit.user.firstName'), 'unit_user_firstName');
+    assert.equal(toColumnCssId('unit.user.lastName'), 'unit_user_lastName');
+    // Sibling nested paths must not collapse to the same CSS token (the old bug).
+    assert.notEqual(columnSizeCssVarName('unit.user.firstName'), columnSizeCssVarName('unit.user.lastName'));
+    assert.equal(columnSizeCssVarName('unit.user.firstName'), '--col-unit_user_firstName-size');
+    assert.equal(columnSizeCssVar('unit.user.lastName'), 'var(--col-unit_user_lastName-size)');
+});

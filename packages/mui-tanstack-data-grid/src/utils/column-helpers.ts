@@ -118,6 +118,27 @@ export function withIdsDeep<T>(cols: ColumnDef<T, any>[]): ColumnDef<T, any>[] {
     }));
 }
 
+/**
+ * CSS-safe token for a TanStack column id.
+ * Dotted accessorKeys (e.g. `unit.user.firstName`) are kept as `column.id` for
+ * filters/sort/server, but `.` terminates a CSS ident inside `var(--name)` — so
+ * width vars must use a sanitized key (same `.` → `_` rule TanStack uses for
+ * default ids). Does not change `column.id` itself.
+ */
+export function toColumnCssId(columnId: string): string {
+    return columnId.replace(/\./g, '_');
+}
+
+/** Custom property name for a column's pixel width (`--col-<css-safe-id>-size`). */
+export function columnSizeCssVarName(columnId: string): string {
+    return `--col-${toColumnCssId(columnId)}-size`;
+}
+
+/** `var(--col-<css-safe-id>-size)` for width / flex-basis. */
+export function columnSizeCssVar(columnId: string): string {
+    return `var(${columnSizeCssVarName(columnId)})`;
+}
+
 export function isColumnFilterable(column: Column<any, unknown>): boolean {
     if (column?.columnDef?.filterable !== undefined) return column.columnDef.filterable;
     return true;
