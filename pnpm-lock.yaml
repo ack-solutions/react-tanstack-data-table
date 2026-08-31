@@ -112,9 +112,6 @@ importers:
       dayjs:
         specifier: ^1.11.13
         version: 1.11.21
-      xlsx:
-        specifier: ^0.18.5
-        version: 0.18.5
     devDependencies:
       '@emotion/react':
         specifier: ^11.14.0
@@ -137,6 +134,9 @@ importers:
       typescript:
         specifier: ~5.8.3
         version: 5.8.3
+      xlsx:
+        specifier: ^0.18.5
+        version: 0.18.5
 
   packages/react-tanstack-data-table:
     dependencies:

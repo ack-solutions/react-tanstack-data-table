@@ -8,6 +8,7 @@ import type { Table } from '@tanstack/react-table';
 
 import type { SelectionState } from '../types/selection.types';
 import type { ExportPhase, ServerExportResult } from '../types/export.types';
+import { loadXlsx } from './export/load-xlsx';
 
 export interface ExportOptions {
     format: 'csv' | 'excel';
@@ -318,8 +319,8 @@ async function exportToFile(data: Record<string, any>[], format: 'csv' | 'excel'
         throwIfExportCancelled(signal);
         downloadFile(csv, `${filename}.csv`, 'text/csv');
     } else {
-        // Lazy-load xlsx only when an Excel export actually runs.
-        const XLSX = await import('xlsx');
+        // Lazy-load the optional `xlsx` peer only when an Excel export actually runs.
+        const XLSX = await loadXlsx();
         const workbook = XLSX.utils.book_new();
         const worksheet = XLSX.utils.json_to_sheet(data);
         XLSX.utils.book_append_sheet(workbook, worksheet, 'Data');

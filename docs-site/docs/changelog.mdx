@@ -16,6 +16,26 @@ format: each release groups changes as **Added** (new features), **Changed** (be
 
 ---
 
+## [1.22.0](https://www.npmjs.com/package/@ackplus/mui-tanstack-data-grid/v/1.22.0) — 2026-07-25
+
+### Changed
+- **`xlsx` is now an _optional peer dependency_** (was a hard `dependency`). SheetJS abandoned its npm
+  package at `0.18.5` — which carries two high-severity **parsing** advisories (`GHSA-4r6h-8v6p-xvw6`
+  prototype pollution, `GHSA-5pgg-2g8v-p4x9` ReDoS) with **no registry fix** — so carrying it as a
+  dependency gave **every** consumer a permanently red `npm audit`, even ones that never export a
+  spreadsheet. This grid only ever *writes* workbooks (`book_new` / `json_to_sheet` / `book_append_sheet` /
+  `write`) and never parses one, so those advisories are unreachable. `xlsx` now loads **lazily**, only on
+  the Excel export path. **A fresh install pulls no `xlsx` and audits clean.**
+
+  :::warning[Action required only if you use Excel export]
+  Add `xlsx` to your **own** dependencies: `npm install xlsx`. **CSV export is unaffected.** Triggering an
+  Excel export without `xlsx` installed now throws a clear _"Excel export requires the optional peer
+  dependency `xlsx` — install it, or export to CSV"_ error (surfaced through `onExportError`) instead of
+  working. That soft, actionable break is why this is a minor bump rather than a patch.
+  :::
+
+---
+
 ## [1.21.2](https://www.npmjs.com/package/@ackplus/mui-tanstack-data-grid/v/1.21.2) — 2026-07-25
 
 Backward compatible.

@@ -1,7 +1,7 @@
 {
   "name": "@ackplus/mui-tanstack-data-grid",
   "type": "commonjs",
-  "version": "1.21.2",
+  "version": "1.22.0",
   "description": "A lightweight, fully-featured React data grid built on TanStack Table and MUI — div/CSS-Grid rendering (no HTML table), themeable like a MUI component. Successor to @ackplus/react-tanstack-data-table.",
   "keywords": [
     "react",
@@ -52,8 +52,7 @@
   "dependencies": {
     "@tanstack/react-table": "^8.21.3",
     "@tanstack/react-virtual": "^3.13.18",
-    "dayjs": "^1.11.13",
-    "xlsx": "^0.18.5"
+    "dayjs": "^1.11.13"
   },
   "peerDependencies": {
     "@emotion/react": ">=11.0.0",
@@ -61,7 +60,13 @@
     "@mui/icons-material": "^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0 || ^9.0.0",
     "@mui/material": "^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0 || ^9.0.0",
     "react": ">=18.0.0 || ^19.0.0",
-    "react-dom": ">=18.0.0 || ^19.0.0"
+    "react-dom": ">=18.0.0 || ^19.0.0",
+    "xlsx": "^0.18.5"
+  },
+  "peerDependenciesMeta": {
+    "xlsx": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@emotion/react": "^11.14.0",
@@ -70,6 +75,7 @@
     "@mui/material": "^7.1.1",
     "react": "19.2.3",
     "react-dom": "19.2.3",
-    "typescript": "~5.8.3"
+    "typescript": "~5.8.3",
+    "xlsx": "^0.18.5"
   }
 }

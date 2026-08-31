@@ -23,6 +23,26 @@ npm install @ackplus/mui-tanstack-data-grid
 
 Published on npm. Docs: https://ack-solutions.github.io/react-tanstack-data-table/docs/
 
+### Optional peer: `xlsx` (Excel export only)
+
+**CSV export needs nothing extra.** Excel (`.xlsx`) export needs the SheetJS `xlsx`
+package, declared as an **optional peer** — install it only if you use Excel export:
+
+```bash
+npm install xlsx
+```
+
+Why optional: SheetJS abandoned its npm package at `0.18.5` (newer builds ship only from
+`cdn.sheetjs.com`), and that version carries two high-severity **parsing** advisories with
+no registry fix — so making it a hard dependency would give **every** consumer a
+permanently red `npm audit`, even ones that never export a spreadsheet. This grid only
+ever *writes* workbooks (`book_new` / `json_to_sheet` / `book_append_sheet` / `write`) and
+never parses one, so those advisories are unreachable. `xlsx` is therefore loaded lazily,
+only on the Excel path: consumers who don't install it get a clean audit, and triggering an
+Excel export without it throws a clear _"install the `xlsx` peer, or export to CSV"_ error
+(CSV keeps working). **Please don't move `xlsx` back into `dependencies`** — that
+re-introduces the audit noise for all consumers.
+
 ## Module formats & build
 
 Shipped as a **dual ESM + CommonJS** package, tree-shakeable, with types:

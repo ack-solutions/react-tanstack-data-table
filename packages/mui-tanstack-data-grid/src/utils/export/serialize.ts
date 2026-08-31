@@ -4,6 +4,7 @@
  * loaded and guarded against Excel's hard worksheet row limit.
  */
 import { sanitizeCSVCellValue } from './format';
+import { loadXlsx } from './load-xlsx';
 
 /** Excel's hard ceiling is 1,048,576 rows per sheet (minus 1 for the header). */
 export const MAX_XLSX_ROWS = 1_048_575;
@@ -73,7 +74,7 @@ export async function buildXlsxBlob(
         rows = records.slice(0, MAX_XLSX_ROWS);
         truncated = true;
     }
-    const XLSX = await import('xlsx');
+    const XLSX = await loadXlsx();
     const workbook = XLSX.utils.book_new();
     const worksheet = XLSX.utils.json_to_sheet(rows);
     XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
