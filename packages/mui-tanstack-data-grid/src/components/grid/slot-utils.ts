@@ -39,6 +39,30 @@ export function resolveSlotProps(slotProps: DataTableSlotProps | undefined, key:
     return { sx, className, style, rest };
 }
 
+const DOM_ATTRS = new Set(['id', 'role', 'title', 'tabIndex', 'dir', 'lang', 'hidden', 'translate']);
+
+/**
+ * Keep only props that are safe on a plain DOM element: `data-*` / `aria-*`, a few global
+ * attributes, and `on*` handlers. For containers whose slotProps are often fed config-style
+ * keys (e.g. a legacy `refreshButtonProps: {…}` or `showRefresh: true` under `toolbar`),
+ * which React would otherwise warn about and write to the DOM.
+ */
+export function pickDomProps(rest: Record<string, any>): Record<string, any> {
+    const out: Record<string, any> = {};
+    for (const k of Object.keys(rest)) {
+        const v = rest[k];
+        if (
+            k.startsWith('data-') ||
+            k.startsWith('aria-') ||
+            DOM_ATTRS.has(k) ||
+            (/^on[A-Z]/.test(k) && typeof v === 'function')
+        ) {
+            out[k] = v;
+        }
+    }
+    return out;
+}
+
 /**
  * Flattening sx merge — MUI does NOT flatten nested sx arrays, so normalize every
  * entry (undefined dropped, arrays spread). Later entries win. Returns undefined

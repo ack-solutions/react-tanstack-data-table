@@ -17,7 +17,7 @@ import type {
     ExportStateChange,
     ServerExportResult,
 } from '../../types/export.types';
-import { createCancelledExportError, isCancelledError, throwIfAborted, waitWithAbort } from './cancel';
+import { createCancelledExportError, isCancelledError, throwIfAborted, waitWithAbort, yieldToEventLoop } from './cancel';
 import { downloadBlob, downloadFromUrl } from './download';
 import { formatRowRecord, type ResolvedExportColumn } from './format';
 import { iterateBatches, pageAllRows, type FetchPage } from './fetch';
@@ -49,6 +49,8 @@ export interface RunExportOptions<T = any> extends RunExportCallbacks<T> {
     maxClientRows?: number;
     /** Truncate XLSX at the Excel row limit instead of throwing. */
     truncateXlsx?: boolean;
+    /** Fail (instead of writing a partial file) when fewer rows arrive than the server's `total`. */
+    strictTotalCheck?: boolean;
     pollIntervalMs?: number;
     /** Force a renamed download for `{ fileUrl }` (buffers — avoid for huge files). */
     renameDownload?: boolean;
@@ -65,6 +67,7 @@ export interface RunExportOptions<T = any> extends RunExportCallbacks<T> {
 const DEFAULT_MAX_CLIENT_ROWS = 1_000_000;
 const DEFAULT_POLL_INTERVAL_MS = 2000;
 const DEFAULT_PROGRESS_EVERY = 2000;
+const DEFAULT_ONE_SHOT_BATCH = 1000;
 
 function resolvedFilename(base: string, format: ExportRequest['format']): string {
     return `${base}.${format === 'excel' ? 'xlsx' : 'csv'}`;
@@ -150,13 +153,33 @@ async function writeXlsx(opts: RunExportOptions, produce: BatchProducer, getTota
 
 // ── modes ───────────────────────────────────────────────────────────────────
 
+function isServerExportRowsResult<T>(result: unknown): result is { data: T[]; total?: number } {
+    return !!result && typeof result === 'object' && Array.isArray((result as { data?: unknown }).data);
+}
+
+function assertTotal(opts: RunExportOptions, received: number, total: number | undefined): void {
+    if (opts.strictTotalCheck && typeof total === 'number' && received < total) {
+        throw new Error(`Export received ${received.toLocaleString()} of ${total.toLocaleString()} rows (exportStrictTotalCheck).`);
+    }
+}
+
 async function runClientOrServerData<T>(table: Table<T>, opts: RunExportOptions<T>): Promise<void> {
     const { request, columns } = buildExportRequest(table, opts.request);
     if (columns.length === 0) throw new Error('No exportable columns');
     opts.onStateChange?.({ phase: 'fetching' });
 
+    // Server rows are sourced, in order of precedence, from: `onExportStream` (server-data) →
+    // paged `onFetchData` → one-shot `onServerExport` returning `{ data, total }`. Paging wins
+    // over the one-shot so a grid can keep `onServerExport` for per-call `server-file` exports.
+    const serverRows = opts.mode === 'server-data' || opts.dataMode === 'server';
     const isStream = opts.mode === 'server-data' && !!opts.onExportStream;
-    const serverPaged = (opts.mode === 'server-data' || opts.dataMode === 'server') && !!opts.fetchPage;
+    const serverPaged = serverRows && !isStream && !!opts.fetchPage;
+    const serverOneShot = serverRows && !isStream && !serverPaged && !!opts.onServerExport;
+    // Never fall back to the in-memory rows for server data — that is only the loaded page,
+    // so the file would silently be partial.
+    if (serverRows && !isStream && !serverPaged && !serverOneShot) {
+        throw new Error("Server-data export needs onExportStream, onFetchData (paged), or onServerExport returning '{ data, total }'.");
+    }
     const totalRef: { value: number | undefined } = { value: undefined };
     const getTotal = () => totalRef.value;
 
@@ -185,6 +208,28 @@ async function runClientOrServerData<T>(table: Table<T>, opts: RunExportOptions<
                 },
             });
             totalRef.value = res.total ?? totalRef.value;
+            assertTotal(opts, res.fetched, res.total);
+            return;
+        }
+        if (serverOneShot) {
+            const result = await opts.onServerExport!(request, opts.signal);
+            throwIfAborted(opts.signal);
+            if (!isServerExportRowsResult<T>(result)) {
+                throw new Error(
+                    "Client/server-data export via onServerExport expects '{ data, total }'. Use exportMode 'server-file' or 'server-async' for blob/fileUrl/jobId results.",
+                );
+            }
+            const all = result.data;
+            const total = typeof result.total === 'number' && result.total >= 0 ? result.total : undefined;
+            assertTotal(opts, all.length, total);
+            totalRef.value = total ?? all.length;
+            // Format + write in batches: bounded chunk strings, throttled progress, and the UI keeps painting.
+            const size = Math.max(1, opts.chunkSize ?? DEFAULT_ONE_SHOT_BATCH);
+            for (let start = 0; start < all.length; start += size) {
+                const batch = all.slice(start, start + size);
+                await consume(batch.map((r, i) => formatRowRecord(r, start + i, columns, getRawFromObject)));
+                await yieldToEventLoop(opts.signal);
+            }
             return;
         }
         // client in-memory rows

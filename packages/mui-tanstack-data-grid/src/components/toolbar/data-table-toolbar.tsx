@@ -30,7 +30,7 @@ import type { DataTableToolbarControls, ToolbarVariant } from '../../types/data-
 import type { ResetLayoutAction } from '../../types/api.types';
 import { ToolbarButton } from './toolbar-button';
 import type { UseDataTableResult } from '../../core/use-data-table';
-import { resolveSlotProps, mergeSx, joinClassNames } from '../grid/slot-utils';
+import { resolveSlotProps, mergeSx, joinClassNames, pickDomProps } from '../grid/slot-utils';
 import {
     ClearFeatherIcon,
     ColumnsFeatherIcon,
@@ -331,7 +331,10 @@ export function DataTableToolbar<T extends Record<string, any>>(props: DataTable
 
     // `slotProps.toolbar` styles the built-in toolbar container (slots.toolbar,
     // which replaces the whole toolbar, is handled one level up in GridView).
+    // The rest bag is filtered to DOM-safe props (data-*/aria-*/id/handlers): config-style
+    // keys such as a legacy `refreshButtonProps: {…}` must not land on the `<div>`.
     const tb = resolveSlotProps(slotProps, 'toolbar');
+    const tbDomProps = pickDomProps(tb.rest);
 
     // Caller-controlled layout: hand over the ready-made controls to arrange freely.
     if (renderToolbar) {
@@ -348,14 +351,14 @@ export function DataTableToolbar<T extends Record<string, any>>(props: DataTable
             extraFilter: extraFilterEl,
         };
         return (
-            <GridToolbar {...tb.rest} className={joinClassNames(tb.className)} style={tb.style} sx={mergeSx(tb.sx)}>
+            <GridToolbar {...tbDomProps} className={joinClassNames(tb.className)} style={tb.style} sx={mergeSx(tb.sx)}>
                 {renderToolbar(controls)}
             </GridToolbar>
         );
     }
 
     return (
-        <GridToolbar {...tb.rest} className={joinClassNames(tb.className)} style={tb.style} sx={mergeSx(tb.sx)}>
+        <GridToolbar {...tbDomProps} className={joinClassNames(tb.className)} style={tb.style} sx={mergeSx(tb.sx)}>
             {/* All built-in tools left-aligned in a stable order (search first, then
                 the column/data controls) — matching the MUI DataGrid toolbar. Only the
                 caller's `extraFilter` slot is pushed to the trailing edge. */}

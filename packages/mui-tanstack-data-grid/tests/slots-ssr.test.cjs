@@ -120,12 +120,35 @@ test('slotProps.searchInput styles the DEFAULT search too (className forwarded, 
     assert.ok(html.includes('my-search-box'), 'the default (un-swapped) search forwards className from slotProps.searchInput');
 });
 
-test('slotProps.toolbar styles the built-in toolbar container', () => {
-    const html = render({
-        enableGlobalFilter: true,
-        slotProps: { toolbar: { 'data-toolbar': 'TB_OK' } },
-    });
-    assert.ok(html.includes('data-toolbar="TB_OK"'), 'slotProps.toolbar spreads onto the toolbar container');
+test('slotProps.toolbar reaches the toolbar container (className + DOM-safe rest), config keys do not leak', () => {
+    const errors = [];
+    const origError = console.error;
+    console.error = (...args) => errors.push(args.join(' '));
+    let html;
+    try {
+        html = render({
+            enableGlobalFilter: true,
+            slotProps: {
+                toolbar: {
+                    className: 'my-toolbar-shell',
+                    'data-toolbar': 'TB_OK',
+                    'aria-label': 'Grid tools',
+                    id: 'tb-id',
+                    // Legacy / config-style keys must NOT land on the toolbar <div>.
+                    refreshButtonProps: { color: 'primary' },
+                    showRefresh: true,
+                },
+            },
+        });
+    } finally {
+        console.error = origError;
+    }
+    assert.ok(html.includes('my-toolbar-shell'), 'slotProps.toolbar.className reaches the toolbar container');
+    assert.ok(html.includes('data-toolbar="TB_OK"'), 'data-* still spreads onto the toolbar container');
+    assert.ok(html.includes('aria-label="Grid tools"'), 'aria-* still spreads onto the toolbar container');
+    assert.ok(html.includes('id="tb-id"'), 'id still spreads onto the toolbar container');
+    assert.ok(!/refreshbuttonprops|showrefresh/i.test(html), 'config-style keys are not written to the DOM');
+    assert.ok(!errors.some((e) => /refreshButtonProps|showRefresh/.test(e)), 'React does not warn about unknown DOM props');
 });
 
 test('slotProps.pagination reaches the pagination control (leaf: caller override wins)', () => {

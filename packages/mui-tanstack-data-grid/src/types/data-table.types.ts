@@ -178,6 +178,7 @@ export interface DataTableProps<T> {
     exportConcurrency?: ExportConcurrencyMode;
     /** Rows per page when paging server data for export (default 1000). */
     exportChunkSize?: number;
+    /** Fail instead of writing a partial file when fewer rows arrive than the server's `total`. Default `false`. */
     exportStrictTotalCheck?: boolean;
     exportSanitizeCSV?: boolean;
     /** Client file sink: `'auto'` (stream where supported), `'stream'`, or `'blob'`. */
@@ -203,6 +204,9 @@ export interface DataTableProps<T> {
     /**
      * `server-file` / `server-async`: the server builds the finished file from the
      * {@link ExportRequest} and returns `{ blob }`, `{ fileUrl }`, or `{ jobId }`.
+     *
+     * `client` / `server-data` with server data and no `onFetchData`: return ALL matching
+     * rows as `{ data, total }` in one shot; the client formats and writes the file.
      */
     onServerExport?: (request: ExportRequest, signal?: AbortSignal) => Promise<ServerExportResult<T>>;
     /** `server-data`: stream raw rows from the server; the client formats + writes them. */

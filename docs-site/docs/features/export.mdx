@@ -143,6 +143,48 @@ exports, prefer a server mode.
 > (without disturbing the visible page). The old hard-coded 100 ms inter-page delay is gone — it defaults
 > to `0` and is configurable via `exportInterPageDelayMs`.
 
+### Server data without `onFetchData` — one-shot `onServerExport`
+
+If your grid gets server data some other way (you pass `data` + `totalRow` yourself, e.g. from a
+React Query wrapper) there is no `onFetchData` to page through. Return **every matching row** from
+`onServerExport` as `{ data, total }` instead; the client still formats the columns and writes the file:
+
+```tsx
+<DataTable
+  columns={columns}
+  data={page.rows}
+  totalRow={page.total}
+  dataMode="server"
+  enableExport                     // exportMode defaults to 'client'
+  onServerExport={async (request, signal) => {
+    // request.filters / request.sorting / request.selection describe the current query — no pagination.
+    const res = await api.post('/api/users/export-rows', request, { signal });
+    return { data: res.rows, total: res.total };
+  }}
+/>
+```
+
+Rows are formatted and written in batches of `exportChunkSize`, with progress. Set
+`exportStrictTotalCheck` to fail the export if fewer rows arrive than `total`, instead of writing a
+partial file.
+
+**Where server rows come from** (`client` / `server-data` modes, first match wins):
+
+1. `onExportStream` — `server-data` mode only.
+2. `onFetchData` — paged in `exportChunkSize` pages.
+3. `onServerExport` returning `{ data, total }` — one shot.
+
+`onFetchData` wins over `onServerExport`, so a grid that has both can keep `onServerExport` for per-call
+`exportCSV({ mode: 'server-file' })` exports. With server data and **none** of the three, the export fails
+with a clear error. It won't quietly export just the loaded page.
+
+:::warning[Migrating from `@ackplus/react-tanstack-data-table`]
+The legacy grid called `onServerExport(filters, selection, signal)` **once per page** and read
+`filters.pagination`. The new signature is `onServerExport(request, signal)` and **`request` has no
+pagination**: return all rows in one response, or switch to `onFetchData` for paging. A handler that still
+applies a default page size will export only that page. Turn on `exportStrictTotalCheck` to catch it.
+:::
+
 ---
 
 ## Mode 2 — `server-data` (server streams rows, client formats)
@@ -327,7 +369,8 @@ apiRef.current?.export.isExporting();    // boolean
 | `exportMode` | `'client' \| 'server-data' \| 'server-file' \| 'server-async'` | `'client'` | Where the file is built. |
 | `exportFilename` | `string` | `'export'` | Base filename. |
 | `exportSink` | `'auto' \| 'stream' \| 'blob'` | `'auto'` | Client file sink. |
-| `exportChunkSize` | `number` | `1000` | Rows per page when paging server data. |
+| `exportChunkSize` | `number` | `1000` | Rows per page when paging server data (and the write batch size for a one-shot result). |
+| `exportStrictTotalCheck` | `boolean` | `false` | Fail instead of writing a partial file when fewer rows arrive than the server's `total`. |
 | `exportInterPageDelayMs` | `number` | `0` | Delay between paged fetches. |
 | `exportFetchConcurrency` | `number` | `1` | Concurrent paged fetches (known total). |
 | `exportMaxClientRows` | `number` | `1000000` | Guard for client-built files. |
@@ -337,7 +380,7 @@ apiRef.current?.export.isExporting();    // boolean
 | `exportProgressEvery` | `number` | `2000` | Emit progress at most every N rows. |
 | `exportConcurrency` | `'cancelAndRestart' \| 'queue' \| 'ignoreIfRunning'` | `'cancelAndRestart'` | Concurrent-export policy. |
 | `exportSanitizeCSV` | `boolean` | `true` | Neutralize CSV formula injection. |
-| `onServerExport` | `(request, signal) => Promise` | — | `server-file` / `server-async` builder. |
+| `onServerExport` | `(request, signal) => Promise` | — | `server-file` / `server-async` builder (`{ blob }` / `{ fileUrl }` / `{ jobId }`); for `client` / `server-data` with server data and no `onFetchData`, return all rows as `{ data, total }`. |
 | `onExportStream` | `(request, signal) => AsyncIterable` | — | `server-data` row source. |
 | `onExportPoll` | `(job, signal) => Promise` | — | `server-async` poll. |
 | `onExportProgress` / `onExportComplete` / `onExportError` / `onExportStateChange` / `onExportCancel` | callbacks | — | Lifecycle. |
@@ -345,7 +388,7 @@ apiRef.current?.export.isExporting();    // boolean
 ## API
 
 ```ts
-// options: { mode, scope, columns, onlyVisibleColumns, onlySelectedRows, filename, delimiter, includeHeaders, chunkSize, sanitizeCSV }
+// options: { mode, scope, columns, onlyVisibleColumns, onlySelectedRows, filename, delimiter, includeHeaders, chunkSize, strictTotalCheck, sanitizeCSV }
 apiRef.current.export.exportCSV(options?);
 apiRef.current.export.exportExcel(options?);
 apiRef.current.export.isExporting();      // boolean
@@ -353,4 +396,5 @@ apiRef.current.export.cancelExport();
 ```
 
 See [Server-side data](/features/server-side) for the `onFetchData` contract that `client` and
-`server-data` modes reuse for paging.
+`server-data` modes reuse for paging, or [one-shot `onServerExport`](#server-data-without-onfetchdata--one-shot-onserverexport)
+when the grid has no `onFetchData`.

@@ -108,8 +108,9 @@ export interface ExportJobStatus {
 
 /**
  * What a server export callback may return.
- * - `{ data, total }` — a page of rows (client builds the file).
- * - `{ blob }`        — a finished file in memory.
+ * - `{ data, total }` — all matching rows in one shot (used by default `client` /
+ *   `server-data` modes when `onFetchData` is not provided for paging).
+ * - `{ blob }`        — a finished file in memory (`server-file` / `server-async`).
  * - `{ fileUrl }`     — a URL to a finished/streamed file.
  * - `{ jobId }`       — an async job to poll (server-async).
  */

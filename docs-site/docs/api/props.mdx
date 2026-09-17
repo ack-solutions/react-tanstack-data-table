@@ -193,6 +193,11 @@ per-property) — a structural part never loses its required roles, refs, or key
 design tokens are never clobbered. Leaf controls (pagination, toolbar buttons) spread your props **last**,
 so a deliberate override wins.
 
+`slotProps.toolbar` forwards only DOM-safe extras onto the toolbar container: `data-*`, `aria-*`, `id`,
+`role`, `title`, `tabIndex`, and `on*` handlers. Config-style keys such as `refreshButtonProps: {…}` or
+`showRefresh: true` are dropped, so they don't end up as attributes on the `<div>`. Target a single control
+through its own key instead, e.g. `slotProps.refreshButton`.
+
 ## Height & scrolling
 
 The grid is a flex column — header pinned to the top, footer to the bottom, body scrolling between.

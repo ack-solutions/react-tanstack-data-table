@@ -3,7 +3,16 @@
 // mergeSx flattens (MUI does not); joinClassNames drops falsy and never emits "".
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { resolveSlotProps, mergeSx, joinClassNames } = require('../dist/cjs/components/grid/slot-utils.js');
+const { resolveSlotProps, mergeSx, joinClassNames, pickDomProps } = require('../dist/cjs/components/grid/slot-utils.js');
+
+test('pickDomProps keeps data-*/aria-*/global attrs/handlers and drops config-style keys', () => {
+    const onClick = () => {};
+    const picked = pickDomProps({
+        'data-x': '1', 'aria-label': 'L', id: 'i', role: 'toolbar', tabIndex: 0, onClick,
+        refreshButtonProps: { color: 'primary' }, showRefresh: true, onRefresh: 'not-a-fn',
+    });
+    assert.deepEqual(picked, { 'data-x': '1', 'aria-label': 'L', id: 'i', role: 'toolbar', tabIndex: 0, onClick });
+});
 
 test('resolveSlotProps splits sx/className/style out and keeps the rest', () => {
     const onClick = () => {};

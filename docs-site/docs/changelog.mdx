@@ -16,6 +16,37 @@ format: each release groups changes as **Added** (new features), **Changed** (be
 
 ---
 
+## [1.22.1](https://www.npmjs.com/package/@ackplus/mui-tanstack-data-grid/v/1.22.1) — 2026-09-17
+
+Backward compatible.
+
+### Fixed
+- **Export works again for server data without `onFetchData`.** The grid always passed a built-in
+  `onFetchData` pager into the export pipeline, even when the grid had no `onFetchData`. That pager threw,
+  so an `onServerExport` handler returning `{ data, total }` never ran, and `client` / `server-data`
+  exports failed. The pager is now wired only when `onFetchData` exists. Without it, `onServerExport` is
+  called once, and the rows are formatted and written in `exportChunkSize` batches with progress.
+  Precedence is `onExportStream` → `onFetchData` → `onServerExport`, so grids that keep `onServerExport`
+  for per-call `server-file` exports are unaffected.
+- **No silent partial files.** With server data and none of those handlers, the export fails with a clear
+  error. It doesn't fall back to the rows already loaded, which would be just the current page. A
+  `{ blob }` / `{ fileUrl }` / `{ jobId }` result in these modes also gives an error that points at
+  `exportMode: 'server-file' | 'server-async'`.
+- **`exportStrictTotalCheck` is enforced** (it was accepted but ignored). When fewer rows arrive than the
+  server's `total`, the export fails instead of writing a partial file. This applies to both paged and
+  one-shot exports, and to the per-call `strictTotalCheck` option.
+- **`slotProps.toolbar` no longer leaks config keys onto the DOM.** Keys such as
+  `refreshButtonProps: {…}` or `showRefresh: true` were written to the toolbar `<div>`, and React warned
+  about them. Only DOM-safe extras are forwarded now: `data-*`, `aria-*`, `id`, `role`, `title`,
+  `tabIndex`, and `on*` handlers. `sx`, `className`, and `style` work as before.
+
+### Docs
+- Export: new section on one-shot `onServerExport` (`{ data, total }`), covering row-source precedence and
+  migrating from the legacy per-page `onServerExport`. Added `exportStrictTotalCheck` to the props table.
+- Props: the `slotProps.toolbar` forwarding rules.
+
+---
+
 ## [1.22.0](https://www.npmjs.com/package/@ackplus/mui-tanstack-data-grid/v/1.22.0) — 2026-07-25
 
 ### Changed

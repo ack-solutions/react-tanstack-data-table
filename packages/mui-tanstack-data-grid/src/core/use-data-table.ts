@@ -1673,9 +1673,11 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
         };
 
         // Page rows for export via the grid's own data fetch (without disturbing the visible page).
+        // Only used when `onFetchData` is set — otherwise `runExport` uses one-shot `onServerExport`
+        // returning `{ data, total }` (see modes.ts `serverOneShot`).
         const fetchPageForExport = async (pageIndex: number, pageSize: number): Promise<{ data: any[]; total?: number }> => {
             const handler = onFetchDataRef.current;
-            if (!handler) throw new Error('Server-data export needs onFetchData, onExportStream, or onServerExport.');
+            if (!handler) throw new Error('Server-data export needs onFetchData (paged) or onServerExport ({ data, total }).');
             const base = curateExportFilters(tableRef.current.getState());
             const result = await handler({ ...base, pagination: { pageIndex, pageSize } } as any, { reason: 'export' } as any);
             return { data: result?.data ?? [], total: result?.total };
@@ -1718,11 +1720,14 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
                         fetchConcurrency: exportFetchConcurrency,
                         maxClientRows: exportMaxClientRows,
                         truncateXlsx: exportTruncateXlsx,
+                        strictTotalCheck: options.strictTotalCheck ?? exportStrictTotalCheck,
                         pollIntervalMs: exportPollIntervalMs,
                         renameDownload: exportRenameDownload,
                         progressEvery: exportProgressEvery,
                         signal: controller.signal,
-                        fetchPage: fetchPageForExport,
+                        // Only wire paged fetch when onFetchData exists — an always-present pager
+                        // shadowed the one-shot `onServerExport` → `{ data, total }` path.
+                        fetchPage: onFetchDataRef.current ? fetchPageForExport : undefined,
                         onExportStream: onExportStreamRef.current,
                         onServerExport: onServerExportRef.current,
                         onExportPoll: onExportPollRef.current,
