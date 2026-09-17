@@ -25,15 +25,16 @@ const COLUMNS = [
     { id: 'age', accessorFn: (r) => r.age, columnDef: { header: 'Age' } },
 ];
 const ROWS = [
-    { name: 'Ann', age: 1 },
-    { name: 'Ben', age: 2 },
-    { name: 'Cal', age: 3 },
-    { name: 'Dee', age: 4 },
-    { name: 'Eve', age: 5 },
+    { id: 1, name: 'Ann', age: 1 },
+    { id: 2, name: 'Ben', age: 2 },
+    { id: 3, name: 'Cal', age: 3 },
+    { id: 4, name: 'Dee', age: 4 },
+    { id: 5, name: 'Eve', age: 5 },
 ];
 
-function mockTable(onInMemoryRead) {
+function mockTable(onInMemoryRead, options) {
     return {
+        options,
         getVisibleLeafColumns: () => COLUMNS,
         getAllLeafColumns: () => COLUMNS,
         getFilteredRowModel: () => {
@@ -44,7 +45,7 @@ function mockTable(onInMemoryRead) {
 }
 
 async function exportCsv(table, extra) {
-    const events = { error: null, complete: null };
+    const events = { error: null, complete: null, progress: [] };
     const before = downloads.length;
     await runExport(table, {
         mode: 'client',
@@ -52,6 +53,7 @@ async function exportCsv(table, extra) {
         sink: 'blob',
         signal: new AbortController().signal,
         onError: (e) => (events.error = e),
+        onProgress: (p) => events.progress.push(p),
         onComplete: (r) => (events.complete = r),
         ...extra,
     });
@@ -131,4 +133,109 @@ test('client data ignores onServerExport and exports the in-memory rows', async 
     assert.equal(error, null);
     assert.equal(serverExportCalls, 0);
     assert.equal(csv, 'Name,Age\nLoaded,0\n');
+});
+
+// ── scope: 'selected' over paged onFetchData ────────────────────────────────
+// onFetchData returns every matching row, so the paged branch must filter by the selection.
+
+/** A pager over ROWS that records each call (page index + the export context it received). */
+function recordingPager() {
+    const calls = [];
+    const fetchPage = async (pageIndex, pageSize, _signal, context) => {
+        calls.push({ pageIndex, context });
+        return { data: ROWS.slice(pageIndex * pageSize, (pageIndex + 1) * pageSize), total: ROWS.length };
+    };
+    return { calls, fetchPage };
+}
+
+const selectedRequest = (selection) => ({ format: 'csv', filename: 'users', onlySelectedRows: true, selection });
+
+test('include selection: only the selected rows are exported, and paging stops once all are found', async () => {
+    const pager = recordingPager();
+    const { error, csv, complete, progress } = await exportCsv(mockTable(), {
+        dataMode: 'server',
+        chunkSize: 2,
+        request: selectedRequest({ ids: ['2', '4'], type: 'include' }),
+        fetchPage: pager.fetchPage,
+    });
+    assert.equal(error, null);
+    assert.equal(csv, 'Name,Age\nBen,2\nDee,4\n');
+    assert.equal(complete.totalRows, 2);
+    assert.deepEqual(pager.calls.map((c) => c.pageIndex), [0, 1], 'page 2 is never fetched — both ids were already found');
+    const last = progress[progress.length - 1];
+    assert.equal(last.totalRows, 2, 'progress total is the selected count, not the server total');
+    assert.equal(last.percentage, 100);
+});
+
+test('the fetcher receives the export scope + selection, so a server can filter itself', async () => {
+    const pager = recordingPager();
+    const selection = { ids: ['3'], type: 'include' };
+    await exportCsv(mockTable(), { dataMode: 'server', request: selectedRequest(selection), fetchPage: pager.fetchPage });
+    assert.deepEqual(pager.calls[0].context, { scope: 'selected', selection });
+
+    const all = recordingPager();
+    await exportCsv(mockTable(), { dataMode: 'server', fetchPage: all.fetchPage });
+    assert.equal(all.calls[0].context.scope, 'all');
+    assert.equal(all.calls[0].context.selection, undefined);
+});
+
+test('a server that already filtered by selection is not double-filtered away', async () => {
+    const { error, csv } = await exportCsv(mockTable(), {
+        dataMode: 'server',
+        request: selectedRequest({ ids: ['5', '1'], type: 'include' }),
+        fetchPage: async () => ({ data: [ROWS[0], ROWS[4]], total: 2 }),
+    });
+    assert.equal(error, null);
+    assert.equal(csv, 'Name,Age\nAnn,1\nEve,5\n', 'rows keep server order');
+});
+
+test('exclude selection ("all except"): excluded ids are dropped across every page', async () => {
+    const pager = recordingPager();
+    const { error, csv, progress } = await exportCsv(mockTable(), {
+        dataMode: 'server',
+        chunkSize: 2,
+        request: selectedRequest({ ids: ['1', '5'], type: 'exclude' }),
+        fetchPage: pager.fetchPage,
+    });
+    assert.equal(error, null);
+    assert.equal(csv, 'Name,Age\nBen,2\nCal,3\nDee,4\n');
+    assert.deepEqual(pager.calls.map((c) => c.pageIndex), [0, 1, 2], 'exclude must walk every page');
+    assert.equal(progress[progress.length - 1].totalRows, 3, 'progress total = server total − excluded');
+});
+
+test("row ids resolve through the table's getRowId, like the grid", async () => {
+    const pager = recordingPager();
+    const { csv } = await exportCsv(mockTable(undefined, { getRowId: (row) => `user-${row.id}` }), {
+        dataMode: 'server',
+        request: selectedRequest({ ids: ['user-3'], type: 'include' }),
+        fetchPage: pager.fetchPage,
+    });
+    assert.equal(csv, 'Name,Age\nCal,3\n');
+});
+
+test('strictTotalCheck does not reject an include export that stopped paging early', async () => {
+    const pager = recordingPager();
+    const { error, csv } = await exportCsv(mockTable(), {
+        dataMode: 'server',
+        chunkSize: 2,
+        strictTotalCheck: true,
+        request: selectedRequest({ ids: ['1'], type: 'include' }),
+        fetchPage: pager.fetchPage,
+    });
+    assert.equal(error, null);
+    assert.equal(csv, 'Name,Age\nAnn,1\n');
+    assert.equal(pager.calls.length, 1);
+});
+
+test('selected ids missing from the results: the whole result set is walked and nothing extra is written', async () => {
+    const pager = recordingPager();
+    const { error, csv } = await exportCsv(mockTable(), {
+        dataMode: 'server',
+        chunkSize: 2,
+        request: selectedRequest({ ids: ['4', '99'], type: 'include' }),
+        fetchPage: pager.fetchPage,
+    });
+    assert.equal(error, null);
+    assert.equal(csv, 'Name,Age\nDee,4\n');
+    assert.deepEqual(pager.calls.map((c) => c.pageIndex), [0, 1, 2]);
 });

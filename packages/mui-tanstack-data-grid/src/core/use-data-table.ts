@@ -35,6 +35,7 @@ import type { DataTableApi, DataRefreshApiInput, DataRefreshApiOptions, DataTabl
 import { DEFAULT_RESET_ACTIONS } from '../types/api.types';
 import type { SavedView, ViewBody, SavedViewsFile } from '../types/views.types';
 import type { TableState, TableFilters, DataFetchMeta, DataRefreshOptions } from '../types/state.types';
+import type { FetchPage } from '../utils/export/fetch';
 import type { ColumnFilterState } from '../types/filter.types';
 import type { SelectionState } from '../types/selection.types';
 import type { DataTableDensity } from '../theme/tokens';
@@ -1675,11 +1676,12 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
         // Page rows for export via the grid's own data fetch (without disturbing the visible page).
         // Only used when `onFetchData` is set — otherwise `runExport` uses one-shot `onServerExport`
         // returning `{ data, total }` (see modes.ts `serverOneShot`).
-        const fetchPageForExport = async (pageIndex: number, pageSize: number): Promise<{ data: any[]; total?: number }> => {
+        const fetchPageForExport: FetchPage = async (pageIndex, pageSize, _signal, context) => {
             const handler = onFetchDataRef.current;
             if (!handler) throw new Error('Server-data export needs onFetchData (paged) or onServerExport ({ data, total }).');
             const base = curateExportFilters(tableRef.current.getState());
-            const result = await handler({ ...base, pagination: { pageIndex, pageSize } } as any, { reason: 'export' } as any);
+            const meta: DataFetchMeta = { reason: 'export', ...(context ? { export: context } : {}) };
+            const result = await handler({ ...base, pagination: { pageIndex, pageSize } } as any, meta);
             return { data: result?.data ?? [], total: result?.total };
         };
 

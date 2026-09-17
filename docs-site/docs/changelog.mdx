@@ -16,6 +16,31 @@ format: each release groups changes as **Added** (new features), **Changed** (be
 
 ---
 
+## [1.22.2](https://www.npmjs.com/package/@ackplus/mui-tanstack-data-grid/v/1.22.2) — 2026-09-17
+
+Backward compatible.
+
+### Fixed
+- **Exporting selected rows from paged server data exports only the selection.** With `onFetchData`,
+  `exportCSV({ onlySelectedRows: true })` (or `scope: 'selected'`) paged through the whole query and wrote
+  **every** matching row. Each page is now filtered by row id, resolved the way the grid does (`getRowId`,
+  else `row[idKey]`). A normal (`include`) selection stops paging once every selected row is written. An
+  `exclude` selection ("select all" in `selectMode="all"`) walks every page and drops the unticked rows.
+  Progress counts toward the selected rows, and `exportStrictTotalCheck` doesn't treat that early stop as a
+  partial export.
+
+### Added
+- **`meta.export` on export page fetches.** `onFetchData` now receives
+  `meta = { reason: 'export', export: { scope, selection? } }` while paging for an export, so a server can
+  filter the selection itself. The grid still re-checks ids on the rows that come back. Typed as
+  `DataFetchExportMeta`.
+
+### Docs
+- Export: new "Exporting selected rows from paged server data" section, including the stable-id requirement.
+- Server-side: `reason: 'export'` and `meta.export`.
+
+---
+
 ## [1.22.1](https://www.npmjs.com/package/@ackplus/mui-tanstack-data-grid/v/1.22.1) — 2026-09-17
 
 Backward compatible.

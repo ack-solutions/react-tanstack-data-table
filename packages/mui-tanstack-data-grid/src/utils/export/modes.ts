@@ -17,6 +17,8 @@ import type {
     ExportStateChange,
     ServerExportResult,
 } from '../../types/export.types';
+import type { SelectionState } from '../../types/selection.types';
+import { generateRowId } from '../table-helpers';
 import { createCancelledExportError, isCancelledError, throwIfAborted, waitWithAbort, yieldToEventLoop } from './cancel';
 import { downloadBlob, downloadFromUrl } from './download';
 import { formatRowRecord, type ResolvedExportColumn } from './format';
@@ -157,6 +159,28 @@ function isServerExportRowsResult<T>(result: unknown): result is { data: T[]; to
     return !!result && typeof result === 'object' && Array.isArray((result as { data?: unknown }).data);
 }
 
+/**
+ * Row-id predicate for a selection, resolving ids exactly like the grid (`getRowId`, else
+ * `row.id` via `generateRowId`). `index` is the row's position in the whole export, so rows
+ * without a real id (positional `row-<n>` fallback) can't be matched reliably across pages.
+ */
+function makeSelectionMatcher<T>(table: Table<T>, selection: SelectionState): { matches: (row: any, index: number) => boolean; found: Set<string> } {
+    const ids = new Set((selection.ids ?? []).map(String));
+    const getRowId = (table as any).options?.getRowId as ((row: any, index: number) => string) | undefined;
+    const idOf = (row: any, index: number) => String(getRowId ? getRowId(row, index) : generateRowId(row, index, 'id'));
+    const found = new Set<string>();
+    const matches =
+        selection.type === 'exclude'
+            ? (row: any, index: number) => !ids.has(idOf(row, index))
+            : (row: any, index: number) => {
+                  const id = idOf(row, index);
+                  if (!ids.has(id)) return false;
+                  found.add(id);
+                  return true;
+              };
+    return { matches, found };
+}
+
 function assertTotal(opts: RunExportOptions, received: number, total: number | undefined): void {
     if (opts.strictTotalCheck && typeof total === 'number' && received < total) {
         throw new Error(`Export received ${received.toLocaleString()} of ${total.toLocaleString()} rows (exportStrictTotalCheck).`);
@@ -196,19 +220,37 @@ async function runClientOrServerData<T>(table: Table<T>, opts: RunExportOptions<
             return;
         }
         if (serverPaged) {
-            const res = await pageAllRows(opts.fetchPage!, {
+            // `onFetchData` returns every matching row, so a `selected` export filters each page by
+            // row id here. The selection also goes to the fetcher (`meta.export`), so a server may
+            // filter itself; re-filtering its result is harmless.
+            const selection = request.scope === 'selected' ? request.selection : undefined;
+            const matcher = selection ? makeSelectionMatcher(table, selection) : undefined;
+            const includeCount = selection?.type === 'include' ? new Set(selection.ids.map(String)).size : undefined;
+            // Progress total = rows expected in the FILE: the selected count, not the matching count.
+            const expected = (serverTotal: number | undefined) =>
+                !selection ? serverTotal : includeCount ?? (serverTotal === undefined ? undefined : Math.max(0, serverTotal - selection.ids.length));
+            if (includeCount === 0) return; // nothing selected → header-only file, no fetch
+            const context = { scope: request.scope, selection: request.selection };
+            let written = 0;
+            const res = await pageAllRows((pageIndex, pageSize, signal) => opts.fetchPage!(pageIndex, pageSize, signal, context), {
                 chunkSize: opts.chunkSize,
                 interPageDelayMs: opts.interPageDelayMs,
                 concurrency: opts.fetchConcurrency,
                 signal: opts.signal,
                 onBatch: async (rows, info) => {
-                    totalRef.value = info.total;
+                    totalRef.value = expected(info.total);
                     const start = info.fetched - rows.length;
-                    await consume(rows.map((r, i) => formatRowRecord(r, start + i, columns, getRawFromObject)));
+                    const kept = matcher ? rows.filter((r, i) => matcher.matches(r, start + i)) : rows;
+                    if (!kept.length) return;
+                    await consume(kept.map((r, i) => formatRowRecord(r, written + i, columns, getRawFromObject)));
+                    written += kept.length;
                 },
+                // Every included id has been written → skip the remaining pages.
+                isDone: includeCount !== undefined ? () => matcher!.found.size >= includeCount : undefined,
             });
-            totalRef.value = res.total ?? totalRef.value;
-            assertTotal(opts, res.fetched, res.total);
+            totalRef.value = expected(res.total) ?? totalRef.value;
+            // Stopping early is expected for an `include` selection, so only a full walk is checked.
+            if (!res.stoppedEarly) assertTotal(opts, res.fetched, res.total);
             return;
         }
         if (serverOneShot) {

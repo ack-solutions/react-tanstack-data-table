@@ -143,6 +143,42 @@ exports, prefer a server mode.
 > (without disturbing the visible page). The old hard-coded 100 ms inter-page delay is gone — it defaults
 > to `0` and is configurable via `exportInterPageDelayMs`.
 
+### Exporting selected rows from paged server data
+
+With `onFetchData`, `exportCSV({ onlySelectedRows: true })` (or `scope: 'selected'`) pages through the
+current query and **keeps only the selected rows**, matched by row id with the same `getRowId` / `idKey`
+the grid uses:
+
+- **A normal selection** (`type: 'include'`): paging stops as soon as every selected row has been
+  written, so exporting 3 rows out of 1M doesn't fetch 1M rows.
+- **"Select all" with `selectMode="all"`** (`type: 'exclude'`): every page is fetched and the rows you
+  unticked are dropped.
+- **Progress** counts toward the selected rows (or the total minus the unticked ones), not the whole
+  result set. `exportStrictTotalCheck` doesn't treat an early stop as a partial export.
+- Selected rows that no longer match the current filters are not exported; the export follows the query.
+
+Each export page fetch also tells your server what the file covers, so it can filter by the selection
+itself and send fewer rows. The grid re-checks ids on whatever comes back, so filtering server-side is
+optional.
+
+```tsx
+onFetchData={async (filters, meta) => {
+  const query = buildQuery(filters);
+  if (meta?.reason === 'export' && meta.export?.scope === 'selected' && meta.export.selection) {
+    const { type, ids } = meta.export.selection;    // 'include' | 'exclude', row ids
+    query[type === 'include' ? 'idIn' : 'idNotIn'] = ids;
+  }
+  const res = await api.get('/api/users', { params: query });
+  return { data: res.rows, total: res.total };
+}}
+```
+
+:::info[Rows need a real id]
+Matching uses `row[idKey]` (default `'id'`) or your `getRowId`. Rows without one get a positional id
+(`row-0`, `row-1`, …) that restarts on every page, so a selection over such rows can't be matched
+reliably when paging. Give server rows a stable id.
+:::
+
 ### Server data without `onFetchData` — one-shot `onServerExport`
 
 If your grid gets server data some other way (you pass `data` + `totalRow` yourself, e.g. from a

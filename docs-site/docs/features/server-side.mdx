@@ -51,7 +51,9 @@ server-delegated state changes, returning the page to render plus the grand tota
   cancel requests yourself. *(There is no `signal` on `meta`; if you want hard cancellation, manage your
   own `AbortController` keyed off `meta.reason`.)*
 - **No `rowCount` needed** in this mode — the `total` you return is authoritative.
-- `meta` tells you *why* the fetch fired: `{ reason: 'initial' | 'state-change' | 'refresh' | 'reload' | 'reset', force?, delay? }`.
+- `meta` tells you *why* the fetch fired: `{ reason: 'initial' | 'state-change' | 'refresh' | 'reload' | 'reset' | 'export', force?, delay?, export? }`.
+  `'export'` fetches page through the data for a file; `meta.export` (`{ scope, selection? }`) says which
+  rows the file covers — see [exporting selected rows](/features/export#exporting-selected-rows-from-paged-server-data).
 
 ### The request payload (what `filters` contains)
 
@@ -179,7 +181,8 @@ onFetchData: (filters: TableFilters, meta: DataFetchMeta) => Promise<{ data: T[]
 | `filters.sorting` | `[{ id, desc }]` |
 | `filters.globalFilter` | the search string |
 | `filters.columnFilter` | `{ filters: Rule[], logic: 'AND' \| 'OR' }` — applied advanced rules |
-| `meta.reason` | why it fired (`'initial'`, `'state-change'`, `'refresh'`, `'reload'`, `'reset'`) |
+| `meta.reason` | why it fired (`'initial'`, `'state-change'`, `'refresh'`, `'reload'`, `'reset'`, `'export'`) |
+| `meta.export` | export fetches only: `{ scope: 'all' \| 'filtered' \| 'selected', selection?: { ids, type } }` |
 
 The grid calls `onFetchData` on mount (unless `initialLoadData={false}`) and on every relevant change.
 `onFetchStateChange(filters, meta)` fires *just before* each fetch — handy for syncing the URL or logging.

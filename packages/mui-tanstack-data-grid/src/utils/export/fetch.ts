@@ -5,6 +5,8 @@
  * cooperative yields so the UI keeps painting. `iterateBatches` consumes a streaming
  * source from `onExportStream`.
  */
+import type { ExportScope } from '../../types/export.types';
+import type { SelectionState } from '../../types/selection.types';
 import { throwIfAborted, waitWithAbort, yieldToEventLoop } from './cancel';
 
 export interface PageResult {
@@ -12,7 +14,13 @@ export interface PageResult {
     total?: number;
 }
 
-export type FetchPage = (pageIndex: number, pageSize: number, signal?: AbortSignal) => Promise<PageResult>;
+/** What the export covers, handed to the page fetcher so a server can filter the selection itself. */
+export interface FetchPageContext {
+    scope: ExportScope;
+    selection?: SelectionState;
+}
+
+export type FetchPage = (pageIndex: number, pageSize: number, signal?: AbortSignal, context?: FetchPageContext) => Promise<PageResult>;
 
 export interface PageAllOptions {
     chunkSize?: number;
@@ -25,6 +33,8 @@ export interface PageAllOptions {
     signal?: AbortSignal;
     /** Called once per batch, in row order. */
     onBatch: (rows: any[], info: { fetched: number; total?: number }) => Promise<void> | void;
+    /** Stop paging once this returns true (checked after every delivered batch). */
+    isDone?: () => boolean;
 }
 
 const DEFAULT_CHUNK_SIZE = 1000;
@@ -34,7 +44,10 @@ const DEFAULT_MAX_PAGES = 10000;
  * Page through `fetchPage` until exhausted, delivering every batch in order to `onBatch`.
  * Returns the total number of rows delivered.
  */
-export async function pageAllRows(fetchPage: FetchPage, options: PageAllOptions): Promise<{ fetched: number; total?: number }> {
+export async function pageAllRows(
+    fetchPage: FetchPage,
+    options: PageAllOptions,
+): Promise<{ fetched: number; total?: number; stoppedEarly?: boolean }> {
     const {
         chunkSize = DEFAULT_CHUNK_SIZE,
         interPageDelayMs = 0,
@@ -42,6 +55,7 @@ export async function pageAllRows(fetchPage: FetchPage, options: PageAllOptions)
         maxPages = DEFAULT_MAX_PAGES,
         signal,
         onBatch,
+        isDone,
     } = options;
 
     throwIfAborted(signal);
@@ -60,6 +74,7 @@ export async function pageAllRows(fetchPage: FetchPage, options: PageAllOptions)
     await deliver(first.data);
 
     if (first.data.length === 0) return { fetched, total };
+    if (isDone?.()) return { fetched, total, stoppedEarly: true };
     if (total !== undefined && fetched >= total) return { fetched, total };
 
     // Known total + concurrency > 1 → fetch remaining pages in ordered waves.
@@ -71,7 +86,10 @@ export async function pageAllRows(fetchPage: FetchPage, options: PageAllOptions)
             const wave: number[] = [];
             for (let i = 0; i < concurrency && page < totalPages; i++) wave.push(page++);
             const results = await Promise.all(wave.map((p) => fetchPage(p, chunkSize, signal)));
-            for (const r of results) await deliver(r.data); // in wave order = row order
+            for (const r of results) {
+                await deliver(r.data); // in wave order = row order
+                if (isDone?.()) return { fetched, total, stoppedEarly: true };
+            }
             if (fetched >= total) break;
             if (interPageDelayMs > 0) await waitWithAbort(interPageDelayMs, signal);
         }
@@ -84,6 +102,7 @@ export async function pageAllRows(fetchPage: FetchPage, options: PageAllOptions)
         const result = await fetchPage(page, chunkSize, signal);
         await deliver(result.data);
         if (result.data.length < chunkSize) break;
+        if (isDone?.()) return { fetched, total, stoppedEarly: true };
         if (total !== undefined && fetched >= total) break;
         if (interPageDelayMs > 0) await waitWithAbort(interPageDelayMs, signal);
     }

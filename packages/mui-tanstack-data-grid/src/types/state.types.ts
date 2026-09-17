@@ -7,6 +7,7 @@ import type {
 } from '@tanstack/react-table';
 
 import type { DataTableDensity } from '../theme/tokens';
+import type { ExportScope } from './export.types';
 import type { ColumnFilterState } from './filter.types';
 import type { SelectionState } from './selection.types';
 
@@ -43,13 +44,22 @@ export interface TableFilters {
 
 export type DataRefreshReason = 'initial' | 'state-change' | 'refresh' | 'reload' | 'reset' | (string & {});
 
+/** Context on an export page fetch (`meta.reason === 'export'`): which rows the file covers. */
+export interface DataFetchExportMeta {
+    scope: ExportScope;
+    /** The grid's selection when `scope === 'selected'`. Filter by it server-side if you can. */
+    selection?: SelectionState;
+}
+
 export interface DataFetchMeta {
     reason?: DataRefreshReason;
     delay?: number;
     force?: boolean;
+    /** Present only on export page fetches (`reason: 'export'`). */
+    export?: DataFetchExportMeta;
 }
 
-export interface DataRefreshOptions extends DataFetchMeta {
+export interface DataRefreshOptions extends Omit<DataFetchMeta, 'export'> {
     resetPagination?: boolean;
 }
 

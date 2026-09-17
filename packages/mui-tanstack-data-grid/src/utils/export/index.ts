@@ -26,7 +26,7 @@ export { createTextSink, supportsStreamingSink } from './sink';
 export type { ExportSinkHandle } from './sink';
 
 export { pageAllRows, iterateBatches } from './fetch';
-export type { FetchPage, PageResult, PageAllOptions } from './fetch';
+export type { FetchPage, FetchPageContext, PageResult, PageAllOptions } from './fetch';
 
 export {
     sanitizeCSVCellValue,
