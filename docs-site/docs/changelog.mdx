@@ -16,6 +16,21 @@ format: each release groups changes as **Added** (new features), **Changed** (be
 
 ---
 
+## [1.22.3](https://www.npmjs.com/package/@ackplus/mui-tanstack-data-grid/v/1.22.3) — 2026-09-27
+
+Backward compatible.
+
+### Fixed
+- **The footer no longer overlaps itself on a phone.** With a `footerFilter` beside pagination, the footer
+  was a single non-wrapping flex row and the pager couldn't shrink below its own controls, so on a narrow
+  screen it painted over the filter ("Show deleted" and "Rows per page" on top of each other). Below the
+  `sm` breakpoint the footer now wraps and the pager takes its own full-width line; from `sm` up the
+  layout is unchanged (filter left, pager right). The pagination toolbar also grows instead of overflowing
+  a fixed height when its label, range, and arrows wrap, and the pagination root is no longer forced to
+  `width: 100%` while a `footerFilter` sibling is present.
+
+---
+
 ## [1.22.2](https://www.npmjs.com/package/@ackplus/mui-tanstack-data-grid/v/1.22.2) — 2026-09-17
 
 Backward compatible.

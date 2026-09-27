@@ -226,11 +226,16 @@ export const GridFooter = styled('div', { name: 'MuiTanstackDataGrid', slot: 'Fo
     //
     // - Root spans the full width (so it right-aligns and only wraps when the
     //   grid is genuinely narrow, never because the flex row shrink-wrapped it).
+    //   With a `footerFilter` sibling it must NOT be forced to 100%, or the pager
+    //   paints over the filter on a narrow screen — it sizes to its wrapper instead.
     // - overflow:visible kills MUI's private horizontal scrollbar.
     // - Padding aligns with the grid cells (default is a cramped 2px on the right).
     '& .MuiTablePagination-root': { overflow: 'visible', width: '100%' },
+    '&[data-has-footer-filter] .MuiTablePagination-root': { width: 'auto', maxWidth: '100%' },
     '& .MuiTablePagination-spacer': { display: 'none' },
     '& .MuiTablePagination-toolbar': {
+        // `height: auto` so the wrapped rows below stack instead of overflowing MUI's fixed height.
+        height: 'auto',
         minHeight: 48,
         paddingInline: 'var(--dt-cell-padding-x)',
         flexWrap: 'wrap',
