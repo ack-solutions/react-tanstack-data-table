@@ -67,6 +67,45 @@ renderer. It receives the cell context and returns a React node:
 `accessorKey` / `valueGetter`), so a custom-rendered cell still sorts and exports correctly.
 :::
 
+## Cells with their own controls
+
+When the grid has a row click ([`onRowClick`](/api/props) or `selectOnRowClick`), a click anywhere in a
+row triggers it — including a near-miss beside a control inside a cell. If a cell holds its own control
+(a dropdown, a switch, a link), set **`disableRowClick`** on the column: clicks anywhere in that column's
+cells never trigger the row click.
+
+```tsx
+{
+  id: 'status',
+  header: 'Status',
+  accessorKey: 'status',
+  disableRowClick: true,     // the cell belongs to the dropdown, not to the row click
+  cell: (ctx) => <StatusSelect row={ctx.row.original} />,
+}
+```
+
+- It covers the **whole cell**, so a click that just misses the control does nothing instead of, say,
+  opening the row's page.
+- It covers **menus the cell opens** too. A MUI `Select` / `Menu` renders outside the grid, but choosing an
+  item still doesn't count as a row click.
+- The cell shows the default cursor rather than the row's pointer, so it doesn't look clickable.
+
+The built-in columns set it for you:
+
+| Column | Default | Change it with |
+| --- | --- | --- |
+| Selection checkbox (`_selection`) | opted out — except with `selectOnRowClick`, where a row click *is* how you select | `slotProps.selectionColumn` |
+| Row expander (`_expanding`) | opted out | `slotProps.expandColumn` |
+| Row actions (`_actions`) | opted out | `slotProps.actionsColumn` |
+
+```tsx
+// Restore the pre-1.23 behaviour for one built-in column:
+<DataTable … slotProps={{ selectionColumn: { disableRowClick: false } }} />
+```
+
+For a single control inside an otherwise clickable cell (a link in the name cell, say), stop the click on
+that element instead: `onClick={(e) => e.stopPropagation()}`.
+
 ## Alignment & wrapping
 
 | Field | Values | Default | Use case |

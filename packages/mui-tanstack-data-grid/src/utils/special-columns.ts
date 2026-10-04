@@ -46,6 +46,7 @@ export const createActionsColumn = <T>(
         enableHiding: false,
         enablePinning: true,
         hideInExport: true,
+        disableRowClick: true,
         cell: ({ row }) => createElement(ActionsCell, { row, getRowActions, display, moreIcon }),
         ...columnConfig,
     };
@@ -65,6 +66,8 @@ export const createSelectionColumn = <T>(
     enableHiding: false,
     enablePinning: true,
     hideInExport: true,
+    // A near-miss beside the checkbox must not fire the row click (e.g. open the row).
+    disableRowClick: true,
     header: ({ table }) => {
         if (!config.multiSelect) return null;
         const allSelected = table.getIsAllRowsSelected?.() || false;
@@ -121,6 +124,7 @@ export const createExpandingColumn = <T>(
         enableHiding: false,
         enablePinning: false,
         hideInExport: true,
+        disableRowClick: true,
         header: '',
         cell: ({ row }) => {
             // Tree rows expose getCanExpand() = has children; detail-panel rows default true.

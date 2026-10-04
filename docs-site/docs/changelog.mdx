@@ -16,6 +16,30 @@ format: each release groups changes as **Added** (new features), **Changed** (be
 
 ---
 
+## [1.23.0](https://www.npmjs.com/package/@ackplus/mui-tanstack-data-grid/v/1.23.0) — 2026-10-04
+
+Backward compatible API; one default changes (see **Changed**).
+
+### Added
+- **`disableRowClick` column option.** Clicks anywhere in that column's cells never trigger the row click
+  (`onRowClick` / `selectOnRowClick`). Use it for a cell that holds its own control — a dropdown, a switch,
+  a link. It covers the whole cell (a near-miss beside the control does nothing), menus the cell opens
+  (a MUI `Select` / `Menu` renders outside the grid, but choosing an item still isn't a row click), and the
+  cell shows the default cursor instead of the row's pointer.
+
+### Changed
+- **The selection, expander, and actions cells ignore the row click.** Before, only the control itself was
+  guarded: a click that just missed a checkbox landed on the cell and fired `onRowClick` — typically
+  opening the row's page and losing the selection. These three built-in columns now set `disableRowClick`
+  by default. With `selectOnRowClick` the checkbox cell stays part of the row click, because there the row
+  click *is* the selection gesture. To restore the old behaviour for a column:
+  `slotProps={{ selectionColumn: { disableRowClick: false } }}` (likewise `expandColumn` / `actionsColumn`).
+
+### Docs
+- Cells: new "Cells with their own controls" section. Selection: "Mis-clicks beside the checkbox".
+
+---
+
 ## [1.22.3](https://www.npmjs.com/package/@ackplus/mui-tanstack-data-grid/v/1.22.3) — 2026-09-27
 
 Backward compatible.

@@ -255,6 +255,7 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
 
         enableRowSelection = false,
         enableMultiRowSelection = true,
+        selectOnRowClick,
         selectMode = 'page',
         isRowSelectable,
         onSelectionChange,
@@ -549,6 +550,9 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
         if (enableRowSelection) {
             cols = [
                 createSelectionColumn<T>({
+                    // With `selectOnRowClick` the row click IS the selection gesture, so the
+                    // checkbox cell stays part of it; otherwise it ignores row clicks.
+                    disableRowClick: !selectOnRowClick,
                     ...(slotProps?.selectionColumn && typeof slotProps.selectionColumn === 'object'
                         ? slotProps.selectionColumn
                         : {}),
@@ -576,7 +580,7 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
         // Depend on the two strings the columns actually consume — not the whole
         // localeText object, which is a fresh reference each render for inline
         // partial overrides and would otherwise rebuild every column.
-    }, [columns, expandEnabled, enableRowSelection, enableMultiRowSelection, hasRowActions, actionsColumnEnabled, editRowMode, rowActionsDisplay, slotProps?.expandColumn, slotProps?.selectionColumn, slotProps?.actionsColumn, slots?.expandIcon, slots?.collapseIcon, slots?.moreActionsIcon, localeText.expandRow, localeText.collapseRow, localeText.editRow, localeText.editSave, localeText.editCancel]);
+    }, [columns, expandEnabled, enableRowSelection, enableMultiRowSelection, selectOnRowClick, hasRowActions, actionsColumnEnabled, editRowMode, rowActionsDisplay, slotProps?.expandColumn, slotProps?.selectionColumn, slotProps?.actionsColumn, slots?.expandIcon, slots?.collapseIcon, slots?.moreActionsIcon, localeText.expandRow, localeText.collapseRow, localeText.editRow, localeText.editSave, localeText.editCancel]);
 
     const fetchData = useEvent(
         async (overrides: Partial<TableState> = {}, options?: { delay?: number; meta?: DataFetchMeta }) => {

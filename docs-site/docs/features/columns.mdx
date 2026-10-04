@@ -185,8 +185,9 @@ const columns = [
 
 `getRowActions(row)` adds an auto-generated **`_actions`** column (pinned right when `enableColumnPinning`
 is on, like the selection/expander columns; otherwise the last column). A few actions render as inline icon
-buttons; returning 3+ (or any action without an `icon`) collapses them into an overflow **⋮** menu. Every
-handler stops propagation, so it won't trigger `onRowClick`.
+buttons; returning 3+ (or any action without an `icon`) collapses them into an overflow **⋮** menu. The
+whole actions cell is [opted out of the row click](/features/cells#cells-with-their-own-controls), so
+neither an action nor a near-miss beside one triggers `onRowClick`.
 
 <LiveDemo>{() => <RowActionsDemo />}</LiveDemo>
 

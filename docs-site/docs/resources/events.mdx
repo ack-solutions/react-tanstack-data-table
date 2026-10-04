@@ -38,7 +38,7 @@ state into a controlled prop.
 
 | Event | Signature | Fires when |
 | --- | --- | --- |
-| `onRowClick` | `(event, row) => void` | A row is clicked (`selectOnRowClick` also toggles selection). |
+| `onRowClick` | `(event, row) => void` | A row is clicked (`selectOnRowClick` also toggles selection). Cells of a [`disableRowClick`](/features/cells#cells-with-their-own-controls) column, including the built-in checkbox / expander / actions cells, don't fire it. |
 | `onClipboardCopy` | `(rowCount: number) => void` | Selected rows are copied ([Cells](/features/cells#copy-cells-to-the-clipboard)). |
 
 ## Editing events

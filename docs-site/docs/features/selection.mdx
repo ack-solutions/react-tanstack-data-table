@@ -59,6 +59,14 @@ It respects single vs. multi mode (`enableMultiRowSelection`) and per-row select
 buttons, an editing cell — don't trigger it (they stop propagation). It **composes** with
 [`onRowClick`](/api/props): if you set both, a row click toggles selection **and** calls your handler.
 
+## Mis-clicks beside the checkbox
+
+Without `selectOnRowClick`, the **whole checkbox cell** ignores the row click. If `onRowClick` opens a
+detail page, a click that just misses a checkbox does nothing; it doesn't navigate away and lose the
+selection. The expander and row-actions cells behave the same way. See
+[Cells with their own controls](/features/cells#cells-with-their-own-controls) to do this for your own
+columns, or to switch it off.
+
 ## Clipboard copy
 
 `enableClipboardCopy` adds a **Copy** action to the bulk-actions bar — copies the selected rows (visible,

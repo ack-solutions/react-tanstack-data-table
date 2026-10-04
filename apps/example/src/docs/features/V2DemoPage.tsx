@@ -11,6 +11,8 @@ import {
     Chip,
     FormControlLabel,
     LinearProgress,
+    MenuItem,
+    Select,
     Stack,
     Switch,
     ToggleButton,
@@ -40,7 +42,6 @@ const COMPANY = ['Acme Co', 'Globex', 'Initech', 'Umbrella', 'Soylent', 'Stark I
 const CITY = ['London', 'New York', 'Mumbai', 'Berlin', 'Tokyo', 'Paris', 'Toronto', 'Sydney', 'Dubai', 'Sao Paulo'];
 const COUNTRY = ['UK', 'USA', 'India', 'Germany', 'Japan', 'France', 'Canada', 'Australia', 'UAE', 'Brazil'];
 const STATUSES: Person['status'][] = ['active', 'pending', 'inactive'];
-const STATUS_COLOR: Record<Person['status'], 'success' | 'warning' | 'default'> = { active: 'success', pending: 'warning', inactive: 'default' };
 
 function makeData(count: number): Person[] {
     return Array.from({ length: count }, (_, i) => {
@@ -62,6 +63,18 @@ function makeData(count: number): Person[] {
     });
 }
 
+/** In-cell dropdown — its column sets `disableRowClick`, so using it never fires the row click. */
+function StatusSelect({ initial }: { initial: Person['status'] }) {
+    const [value, setValue] = useState(initial);
+    return (
+        <Select size="small" variant="standard" disableUnderline value={value} onChange={(e) => setValue(e.target.value as Person['status'])} sx={{ fontSize: 'inherit' }}>
+            <MenuItem value="active">active</MenuItem>
+            <MenuItem value="pending">pending</MenuItem>
+            <MenuItem value="inactive">inactive</MenuItem>
+        </Select>
+    );
+}
+
 export function V2DemoPage() {
     const data = useMemo(() => makeData(237), []);
     const apiRef = useRef<DataTableApi<Person> | null>(null);
@@ -70,6 +83,8 @@ export function V2DemoPage() {
     const [fitToScreen, setFitToScreen] = useState(true);
     const [toolbarVariant, setToolbarVariant] = useState<'icon' | 'text'>('icon');
     const [selectedCount, setSelectedCount] = useState(0);
+    const [selectOnRowClick, setSelectOnRowClick] = useState(false);
+    const [lastRowClick, setLastRowClick] = useState('—');
 
     const columns = useMemo<ColumnDef<Person, any>[]>(() => [
         { id: 'name', header: 'Name', accessorKey: 'name', size: 180, minSize: 120 },
@@ -86,10 +101,9 @@ export function V2DemoPage() {
                 { label: 'Pending', value: 'pending' },
                 { label: 'Inactive', value: 'inactive' },
             ],
-            cell: (ctx) => {
-                const v = ctx.getValue() as Person['status'];
-                return <Chip size="small" label={v} color={STATUS_COLOR[v]} variant={v === 'inactive' ? 'outlined' : 'filled'} />;
-            },
+            // The cell holds its own control: clicks in it (and in its menu) never trigger the row click.
+            disableRowClick: true,
+            cell: (ctx) => <StatusSelect initial={ctx.getValue() as Person['status']} />,
         },
         { id: 'amount', header: 'Amount', accessorKey: 'amount', size: 130, align: 'right', type: 'number', cell: (ctx) => `$${(ctx.getValue() as number).toLocaleString()}` } as ColumnDef<Person, any>,
         {
@@ -124,6 +138,7 @@ export function V2DemoPage() {
                 <Typography variant="caption" color="text.secondary">Density / columns / export are in the grid toolbar →</Typography>
                 <FormControlLabel control={<Switch checked={striped} onChange={(e) => setStriped(e.target.checked)} />} label="Striped" />
                 <FormControlLabel control={<Switch checked={fitToScreen} onChange={(e) => setFitToScreen(e.target.checked)} />} label="Fit to screen" />
+                <FormControlLabel control={<Switch checked={selectOnRowClick} onChange={(e) => setSelectOnRowClick(e.target.checked)} />} label="Select on row click" />
                 <ToggleButtonGroup size="small" exclusive value={toolbarVariant} onChange={(_, v) => v && setToolbarVariant(v)}>
                     <ToggleButton value="icon">Icon toolbar</ToggleButton>
                     <ToggleButton value="text">Icon + label</ToggleButton>
@@ -132,6 +147,7 @@ export function V2DemoPage() {
                 <Button size="small" variant="outlined" onClick={() => apiRef.current?.selection.selectAll()}>Select all</Button>
                 <Button size="small" variant="outlined" onClick={() => apiRef.current?.selection.deselectAll()}>Clear</Button>
                 <Typography variant="caption" color="text.secondary">{selectedCount} selected</Typography>
+                <Typography variant="caption" color="text.secondary" data-testid="last-row-click">Last row click: {lastRowClick}</Typography>
             </Stack>
 
             <Box>
@@ -147,7 +163,7 @@ export function V2DemoPage() {
                     enableColumnResizing
                     enableColumnPinning
                     enableRowSelection
-                    selectOnRowClick
+                    selectOnRowClick={selectOnRowClick}
                     enableBulkActions
                     enableColumnReordering
                     enableRowExpansion
@@ -196,7 +212,7 @@ export function V2DemoPage() {
                     stickyHeader
                     maxHeight={520}
                     onSelectionChange={(s) => setSelectedCount(s.type === 'exclude' ? data.length - s.ids.length : s.ids.length)}
-                    onRowClick={(_, row) => console.log('row click', row.original.name)}
+                    onRowClick={(_, row) => setLastRowClick(row.original.name)}
                     initialState={{
                         pagination: { pageIndex: 0, pageSize: 10 },
                         columnPinning: { left: ['name'], right: ['actions'] },

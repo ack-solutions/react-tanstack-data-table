@@ -32,7 +32,7 @@ linked from each section.
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `columns` | `ColumnDef<T>[]` | — | TanStack column definitions (+ `align`, `type`, `wrapText`, export options). |
+| `columns` | `ColumnDef<T>[]` | — | TanStack column definitions (+ `align`, `type`, `wrapText`, [`disableRowClick`](/features/cells#cells-with-their-own-controls), export options). |
 | `data` | `T[]` | `[]` | Row data (client mode). |
 | `rowCount` | `number` | — | Total row count (server mode). |
 | `getRowId` | `(row, index) => string` | — | Stable row id; defaults to `row[idKey]`. |
@@ -137,7 +137,7 @@ See [Columns](/features/columns) · [Column pinning](/features/pinning) · [Cell
 | `slotProps` | `PartialSlotProps` | — | Inject props/`sx` into parts. |
 | `apiRef` | `RefObject<DataTableApi<T>>` | — | Imperative handle. |
 | `sx` | `SxProps` | — | Root styles. |
-| `onRowClick` | `(event, row) => void` | — | Fires when a row is clicked (not when a checkbox / expander / action inside it is). |
+| `onRowClick` | `(event, row) => void` | — | Fires when a row is clicked. Not fired from the selection, expander, or actions cells, an editable cell, or any column with [`disableRowClick`](/features/cells#cells-with-their-own-controls). |
 | `selectOnRowClick` | `boolean` | `false` | Clicking anywhere in a row toggles its selection (needs `enableRowSelection`; respects single/multi mode + per-row selectability). Composes with `onRowClick`. |
 | `logging` | `boolean \| DataTableLoggingOptions` | `false` | Debug logging. |
 

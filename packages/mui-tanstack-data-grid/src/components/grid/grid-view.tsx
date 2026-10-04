@@ -274,8 +274,9 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
 
     // Row click. `selectOnRowClick` toggles the row's selection on a click anywhere in the
     // row (respecting single/multi mode + per-row selectability); interactive controls
-    // (checkbox, expander, actions, editable cells) stopPropagation, so this never
-    // double-fires with them. Composes with `onRowClick` — both run when both are set.
+    // (checkbox, expander, actions), editable cells, and every cell of a `disableRowClick`
+    // column stopPropagation, so this never fires from them. Composes with `onRowClick` —
+    // both run when both are set.
     const rowClickable = !!onRowClick || !!selectOnRowClick;
     const handleRowClick = (e: any, row: Row<any>) => {
         if (selectOnRowClick && enableRowSelection && ((table as any).canSelectRow?.(row.id) ?? true)) {
@@ -738,6 +739,10 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
                     const cellEditing = !!editing && editing.rowId === row.id && editing.columnId === column.id;
                     const cellInRowEdit = isEditingRow && editable;
                     const cellOpen = cellEditing || cellInRowEdit;
+                    // Clicks in this cell never reach the row's onClick: editable cells, an open
+                    // editor, and columns opted out with `disableRowClick`. Stopping at the cell
+                    // also covers a menu/dropdown the cell portals (React events bubble through portals).
+                    const rowClickOff = editable || cellOpen || !!def.disableRowClick;
                     return (
                         <CellSlot
                             key={cell.id}
@@ -751,14 +756,15 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
                             aria-colindex={colIndex + 1}
                             onFocus={() => kbd.setFocused({ row: displayIndex + 1, col: colIndex })}
                             onDoubleClick={editable ? (e: any) => { e.stopPropagation(); if (editMode === 'row') enterRowEdit(row); else setEditing({ rowId: row.id, columnId: column.id }); } : undefined}
-                            onClick={editable || cellOpen ? (e: any) => e.stopPropagation() : undefined}
+                            onClick={rowClickOff ? (e: any) => e.stopPropagation() : undefined}
                             className={joinClassNames(cellClassName, cellSlotProps.className)}
                             {...(cellSlotProps.sx ? { sx: cellSlotProps.sx } : {})}
                             style={{
                                 flex: flexFor(column),
                                 width: columnSizeCssVar(column.id),
                                 justifyContent: cellOpen ? 'stretch' : align === 'right' ? 'flex-end' : align === 'center' ? 'center' : 'flex-start',
-                                cursor: editable && !cellOpen ? 'text' : undefined,
+                                // An opted-out cell drops the row's pointer cursor, so it doesn't look clickable.
+                                cursor: editable && !cellOpen ? 'text' : def.disableRowClick ? 'default' : undefined,
                                 ...getPinnedStyle(column, isRtl),
                                 // Edit mode: a clean full-cell ring (no stray underline), after
                                 // getPinnedStyle so it wins over a pinned cell's shadow.

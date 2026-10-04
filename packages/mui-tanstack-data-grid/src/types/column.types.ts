@@ -86,6 +86,14 @@ declare module '@tanstack/react-table' {
         wrapText?: boolean;
         /** Allow inline editing of this column's cells (needs a `processRowUpdate` or local data). */
         editable?: boolean | ((row: TData) => boolean);
+        /**
+         * Clicks anywhere in this column's cells never trigger the row click (`onRowClick` /
+         * `selectOnRowClick`). Use it for a cell that holds its own control (a dropdown, a
+         * switch, a link): a near-miss beside the control then does nothing instead of, say,
+         * opening the row. Clicks from a menu the cell portals are covered too. On by default
+         * for the built-in selection, expand, and actions columns.
+         */
+        disableRowClick?: boolean;
         /** Conditional class for body cells (DataGrid-style). */
         cellClassName?: string | ((context: { value: any; row: TData }) => string);
         /** Conditional class for the header cell. */
