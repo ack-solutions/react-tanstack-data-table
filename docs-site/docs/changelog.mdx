@@ -16,6 +16,39 @@ format: each release groups changes as **Added** (new features), **Changed** (be
 
 ---
 
+## [1.24.0](https://www.npmjs.com/package/@ackplus/mui-tanstack-data-grid/v/1.24.0) — 2026-10-17
+
+Backward compatible API; the pinned edge shadow's default changes (see **Changed**).
+
+### Added
+- **`pinnedShadow: 'scroll' | 'always' | 'none'`.** Controls the edge shadow on the last left-pinned /
+  first right-pinned column. The grid root carries `data-scrolled-start` / `data-scrolled-end` while
+  content is scrolled under each side.
+- **`expandPlacement: 'column' | 'first-cell'`.** `'first-cell'` puts the expand arrow at the start of the
+  first data cell instead of spending a whole column on it. Rows that can't expand keep an empty slot so
+  text stays aligned, and tree depth indents the arrow.
+- **`data-col-kind="selection" | "expand" | "actions"`** on the built-in columns' header and body cells,
+  plus `data-pinned` / `data-pinned-edge` on pinned cells, so themes can target them.
+
+### Changed
+- **The pinned edge shadow only shows while content is scrolled under it** (default `'scroll'`). Before,
+  it was always drawn, which put a faint line beside the checkbox and expander columns even at rest.
+  `pinnedShadow="always"` restores the old look.
+- **Pinned-column background and shadow are CSS now, not inline styles,** so a theme can change them
+  through `styleOverrides.root` or the `--dt-pinned-bg` / `--dt-pinned-shadow` tokens without
+  `!important`. Only `position: sticky` and the column offset stay inline.
+
+### Fixed
+- **Theme cell padding no longer shifts the checkbox and expander.** These fixed-width columns shared
+  the ordinary cell padding, so widening `cell` / `headerCell` padding squeezed the checkbox off centre.
+  They now ignore cell padding.
+
+### Docs
+- Pinning: "Edge shadow & styling". Expansion: "Arrow placement". Theming: pinned tokens and built-in
+  column hooks.
+
+---
+
 ## [1.23.0](https://www.npmjs.com/package/@ackplus/mui-tanstack-data-grid/v/1.23.0) — 2026-10-04
 
 Backward compatible API; one default changes (see **Changed**).

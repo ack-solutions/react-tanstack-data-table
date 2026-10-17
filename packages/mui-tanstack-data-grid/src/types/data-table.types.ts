@@ -304,9 +304,22 @@ export interface DataTableProps<T> {
      * Default `true`. Opt a single column out via `columnDef.disableColumnMenu`.
      */
     enableColumnMenu?: boolean;
+    /**
+     * Edge shadow on the last left-pinned / first right-pinned column. `'scroll'`
+     * (default) — only while content is scrolled under that side. `'always'` — always
+     * drawn. `'none'` — never. Its colour is the `--dt-pinned-shadow` token.
+     */
+    pinnedShadow?: 'scroll' | 'always' | 'none';
 
     // ── Row expansion ─────────────────────────────────────────────────────
     enableRowExpansion?: boolean;
+    /**
+     * Where the expand/collapse arrow goes. `'column'` (default) — its own narrow column.
+     * `'first-cell'` — at the start of the first data cell, so no column is spent on it
+     * (rows that can't expand keep an empty slot so text stays aligned; tree depth
+     * indents the arrow).
+     */
+    expandPlacement?: 'column' | 'first-cell';
     getRowCanExpand?: (row: Row<T>) => boolean;
     renderDetailPanel?: (row: Row<T>) => ReactNode;
     /**

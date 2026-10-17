@@ -67,6 +67,19 @@ rounded corners — so you don't need to wrap it in your own `<Paper>`. Drop the
 | `--dt-row-height`, `--dt-cell-padding-x/y` | density preset |
 | `--dt-font-size` | density preset |
 | `--dt-radius` | `theme.shape.borderRadius` (floored at 8px) |
+| `--dt-pinned-bg` / `--dt-pinned-shadow` | `palette.background.paper` / a soft black — pinned columns ([styling](/features/pinning#edge-shadow--styling)) |
+
+### Built-in columns
+
+The checkbox, expander and actions cells carry `data-col-kind="selection" | "expand" | "actions"` on both
+the header and body cells. The checkbox and expander cells don't take the cell padding, so widening
+`cell` / `headerCell` padding in a theme no longer squeezes or shifts them. Style them on their own:
+
+```tsx
+createTheme({ components: { MuiTanstackDataGrid: { styleOverrides: { root: {
+  '& [data-col-kind="selection"]': { backgroundColor: 'rgba(0,0,0,.02)' },
+} } } } });
+```
 
 ## 4. Per-instance overrides
 

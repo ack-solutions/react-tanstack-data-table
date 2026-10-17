@@ -56,6 +56,20 @@ The expander column uses MUI chevrons by default. Swap them via [`slots`](/featu
 />
 ```
 
+## Arrow placement
+
+By default the arrow gets its own narrow column. Set `expandPlacement="first-cell"` to put it at the start
+of the first data cell instead, so no column is spent on it:
+
+```tsx
+<DataTable enableRowExpansion expandPlacement="first-cell" renderDetailPanel={/* … */} />
+```
+
+Rows that can't expand keep an empty slot of the same width, so text stays aligned. In
+[tree data](/features/tree-data) the arrow is indented by depth, the classic tree look. The arrow keeps its
+own click handling, so it never triggers `onRowClick`. A click elsewhere in that cell is an ordinary row
+click.
+
 ## Imperative control
 
 The expander column toggles a row for you. For programmatic control (e.g. expand all), reach the
@@ -73,6 +87,7 @@ apiRef.current?.table.getTable().toggleAllRowsExpanded(false);  // collapse all
 | `enableRowExpansion` | `boolean` | Adds the expand/collapse toggle column |
 | `renderDetailPanel` | `(row) => ReactNode` | Content rendered beneath an expanded row |
 | `getRowCanExpand` | `(row) => boolean` | Which rows can expand (default: all) |
+| `expandPlacement` | `'column' \| 'first-cell'` | Own column (default) or the start of the first data cell |
 
 > Pin the expander column to keep the toggle visible while scrolling — it's pinned left by default when
 > [pinning](/features/pinning) is enabled (id `_expanding`).

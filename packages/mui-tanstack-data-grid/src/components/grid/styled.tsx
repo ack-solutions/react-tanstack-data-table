@@ -18,6 +18,10 @@ type DivSlot = ForwardRefExoticComponent<
 >;
 export const GridRoot = styled('div', { name: 'MuiTanstackDataGrid', slot: 'Root' })(({ theme }) => {
     const p = theme.palette as any;
+    // box-shadow's x-offset isn't a logical property, so flip its sign under RTL.
+    const sign = theme.direction === 'rtl' ? -1 : 1;
+    const startEdgeShadow = `${2 * sign}px 0 4px -2px var(--dt-pinned-shadow)`;
+    const endEdgeShadow = `${-2 * sign}px 0 4px -2px var(--dt-pinned-shadow)`;
     // Mode-dependent token defaults. Emitted scheme-conditionally so the grid
     // follows dark mode under MUI `cssVariables: true` + `colorSchemes` (where
     // `palette.mode` no longer reflects the active scheme). Overridable via
@@ -50,6 +54,35 @@ export const GridRoot = styled('div', { name: 'MuiTanstackDataGrid', slot: 'Root
             : p.mode === 'dark'
                 ? darkTokens
                 : {}),
+
+        // ── Pinned columns (visuals only; sticky + offsets are inline in GridView) ──
+        // Plain CSS keyed off the cells' data attributes, so a theme restyles it via
+        // `styleOverrides.root` or the `--dt-pinned-bg` / `--dt-pinned-shadow` tokens.
+        // Opaque base + row-tint overlay so scrolling content never bleeds through.
+        '& [data-pinned]': {
+            backgroundColor: 'var(--dt-pinned-bg)',
+            backgroundImage: 'linear-gradient(var(--dt-row-bg), var(--dt-row-bg))',
+        },
+        '& [role="columnheader"][data-pinned], & [data-summary-row] [data-pinned]': {
+            backgroundColor: 'var(--dt-header-bg)',
+            backgroundImage: 'none',
+        },
+        // Edge shadow: always, or (default) only while content is scrolled under that side.
+        '&[data-pinned-shadow="always"] [data-pinned-edge="start"], &[data-scrolled-start] [data-pinned-edge="start"]': {
+            boxShadow: startEdgeShadow,
+        },
+        '&[data-pinned-shadow="always"] [data-pinned-edge="end"], &[data-scrolled-end] [data-pinned-edge="end"]': {
+            boxShadow: endEdgeShadow,
+        },
+
+        // ── Built-in columns ──
+        // The checkbox / expander cells are fixed-width and hold one centred control, so
+        // they don't take the cell padding: a theme that widens `cell` / `headerCell`
+        // padding no longer squeezes or shifts them. Target any of them with
+        // `& [data-col-kind="selection" | "expand" | "actions"]`.
+        '& [data-col-kind="selection"], & [data-col-kind="expand"]': {
+            paddingInline: 0,
+        },
     };
 }) as unknown as DivSlot;
 

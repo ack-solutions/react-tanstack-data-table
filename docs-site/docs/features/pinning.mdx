@@ -79,6 +79,34 @@ Listen for changes with the `onColumnPinningChange` prop.
 | `enableColumnPinning` | `boolean` | Enable pinning + the toolbar pin toggles |
 | `initialState.columnPinning` | `{ left?: string[]; right?: string[] }` | Initial (and reset) pinned columns |
 | `onColumnPinningChange` | `(state) => void` | Fires when pinning changes |
+| `pinnedShadow` | `'scroll' \| 'always' \| 'none'` | Edge shadow on the pinned columns. Default `'scroll'`: only while content is scrolled under that side |
+
+## Edge shadow & styling
+
+The last left-pinned and first right-pinned columns draw a soft edge shadow, so you can see content
+sliding underneath. By default (`pinnedShadow="scroll"`) it only appears **while content is actually
+scrolled under** that side: at rest there's no line beside the checkbox or expander. Use `'always'` for
+the old always-on look, or `'none'` to drop it.
+
+Pinned visuals are plain CSS, not inline styles, so a theme can change them without `!important`.
+Only `position: sticky` and the column offset stay inline, because pinning needs them to work.
+
+```tsx
+// Tokens — colour of the shadow and the pinned background:
+<DataTable … sx={{ '--dt-pinned-shadow': 'rgba(0,0,0,.3)', '--dt-pinned-bg': '#fafafa' }} />
+
+// Or target the cells directly (theme-wide):
+createTheme({ components: { MuiTanstackDataGrid: { styleOverrides: { root: {
+  '& [data-pinned-edge="start"]': { borderInlineEnd: '1px solid #ddd' },
+} } } } });
+```
+
+| Hook | On | Meaning |
+| --- | --- | --- |
+| `data-pinned="left" \| "right"` | every pinned header / body / summary cell | the column is pinned |
+| `data-pinned-edge="start" \| "end"` | last left-pinned / first right-pinned cell | the cell that draws the edge shadow |
+| `data-scrolled-start`, `data-scrolled-end` | grid root | content is scrolled under the left / right pinned columns |
+| `data-pinned-shadow` | grid root | the current `pinnedShadow` mode |
 
 > The detail-panel row from [row expansion](/features/expansion) always spans the full width and is not
 > affected by pinning.

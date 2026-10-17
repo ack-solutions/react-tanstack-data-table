@@ -67,6 +67,7 @@ See [Selection](/features/selection).
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
 | `enableRowSelection` | `boolean \| (row) => boolean` | `false` | Add the checkbox column. Pass a predicate to allow selection only on some rows. |
+| `expandPlacement` | `'column' \| 'first-cell'` | `'column'` | Expand arrow in its own column, or at the start of the first data cell ([expansion](/features/expansion#arrow-placement)). |
 | `enableMultiRowSelection` | `boolean` | `true` | `false` = single-select (radio-like) — use for "pick one". |
 | `selectMode` | `'page' \| 'all'` | `'page'` | Whether "select all" spans the current page or the whole (filtered) dataset. |
 | `isRowSelectable` | `({ row, id }) => boolean` | — | Disable specific rows' checkboxes (e.g. locked records). |
@@ -85,6 +86,7 @@ See [Columns](/features/columns) · [Column pinning](/features/pinning) · [Cell
 | `columnResizeMode` | `'onChange' \| 'onEnd'` | `'onChange'` | `'onChange'` resizes live as you drag; `'onEnd'` waits for release (steadier for very wide grids). |
 | `enableColumnReordering` | `boolean` | `false` | Drag headers to reorder (also exposed in the columns panel). |
 | `enableColumnPinning` | `boolean` | `false` | Freeze columns left/right; seed with `initialState.columnPinning`. |
+| `pinnedShadow` | `'scroll' \| 'always' \| 'none'` | `'scroll'` | Edge shadow on pinned columns: only while content scrolls under them, always, or never. |
 | `enableColumnVisibility` | `boolean` | `true` | Show/hide checkboxes in the toolbar columns panel. |
 | `enableColumnMenu` | `boolean` | `true` | Per-column header **⋮** menu (sort, hide, autosize). Opt one column out with `columnDef.disableColumnMenu`. |
 | `onColumnOrderChange` / `onColumnPinningChange` / `onColumnVisibilityChange` / `onColumnSizingChange` | `(state) => void` | — | Observe each column-layout change — see [Events](/resources/events). |

@@ -535,7 +535,8 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
     const enhancedColumns = useMemo(() => {
         // Normalize user columns first (valueGetter → accessorFn, default type/format cells).
         let cols = columns.map((c) => normalizeUserColumn<T>(c));
-        if (expandEnabled) {
+        // `expandPlacement="first-cell"` draws the arrow inside the first data cell instead.
+        if (expandEnabled && props.expandPlacement !== 'first-cell') {
             cols = [
                 createExpandingColumn<T>({
                     ...(slotProps?.expandColumn && typeof slotProps.expandColumn === 'object' ? slotProps.expandColumn : {}),
@@ -580,7 +581,7 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
         // Depend on the two strings the columns actually consume — not the whole
         // localeText object, which is a fresh reference each render for inline
         // partial overrides and would otherwise rebuild every column.
-    }, [columns, expandEnabled, enableRowSelection, enableMultiRowSelection, selectOnRowClick, hasRowActions, actionsColumnEnabled, editRowMode, rowActionsDisplay, slotProps?.expandColumn, slotProps?.selectionColumn, slotProps?.actionsColumn, slots?.expandIcon, slots?.collapseIcon, slots?.moreActionsIcon, localeText.expandRow, localeText.collapseRow, localeText.editRow, localeText.editSave, localeText.editCancel]);
+    }, [columns, expandEnabled, props.expandPlacement, enableRowSelection, enableMultiRowSelection, selectOnRowClick, hasRowActions, actionsColumnEnabled, editRowMode, rowActionsDisplay, slotProps?.expandColumn, slotProps?.selectionColumn, slotProps?.actionsColumn, slots?.expandIcon, slots?.collapseIcon, slots?.moreActionsIcon, localeText.expandRow, localeText.collapseRow, localeText.editRow, localeText.editSave, localeText.editCancel]);
 
     const fetchData = useEvent(
         async (overrides: Partial<TableState> = {}, options?: { delay?: number; meta?: DataFetchMeta }) => {

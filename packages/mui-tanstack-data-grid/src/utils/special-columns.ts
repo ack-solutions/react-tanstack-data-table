@@ -106,13 +106,45 @@ export const createSelectionColumn = <T>(
     ...config,
 });
 
+export interface ExpandToggleOptions {
+    expandIcon?: ComponentType<any>;
+    collapseIcon?: ComponentType<any>;
+    expandLabel?: string;
+    collapseLabel?: string;
+}
+
+/**
+ * The expand/collapse arrow for one row, or `null` when the row can't expand. Shared by
+ * the expander column and `expandPlacement="first-cell"`, so both behave identically.
+ */
+export const renderExpandToggle = (row: any, options: ExpandToggleOptions = {}) => {
+    // Tree rows expose getCanExpand() = has children; detail-panel rows default true.
+    if (row.getCanExpand && !row.getCanExpand()) return null;
+    const { expandLabel = 'Expand row', collapseLabel = 'Collapse row' } = options;
+    const ExpandIcon = options.expandIcon ?? KeyboardArrowDownOutlined;
+    const CollapseIcon = options.collapseIcon ?? KeyboardArrowUpOutlined;
+    const expanded = row.getIsExpanded();
+    const toggleExpanded = row.getToggleExpandedHandler();
+    return createElement(
+        IconButton,
+        {
+            // Expanding a row must not also fire the row's `onRowClick`.
+            onClick: (e: any) => { e.stopPropagation(); toggleExpanded(); },
+            size: 'small',
+            sx: { p: 0 },
+            tabIndex: -1,
+            'aria-label': expanded ? collapseLabel : expandLabel,
+            'aria-expanded': expanded,
+        },
+        expanded ? createElement(CollapseIcon) : createElement(ExpandIcon),
+    );
+};
+
 /** Auto-generated expand/collapse column for row detail panels. */
 export const createExpandingColumn = <T>(
     config: Partial<DataTableColumn<T>> & ExpandingColumnConfig,
 ): DataTableColumn<T> => {
-    const { expandIcon, collapseIcon, expandLabel = 'Expand row', collapseLabel = 'Collapse row', ...columnConfig } = config;
-    const ExpandIcon = expandIcon ?? KeyboardArrowDownOutlined;
-    const CollapseIcon = collapseIcon ?? KeyboardArrowUpOutlined;
+    const { expandIcon, collapseIcon, expandLabel, collapseLabel, ...columnConfig } = config;
     return {
         id: DEFAULT_EXPAND_COLUMN_ID,
         maxSize: 60,
@@ -126,25 +158,7 @@ export const createExpandingColumn = <T>(
         hideInExport: true,
         disableRowClick: true,
         header: '',
-        cell: ({ row }) => {
-            // Tree rows expose getCanExpand() = has children; detail-panel rows default true.
-            if (row.getCanExpand && !row.getCanExpand()) return null;
-            const expanded = row.getIsExpanded();
-            const toggleExpanded = row.getToggleExpandedHandler();
-            return createElement(
-                IconButton,
-                {
-                    // Expanding a row must not also fire the row's `onRowClick`.
-                    onClick: (e: any) => { e.stopPropagation(); toggleExpanded(); },
-                    size: 'small',
-                    sx: { p: 0 },
-                    tabIndex: -1,
-                    'aria-label': expanded ? collapseLabel : expandLabel,
-                    'aria-expanded': expanded,
-                },
-                expanded ? createElement(CollapseIcon) : createElement(ExpandIcon),
-            );
-        },
+        cell: ({ row }) => renderExpandToggle(row, { expandIcon, collapseIcon, expandLabel, collapseLabel }),
         ...columnConfig,
     };
 };

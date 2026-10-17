@@ -26,6 +26,8 @@ import { EditCell } from './edit-cell';
 import { ColumnMenu } from './column-menu';
 import { GridAnnouncer } from './grid-announcer';
 import { computeColumnTotals, formatAggregation } from '../../utils/aggregation';
+import { renderExpandToggle } from '../../utils/special-columns';
+import { DEFAULT_SELECTION_COLUMN_ID, DEFAULT_EXPAND_COLUMN_ID, DEFAULT_ACTIONS_COLUMN_ID } from '../../types/column.types';
 import { setNestedValue, coerceEditValue } from '../../utils/table-helpers';
 import { columnSizeCssVar, columnSizeCssVarName } from '../../utils/column-helpers';
 import { LocaleTextProvider } from '../../locale/locale-context';
@@ -53,28 +55,40 @@ function textWrapSx(wrapText: boolean): CSSProperties {
         : { whiteSpace: 'nowrap', textOverflow: 'ellipsis' };
 }
 
-function getPinnedStyle(column: Column<any, unknown>, isRtl: boolean): CSSProperties {
+// Only what pinning NEEDS to work stays inline: sticky + the per-column offset. The
+// visuals (background, edge shadow) are CSS on the root keyed off the attributes below,
+// so a theme can restyle them (see GridRoot). Logical insets auto-flip under RTL.
+function getPinnedStyle(column: Column<any, unknown>): CSSProperties {
     const pinned = column.getIsPinned();
     if (!pinned) return {};
-    const isLastLeft = pinned === 'left' && column.getIsLastColumn('left');
-    const isFirstRight = pinned === 'right' && column.getIsFirstColumn('right');
-    // Logical inset props auto-flip with `dir` (left pin → inline-start), so the
-    // pin offsets are correct under RTL with no JS flipping. The box-shadow x-offset
-    // is NOT a logical property, so its sign is flipped explicitly under RTL.
-    const sx = isRtl ? -1 : 1;
     return {
         position: 'sticky',
         insetInlineStart: pinned === 'left' ? column.getStart('left') : undefined,
         insetInlineEnd: pinned === 'right' ? column.getAfter('right') : undefined,
         zIndex: 'var(--dt-z-pinned)' as unknown as number,
-        // Opaque base + row-tint overlay so scrolling content never bleeds through.
-        backgroundColor: 'var(--dt-pinned-bg)',
-        backgroundImage: 'linear-gradient(var(--dt-row-bg), var(--dt-row-bg))',
-        boxShadow: isLastLeft
-            ? `${2 * sx}px 0 4px -2px var(--dt-pinned-shadow)`
-            : isFirstRight
-                ? `${-2 * sx}px 0 4px -2px var(--dt-pinned-shadow)`
-                : undefined,
+    };
+}
+
+const COLUMN_KIND: Record<string, 'selection' | 'expand' | 'actions'> = {
+    [DEFAULT_SELECTION_COLUMN_ID]: 'selection',
+    [DEFAULT_EXPAND_COLUMN_ID]: 'expand',
+    [DEFAULT_ACTIONS_COLUMN_ID]: 'actions',
+};
+
+// Theme hooks on every header/body/summary cell: `data-pinned="left|right"`, and
+// `data-pinned-edge="start|end"` on the last left-pinned / first right-pinned column
+// (the one that draws the edge shadow), plus `data-col-kind` on the built-in columns.
+function cellAttrs(column: Column<any, unknown>): Record<string, string | undefined> {
+    const pinned = column.getIsPinned();
+    return {
+        'data-pinned': pinned || undefined,
+        'data-pinned-edge':
+            pinned === 'left' && column.getIsLastColumn('left')
+                ? 'start'
+                : pinned === 'right' && column.getIsFirstColumn('right')
+                    ? 'end'
+                    : undefined,
+        'data-col-kind': COLUMN_KIND[column.id],
     };
 }
 
@@ -124,6 +138,8 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
         enableColumnReordering,
         renderBulkActions,
         renderDetailPanel,
+        expandPlacement = 'column',
+        pinnedShadow = 'scroll',
         renderToolbar,
         listView,
         onListViewChange,
@@ -188,6 +204,10 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
     const isTree = derived.isTree;
     // First non-special column carries the tree depth indentation.
     const firstDataColId = table.getVisibleLeafColumns().find((c) => !c.id.startsWith('_'))?.id;
+    // `expandPlacement="first-cell"`: the engine skips the expander column and the arrow is
+    // drawn at the start of the first data cell instead.
+    const expandInFirstCell =
+        expandPlacement === 'first-cell' && (isTree || !!(props.enableRowExpansion ?? props.enableExpanding));
     // aria-rowindex is page-global so it matches aria-rowcount (the grand total). Trees
     // grow/shrink as nodes expand, so their count is reported as unknown (-1) and the
     // index stays page/flatten-local.
@@ -284,6 +304,33 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
         }
         onRowClick?.(e, row);
     };
+
+    // Pinned edge shadow, `pinnedShadow="scroll"`: track whether content is scrolled under
+    // the left (start) / right (end) pinned columns, and expose it as root attributes the
+    // CSS keys off. State only changes when a flag flips, so scrolling doesn't re-render.
+    const hasPinnedColumns = table.getLeftLeafColumns().length > 0 || table.getRightLeafColumns().length > 0;
+    const trackScrollEdges = pinnedShadow === 'scroll' && hasPinnedColumns && !listViewActive;
+    const [scrollEdges, setScrollEdges] = useState({ start: false, end: false });
+    useEffect(() => {
+        const el = refs.tableContainerRef.current;
+        if (!el || !trackScrollEdges) return;
+        const update = () => {
+            const x = Math.abs(el.scrollLeft); // RTL scrollLeft runs negative
+            const start = x > 0.5;
+            const end = x + el.clientWidth < el.scrollWidth - 0.5;
+            setScrollEdges((p) => (p.start === start && p.end === end ? p : { start, end }));
+        };
+        update();
+        el.addEventListener('scroll', update, { passive: true });
+        // Re-check when the viewport or the column track changes size (resize, column changes).
+        const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(update) : null;
+        ro?.observe(el);
+        if (el.firstElementChild) ro?.observe(el.firstElementChild);
+        return () => {
+            el.removeEventListener('scroll', update);
+            ro?.disconnect();
+        };
+    }, [trackScrollEdges, refs.tableContainerRef]);
 
     // Footer aggregation — client mode only (in server mode the row model is just the
     // loaded page, so totals would be silently page-scoped). Recompute when the filtered
@@ -503,6 +550,7 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
                             {...headerCellSlotProps.rest}
                             role="columnheader"
                             data-col-id={column.id}
+                            {...cellAttrs(column)}
                             data-placeholder={header.isPlaceholder || undefined}
                             aria-colspan={header.colSpan > 1 ? header.colSpan : undefined}
                             {...(isLeafRow ? {
@@ -536,8 +584,7 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
                                 justifyContent: align === 'right' ? 'flex-end' : align === 'center' ? 'center' : 'flex-start',
                                 cursor: canSort ? 'pointer' : 'default',
                                 gap: theme.spacing(0.5),
-                                ...getPinnedStyle(column, isRtl),
-                                ...(column.getIsPinned() ? { backgroundColor: 'var(--dt-header-bg)', backgroundImage: 'none' } : {}),
+                                ...getPinnedStyle(column),
                                 ...(isDropTarget ? { boxShadow: `inset ${isRtl ? -2 : 2}px 0 0 0 var(--dt-resize-handle)` } : {}),
                                 // Slot style LAST — the only channel that can beat inline styles
                                 // (sx can't). Overriding flex/width is at-your-own-risk (documented).
@@ -750,6 +797,7 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
                             {...cellSlotProps.rest}
                             role="gridcell"
                             data-col-id={column.id}
+                            {...cellAttrs(column)}
                             data-r={displayIndex + 1}
                             data-c={colIndex}
                             tabIndex={kbd.isFocused(displayIndex + 1, colIndex) ? 0 : -1}
@@ -765,9 +813,9 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
                                 justifyContent: cellOpen ? 'stretch' : align === 'right' ? 'flex-end' : align === 'center' ? 'center' : 'flex-start',
                                 // An opted-out cell drops the row's pointer cursor, so it doesn't look clickable.
                                 cursor: editable && !cellOpen ? 'text' : def.disableRowClick ? 'default' : undefined,
-                                ...getPinnedStyle(column, isRtl),
+                                ...getPinnedStyle(column),
                                 // Edit mode: a clean full-cell ring (no stray underline), after
-                                // getPinnedStyle so it wins over a pinned cell's shadow.
+                                // the pinned styles so it wins over a pinned cell's edge shadow.
                                 ...(cellOpen ? { boxShadow: 'inset 0 0 0 2px var(--dt-resize-handle)', backgroundColor: 'var(--dt-row-bg)' } : {}),
                                 ...cellSlotProps.style,
                             }}
@@ -787,9 +835,18 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
                                     autoFocusEditor={cellInRowEdit ? column.id === firstEditableColId : true}
                                 />
                             ) : (
-                                <Box component="span" data-cell-content sx={{ minWidth: 0, width: '100%', overflow: 'hidden', ...textWrapSx(wrapText), textAlign: logicalTextAlign(align), ...(isTree && column.id === firstDataColId && row.depth ? { marginInlineStart: `${row.depth * 16}px` } : {}) }}>
+                                <>
+                                {expandInFirstCell && column.id === firstDataColId ? (
+                                    // Fixed-width slot (empty when the row can't expand) so text stays
+                                    // aligned; tree depth indents the arrow, not the text.
+                                    <Box component="span" data-expand-toggle sx={{ display: 'inline-flex', justifyContent: 'center', flexShrink: 0, width: 24, marginInlineEnd: 0.5, marginInlineStart: isTree && row.depth ? `${row.depth * 16}px` : 0 }}>
+                                        {renderExpandToggle(row, { expandIcon: slots?.expandIcon, collapseIcon: slots?.collapseIcon, expandLabel: locale.expandRow, collapseLabel: locale.collapseRow })}
+                                    </Box>
+                                ) : null}
+                                <Box component="span" data-cell-content sx={{ minWidth: 0, width: '100%', overflow: 'hidden', ...textWrapSx(wrapText), textAlign: logicalTextAlign(align), ...(isTree && !expandInFirstCell && column.id === firstDataColId && row.depth ? { marginInlineStart: `${row.depth * 16}px` } : {}) }}>
                                     {flexRender(column.columnDef.cell, cell.getContext())}
                                 </Box>
+                                </>
                             )}
                         </CellSlot>
                     );
@@ -824,7 +881,7 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
                         <GridListItem role="cell"><Skeleton width="60%" /></GridListItem>
                     ) : (
                         table.getVisibleLeafColumns().map((column) => (
-                            <GridCell key={column.id} role="cell" style={{ flex: flexFor(column), width: columnSizeCssVar(column.id), ...getPinnedStyle(column, isRtl) }}>
+                            <GridCell key={column.id} role="cell" {...cellAttrs(column)} style={{ flex: flexFor(column), width: columnSizeCssVar(column.id), ...getPinnedStyle(column) }}>
                                 <Skeleton width="80%" />
                             </GridCell>
                         ))
@@ -860,7 +917,7 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
         bandRows.map((row, i) => renderRow(row, startDisplayIndex + i));
 
     const renderAggregation = () => (
-        <GridFooterRow role="row">
+        <GridFooterRow role="row" data-summary-row="">
             {table.getVisibleLeafColumns().map((column) => {
                 const align = getAlign(column);
                 const total = columnTotals[column.id];
@@ -870,12 +927,12 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
                         key={column.id}
                         role="cell"
                         data-col-id={column.id}
+                        {...cellAttrs(column)}
                         style={{
                             flex: flexFor(column),
                             width: columnSizeCssVar(column.id),
                             justifyContent: align === 'right' ? 'flex-end' : align === 'center' ? 'center' : 'flex-start',
-                            ...getPinnedStyle(column, isRtl),
-                            ...(column.getIsPinned() ? { backgroundColor: 'var(--dt-header-bg)', backgroundImage: 'none' } : {}),
+                            ...getPinnedStyle(column),
                         }}
                     >
                         <Box component="span" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{text}</Box>
@@ -890,6 +947,10 @@ export function GridView<T extends Record<string, any>>(props: GridViewProps<T>)
         <RootSlot
             // dir first so slotProps.root can deliberately override it.
             dir={isRtl ? 'rtl' : undefined}
+            // Pinned edge-shadow state for the CSS in GridRoot (see `pinnedShadow`).
+            data-pinned-shadow={pinnedShadow}
+            data-scrolled-start={scrollEdges.start && trackScrollEdges ? '' : undefined}
+            data-scrolled-end={scrollEdges.end && trackScrollEdges ? '' : undefined}
             {...rootSlotProps.rest}
             className={joinClassNames(props.className, rootSlotProps.className)}
             // Merge (not replace) so slotProps.root.style adds properties without

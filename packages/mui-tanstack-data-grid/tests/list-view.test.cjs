@@ -27,7 +27,8 @@ test('listView renders one custom item per row and hides column headers', () => 
     assert.ok(html.includes('data-list-item="1"') && html.includes('data-list-item="2"') && html.includes('data-list-item="3"'), 'a custom item renders per row');
     assert.ok(html.includes('Alice — Admin'), 'the item content renders');
     // column headers are gone
-    assert.ok(!html.includes('role="columnheader"'), 'no column headers in list view');
+    // Match an element, not the text: the grid's CSS also contains a `[role="columnheader"]` selector.
+    assert.ok(!/<div[^>]*role="columnheader"/.test(html), 'no column headers in list view');
     // exactly one gridcell per row (the list item), not one per column
     const cellCount = (html.match(/role="gridcell"/g) || []).length;
     assert.equal(cellCount, 3, 'one full-width cell per row (not one per column)');
@@ -35,14 +36,14 @@ test('listView renders one custom item per row and hides column headers', () => 
 
 test('grid view (no listView) still renders columnar headers + per-column cells', () => {
     const html = render({ renderListItem: listItem }); // renderListItem present but listView off
-    assert.ok(html.includes('role="columnheader"'), 'headers present in grid mode');
+    assert.ok(/<div[^>]*role="columnheader"/.test(html), 'headers present in grid mode');
     assert.ok(!html.includes('data-list-item'), 'the list item is NOT used when listView is off');
     assert.equal((html.match(/role="gridcell"/g) || []).length, 6, 'two columns × three rows = 6 cells');
 });
 
 test('listView requires renderListItem (falls back to grid if missing)', () => {
     const html = render({ listView: true }); // no renderListItem
-    assert.ok(html.includes('role="columnheader"'), 'without renderListItem it stays a normal grid');
+    assert.ok(/<div[^>]*role="columnheader"/.test(html), 'without renderListItem it stays a normal grid');
 });
 
 test('engine still applies in list view — pagination slices rows', () => {
