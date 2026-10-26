@@ -15,6 +15,7 @@ import type {
     ExportRequest,
     ExportSink,
     ExportStateChange,
+    ExcelWriter,
     ServerExportResult,
 } from '../../types/export.types';
 import type { SelectionState } from '../../types/selection.types';
@@ -51,6 +52,8 @@ export interface RunExportOptions<T = any> extends RunExportCallbacks<T> {
     maxClientRows?: number;
     /** Truncate XLSX at the Excel row limit instead of throwing. */
     truncateXlsx?: boolean;
+    /** Builds the XLSX file instead of the optional `xlsx` peer. */
+    excelWriter?: ExcelWriter;
     /** Fail (instead of writing a partial file) when fewer rows arrive than the server's `total`. */
     strictTotalCheck?: boolean;
     pollIntervalMs?: number;
@@ -148,7 +151,7 @@ async function writeXlsx(opts: RunExportOptions, produce: BatchProducer, getTota
         emit(all.length, 'processing');
     });
     emit(all.length, 'downloading', true);
-    const { blob } = await buildXlsxBlob(all, { truncate: opts.truncateXlsx });
+    const { blob } = await buildXlsxBlob(all, { truncate: opts.truncateXlsx, writer: opts.excelWriter });
     downloadBlob(blob, resolvedFilename(opts.request.filename, 'excel'), XLSX_MIME);
     return all.length;
 }

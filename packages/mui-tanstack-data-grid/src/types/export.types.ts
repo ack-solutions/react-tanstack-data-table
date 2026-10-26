@@ -22,7 +22,17 @@ export type ExportScope = 'all' | 'filtered' | 'selected';
 /** How the file is written on the client. `auto` picks the best supported sink. */
 export type ExportSink = 'auto' | 'stream' | 'blob';
 
-export type ExportConcurrencyMode = 'ignoreIfRunning' | 'cancelAndRestart' | 'queue';
+/**
+ * Builds the `.xlsx` file for an Excel export instead of the optional `xlsx` (SheetJS) peer.
+ * Receives the formatted `{ header: value }` records (in column order) and returns the file
+ * bytes. Use it to export with `exceljs` or any other writer, so `xlsx` need not be installed.
+ */
+export type ExcelWriter = (
+    records: Record<string, any>[],
+    context: { sheetName: string },
+) => Blob | ArrayBuffer | Uint8Array | Promise<Blob | ArrayBuffer | Uint8Array>;
+
+export type ExportConcurrencyMode ='ignoreIfRunning' | 'cancelAndRestart' | 'queue';
 
 export type ExportPhase =
     | 'starting'

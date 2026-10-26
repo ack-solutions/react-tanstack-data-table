@@ -3,6 +3,7 @@
  * `join`), so it pairs with a streaming sink for bounded memory. XLSX is lazily
  * loaded and guarded against Excel's hard worksheet row limit.
  */
+import type { ExcelWriter } from '../../types/export.types';
 import { sanitizeCSVCellValue } from './format';
 import { loadXlsx } from './load-xlsx';
 
@@ -55,13 +56,14 @@ export interface XlsxBuildResult {
 /**
  * Build an XLSX blob from records. Throws if the row count exceeds Excel's limit
  * unless `truncate` is set, in which case it caps and reports `truncated: true`.
- * `xlsx` is dynamically imported so it stays out of the initial bundle.
+ * `xlsx` is dynamically imported so it stays out of the initial bundle; with a `writer`
+ * it is never loaded.
  */
 export async function buildXlsxBlob(
     records: Record<string, any>[],
-    options: { sheetName?: string; truncate?: boolean } = {},
+    options: { sheetName?: string; truncate?: boolean; writer?: ExcelWriter } = {},
 ): Promise<XlsxBuildResult> {
-    const { sheetName = 'Data', truncate = false } = options;
+    const { sheetName = 'Data', truncate = false, writer } = options;
     let rows = records;
     let truncated = false;
     if (records.length > MAX_XLSX_ROWS) {
@@ -74,13 +76,23 @@ export async function buildXlsxBlob(
         rows = records.slice(0, MAX_XLSX_ROWS);
         truncated = true;
     }
-    const XLSX = await loadXlsx();
-    const workbook = XLSX.utils.book_new();
-    const worksheet = XLSX.utils.json_to_sheet(rows);
-    XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
-    const buffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const blob = await writeXlsxBytes(rows, sheetName, writer);
     return { blob, rows: rows.length, truncated };
+}
+
+/** Workbook bytes as an XLSX blob, from the app's `writer` if given, else the `xlsx` peer. */
+export async function writeXlsxBytes(rows: Record<string, any>[], sheetName: string, writer?: ExcelWriter): Promise<Blob> {
+    let bytes: Blob | ArrayBuffer | Uint8Array;
+    if (writer) {
+        bytes = await writer(rows, { sheetName });
+    } else {
+        const XLSX = await loadXlsx();
+        const workbook = XLSX.utils.book_new();
+        const worksheet = XLSX.utils.json_to_sheet(rows);
+        XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+        bytes = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    }
+    return bytes instanceof Blob ? bytes : new Blob([bytes as BlobPart], { type: XLSX_MIME });
 }
 
 export const CSV_MIME = 'text/csv;charset=utf-8';

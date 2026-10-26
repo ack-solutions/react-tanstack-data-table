@@ -23,6 +23,7 @@ import type {
     ExportProgressPayload,
     ExportStateChange,
     ExportMode,
+    ExcelWriter,
     ExportSink,
     ExportRequest,
     ExportJobRef,
@@ -191,6 +192,11 @@ export interface DataTableProps<T> {
     exportMaxClientRows?: number;
     /** Truncate XLSX at Excel's row cap instead of throwing. Default `false`. */
     exportTruncateXlsx?: boolean;
+    /**
+     * Build Excel files with your own writer (e.g. `exceljs`) instead of the optional `xlsx`
+     * peer, which then need not be installed. Receives the formatted records; returns the bytes.
+     */
+    exportExcelWriter?: ExcelWriter;
     /** Poll interval for `server-async` jobs in ms. Default `2000`. */
     exportPollIntervalMs?: number;
     /** Force a renamed download for `{ fileUrl }` (buffers — avoid for huge files). */

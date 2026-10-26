@@ -46,3 +46,28 @@ test('Excel export with xlsx ABSENT throws the clear peer error (not a module-re
         Module._resolveFilename = originalResolve;
     }
 });
+
+test('a custom excelWriter builds the file and xlsx is never loaded', async () => {
+    const originalResolve = Module._resolveFilename;
+    Module._resolveFilename = function (request, ...args) {
+        if (request === 'xlsx') throw new Error('xlsx must not be resolved when a writer is given');
+        return originalResolve.apply(this, [request, ...args]);
+    };
+    try {
+        let seen;
+        const writer = (records, ctx) => {
+            seen = { records, ctx };
+            return new Uint8Array([0x50, 0x4b, 0x03, 0x04]);
+        };
+        const res = await buildXlsxBlob([{ unit: 'A-101' }], { sheetName: 'Units', writer });
+        assert.deepEqual(seen, { records: [{ unit: 'A-101' }], ctx: { sheetName: 'Units' } });
+        assert.ok(res.blob instanceof Blob);
+        assert.equal(res.blob.size, 4);
+        assert.match(res.blob.type, /spreadsheetml/);
+
+        const asBlob = await buildXlsxBlob([{ a: 1 }], { writer: async () => new Blob(['x']) });
+        assert.equal(asBlob.blob.size, 1, 'a Blob from the writer is used as-is');
+    } finally {
+        Module._resolveFilename = originalResolve;
+    }
+});

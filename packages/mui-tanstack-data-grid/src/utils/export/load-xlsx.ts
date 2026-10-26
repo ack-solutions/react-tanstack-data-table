@@ -10,8 +10,9 @@
  * Why that's safe here: this grid only ever *writes* workbooks — `book_new`,
  * `json_to_sheet`, `book_append_sheet`, `write` — and never calls `XLSX.read` /
  * `readFile`. Both advisories live in the parsing path, so they're unreachable. So
- * `xlsx` is declared as an optional peer: most consumers (and all CSV-only ones) don't
- * install it and get a clean audit; Excel-export consumers add `xlsx` themselves.
+ * `xlsx` is declared as an optional peer (`>=0.18.5`, so the patched CDN builds fit): most
+ * consumers (and all CSV-only ones) don't install it and get a clean audit; Excel-export
+ * consumers add `xlsx` themselves or pass their own `exportExcelWriter`.
  *
  * DO NOT move `xlsx` back into `dependencies` — that re-introduces the audit noise for
  * everyone. It stays a `devDependency` (so this package builds/tests) + an optional peer.
@@ -28,7 +29,8 @@ export interface XlsxWriteApi {
 }
 
 export const XLSX_MISSING_MESSAGE =
-    'Excel export requires the optional peer dependency "xlsx". Install it (`npm install xlsx`) or export to CSV instead.';
+    'Excel export requires the optional peer dependency "xlsx". Install it (the patched build: ' +
+    '`npm install https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz`), pass `exportExcelWriter`, or export to CSV instead.';
 
 /**
  * Dynamically import `xlsx`, translating an absent module into a clear, actionable

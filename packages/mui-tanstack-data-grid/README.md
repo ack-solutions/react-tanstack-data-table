@@ -23,25 +23,41 @@ npm install @ackplus/mui-tanstack-data-grid
 
 Published on npm. Docs: https://ack-solutions.github.io/react-tanstack-data-table/docs/
 
-### Optional peer: `xlsx` (Excel export only)
+### Excel export: the optional `xlsx` peer, or your own writer
 
-**CSV export needs nothing extra.** Excel (`.xlsx`) export needs the SheetJS `xlsx`
-package, declared as an **optional peer** — install it only if you use Excel export:
+**CSV export needs nothing extra.** For Excel (`.xlsx`) export, pick one:
+
+**1. Install the `xlsx` (SheetJS) peer.** It's optional and loads only when an Excel export runs.
+SheetJS stopped publishing to npm at `0.18.5`, which has two high-severity advisories
+(GHSA-4r6h-8v6p-xvw6, GHSA-5pgg-2g8v-p4x9) with no npm fix. The fixed builds are on SheetJS's CDN,
+so install from there:
 
 ```bash
-npm install xlsx
+npm install https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz
 ```
 
-Why optional: SheetJS abandoned its npm package at `0.18.5` (newer builds ship only from
-`cdn.sheetjs.com`), and that version carries two high-severity **parsing** advisories with
-no registry fix — so making it a hard dependency would give **every** consumer a
-permanently red `npm audit`, even ones that never export a spreadsheet. This grid only
-ever *writes* workbooks (`book_new` / `json_to_sheet` / `book_append_sheet` / `write`) and
-never parses one, so those advisories are unreachable. `xlsx` is therefore loaded lazily,
-only on the Excel path: consumers who don't install it get a clean audit, and triggering an
-Excel export without it throws a clear _"install the `xlsx` peer, or export to CSV"_ error
-(CSV keeps working). **Please don't move `xlsx` back into `dependencies`** — that
-re-introduces the audit noise for all consumers.
+The peer range is `>=0.18.5`, so the CDN builds satisfy it without a peer warning.
+
+**2. Pass your own writer** with `exportExcelWriter` (for example one built on `exceljs`). The grid
+then never loads `xlsx`, and you don't need it installed:
+
+```tsx
+<DataTable
+  exportExcelWriter={async (records, { sheetName }) => {
+    const { default: ExcelJS } = await import('exceljs');
+    const workbook = new ExcelJS.Workbook();
+    const sheet = workbook.addWorksheet(sheetName);
+    sheet.columns = Object.keys(records[0] ?? {}).map((header) => ({ header, key: header }));
+    sheet.addRows(records);
+    return workbook.xlsx.writeBuffer();
+  }}
+  /* ... */
+/>
+```
+
+Triggering an Excel export with neither throws a clear _"install the `xlsx` peer, or export to
+CSV"_ error (CSV keeps working). **Please don't move `xlsx` back into `dependencies`** — that would
+put the npm `0.18.5` advisories on every consumer, including ones that never export a spreadsheet.
 
 ## Module formats & build
 

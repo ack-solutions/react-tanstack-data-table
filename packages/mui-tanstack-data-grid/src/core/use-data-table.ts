@@ -303,6 +303,7 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
         exportFetchConcurrency = 1,
         exportMaxClientRows,
         exportTruncateXlsx = false,
+        exportExcelWriter,
         exportPollIntervalMs = 2000,
         exportRenameDownload = false,
         exportProgressEvery = 2000,
@@ -1727,6 +1728,7 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
                         fetchConcurrency: exportFetchConcurrency,
                         maxClientRows: exportMaxClientRows,
                         truncateXlsx: exportTruncateXlsx,
+                        excelWriter: exportExcelWriter,
                         strictTotalCheck: options.strictTotalCheck ?? exportStrictTotalCheck,
                         pollIntervalMs: exportPollIntervalMs,
                         renameDownload: exportRenameDownload,
@@ -1754,7 +1756,7 @@ export function useDataTable<T extends Record<string, any>>(props: DataTableProp
             cancelExport: () => handleCancelExport(),
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [dataMode, exportChunkSize, exportFilename, exportSanitizeCSV, exportStrictTotalCheck, exportMode, exportSink, exportInterPageDelayMs, exportFetchConcurrency, exportMaxClientRows, exportTruncateXlsx, exportPollIntervalMs, exportRenameDownload, exportProgressEvery, fetchData, handleCancelExport, handleColumnFilterChangeHandler, handleExportProgressInternal, handleExportStateChangeInternal, initialStateConfig, resetAllAndReload, runExportWithPolicy, triggerRefresh, tableTotalRow, getRowId, tableRef, uiRef, serverDataRef, dataRef, enablePagination]);
+    }, [dataMode, exportChunkSize, exportFilename, exportSanitizeCSV, exportStrictTotalCheck, exportMode, exportSink, exportInterPageDelayMs, exportFetchConcurrency, exportMaxClientRows, exportTruncateXlsx, exportExcelWriter, exportPollIntervalMs, exportRenameDownload, exportProgressEvery, fetchData, handleCancelExport, handleColumnFilterChangeHandler, handleExportProgressInternal, handleExportStateChangeInternal, initialStateConfig, resetAllAndReload, runExportWithPolicy, triggerRefresh, tableTotalRow, getRowId, tableRef, uiRef, serverDataRef, dataRef, enablePagination]);
 
     const handleColumnReorder = useCallback(
         (draggedId: string, targetId: string) => {

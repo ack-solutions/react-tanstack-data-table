@@ -16,6 +16,26 @@ format: each release groups changes as **Added** (new features), **Changed** (be
 
 ---
 
+## [1.25.0](https://www.npmjs.com/package/@ackplus/mui-tanstack-data-grid/v/1.25.0) — 2026-10-26
+
+Backward compatible.
+
+### Added
+- **`exportExcelWriter`.** Build Excel files with your own writer (for example `exceljs`) instead of the
+  `xlsx` peer. It gets the formatted records and returns the file bytes; the grid then never loads
+  `xlsx`, so it doesn't need to be installed. The `ExcelWriter` type is exported.
+
+### Changed
+- **The optional `xlsx` peer range is now `>=0.18.5`** (was `^0.18.5`), so the patched SheetJS builds
+  from `cdn.sheetjs.com` (0.19.3+, 0.20.x) install without a peer conflict. The grid uses only
+  `book_new`, `json_to_sheet`, `book_append_sheet` and `write`, which are the same across them.
+
+### Docs
+- The export page and README recommend installing `xlsx` from the SheetJS CDN, and show an `exceljs`
+  writer.
+
+---
+
 ## [1.24.0](https://www.npmjs.com/package/@ackplus/mui-tanstack-data-grid/v/1.24.0) — 2026-10-17
 
 Backward compatible API; the pinned edge shadow's default changes (see **Changed**).

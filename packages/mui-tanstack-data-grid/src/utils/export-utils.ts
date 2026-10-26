@@ -7,8 +7,8 @@
 import type { Table } from '@tanstack/react-table';
 
 import type { SelectionState } from '../types/selection.types';
-import type { ExportPhase, ServerExportResult } from '../types/export.types';
-import { loadXlsx } from './export/load-xlsx';
+import type { ExcelWriter, ExportPhase, ServerExportResult } from '../types/export.types';
+import { writeXlsxBytes } from './export/serialize';
 
 export interface ExportOptions {
     format: 'csv' | 'excel';
@@ -26,6 +26,8 @@ export interface ExportOptions {
     }) => void;
     signal?: AbortSignal;
     sanitizeCSV?: boolean;
+    /** Builds the XLSX file instead of the optional `xlsx` peer. */
+    excelWriter?: ExcelWriter;
 }
 
 export interface ServerExportOptions extends ExportOptions {
@@ -128,7 +130,7 @@ function normalizeExportValue(value: any): any {
 
 /** Client export: selected rows if any, else filtered rows; visible non-hidden columns. */
 export async function exportClientData<TData>(table: Table<TData>, options: ExportOptions): Promise<void> {
-    const { format, filename, onProgress, onComplete, onError, onStateChange, signal, sanitizeCSV = true } = options;
+    const { format, filename, onProgress, onComplete, onError, onStateChange, signal, sanitizeCSV = true, excelWriter } = options;
     try {
         throwIfExportCancelled(signal);
         notifyState(onStateChange, { phase: 'starting' });
@@ -165,7 +167,7 @@ export async function exportClientData<TData>(table: Table<TData>, options: Expo
         }
 
         notifyState(onStateChange, { phase: 'downloading', processedRows: exportData.length, totalRows: exportData.length, percentage: 100 });
-        await exportToFile(exportData, format, filename, signal, sanitizeCSV);
+        await exportToFile(exportData, format, filename, signal, sanitizeCSV, excelWriter);
 
         const resolvedName = `${filename}.${format === 'excel' ? 'xlsx' : 'csv'}`;
         onComplete?.({ success: true, filename: resolvedName, totalRows: exportData.length });
@@ -188,7 +190,7 @@ export async function exportServerData<TData>(table: Table<TData>, options: Serv
     const {
         format, filename, fetchData, currentFilters, selection,
         onProgress, onComplete, onError, onStateChange, signal,
-        chunkSize = DEFAULT_CHUNK_SIZE, strictTotalCheck = false, sanitizeCSV = true,
+        chunkSize = DEFAULT_CHUNK_SIZE, strictTotalCheck = false, sanitizeCSV = true, excelWriter,
     } = options;
 
     try {
@@ -292,7 +294,7 @@ export async function exportServerData<TData>(table: Table<TData>, options: Serv
         }
 
         notifyState(onStateChange, { phase: 'downloading' });
-        await exportToFile(exportData, format, filename, signal, sanitizeCSV);
+        await exportToFile(exportData, format, filename, signal, sanitizeCSV, excelWriter);
 
         const resolvedName = `${filename}.${format === 'excel' ? 'xlsx' : 'csv'}`;
         onComplete?.({ success: true, filename: resolvedName, totalRows: exportData.length });
@@ -310,7 +312,7 @@ export async function exportServerData<TData>(table: Table<TData>, options: Serv
     }
 }
 
-async function exportToFile(data: Record<string, any>[], format: 'csv' | 'excel', filename: string, signal?: AbortSignal, sanitizeCSV = true): Promise<void> {
+async function exportToFile(data: Record<string, any>[], format: 'csv' | 'excel', filename: string, signal?: AbortSignal, sanitizeCSV = true, excelWriter?: ExcelWriter): Promise<void> {
     throwIfExportCancelled(signal);
     if (data.length === 0) throw new Error('No data to export');
 
@@ -319,13 +321,8 @@ async function exportToFile(data: Record<string, any>[], format: 'csv' | 'excel'
         throwIfExportCancelled(signal);
         downloadFile(csv, `${filename}.csv`, 'text/csv');
     } else {
-        // Lazy-load the optional `xlsx` peer only when an Excel export actually runs.
-        const XLSX = await loadXlsx();
-        const workbook = XLSX.utils.book_new();
-        const worksheet = XLSX.utils.json_to_sheet(data);
-        XLSX.utils.book_append_sheet(workbook, worksheet, 'Data');
-        const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-        const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        // The app's writer, or the optional `xlsx` peer lazy-loaded only when an Excel export runs.
+        const blob = await writeXlsxBytes(data, 'Data', excelWriter);
         throwIfExportCancelled(signal);
         downloadFile(blob, `${filename}.xlsx`, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     }

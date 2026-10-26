@@ -385,8 +385,46 @@ apiRef.current?.export.isExporting();    // boolean
   `exportTruncateXlsx` to cap-and-truncate instead). XLSX is built whole in memory (it can't stream
   line-by-line), and `xlsx` is **lazy-loaded** only when you export Excel — it's not in your initial
   bundle. Use a server mode for large Excel.
+- **Excel needs a writer.** By default the grid uses the optional `xlsx` (SheetJS) peer; see
+  [Excel writer](#excel-writer) below. CSV needs nothing extra.
 - **CSV-injection sanitization is on by default** (`exportSanitizeCSV`) — leading `=`, `+`, `-`, `@`,
   TAB, and CR are neutralized so spreadsheets don't execute cell content as a formula.
+
+## Excel writer
+
+The grid only **writes** workbooks. You have two ways to do that:
+
+**1. The `xlsx` (SheetJS) peer** — optional, loaded only when an Excel export runs. The last
+`xlsx` on npm is `0.18.5`, which has two high advisories (GHSA-4r6h-8v6p-xvw6,
+GHSA-5pgg-2g8v-p4x9). SheetJS publishes the fixed builds only on its own CDN, so install from there:
+
+```bash
+npm install https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz
+```
+
+The peer range is `>=0.18.5`, so the CDN builds install without a peer warning.
+
+**2. Your own writer** — pass `exportExcelWriter` and the grid never loads `xlsx`, so you don't need
+it installed. It gets the formatted `{ header: value }` records (in column order) and returns the
+file as a `Blob`, `ArrayBuffer`, or `Uint8Array`. For example, with `exceljs`:
+
+```tsx
+import ExcelJS from 'exceljs';
+
+const writeExcel: ExcelWriter = async (records, { sheetName }) => {
+  const workbook = new ExcelJS.Workbook();
+  const sheet = workbook.addWorksheet(sheetName);
+  const headers = Object.keys(records[0] ?? {});
+  sheet.columns = headers.map((header) => ({ header, key: header }));
+  sheet.addRows(records);
+  return workbook.xlsx.writeBuffer();
+};
+
+<DataTable columns={columns} data={rows} enableExport exportExcelWriter={writeExcel} />;
+```
+
+Import `ExcelJS` lazily inside the writer (`const { default: ExcelJS } = await import('exceljs')`) if
+you want it out of the initial bundle.
 
 ## Caveats
 
@@ -411,6 +449,7 @@ apiRef.current?.export.isExporting();    // boolean
 | `exportFetchConcurrency` | `number` | `1` | Concurrent paged fetches (known total). |
 | `exportMaxClientRows` | `number` | `1000000` | Guard for client-built files. |
 | `exportTruncateXlsx` | `boolean` | `false` | Truncate XLSX at the row cap instead of throwing. |
+| `exportExcelWriter` | `ExcelWriter` | — | Build Excel files with your own writer instead of the `xlsx` peer. See [Excel writer](#excel-writer). |
 | `exportPollIntervalMs` | `number` | `2000` | Poll interval for `server-async`. |
 | `exportRenameDownload` | `boolean` | `false` | Force a renamed (buffered) `fileUrl` download. |
 | `exportProgressEvery` | `number` | `2000` | Emit progress at most every N rows. |
